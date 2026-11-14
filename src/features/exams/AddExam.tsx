@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { ErrorNote } from '../../components/Primitives';
 import { useExams } from './context';
 import { preparePhoto } from './photo';
+import { RefusalNote } from './Marks';
 import { readExam, type Failure, type ReadCtx, type RefusalView } from './logic';
 import { ReviewPanel } from './ReviewPanel';
 import type { DocumentDraft } from '../../api/contract';
@@ -125,9 +126,7 @@ export function AddExam() {
 
       {phase.name === 'refused' && (
         <div data-testid={`refused-${phase.view.kind}`}>
-          <ErrorNote tone="caution">
-            <span><strong>{phase.view.title}</strong> {phase.view.body}</span>
-          </ErrorNote>
+          <RefusalNote view={phase.view} />
           <div className="btn-stack" style={{ marginTop: 'var(--space-4)' }}>
             <button type="button" className="btn primary block" data-testid="retake" onClick={reset}>Take another photo</button>
             <Link to={home} className="btn block">Close</Link>
