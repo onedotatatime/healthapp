@@ -10,3 +10,4 @@ export { Steps } from './Steps';
 export { TeamAsk } from './TeamAsk';
 export { Appendix } from './Appendix';
 export { Hero } from './Hero';
+export { TwoColumnRevenue } from './TwoColumnRevenue';

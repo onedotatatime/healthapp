@@ -6,7 +6,7 @@
 | **Date** | 15 Nov 2026 |
 | **For** | The founder, who asked, verbatim: "Create a summary for me to explain if we can fit to find patients eligible to a clinical trial when we have their concent to process their data" |
 | **Challenge** | Athens LifeHack, The Clinical Trials Challenge (Athens LifeTech Park). Text as the founder shared it: `clinical-trials-challenge.md` in the coordinator's scratchpad (Google Doc "ALTP_Clinical_Trials_Challenge_draft (3)") |
-| **Status** | Draft for the founder. Nothing sent. **Nothing in this note is built.** Legal points are flagged for a lawyer or regulator; none of them is legal advice. |
+| **Status** | Draft for the founder. Nothing sent. Trial matching is not built (the record, the diary and values over time are, on synthetic data). Section 8 added 15 Nov 2026 for deck v3.9. Legal points are flagged for a lawyer or regulator; none of them is legal advice. |
 
 ## Bottom line
 
@@ -69,7 +69,7 @@
 
 ## 6. Fit with the goal
 
-This is direction 5's most concrete use. "Possible matches" (slide 7) connects a patient to doctors with similar cases; trial matching connects the same consenting patient to a study, and it has a buyer. The payer would be **sponsors and CROs, never the patient**: a service fee per matched study is the model in our buyer research (`buyers.md` §1.10). **No price**: it has to be validated with a sponsor. Our funding plan funds the consent design for direction 5 this round, not a matching product (`team-and-funding-plan.md`), so trials would be the reason to fund the next step, not this one.
+This is direction 5's most concrete use. "Possible matches" (slide 7) connects a patient to doctors with similar cases; trial matching connects the same consenting patient to a study, and it has a buyer. The payer would be **sponsors and CROs, never the patient**: a service fee per matched study is the model in our buyer research (`buyers.md` §1.10). A price is proposed in section 8 (assumptions, to be validated with a sponsor). Our funding plan funds the consent design for direction 5 this round, not a matching product (`team-and-funding-plan.md`), so trials would be the reason to fund the next step, not this one.
 
 ## 7. Risks
 
@@ -80,6 +80,52 @@ This is direction 5's most concrete use. "Possible matches" (slide 7) connects a
 - **False hope.** "You may be eligible" can read as a promise of treatment. Route it through the doctor, and say plainly that most people pre-screened are not enrolled.
 - **Crowded market.** Hospital-network players already sell this to sponsors. We must show what the patient-held record adds, not claim to be first.
 
+## 8. Recruitment economics and pricing (added 15 Nov 2026, deck v3.9)
+
+The founder, verbatim: *"Connect with revenue from trial clinics (find data from treg to see how difficult and expensive is recruitment and calculate how we can charge)"*. Researched with treg (three cited web answers, $0.0053 in total) and direct reads of the sources below. Labels: **verified** (primary source read), **secondary** (a reputable report of a primary source, or a trade article by the study's author), **vendor claim** (a company's own figures), **unverified, do not use**.
+
+### How hard and how expensive recruitment is
+
+| # | Number | Label | Source, date read 15 Nov 2026 |
+|---|---|---|---|
+| 1 | **About $40,000 a day** in direct costs to run a phase 2 or 3 trial (phase 2 $23,737, phase 3 $55,716, phase 1 $7,829). This is the cost of one day of delay to a sponsor, before lost sales. | verified | Tufts CSDD white paper, Aug 2024: https://csdd.tufts.edu/sites/default/files/2025-02/Aug2024%20Day%20of%20Delay%20White%20Paper%20Final.pdf |
+| 2 | Lost sales of about $800,000 a day (white paper) or about $500,000 (the peer-reviewed version, Smith, DiMasi and Getz, Ther Innov Regul Sci 2024) | secondary, **not used**: the two versions disagree | https://doi.org/10.1007/s43441-024-00667-w |
+| 3 | In a typical trial, **11% of sites enrol no patient**, 37% under-enrol, 39% meet target, 13% exceed (150+ studies, about 16,000 sites) | secondary, old (2013) | Tufts CSDD Impact Report Jan/Feb 2013, via FierceBiotech: https://www.fiercebiotech.com/biotech/new-research-from-tufts-center-for-study-of-drug-development-characterizes-effectiveness-0 |
+| 4 | **19%** of 2,579 phase 2 and 3 trials closed in 2011 ended early for poor accrual or below 85% of expected enrolment; 48,027 patients enrolled in trials that could not answer their question | verified | Carlisle et al., Clinical Trials 2015;12(1):77-83: https://pmc.ncbi.nlm.nih.gov/articles/PMC4516407 |
+| 5 | **36.3%** of screened patients fail screening in phase 2 and 3 trials (2016 to 2019; 34.7% in 2012); neuroscience 57%; dropout 19.1% | secondary | Getz (Tufts CSDD), Applied Clinical Trials, Dec 2019: https://www.appliedclinicaltrialsonline.com/view/can-recruitment-and-retention-get-any-worse |
+| 6 | 53% of studies run longer than planned enrolment | secondary, old (2012); not used on a slide | Applied Clinical Trials, May 2012, via treg answer: https://www.appliedclinicaltrialsonline.com/view/enrollment-performance-weighing-facts |
+| 7 | A pivotal trial spends a **median $41,117 per patient** in total (138 trials, 59 drugs approved 2015 to 2016; median trial about $19M) | secondary (peer-reviewed, read via two summaries) | Moore et al., JAMA Intern Med 2018, via RAPS: https://www.raps.org/resource/phase-3-trial-costs-estimated-at-19m-study-finds.html and AJMC: https://www.ajmc.com/view/more-than-100fold-cost-differences-found-for-pivotal-trials |
+| 8 | Recruitment cost per randomised patient from **$577**, average **$1,379** across one vendor's own case studies; named cases $1,818 and $2,000 | vendor claim | ClinicalEnroll: https://clinicalenroll.com/resources/guides/digital-recruitment-for-clinical-trials |
+| 9 | Pre-screened referrals at $20 to $50 each plus a subscription; ad leads $20 to $45 | **unverified, do not use** (vendor pages; the referral page returned 429 when opened) | https://www.allclinicaltrials.com/researchers ; https://www.dataally.ai/blog/best-clinical-trial-patient-recruitment-companies |
+| 10 | "$1,500 to $10,000 recruitment cost per patient"; "80% of trials miss enrolment timelines" | **unverified, do not use** (widely repeated, no primary found) | none |
+
+Not found: a sourced recruitment cost per patient **by phase and therapy area**. The US ASPE report (Sertkaya et al., 2016 and its 2024 update) has per-patient costs by phase and area, but recruitment sits inside patient-level costs and the table was not opened. That gap stays open.
+
+### Pricing model
+
+**Who pays.** Sponsors and CROs fund recruitment and pay sites per patient. We bill the sponsor or CRO, or the site where the sponsor's recruitment budget runs through it (open question Q38 in the deck). **Never the patient.** The fee is for a recruitment service, never for data: rule 2 holds.
+
+**The unit: a set-up fee per trial, plus a success fee per randomised patient.**
+- *Per randomised patient* is the unit sponsors already compare vendors on (row 8), and it pays us only when the site has accepted the patient and they are randomised.
+- *A set-up fee* pays for turning one trial's criteria into rules, with a person reviewing them, per trial and country.
+- *Per pre-screened referral* was rejected: the public anchor is low ($20 to $50, unverified) and it rewards volume over fit.
+- *A per-trial subscription* was rejected for now: it needs a volume history we do not have.
+
+| Input | Value | Label |
+|---|---|---|
+| Set-up fee, per trial and country | €5,000 | assumption |
+| Success fee, per randomised patient | €1,500 (range €1,000 to €2,000) | assumption, anchored to row 8 ($577 to $2,000, vendor claim) and row 7 (€1,500 is about 4% of the median $41,117 per patient) |
+| Referrals the site accepts, per trial | 50 | assumption |
+| Screen failure at the site | 36.3% | secondary (row 5); we do not claim to lower it |
+| Share of patients who pass screening and are randomised | 60% | assumption |
+| Cost of one day of delay to the sponsor | about $40,000 | verified (row 1) |
+
+**Worked example, one trial in one country** *(our estimate)*: 50 accepted referrals × (1 − 36.3%) = about 32 pass screening × 60% = about 19 randomised. Revenue: €5,000 + 19 × €1,500 = **about €33,500**. For the sponsor that is about the direct cost of one day of delay (row 1).
+
+**Slide 11.** The trial revenue is **not** added as a line D. Slide 11 projects the hospital wedge (per case, per seat, labs); trial pre-screening has no volume history and no sponsor pilot, and the funding plan funds direction 5's consent design this round, not a matching product. Slide 11 names it under "Not counted", and slide 7b carries the unit, the price and the example. Totals unchanged: €26k / €180k / €560k (conservative) and €258k / €1,705k / €4,850k (upside).
+
+**Topic 3, patient experience.** Deck v3.9 also puts Topic 3 on slide 7b: the symptom diary in the patient's words and lab values as a series over time, shared with the trial team with consent. The verdict in section 1 ("partly") stands: the diary is not a validated patient-reported outcome instrument and detects no side effects. It has no separate price; it is part of what a sponsor gets for a randomised patient.
+
 ## Sources
 
-Challenge text (founder's Google Doc, 15 Nov). `docs/PRD.md` §6F, §10.2 to §10.4, §10.10, §10.B.5, §8. `docs/research/buyers.md` §1.10 and target 39. `docs/research/market-and-competitors.md` §2.3. `docs/business/team-and-funding-plan.md` (directions 1 to 5). Registry and law names are from general knowledge and should be checked against their official pages before any public use.
+Challenge text (founder's Google Doc, 15 Nov). `docs/PRD.md` §6F, §10.2 to §10.4, §10.10, §10.B.5, §8. `docs/research/buyers.md` §1.10 and target 39. `docs/research/market-and-competitors.md` §2.3. `docs/business/team-and-funding-plan.md` (directions 1 to 5). Registry and law names are from general knowledge and should be checked against their official pages before any public use. Section 8: sources with URLs in its table.

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Slide } from './types';
 import { Lockup, typo } from './util';
-import { Appendix, Chart, Compare, Cover, Funnel, Hero, Product, Statement, Stats, Steps, Table, TeamAsk } from './templates';
+import { Appendix, Chart, Compare, Cover, Funnel, Hero, Product, Statement, Stats, Steps, Table, TeamAsk, TwoColumnRevenue } from './templates';
 
 const W = 1920;
 const H = 1080;
@@ -18,6 +18,7 @@ function SlideBody({ s }: { s: Slide }) {
     case 'product': return <Product s={s} />;
     case 'compare': return <Compare s={s} />;
     case 'steps': return <Steps s={s} />;
+    case 'twocol': return <TwoColumnRevenue s={s} />;
     case 'teamask': return <TeamAsk s={s} />;
     case 'appendix': return <Appendix s={s} />;
   }
