@@ -9,7 +9,7 @@ function setup() {
 }
 const body = { content_type: "image/jpeg", size_bytes: 400_000 };
 
-Deno.test("a patient gets a draft row, a path under their own id, and a signed upload; no-store", async () => {
+Deno.test("a patient gets a queued row, a path under their own id, and a signed upload; no-store", async () => {
   const { s, h } = setup();
   const res = await h(call("healthapp-doc-create", body));
   assertEquals(res.status, 200);
@@ -17,7 +17,7 @@ Deno.test("a patient gets a draft row, a path under their own id, and a signed u
   const out = DocCreateResponse.parse(await res.json());
   assertEquals(out.bucket, "healthapp-dev");
   assertEquals(out.path, `${PATIENT}/${out.doc_id}`);
-  assertEquals(s.docs.get(out.doc_id)?.document.status, "draft");
+  assertEquals(s.docs.get(out.doc_id)?.document.status, "queued"); // read later, in the background (MIN-4556)
   assertEquals(s.docs.get(out.doc_id)?.document.patient_id, PATIENT);
 });
 

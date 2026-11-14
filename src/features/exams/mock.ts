@@ -13,7 +13,7 @@ const uid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0'
 
 const doc = (id: string, o: Partial<DocumentRow>): DocumentRow => ({
   id, patient_id: PATIENT, kind: 'blood_test', language: 'el', exam_date: '2026-03-12', issuer: 'Demo Lab Athens',
-  identity_status: 'match', provenance: 'uploaded_by_patient', status: 'confirmed', created_at: NOW, confirmed_at: NOW, ...o,
+  identity_status: 'match', provenance: 'uploaded_by_patient', status: 'confirmed', created_at: NOW, confirmed_at: NOW, unchecked: false, ...o,
 });
 const res = (n: number, document_id: string, o: Partial<ResultRow>): ResultRow => ({
   id: uid(n), document_id, patient_id: PATIENT, analyte: 'CRP', analyte_key: 'crp', value_num: 14.2, value_text: null, unit: 'mg/L',
