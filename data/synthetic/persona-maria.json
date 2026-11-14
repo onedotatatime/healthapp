@@ -1,0 +1,99 @@
+{
+ "age_band": "50-59",
+ "country": "GR",
+ "id": "persona-maria",
+ "imaging": [],
+ "label": "seeded, synthetic",
+ "labs": [
+  {
+   "date": "2026-05",
+   "marker": "CRP",
+   "ref_high": 5,
+   "ref_low": 0,
+   "unit": "mg/L",
+   "value": 7.6
+  },
+  {
+   "date": "2025-08",
+   "marker": "RF",
+   "ref_high": 14,
+   "ref_low": 0,
+   "unit": "IU/mL",
+   "value": 25.3
+  },
+  {
+   "date": "2026-07",
+   "marker": "anti_CCP",
+   "ref_high": 20,
+   "ref_low": 0,
+   "unit": "U/mL",
+   "value": 41.5
+  },
+  {
+   "date": "2024-11",
+   "marker": "anti_CCP",
+   "ref_high": 20,
+   "ref_low": 0,
+   "unit": "U/mL",
+   "value": 5.1
+  },
+  {
+   "date": "2025-05",
+   "marker": "ESR",
+   "ref_high": 20,
+   "ref_low": 0,
+   "unit": "mm/h",
+   "value": 15.8
+  },
+  {
+   "date": "2023-12",
+   "marker": "ESR",
+   "ref_high": 20,
+   "ref_low": 0,
+   "unit": "mm/h",
+   "value": 30.1
+  },
+  {
+   "date": "2026-06",
+   "marker": "Hemoglobin",
+   "ref_high": 17.5,
+   "ref_low": 12.0,
+   "unit": "g/dL",
+   "value": 14.2
+  },
+  {
+   "date": "2026-05",
+   "marker": "UricAcid",
+   "ref_high": 7.2,
+   "ref_low": 3.5,
+   "unit": "mg/dL",
+   "value": 5.5
+  },
+  {
+   "date": "2026-10",
+   "marker": "ALT",
+   "ref_high": 40,
+   "ref_low": 7,
+   "unit": "U/L",
+   "value": 20.3
+  },
+  {
+   "date": "2025-12",
+   "marker": "ACE",
+   "ref_high": 52,
+   "ref_low": 8,
+   "unit": "U/L",
+   "value": 42.2
+  }
+ ],
+ "matching_opt_in": true,
+ "sex": "F",
+ "specialties": [
+  "spec_rheumatology"
+ ],
+ "symptoms": [
+  "joint_pain",
+  "morning_stiffness"
+ ],
+ "synthetic": true
+}

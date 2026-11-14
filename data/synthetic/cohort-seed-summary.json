@@ -1,0 +1,21 @@
+{
+ "cohort_size": 400,
+ "opted_in": 367,
+ "seed": 20261114,
+ "seeded_patterns": {
+  "gout": 12,
+  "hyperthyroid": 12,
+  "hypothyroid": 26,
+  "inflammatory_back_pain": 28,
+  "iron_deficiency": 22,
+  "low_bone_density": 15,
+  "lupus_like": 14,
+  "noise": 196,
+  "rare_copper_metabolism": 2,
+  "rare_myopathy": 4,
+  "rare_sarcoid_like": 3,
+  "reduced_kidney_function": 10,
+  "rheumatoid_arthritis": 26,
+  "type2_diabetes_metabolic": 30
+ }
+}
