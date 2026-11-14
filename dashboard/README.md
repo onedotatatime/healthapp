@@ -5,7 +5,7 @@ pushes it to the ingest function. Stdlib Python 3.9+. A launchd job on the found
 
 ```
 python3 dashboard/snapshot.py --home ~/.healthapp-dashboard --out /tmp/snap.json      # local file, no push
-python3 -m unittest discover -s dashboard/tests                                        # 112 tests, about 50 s (the branches tests build real git repositories; the chat tests stub claude)
+python3 -m unittest discover -s dashboard/tests                                        # 135 tests, about 50 s (the branches tests build real git repositories; the chat tests stub claude)
 deno test --allow-read supabase/functions/                                             # 23 tests (key matrix, limits, boundaries)
 deno check supabase/functions/*/index.ts && deno lint supabase/functions
 dashboard/install.sh [--viewer-url BASE] [--rotate]                                    # install or update the Mac job
@@ -163,3 +163,21 @@ and today's budget (`budget_reached`), then shown with `status: open|refused`.
 short id, result, seconds, cost) and **no message text, no reply, no key**; `chat-audit.log` (from the guard) one line per tool call: tool, allow or deny,
 the command's first word or a relative path. The raw `stream-json` is read line by line and never written to disk. Run 2 adds the act turn, the
 worktree, the Yes and the result card.
+
+## Dashboard chat, the page side (MIN-4498)
+Direction A's "Who is working" card is the chat list: each agent is a row that opens `#/chat/<Agent>`, the chat drawer (480 px). Files:
+`docs/dashboard/drafts/shared/chat-model.js` (pure: texts, the one-word-per-agent rule, formats), `shared/chat.js` (key, calls, polling, drawer),
+`shared/chat.css`; `direction-A/a.js` only mounts it. **The key** arrives once as `#c=<key>` (MIN-4500's `open.sh` adds it to the local URL), is removed from
+the address bar and lives in memory: a reload needs `open.sh` again. **Where it works:** only on `http://127.0.0.1` with a key and a bridge that answers
+`/chat/health`. On the Pages bundle (another host), on a plain file server, or with no key, the rows are the old plain rows plus one sentence ("Chat works
+on this Mac only. Open the dashboard with open.sh."), `#/chat/<Agent>` shows the same sentence, and no `/chat` call is made. **Polling:** every 10 s
+(health, then one `GET /chat/sessions?agent=` per agent), every 2 s only while the open chat is `working` or `acting` (the thread and `events?after=`),
+nothing while the tab is hidden. **States:** answered, sending, waiting for the answer (live events list: time, tool, path), no open chat, agent busy,
+cap hit, chat off, bridge not reachable (Try again), error, loading, finished or full; proposal card (Yes, No, expired, declined, refused, acting off),
+acting strip (Stop, branch, "See it in Branches"), result card (done, stopped, failed, timed out). `/chat/health` `act: false` shows "Answers only" in the
+header and a proposal with no Yes. Typing while a proposal is open declines it (the bridge does that; the card shows Declined after the next read).
+**Demo drawer:** a "How it works" link to `../how-it-works/index.html#how-it-works`, only on 127.0.0.1 and only when a HEAD request finds the file.
+**Looking at it without a model:** `python3 dashboard/tests/chat_dev_server.py` runs the real bridge with the stub `claude` from the test kit;
+`python3 dashboard/tests/chat_mock_server.py --act` serves every state from `dashboard/fixtures/chat.example.json`, including the act states the bridge does not
+build yet (Yes, acting, result, Stop). Open `http://127.0.0.1:<port>/direction-A/index.html?feed=../dev/fresh.json#c=<the throw-away key>` once.
+Tests: `dashboard/tests/test_chat_ui.py` (the model run in node, guards on the page source, the fixture, the mock).

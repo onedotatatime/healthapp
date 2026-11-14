@@ -73,7 +73,7 @@ function renderDyn(force){
   +   '<div class="sec blk" data-blk="money"><div class="sub"><span>Est. spend, EUR</span><span class="subr">'+blkTag('money')+'<span class="upd"></span></span></div><p class="blkmsg"></p><div class="bb"><div class="stat" data-flash><span data-v="eur" data-f="eur"></span></div><div class="spark" id="spark"></div>'+(rateNote?'<p class="muted note">'+rateNote+'</p>':'')+'</div></div>'
   +   '<div class="sec blk" data-blk="hand"><div class="sub"><span>Credits consumed of granted</span><span class="subr">'+blkTag('hand')+'<span class="upd"></span></span></div><p class="blkmsg"></p><div class="bb">'+H.creditMeters()+'</div></div></div></div>'
   + '<div class="card panel p-who blk" data-enter data-blk="linear"><div class="card-h"><h2>Who is working</h2>'+blkTag('linear')+'<span class="upd"></span></div><p class="blkmsg"></p><div class="body bb">'
-  +   (ag.length ? ag.slice(0,5).map(H.agentRow).join('') + (ag.length>5 ? '<div class="muted more">+'+(ag.length-5)+' more, idle: '+ag.slice(5).map(a=>esc(a.n)).join(', ')+'</div>' : '') : BRE('No agents in the feed yet.'))
+  +   '<div id="whoList"></div>'
   +   '<div class="sub"><span>Live log</span></div><div class="log" id="log" aria-live="off"></div></div></div>'
   + '</section>'
   + '<a class="strip blk" id="strip" href="#/demo" data-blk="hand" aria-label="Open the demo product drawer"><span class="t">DEMO</span><span class="blkmsg"></span><span class="sv">'
@@ -83,7 +83,7 @@ function renderDyn(force){
   +   (st.length ? '<span class="steps" title="The '+st.length+' steps">'+st.map(s=>'<span class="g '+s.s+'">'+H.ragGlyph(s.s)+'</span>').join('')+'</span>' : '<span class="muted">no steps published yet</span>')
   + '</span><span class="open">open ↗</span></a>';
   H.hydrate(dyn); H.paintTaskBar(dyn); Live.paint(dyn);
-  paintSpark(); paintLog(); paintLadder();
+  paintSpark(); paintLog(); paintLadder(); Chat.paintCard();
 }
 
 function paintLadder(){
@@ -267,10 +267,17 @@ function demoView(){
     + '<div class="kv"><span class="lbl">Link</span><span class="linkrow">'+(hasUrl ? H.rag(dm.deploy.state, 'Live: '+dp) : '<span class="chip">No link yet</span>')+'<span class="mono">'+esc(dm.url||'')+'</span><button class="btn" id="copyLink"'+(hasUrl?'':' disabled aria-disabled="true"')+'>Copy</button>'
     +   (hasUrl ? '<a class="btn" href="'+esc(dm.url)+'" target="_blank" rel="noopener">Open ↗</a>' : '<span class="btn" aria-disabled="true" style="opacity:.5">Open ↗</span>')+'</span></div>'
     + '<div class="kv"><span class="lbl">Clean runs</span><span class="linkrow"><span class="runs" id="runs"></span><b class="mono"><span data-v="clean"></span> of '+(dm.cleanTarget||0)+'</b><span class="muted">Counted by hand by the CTO or Release</span></span></div>'
+    + (Chat.isLocal ? '<div class="kv" id="hiwRow" hidden><span class="lbl">Explainer</span><span class="linkrow"><a class="btn" href="'+HIW+'" target="_blank" rel="noopener">How it works \u2197</a><span class="muted">The page that explains the product. Local only.</span></span></div>' : '')
     + (st.length ? '<h3 class="micro" style="margin:20px 0 4px">The '+st.length+' steps</h3>'+st.map(s=>'<div class="steprow"><span class="n">'+s.n+'</span><span>'+esc(s.t)+'<div class="muted" style="font-size:12px;line-height:16px">'+esc((dm.notes||{})[s.n] || 'No note yet.')+'</div></span>'+H.rag(s.s)+'</div>').join('')
         + '<p class="muted" style="margin-top:14px;font-size:13px">Set by hand by the CTO or Release after each run.</p>'
       : '<div style="margin-top:20px">'+BRE('No demo steps are published on this page yet.')+'</div>')
     + '</div></section>';
+}
+/* "How it works" (a page built next to the dashboard): local only, and only when the file is really there, so the link never opens a 404 */
+const HIW = '../how-it-works/index.html#how-it-works';
+async function showHiw(){
+  if(!Chat.isLocal) return;
+  try{ const r = await fetch(HIW.split('#')[0], { method:'HEAD', cache:'no-store' }); const row = $('#hiwRow'); if(r.ok && row) row.hidden = false; }catch(e){}
 }
 function paintRuns(){ const el = $('#runs'); if(el) el.innerHTML = Array.from({length:DATA.demo.cleanTarget||0},(_,i)=>'<i class="'+(i<S.clean?'on':'')+'"></i>').join(''); }
 
@@ -292,22 +299,26 @@ function renderDrawer(soft){
     title = 'Decks'; html = decksView();
   } else if(r.v==='demo'){
     title = 'Demo product'; html = demoView();
+  } else if(r.v==='chat'){
+    title = 'Chat \u00B7 '+(r.a||'');
   } else if(r.v==='risk'){
     title = 'Risk flags'; const f = Live.state('derived').s==='ok' ? H.flags() : [];
     html = (f.length ? f.map(x=>'<div class="risk-item"><span class="chip '+(x.level==='bad'?'bad':'warn')+'"><span class="g">'+(x.level==='bad'?'■':'▲')+'</span>'+(x.level==='bad'?'Late':'Risk')+'</span><div>'+esc(x.text)+(x.act?'<div class="muted" style="font-size:13px">'+esc(x.act)+'</div>':'')+'</div></div>').join('') : '<p>Nothing is flagged right now.</p>')
       + '<p class="muted" style="font-size:13px;margin-top:12px">Rules: a milestone window that ended with open issues, credits over 70% used, and the flags set by hand.</p>';
   }
   drawerKey = key; drTitle.textContent = title; drTabs.innerHTML = tabs; drBody.innerHTML = html;
+  drawer.classList.toggle('chat', r.v==='chat');
+  if(r.v==='chat') Chat.mount(drBody, decodeURIComponent(r.a||'')); else Chat.unmount();
   if(r.v==='exercises' && EX.length){ H.wireExercise(drBody, drBody); }
-  if(r.v==='demo'){ paintRuns(); H.hydrate(drBody); const cl = $('#copyLink'); if(cl && !cl.disabled) cl.onclick = async () => { const ok = await H.copy(DATA.demo.url); cl.textContent = ok?'Copied':'Copy failed'; setTimeout(()=>cl.textContent='Copy',1500); }; }
+  if(r.v==='demo'){ showHiw(); paintRuns(); H.hydrate(drBody); const cl = $('#copyLink'); if(cl && !cl.disabled) cl.onclick = async () => { const ok = await H.copy(DATA.demo.url); cl.textContent = ok?'Copied':'Copy failed'; setTimeout(()=>cl.textContent='Copy',1500); }; }
   if(r.v==='decks'){ $$('[data-present]',drBody).forEach(a => a.addEventListener('click', () => { const rc = a.closest('.poster').getBoundingClientRect(); viewer.style.setProperty('--ox', (rc.left+rc.width/2)+'px'); viewer.style.setProperty('--oy', (rc.top+rc.height/2)+'px'); })); }
   Live.paint(drBody);
   if(soft) drBody.scrollTop = keep;
 }
 function applyRoute(){
   const prev = route; route = parse();
-  const open = ['branches','exercises','decks','demo','risk'].includes(route.v);
-  $$('#rail a').forEach(a => a.removeAttribute('aria-current')); const rv = open ? (route.v==='risk'?null:route.v) : 'overview'; if(rv) $('#rail a[data-view="'+rv+'"]').setAttribute('aria-current','page');
+  const open = ['branches','exercises','decks','demo','risk','chat'].includes(route.v);
+  $$('#rail a').forEach(a => a.removeAttribute('aria-current')); const rv = open ? (route.v==='risk'||route.v==='chat'?null:route.v) : 'overview'; if(rv) $('#rail a[data-view="'+rv+'"]').setAttribute('aria-current','page');
   const kbd = viaKey; viaKey = false;
   drawer.classList.toggle('instant', kbd); scrim.classList.toggle('instant', kbd);
   if(open){
@@ -317,11 +328,11 @@ function applyRoute(){
     renderDrawer(false);
     if(wasOpen && !kbd && sameView && route.v!=='decks'){ drBody.classList.remove('fade'); void drBody.offsetWidth; drBody.classList.add('fade'); }
     drawer.classList.add('open'); scrim.classList.add('open'); drawer.setAttribute('aria-hidden','false');
-    if(!wasOpen){ drBody.scrollTop = 0; setTimeout(()=>$('#drClose').focus({preventScroll:true}), kbd?0:30); } else if(sameView && route.v==='exercises'){ drBody.scrollTop = 0; }
+    if(!wasOpen){ drBody.scrollTop = 0; setTimeout(()=>{ const ta = route.v==='chat' && $('#chatText'); (ta && !ta.disabled ? ta : $('#drClose')).focus({preventScroll:true}); }, kbd?0:30); } else if(sameView && route.v==='exercises'){ drBody.scrollTop = 0; }
     if(route.v==='exercises') requestAnimationFrame(()=>moveInd(!sameView || kbd || !wasOpen));
     main.setAttribute('inert','');
   } else {
-    drawer.classList.remove('open'); scrim.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); main.removeAttribute('inert');
+    drawer.classList.remove('open'); scrim.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); main.removeAttribute('inert'); Chat.unmount();
     if(lastFocus && document.contains(lastFocus)){ try{ lastFocus.focus({preventScroll:true}); }catch(e){} } lastFocus = null; drawerKey = '';
   }
   const dk = route.v==='decks' && (route.a==='short' || route.a==='full') ? route.a : null;

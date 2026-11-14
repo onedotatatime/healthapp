@@ -1,0 +1,94 @@
+/* Dashboard chat (MIN-4498). Tokens from base.css only; Pix's frames on MIN-4496: A's drawer at 480 px, cards radius 10, padding 12, gaps 8. */
+.drawer.chat{width:480px;min-width:0}
+.dr-body.chatbody{display:flex;flex-direction:column;padding:0;overflow:hidden}
+.chat{display:flex;flex-direction:column;flex:1;min-height:0}
+
+/* dots with the card's state colours */
+.dot.warn{background:var(--warn)} .dot.brand{background:var(--brand)} .dot.ok{background:var(--ok)} .dot.idle{background:var(--idle)}
+.dot.ring::after{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid currentColor;animation:ring 1.8s var(--ease-out) infinite}
+.dot.ring.brand{color:var(--brand)} .dot.ring.ok{color:var(--ok)}
+[data-motion="reduced"] .dot.ring::after{animation:none;opacity:0}
+
+/* the "Who is working" card as a chat list */
+.chsum{font:600 12px/16px var(--mono);margin:0 0 6px}
+a.arow.chrow{color:inherit;text-decoration:none}
+a.arow.chrow:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.chrow .atask{display:flex;align-items:center;gap:6px;min-width:0}
+.chrow .rw{font-weight:600;white-space:nowrap} .chrow .rw.warn{color:var(--warn-text)} .chrow .rw.brand{color:var(--brand-text)} .chrow .rw.ok{color:var(--ok-text)}
+.chrow .atask .mono{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.chrow .astat{gap:8px}
+.chip.rep{font:600 11px/16px var(--sans);padding:0 6px}
+.chnote{margin-top:8px}
+
+/* header, open chats */
+.ch-top{display:flex;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.ch-top .chip{margin-left:auto}
+.av.lg{width:36px;height:36px;font-size:13px}
+.ch-id{min-width:0;flex:1}
+.ch-state{display:flex;align-items:center;gap:8px;font:500 12px/16px var(--mono);color:var(--ink-2);margin-top:2px}
+.ch-state span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-state .dot{margin-left:2px}
+.ch-sess{padding:8px 16px;border-bottom:1px solid var(--line)}
+.ch-sh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.btn.sm{min-height:32px;padding:0 10px;font-size:12px}
+.ch-sl{display:grid;gap:4px;margin-top:6px;max-height:124px;overflow:auto}
+.ch-srow{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:0 8px;align-items:center;padding:6px 10px;border-radius:var(--r-1);border:1px solid var(--line);background:var(--surface);position:relative}
+.ch-srow:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.ch-srow .ttl{font:500 13px/18px var(--sans);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-srow .mk{font:600 11px/16px var(--sans);color:var(--ink-2);white-space:nowrap}
+.ch-srow .sub{grid-column:1 / -1;font:400 11px/14px var(--mono);color:var(--ink-2)}
+.ch-srow.on{background:var(--brand-tint);border-color:var(--brand)}
+.ch-srow.on::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:3px;border-radius:2px;background:var(--brand)}
+@media (hover:hover) and (pointer:fine){.ch-srow:hover{background:var(--surface-2)} .ch-srow.on:hover{background:var(--brand-tint)}}
+
+/* thread */
+.ch-thread{flex:1;min-height:0;overflow:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
+.ch-m{display:flex;flex-direction:column;gap:6px;max-width:100%}
+.ch-m.you{align-items:flex-end} .ch-m.agent{align-items:flex-start}
+.ch-m .bub{padding:8px 12px;border-radius:var(--r-2);max-width:92%;white-space:pre-wrap;overflow-wrap:anywhere;font:400 14px/20px var(--sans);background:var(--surface-2);color:var(--ink)}
+.ch-m.you .bub{background:var(--brand-tint)}
+.ch-m.sending .bub{opacity:.6}
+.ch-m.bad .bub{border:1px solid var(--bad)}
+.ch-m .meta{font:400 11px/14px var(--mono);color:var(--ink-2)}
+.ch-m.agent>.ch-card{width:100%}
+.ch-empty{margin:auto;display:grid;gap:12px;justify-items:center;text-align:center;color:var(--ink-2);padding:24px}
+.ch-skel{display:grid;gap:8px} .ch-skel i{display:block;height:44px;border-radius:var(--r-2);background:var(--surface-2)}
+
+/* proposal and result cards */
+.ch-card{background:var(--surface-2);border:1px solid transparent;border-radius:var(--r-2);padding:12px;display:grid;gap:8px;min-width:0}
+.ch-card.prop.st-open,.ch-card.prop.st-accepted{border-color:var(--brand)}
+.ch-card.ghost{color:var(--ink-2)}
+.ch-card.res.t-ok{border-color:var(--ok)} .ch-card.res.t-warn{border-color:var(--warn)} .ch-card.res.t-bad{border-color:var(--bad)}
+.ch-card .sum{font:500 14px/20px var(--sans);color:var(--ink);overflow-wrap:anywhere}
+.ch-card.ghost .sum{color:var(--ink-2)}
+.ch-kv{display:grid;grid-template-columns:72px minmax(0,1fr);gap:4px 8px;margin:0;font:400 12px/17px var(--sans)}
+.ch-kv dt{color:var(--ink-2)} .ch-kv dd{margin:0;color:var(--ink);overflow-wrap:anywhere}
+.ch-btns{display:flex;gap:8px}
+.ch-btns .btn{min-height:36px}
+.ch-note{font:400 12px/17px var(--sans)}
+.ch-pl{font:500 12px/17px var(--sans)}
+.ch-rh{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font:600 13px/18px var(--sans)}
+.ch-rh .mono{font-size:11px;font-weight:400}
+
+/* the one strip above the composer: neutral, warn, bad; the text is --ink on all three */
+.ch-strip{display:flex;gap:8px;align-items:flex-start;padding:8px 16px;border-top:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:400 13px/18px var(--sans)}
+.ch-strip.tone-warn{background:var(--warn-tint)} .ch-strip.tone-bad{background:var(--bad-tint)}
+.ch-strip .g{flex:none;margin-top:1px}
+.ch-strip.tone-warn .g{color:var(--warn)} .ch-strip.tone-bad .g{color:var(--bad)} .ch-strip.tone-neutral .g{color:var(--ink-2)}
+.ch-sm{flex:1;min-width:0}
+.ch-br{font-size:11px;line-height:16px;margin-top:2px;overflow-wrap:anywhere}
+.ch-ev{list-style:none;margin:6px 0 0;padding:0;max-height:112px;overflow:auto;font:400 12px/18px var(--sans);display:grid}
+.ch-ev li{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-ev .t{color:var(--ink-2)}
+
+/* composer */
+.ch-comp{padding:8px 16px 12px;border-top:1px solid var(--line)}
+.ch-row{display:flex;gap:8px;align-items:flex-end}
+.ch-comp textarea{flex:1;min-width:0;min-height:44px;max-height:132px;resize:vertical;border:1px solid var(--line-ui);border-radius:var(--r-1);background:var(--surface);color:var(--ink);padding:10px 12px;font:400 14px/20px var(--sans)}
+.ch-comp textarea:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.ch-comp textarea:disabled{opacity:.7;cursor:not-allowed}
+.ch-comp textarea::placeholder{color:var(--ink-2);opacity:1}
+.ch-help{font:400 12px/16px var(--sans);color:var(--ink-2);margin-top:6px}
+
+@media (max-width:899px){ .drawer.chat{width:100vw} .dr-body.chatbody{padding:0 0 56px} }
+.kv[hidden]{display:none}
