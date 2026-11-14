@@ -57,6 +57,32 @@ the local-git data, with PR fields `null`, `prSource: "none"` and `blocks.branch
 `gh failed: ...`, a `gh` call that takes over 10 s is `gh failed: timed out after 10s`). Nothing in this block can fail the
 other blocks.
 
+## Agent leaderboard: `tokens.perAgent` (MIN-4583, additive: `schema` stays 1)
+
+`tokens.perAgent` is the build leaderboard, one row per agent: `{ "n": "Cron", "v": 101214493, "mins": 514.7, "runs": 43 }`.
+
+| Field | Meaning |
+| -- | -- |
+| `n` | agent name (as before) |
+| `v` | weighted tokens since `buildStart` (as before: in x1, cache write x2, cache read x0.1, out x5) |
+| `mins` | minutes worked since `buildStart`, one decimal |
+| `runs` | number of runs since `buildStart` |
+
+- **A run** is one subagent transcript file (one dispatch of that agent) with at least one request after `buildStart`. Requests are the same
+  deduped events that give the tokens, so a request is never counted in two runs.
+- **A run's minutes** are the gaps between its consecutive requests (first to last), **each gap capped at 300 s** (the idle rule of conductor
+  `bin/usage`, `PAUSE_S`). A long CI wait or an idle gap counts 5 minutes, never more, so the figure is active time, not wall clock. A run of
+  one request has no span and counts 0. The last model call of a run has no end timestamp, so it adds nothing: the figure is a little low, never high.
+- **An agent's `mins`** is the sum over its runs, so two runs in parallel add up: `mins` can exceed the minutes elapsed since `buildStart`. It
+  measures work done, like tokens do.
+- **Zeros:** all 13 configured agents are always present (an agent with no runs is `v: 0, mins: 0, runs: 0`). Built-in agents that are not in
+  `config.agents` (`general-purpose`, `web-fetch`, `Explore`) appear too, the biggest five by tokens. Sorted by `v`, biggest first, configured zeros
+  last in config order.
+- **Old feeds:** a feed without `mins` and `runs` (older snapshots, the Pages stub) is valid: readers treat them as absent, not as an error.
+- **Public Pages bundle:** `pages-bundle.sh` writes `perAgent: []` (an empty list, not fake values), and this change leaves it so: the
+  public stub carries no agent numbers, the live feed (behind the view key) does. Whether real per-agent numbers belong in the public stub is the
+  CTO's call (MIN-4583).
+
 ## Forecast block (MIN-4565, additive: `schema` stays 1)
 
 `forecast` is a top-level field of the feed, built inside the `linear` block from the same read (a failure drops the block and sets `blocks.linear.error`; the rest of the linear block stays fresh). It reads

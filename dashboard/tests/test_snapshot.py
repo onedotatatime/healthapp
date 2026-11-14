@@ -62,8 +62,54 @@ class Usage(unittest.TestCase):
         ref = [r for r in U.collect(self.tmp.name, self.since) if 'healthapp' in r['proj']]
         self.assertEqual(round(sum(r['w'] for r in ref)), data['totalWeighted'])
         self.assertEqual(data['totalWeighted'], 410 + 6)            # r1 once (10+200+100+100), r2 = 1+5; the conductor folder is excluded
-        self.assertEqual(data['perAgent'], [{'n': 'Cron', 'v': 410}])   # r1 charged to the subagent file, as bin/usage does
+        # r1 charged to the subagent file, as bin/usage does; every other configured agent is a zero row, not a missing one (MIN-4583)
+        self.assertEqual(data['perAgent'][0], {'n': 'Cron', 'v': 410, 'mins': 0.0, 'runs': 1})
+        self.assertEqual(len(data['perAgent']), 13)
+        self.assertEqual({a['n'] for a in data['perAgent']}, {a['n'] for a in self.cfg['agents']})
+        for a in data['perAgent'][1:]:
+            self.assertEqual((a['v'], a['mins'], a['runs']), (0, 0.0, 0))
         self.assertEqual(data['lastSeen']['Cron'], '2026-11-14T12:30:00Z')
+
+    def test_minutes_and_runs_per_agent(self):
+        # Two runs of Cron (two subagent files) and one of Pix. Gaps count up to PAUSE_S (300 s) each; the 25-minute silence in Cron's
+        # first run counts as 5, not 25, and a run of one request is 0 minutes.
+        tmp = tempfile.TemporaryDirectory()
+        p = os.path.join(tmp.name, '-proj-healthapp-y')
+        os.makedirs(os.path.join(p, 'sess2', 'subagents'))
+        n = [0]
+
+        def line(t):
+            n[0] += 1
+            return json.dumps({'type': 'assistant', 'timestamp': t, 'requestId': 'q%d' % n[0], 'message': {
+                'id': 'mm%d' % n[0], 'model': 'claude-sonnet-5-5', 'usage': {'input_tokens': 1, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 0, 'output_tokens': 0}}})
+
+        def run(name, agent, times):
+            f = os.path.join(p, 'sess2', 'subagents', name + '.jsonl')
+            open(f, 'w').write('\n'.join(line(t) for t in times) + '\n')
+            json.dump({'agentType': agent}, open(f[:-6] + '.meta.json', 'w'))
+        run('a1', 'backend-minhos', ['2026-11-14T12:00:00Z', '2026-11-14T12:02:00Z', '2026-11-14T12:27:00Z', '2026-11-14T12:28:00Z'])   # 2 + 5 + 1 = 8
+        run('a2', 'backend-minhos', ['2026-11-14T13:00:00Z', '2026-11-14T13:03:30Z'])                                                        # 3.5
+        run('a3', 'design-minhos', ['2026-11-14T13:10:00Z'])                                                                                 # 0
+        for i in range(7):                                                      # built-in agents are kept, the biggest five only
+            run('u%d' % i, 'built-in-%d' % i, ['2026-11-14T13:20:00Z'] * (i + 1))
+        data, rows, U = sn.build_usage(self.cfg, NOW, self.since, tmp.name, USAGE_BIN, 'healthapp')
+        by = {a['n']: a for a in data['perAgent']}
+        self.assertEqual(len(data['perAgent']), 13 + 5)
+        self.assertEqual([a['n'] for a in data['perAgent'] if a['n'].startswith('built-in')], ['built-in-6', 'built-in-5', 'built-in-4', 'built-in-3', 'built-in-2'])
+        self.assertEqual((by['Cron']['mins'], by['Cron']['runs']), (11.5, 2))
+        self.assertEqual((by['Pix']['mins'], by['Pix']['runs']), (0.0, 1))
+        self.assertEqual((by['Ren']['mins'], by['Ren']['runs'], by['Ren']['v']), (0.0, 0, 0))
+        self.assertEqual(by['Cron']['v'], 6)        # n and v are what they were: weighted tokens, 6 requests of 1 input token
+        self.assertEqual(sum(a['runs'] for a in data['perAgent'] if a['n'] in ('Cron', 'Pix')), 3)
+
+    def test_run_minutes_caps_idle_gaps_and_ignores_order(self):
+        U = sn.load_usage_module(USAGE_BIN)
+        t = lambda m: sn.parse('2026-11-14T12:00:00Z') + __import__('datetime').timedelta(minutes=m)
+        ev = lambda *ms: [{'t': t(m)} for m in ms]
+        self.assertEqual(sn.run_minutes(U, ev(0, 2, 30, 31)), 8.0)
+        self.assertEqual(sn.run_minutes(U, ev(31, 0, 30, 2)), 8.0)       # file order does not matter
+        self.assertEqual(sn.run_minutes(U, ev(5)), 0)
+        self.assertEqual(sn.run_minutes(U, []), 0)
 
     def test_money_by_model_exact(self):
         data, rows, U = sn.build_usage(self.cfg, NOW, self.since, self.tmp.name, USAGE_BIN, 'healthapp')

@@ -143,6 +143,14 @@ def project_line(series, start, end, deadline, step_min, key=1):
     return {'at': iso(deadline), 'v': round(series[-1] + slope * mins, 2 if key == 2 else 0)}
 
 
+def run_minutes(U, events):
+    """Active minutes of one run: the gaps between consecutive requests, each capped at the idle rule of bin/usage (PAUSE_S, 300 s), so
+    a long CI wait or an idle gap never counts as work. A run of one request has no span: 0."""
+    cap = getattr(U, 'PAUSE_S', 300)
+    ts = sorted(e['t'] for e in events)
+    return sum(min((b - a).total_seconds(), cap) for a, b in zip(ts, ts[1:])) / 60
+
+
 def build_usage(cfg, now, since, root, usage_bin, name_filter):
     U = load_usage_module(usage_bin)
     if not os.path.isdir(root):
@@ -150,6 +158,7 @@ def build_usage(cfg, now, since, root, usage_bin, name_filter):
     rows = collect_rows(U, root, since, None, name_filter)
     names = {a['agentType']: a['n'] for a in cfg['agents']}
     per_agent, last_seen = collections.Counter(), {}
+    mins, runs = collections.Counter(), collections.Counter()
     per_chat = collections.Counter()
     points = []
     for r in rows:
@@ -157,6 +166,8 @@ def build_usage(cfg, now, since, root, usage_bin, name_filter):
         per_chat[r['session']] += r['w']
         if who:
             per_agent[who] += r['w']
+            mins[who] += run_minutes(U, r['events'])
+            runs[who] += 1
             if who not in last_seen or r['last'] > last_seen[who]:
                 last_seen[who] = r['last']
         points.extend((e['t'], weigh(U, e)) for e in r['events'])
@@ -165,9 +176,16 @@ def build_usage(cfg, now, since, root, usage_bin, name_filter):
     total = sum(r['w'] for r in rows)
     deadline = parse(cfg['_deadline'])
     top = lambda c, n: [{'n': k, 'v': int(round(v))} for k, v in c.most_common(n)]
+    # Every configured agent has a row, zeros included (MIN-4583); n and v keep their meaning, mins and runs are added.
+    configured = {a['n'] for a in cfg['agents']}
+    for k in configured:
+        per_agent.setdefault(k, 0)
+    others = [k for k, _ in per_agent.most_common() if k not in configured][:5]      # built-in agents (Explore, general-purpose...), biggest first
+    leaderboard = [{'n': k, 'v': int(round(v)), 'mins': round(float(mins[k]), 1), 'runs': runs[k]}
+                   for k, v in per_agent.most_common() if k in configured or k in others]
     data = {
         'agentCaps': cfg['agentCaps'], 'chatCaps': cfg['chatCaps'],
-        'perAgent': top(per_agent, max(12, len(cfg['agents']))), 'perChat': top(per_chat, 8),
+        'perAgent': leaderboard, 'perChat': top(per_chat, 8),
         'series': [int(round(x)) for x in series], 'seriesFrom': iso(since), 'seriesStepMin': SERIES_STEP_MIN,
         'projection': project_line(series, since, now, deadline, SERIES_STEP_MIN),
         'window': {'since': iso(since), 'until': iso(now)},
