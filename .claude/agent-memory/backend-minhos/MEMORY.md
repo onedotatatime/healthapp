@@ -1,5 +1,1 @@
-- [Healthapp dashboard feed](project_healthapp_dashboard_feed.md) — two edge functions, bucket object, launchd job, bucket MIME stand-in, deploy rules
-- [healthapp Data API exposure](project_healthapp_data_api_exposure.md) — healthapp_dev answers 406 until a human adds it to Exposed schemas; no safe agent route
-- [healthapp Gemini model ids](project_healthapp_gemini_model_ids.md) — gemini-2.5-flash 404s for this key; 3.8/3.5-flash work; zsh `$m:g` URL trap
-- [healthapp edge DB direct](project_healthapp_edge_db_direct.md) — functions use SUPABASE_DB_URL, not PostgREST; jsonb/uuid param traps; deploy and SQL rules
-- [healthapp extraction measured](project_healthapp_extraction_measured.md) — Greek lookalike IDs, finding granularity, timings, M2 harness
+- [Isolated worktree tooling](feedback_isolated_worktree_tooling.md) — what Bash refuses in a worktree-isolated run, and the ways around it that worked
