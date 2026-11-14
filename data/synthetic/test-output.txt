@@ -1,0 +1,71 @@
+PASS every cohort row flagged synthetic
+PASS ids unique
+PASS rows carry only the allowed fields (no name, no address)
+PASS dates are month/year only
+PASS derived features stay inside the fixed vocabulary
+
+== TEST 1  Maria (opted in) -> matches ==
+{
+ "persona_features": [
+  "CRP_high",
+  "RF_positive",
+  "anti_CCP_positive",
+  "joint_pain",
+  "morning_stiffness",
+  "spec_rheumatology"
+ ],
+ "answer": {
+  "match_count": 9,
+  "groups": [
+   {
+    "n": 9,
+    "pattern": [
+     "CRP_high",
+     "RF_positive",
+     "anti_CCP_positive",
+     "joint_pain",
+     "morning_stiffness",
+     "spec_rheumatology"
+    ],
+    "countries": [
+     "DE",
+     "FR",
+     "GR",
+     "IT",
+     "NL",
+     "SE"
+    ],
+    "label": "seeded, synthetic"
+   }
+  ]
+ }
+}
+PASS Maria gets at least one group
+PASS every group has N >= K
+PASS a group exposes only n, pattern, countries, label
+PASS every group carries the label
+PASS match_count is the sum of the group sizes
+PASS answer holds no id, no sex, no age band, no date
+
+== TEST 2  rare pattern (3 seeded rows share it) -> empty ==
+{
+ "match_count": 0,
+ "groups": []
+}
+PASS rare pattern returns the empty answer
+PASS CONTROL: with k=1 the same persona DOES match, so k is what suppresses
+  control (k=1, internal check only): 3 record(s) share the rare pattern
+PASS CONTROL: those rare groups are all below K
+
+== TEST 3  same persona, matching_opt_in = false -> empty ==
+{
+ "match_count": 0,
+ "groups": []
+}
+PASS not opted in returns the empty answer
+PASS CONTROL: flipping only the opt-in flag brings the matches back
+PASS no-match, below-k and not-opted-in answers are byte-identical
+PASS cohort rows that did not opt in are never matched
+PASS same input, same answer
+
+ALL CHECKS PASSED
