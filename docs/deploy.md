@@ -142,3 +142,24 @@ Not the demo app. A separate static page plus two Edge Functions. CTO decisions 
 **Rollback.** Pages: promote the previous deployment in the dashboard, or redeploy the placeholder. Feed: `launchctl bootout gui/$(id -u)/ai.minhos.healthapp-dashboard` stops the pushes; `dashboard/install.sh --rotate` kills every link already handed out.
 
 **Checks (Lane C `static`, `.github/workflows/dashboard.yml`):** `python3 -m unittest discover -s dashboard/tests`; `deno check`, `deno lint` and `deno test --allow-read supabase/functions/`; the key-pattern grep over tracked files; `dashboard/pages-bundle.sh` must build a clean upload set. No `smoke` (no Playwright for this tool), no funnel, no migration job.
+
+## 11. Landing page (MIN-4462, MIN-4539)
+
+The public one-page showcase. Not the app and not the dashboard: its own Pages project, so nothing here touches `healthapp`.
+
+| Thing | Value |
+| --- | --- |
+| Source | `landing/` (Vite + React + TS, its own `package.json`; not in the app's `tsconfig` or build). Copy and design specs: `docs/landing/` |
+| Pages project | `healthapp-landing`, **direct upload**, not Git-connected. Production branch `main` |
+| Production URL | `https://healthapp-landing.pages.dev` |
+| Data, env, secrets | none. Static files only (fonts from Google Fonts) |
+
+**Redeploy** (Lane A: merge the change to `staging` first, then deploy from that commit):
+
+```sh
+cd landing && npm ci && npm run build          # in a clean worktree, no .env
+cd "$(mktemp -d)"                               # empty folder: wrangler must not pick up a stray static folder
+npx wrangler pages deploy "<absolute path>/landing/dist" --project-name healthapp-landing --branch main
+```
+
+Then `curl -s -o /dev/null -w '%{http_code}' https://healthapp-landing.pages.dev/` (200) and the same for `/img/hero.webp` and the `/assets/index-*.js` named in the built `index.html`. Never pass `--force` again: it was needed once, to create the project as Pages instead of a Worker (section 10, step 1). **Rollback:** promote the previous deployment in the dashboard (Pages → healthapp-landing → Deployments).
