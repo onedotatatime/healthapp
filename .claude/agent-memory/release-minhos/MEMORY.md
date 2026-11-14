@@ -1,0 +1,1 @@
+- [wrangler Pages delegation](feedback_wrangler_pages_delegation.md) — `pages project create` now makes a public Worker from cwd; use --force from an empty folder
