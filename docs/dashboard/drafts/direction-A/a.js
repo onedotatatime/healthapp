@@ -1,5 +1,5 @@
 /* Direction A · Mission Control, the dashboard base (MIN-4530). Live through shared/live.js and shared/feed.js, like B.
-   Hash routes: #/ (overview), #/branches, #/exercises/00..06, #/decks, #/decks/short|full/N (viewer over the drawer), #/demo, #/risk.
+   Hash routes: #/ (overview), #/branches, #/exercises/00..06, #/decks, #/decks/short|full/N (viewer over the drawer), #/simulations (#/demo redirects there), #/risk.
    Every list can be empty (the public stub bundle has no exercises, decks or demo steps): nothing here may throw on [] or null. */
 (function(){
 'use strict';
@@ -84,9 +84,8 @@ function renderDyn(force){
   const sig = JSON.stringify([H.ms.map(m=>[m.id,m.name,m.start,m.end,m.gate,m.total,m.done]), DATA.tasks, DATA.tokens.perAgent, DATA.tokens.perChat, DATA.tokens.scope,
     DATA.money.credits, DATA.money.estimateEUR, DATA.money.estimateSeries, DATA.money.rateCard, DATA.agents, DATA.demo, rolesAll, DATA.repo, Live.loaded, Live.feedErr, Live.rec.repo]);
   if(!force && sig===dynSig) return; dynSig = sig;
-  const tk = DATA.tokens, rc = DATA.money.rateCard, ag = DATA.agents, dm = DATA.demo, st = dm.steps || [];
+  const tk = DATA.tokens, rc = DATA.money.rateCard, ag = DATA.agents;
   const rateNote = rc ? esc(rc.label||'estimate at API list price, not a bill')+'.'+(rc.aliased && Object.keys(rc.aliased).length ? ' '+Object.keys(rc.aliased).map(k=>esc(k.replace('claude-',''))).join(', ')+' priced at the nearest rate row.' : '') : '';
-  const bt = ((dm.build.label||'')+' '+(dm.build.at||'')).trim(), dp = dm.deploy.label || '';
   const slot = $('#heroRepo'); if(slot) slot.innerHTML = repoCard('hero');
   dyn.innerHTML = bandHTML()
   + '<section class="panels">'
@@ -105,11 +104,9 @@ function renderDyn(force){
   +   '<div id="whoList"></div>'
   +   '<div class="sub"><span>Live log</span></div><div class="log" id="log" aria-live="off"></div></div></div>'
   + '</section>'
-  + '<a class="strip blk" id="strip" href="#/demo" data-blk="hand" aria-label="Open the demo product drawer"><span class="t">DEMO</span><span class="blkmsg"></span><span class="sv">'
-  +   '<span><span class="g '+dm.build.state+'">'+H.ragGlyph(dm.build.state)+'</span> '+esc(bt||'build: no reading')+'</span>'
-  +   '<span><span class="g '+dm.deploy.state+'">'+H.ragGlyph(dm.deploy.state)+'</span> deploy: '+esc(dp||'no reading')+'</span>'
-  +   '<span>clean runs <b data-v="clean"></b>/'+(dm.cleanTarget||0)+'</span>'
-  +   (st.length ? '<span class="steps" title="The '+st.length+' steps">'+st.map(s=>'<span class="g '+s.s+'">'+H.ragGlyph(s.s)+'</span>').join('')+'</span>' : '<span class="muted">no steps published yet</span>')
+  + '<a class="strip" id="strip" href="#/simulations" aria-label="Open the doctor simulations"><span class="t">SIMULATIONS</span><span class="sv">'
+  +   '<span><b class="num">'+SIMS.run.n.toLocaleString('en-US')+'</b> synthetic patients, <b class="num">'+SIMS.run.match_count+'</b> matches</span>'
+  +   '<span class="muted">'+esc(SIMS.label)+'</span>'
   + '</span><span class="open">open ↗</span></a>';
   H.hydrate(dyn); H.paintTaskBar(dyn); Live.paint(dyn);
   paintSpark(); paintLog(); paintLadder(); Chat.paintCard();
@@ -233,12 +230,13 @@ function logDiff(){
 /* a snapshot (or a feed failure) arrived: repaint everything that reads it, keep the open drawer's scroll */
 H.on('live', () => {
   logDiff(); renderDyn(false); paintDirections(); paintLadder(); paintNow(); paintForecast(); paintFlags(); paintVerdict(); Live.paint();
-  if(drawer.classList.contains('open') && ['branches','demo','risk'].includes(route.v)) renderDrawer(true);
+  if(drawer.classList.contains('open') && ['branches','risk'].includes(route.v)) renderDrawer(true);
 });
 
 /* ---------- drawer ---------- */
 let route = {v:'',a:'',b:''}, lastFocus = null, drawerKey = '';
-const parse = () => { const p = location.hash.replace(/^#\/?/,'').split('/'); return {v:p[0]||'', a:p[1]||'', b:p[2]||''}; };
+const parse = () => { const p = location.hash.replace(/^#\/?/,'').split('/'); if(p[0]==='demo'){ p[0] = 'simulations'; history.replaceState(null,'','#/simulations'); }   // the Demo tab is gone: old links land on the simulations
+  return {v:p[0]||'', a:p[1]||'', b:p[2]||''}; };
 const exHref = i => '#/exercises/'+EX[i].n;
 function moveInd(nomove){
   const t = $('.tabs',drTabs); if(!t) return; const cur = $('[aria-current="page"]',t), ind = $('.ind',t); if(!cur) return;
@@ -293,8 +291,9 @@ function branchesView(){
 /* decks: both pitch decks as posters, Present opens the full-screen viewer, Open the deck HTML (a local link, so empty on the public page) */
 function decksView(){
   const ks = ['short','full'].filter(k => CONTENT.decks[k] && CONTENT.decks[k].slides.length);
-  if(!ks.length) return BRE('Decks are not published on this page yet.');
-  return '<p class="muted drintro">Two decks, equal weight. Thumbnails show the slide title and headline from the content files; the real HTML decks open from a local file link. '+H.src('none','SAMPLE · copied text')+'</p><div class="posters">'
+  const deckBtn = '<p><a class="btn primary" id="deckLink" href="'+esc(H.deckUrl)+'" target="_blank" rel="noopener">Open the pitch deck ↗</a></p>';
+  if(!ks.length) return '<p class="muted drintro">The pitch deck opens on its own page.</p>'+deckBtn;
+  return deckBtn+'<p class="muted drintro">Two decks, equal weight. Thumbnails show the slide title and headline from the content files; the real HTML decks open from a local file link. '+H.src('none','SAMPLE · copied text')+'</p><div class="posters">'
     + ks.map(k => { const d = H.deckInfo(k); return '<article class="card poster" data-k="'+k+'">'+H.slideTile(k,0)+'<h3>'+esc(d.label)+' · '+d.slides.length+' slides</h3><p class="muted">'+esc(d.sub)+' · '+esc(d.ver)+'</p><div class="actions"><a class="btn primary" href="#/decks/'+k+'/1" data-present>Present ▸</a><a class="btn" href="'+esc(d.file)+'" target="_blank" rel="noopener" title="Opens the deck HTML from the pix-pitching-deck-draft worktree on this machine">Open ↗</a></div></article>'; }).join('')+'</div>';
 }
 let viewerT0 = 0, viewerTimer = 0;
@@ -316,29 +315,35 @@ function renderViewer(k, n){
 }
 function closeViewer(){ if(!viewer.classList.contains('open')) return; viewer.classList.remove('open'); clearInterval(viewerTimer); if(document.fullscreenElement) document.exitFullscreen(); }
 
-/* demo product: build, deploy, link, clean runs and the steps, all set by hand */
-function demoView(){
-  const dm = DATA.demo, st = dm.steps || [], hasUrl = /^https?:\/\//.test(dm.url || '');
-  const bt = ((dm.build.label||'')+' '+(dm.build.at||'')).trim(), dp = dm.deploy.label || '';
-  return '<section class="blk" data-blk="hand"><div class="blkhead"><span class="subr">'+blkTag('hand')+'<span class="upd"></span></span></div><p class="blkmsg"></p><div class="bb">'
-    + '<div class="kv"><span class="lbl">Build</span><span>'+H.rag(dm.build.state, bt||undefined)+'</span></div>'
-    + '<div class="kv"><span class="lbl">Deploy</span><span>'+H.rag(dm.deploy.state, dp||undefined)+'</span></div>'
-    + '<div class="kv"><span class="lbl">Link</span><span class="linkrow">'+(hasUrl ? H.rag(dm.deploy.state, 'Live: '+dp) : '<span class="chip">No link yet</span>')+'<span class="mono">'+esc(dm.url||'')+'</span><button class="btn" id="copyLink"'+(hasUrl?'':' disabled aria-disabled="true"')+'>Copy</button>'
-    +   (hasUrl ? '<a class="btn" href="'+esc(dm.url)+'" target="_blank" rel="noopener">Open ↗</a>' : '<span class="btn" aria-disabled="true" style="opacity:.5">Open ↗</span>')+'</span></div>'
-    + '<div class="kv"><span class="lbl">Clean runs</span><span class="linkrow"><span class="runs" id="runs"></span><b class="mono"><span data-v="clean"></span> of '+(dm.cleanTarget||0)+'</b><span class="muted">Counted by hand by the CTO or Release</span></span></div>'
-    + (Chat.isLocal ? '<div class="kv" id="hiwRow" hidden><span class="lbl">Explainer</span><span class="linkrow"><a class="btn" href="'+HIW+'" target="_blank" rel="noopener">How it works \u2197</a><span class="muted">The page that explains the product. Local only.</span></span></div>' : '')
-    + (st.length ? '<h3 class="micro" style="margin:20px 0 4px">The '+st.length+' steps</h3>'+st.map(s=>'<div class="steprow"><span class="n">'+s.n+'</span><span>'+esc(s.t)+'<div class="muted" style="font-size:12px;line-height:16px">'+esc((dm.notes||{})[s.n] || 'No note yet.')+'</div></span>'+H.rag(s.s)+'</div>').join('')
-        + '<p class="muted" style="margin-top:14px;font-size:13px">Set by hand by the CTO or Release after each run.</p>'
-      : '<div style="margin-top:20px">'+BRE('No demo steps are published on this page yet.')+'</div>')
-    + '</div></section>';
+/* doctor simulations (MIN-4600): recorded runs on seeded synthetic data, replayed from shared/sim-data.js (aggregates only, built by dashboard/build_sims.py).
+   No feed and no key: the numbers are in the page. Every block carries the synthetic label; the 5,000 run also says it is a recording. */
+const nf = n => Number(n).toLocaleString('en-US');
+const dateOf = iso => new Date(iso).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric', timeZone:'UTC' });
+const PHASE = { created:'Machine created', running:'Simulation ran', done:'Result written', deleted:'Machine deleted' };
+function simsView(){
+  const r = SIMS.run, g = SIMS.growth, f = r.funnel, lab = '<p class="simlabel">'+esc(SIMS.label)+'</p>';
+  const steps = [[f.opted_in,'Opted in'],[f.share_min,'Share at least '+r.min_shared+' findings with the patient'],[f.exact,'Exact match'],[f.shown,'Shown as matches']];
+  const mx = Math.max(1, ...g.rate_values);
+  return '<p class="muted drintro">One synthetic patient looking for matches in a seeded network</p>'
+    + '<section class="card simcard" aria-labelledby="simH1"><div class="card-h"><h2 id="simH1">The '+nf(r.n)+' run</h2></div>'
+    +   lab+'<p class="simlabel">Recorded run on a '+esc(r.provider)+' machine, '+esc(dateOf(r.started_at))+'. Replayed here, not live.</p>'
+    +   '<div class="kv"><span class="lbl">Machine</span><span class="mono">'+esc(r.machine)+'</span></div>'
+    +   '<div class="kv"><span class="lbl">Size</span><span>'+esc(r.size)+(r.deleted?', deleted after the run':'')+'</span></div>'
+    +   '<div class="kv"><span class="lbl">Total time</span><span class="mono">'+r.seconds+' s</span></div>'
+    +   '<div class="kv"><span class="lbl">Seed</span><span class="mono">'+r.seed+'</span></div>'
+    +   '<div class="kv"><span class="lbl">Rule</span><span>Groups of '+r.k+', at least '+r.min_shared+' shared findings</span></div>'
+    +   '<h3 class="micro simsub">Funnel</h3><ol class="simfun">'+steps.map(x=>'<li><b class="mono num">'+nf(x[0])+'</b><span>'+esc(x[1])+'</span></li>').join('')+'</ol>'
+    +   '<h3 class="micro simsub">Matches by country</h3><p class="simcty">'+r.by_country.map(c=>'<span class="chip brand"><b>'+esc(c[0])+'</b> '+c[1]+'</span>').join(' ')+'</p>'
+    + '</section>'
+    + '<section class="card simcard" aria-labelledby="simH2"><div class="card-h"><h2 id="simH2">Match rate as the network grows</h2></div>'
+    +   lab+'<p class="simlabel">'+esc(g.label)+'.</p>'
+    +   '<div class="kv"><span class="lbl">Seed</span><span class="mono">'+g.seed+'</span></div>'
+    +   '<div class="kv"><span class="lbl">Rule</span><span>Groups of '+g.k+', at least '+g.min_shared+' shared findings, up to '+nf(g.cohort_size)+' records</span></div>'
+    +   '<table class="simtbl"><thead><tr><th scope="col">'+esc(g.x_label)+'</th><th scope="col">'+esc(g.rate_label)+' ('+esc(g.rate_unit)+')</th></tr></thead><tbody>'
+    +   g.x_values.map((x,i)=>'<tr><td class="mono num">'+nf(x)+'</td><td><span class="simbar" style="--w:'+(g.rate_values[i]/mx*100).toFixed(1)+'%"></span><b class="mono num">'+g.rate_values[i].toFixed(1)+'%</b></td></tr>').join('')
+    +   '</tbody></table>'
+    + '</section>';
 }
-/* "How it works" (a page built next to the dashboard): local only, and only when the file is really there, so the link never opens a 404 */
-const HIW = '../how-it-works/index.html#how-it-works';
-async function showHiw(){
-  if(!Chat.isLocal) return;
-  try{ const r = await fetch(HIW.split('#')[0], { method:'HEAD', cache:'no-store' }); const row = $('#hiwRow'); if(r.ok && row) row.hidden = false; }catch(e){}
-}
-function paintRuns(){ const el = $('#runs'); if(el) el.innerHTML = Array.from({length:DATA.demo.cleanTarget||0},(_,i)=>'<i class="'+(i<S.clean?'on':'')+'"></i>').join(''); }
 
 function renderDrawer(soft){
   const r = route, key = r.v==='decks' ? 'decks' : r.v+'/'+r.a+'/'+r.b;
@@ -356,8 +361,8 @@ function renderDrawer(soft){
       html = H.exercisePage(idx,{href:exHref}) + '<p class="muted mono" style="font-size:11px;margin-top:12px">keys: 0 to 6 jump a page · j / k scroll · Esc close</p>'; }
   } else if(r.v==='decks'){
     title = 'Decks'; html = decksView();
-  } else if(r.v==='demo'){
-    title = 'Demo product'; html = demoView();
+  } else if(r.v==='simulations'){
+    title = 'Doctor simulations'; html = simsView();
   } else if(r.v==='chat'){
     title = 'Chat \u00B7 '+(r.a||'');
   } else if(r.v==='risk'){
@@ -369,14 +374,13 @@ function renderDrawer(soft){
   drawer.classList.toggle('chat', r.v==='chat');
   if(r.v==='chat') Chat.mount(drBody, decodeURIComponent(r.a||'')); else Chat.unmount();
   if(r.v==='exercises' && EX.length){ H.wireExercise(drBody, drBody); }
-  if(r.v==='demo'){ showHiw(); paintRuns(); H.hydrate(drBody); const cl = $('#copyLink'); if(cl && !cl.disabled) cl.onclick = async () => { const ok = await H.copy(DATA.demo.url); cl.textContent = ok?'Copied':'Copy failed'; setTimeout(()=>cl.textContent='Copy',1500); }; }
   if(r.v==='decks'){ $$('[data-present]',drBody).forEach(a => a.addEventListener('click', () => { const rc = a.closest('.poster').getBoundingClientRect(); viewer.style.setProperty('--ox', (rc.left+rc.width/2)+'px'); viewer.style.setProperty('--oy', (rc.top+rc.height/2)+'px'); })); }
   Live.paint(drBody);
   if(soft) drBody.scrollTop = keep;
 }
 function applyRoute(){
   const prev = route; route = parse();
-  const open = ['branches','exercises','decks','demo','risk','chat'].includes(route.v);
+  const open = ['branches','exercises','decks','simulations','risk','chat'].includes(route.v);
   $$('#rail a').forEach(a => a.removeAttribute('aria-current')); const rv = open ? (route.v==='risk'||route.v==='chat'?null:route.v) : 'overview'; if(rv) $('#rail a[data-view="'+rv+'"]').setAttribute('aria-current','page');
   const kbd = viaKey; viaKey = false;
   drawer.classList.toggle('instant', kbd); scrim.classList.toggle('instant', kbd);
@@ -416,7 +420,7 @@ document.addEventListener('keydown', e => {
   if(e.key==='k' && open){ drBody.scrollBy({top:-140}); return; }
   if(e.key==='w'){ document.body.classList.toggle('wall'); startWall(); return; }
   if(open && route.v==='exercises' && /^[0-6]$/.test(e.key) && EX.some(x=>x.n==='0'+e.key)){ viaKey = true; location.hash = '#/exercises/0'+e.key; return; }
-  const map = {'1':'#/','2':'#/branches','3':'#/exercises/00','4':'#/decks','5':'#/demo'};
+  const map = {'1':'#/','2':'#/branches','3':'#/exercises/00','4':'#/decks','5':'#/simulations'};
   if(map[e.key]){ viaKey = true; location.hash = map[e.key]; }
 });
 
