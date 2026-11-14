@@ -13,3 +13,6 @@ verify_jwt = true
 
 [functions.healthapp-dashboard-feed]
 verify_jwt = true
+
+[functions.healthapp-demo-login]
+verify_jwt = false

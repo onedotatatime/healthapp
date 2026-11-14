@@ -13,7 +13,7 @@ run() { if [ -n "${HDB_DATABASE_URL:-}" ]; then psql "$HDB_DATABASE_URL" -X -v O
 case "$cmd" in
   render)
     f="${3:?file}"; [[ "$f" =~ ^[0-9]{3}_[a-z_]+\.sql$ ]] || { echo "bad file name" >&2; exit 2; }
-    sed -e "s/__SCHEMA__/${schema}/g" -e "s/__BUCKET__/${bucket}/g" "$dir/$f" ;;
+    sed -e "s/__SCHEMA__/${schema}/g" -e "s/__BUCKET__/${bucket}/g" -e "s/__ENV__/${env}/g" "$dir/$f" ;;
   check)
     run <<SQL
 select
