@@ -78,6 +78,11 @@ export function outOfRangeText(r: Pick<ResultRow, 'ref_text' | 'ref_low' | 'ref_
 export const valueString = (r: Pick<ResultRow, 'value_num' | 'value_text'>) =>
   r.value_num != null ? String(r.value_num) : (r.value_text ?? '');
 
+/** The document-level provenance marks, in order: where it came from, then "name match only" when the ID was not checked. */
+export function docMarks(d: { provenance: string; identity_status: string | null }): ('verified' | 'uploaded' | 'name-match')[] {
+  return [d.provenance === 'verified_by_source' ? 'verified' : 'uploaded', ...(d.identity_status === 'name_only' ? (['name-match'] as const) : [])];
+}
+
 export const isLowConfidence = (c: number | null) => c != null && c < LOW_CONFIDENCE;
 
 // ---------------------------------------------------------------------------------------------

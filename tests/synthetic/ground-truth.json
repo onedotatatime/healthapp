@@ -1,0 +1,773 @@
+{
+ "synthetic": true,
+ "note": "All people, IDs, labs and values are invented. Maria Papadopoulou is the stage persona.",
+ "documents": [
+  {
+   "n": 1,
+   "file": "01-blood-el-2025-05-14.jpg",
+   "kind": "blood_test",
+   "language": "el",
+   "issuer": "Ιατρικό Εργαστήριο «Υγεία», Αθήνα",
+   "exam_date": "2025-05-14",
+   "exam_date_printed": "14/05/2025",
+   "printed_name": "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ",
+   "printed_id": "AK123456",
+   "results": [
+    {
+     "analyte": "CRP (C-αντιδρώσα πρωτεΐνη)",
+     "value": "18,4",
+     "value_num": 18.4,
+     "unit": "mg/L",
+     "ref": "0 - 5",
+     "ref_low": 0,
+     "ref_high": 5,
+     "flag": "high"
+    },
+    {
+     "analyte": "ΤΚΕ (Ταχύτητα καθίζησης ερυθρών)",
+     "value": "42",
+     "value_num": 42.0,
+     "unit": "mm/h",
+     "ref": "0 - 20",
+     "ref_low": 0,
+     "ref_high": 20,
+     "flag": "high"
+    },
+    {
+     "analyte": "Ρευματοειδής παράγοντας (RF)",
+     "value": "38",
+     "value_num": 38.0,
+     "unit": "IU/mL",
+     "ref": "<14",
+     "ref_low": null,
+     "ref_high": 14,
+     "flag": "high"
+    },
+    {
+     "analyte": "Αντι-CCP",
+     "value": "85",
+     "value_num": 85.0,
+     "unit": "U/mL",
+     "ref": "<20",
+     "ref_low": null,
+     "ref_high": 20,
+     "flag": "high"
+    },
+    {
+     "analyte": "Αιμοσφαιρίνη",
+     "value": "12,4",
+     "value_num": 12.4,
+     "unit": "g/dL",
+     "ref": "12,0 - 16,0",
+     "ref_low": 12.0,
+     "ref_high": 16.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Λευκά αιμοσφαίρια",
+     "value": "9,1",
+     "value_num": 9.1,
+     "unit": "10^3/μL",
+     "ref": "4,0 - 10,0",
+     "ref_low": 4.0,
+     "ref_high": 10.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Ερυθρά αιμοσφαίρια",
+     "value": "4,3",
+     "value_num": 4.3,
+     "unit": "10^6/μL",
+     "ref": "3,8 - 5,2",
+     "ref_low": 3.8,
+     "ref_high": 5.2,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Αιματοκρίτης",
+     "value": "37,9",
+     "value_num": 37.9,
+     "unit": "%",
+     "ref": "36,0 - 46,0",
+     "ref_low": 36.0,
+     "ref_high": 46.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Αιμοπετάλια",
+     "value": "332",
+     "value_num": 332.0,
+     "unit": "10^3/μL",
+     "ref": "150 - 400",
+     "ref_low": 150,
+     "ref_high": 400,
+     "flag": "normal"
+    }
+   ],
+   "findings": [],
+   "expected": {
+    "outcome": "draft"
+   },
+   "render": {
+    "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΑΙΜΑΤΟΛΟΓΙΚΩΝ ΚΑΙ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
+    "blur": 0
+   },
+   "note": "CRP and ESR raised"
+  },
+  {
+   "n": 2,
+   "file": "02-blood-el-2025-12-09.jpg",
+   "kind": "blood_test",
+   "language": "el",
+   "issuer": "Ιατρικό Εργαστήριο «Υγεία», Αθήνα",
+   "exam_date": "2025-12-09",
+   "exam_date_printed": "09/12/2025",
+   "printed_name": "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ",
+   "printed_id": "AK123456",
+   "results": [
+    {
+     "analyte": "CRP (C-αντιδρώσα πρωτεΐνη)",
+     "value": "7,9",
+     "value_num": 7.9,
+     "unit": "mg/L",
+     "ref": "0 - 5",
+     "ref_low": 0,
+     "ref_high": 5,
+     "flag": "high"
+    },
+    {
+     "analyte": "ΤΚΕ (Ταχύτητα καθίζησης ερυθρών)",
+     "value": "31",
+     "value_num": 31.0,
+     "unit": "mm/h",
+     "ref": "0 - 20",
+     "ref_low": 0,
+     "ref_high": 20,
+     "flag": "high"
+    },
+    {
+     "analyte": "Ρευματοειδής παράγοντας (RF)",
+     "value": "33",
+     "value_num": 33.0,
+     "unit": "IU/mL",
+     "ref": "<14",
+     "ref_low": null,
+     "ref_high": 14,
+     "flag": "high"
+    },
+    {
+     "analyte": "Αντι-CCP",
+     "value": "79",
+     "value_num": 79.0,
+     "unit": "U/mL",
+     "ref": "<20",
+     "ref_low": null,
+     "ref_high": 20,
+     "flag": "high"
+    },
+    {
+     "analyte": "Αιμοσφαιρίνη",
+     "value": "12,9",
+     "value_num": 12.9,
+     "unit": "g/dL",
+     "ref": "12,0 - 16,0",
+     "ref_low": 12.0,
+     "ref_high": 16.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Λευκά αιμοσφαίρια",
+     "value": "8,4",
+     "value_num": 8.4,
+     "unit": "10^3/μL",
+     "ref": "4,0 - 10,0",
+     "ref_low": 4.0,
+     "ref_high": 10.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Ερυθρά αιμοσφαίρια",
+     "value": "4,4",
+     "value_num": 4.4,
+     "unit": "10^6/μL",
+     "ref": "3,8 - 5,2",
+     "ref_low": 3.8,
+     "ref_high": 5.2,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Αιματοκρίτης",
+     "value": "38,6",
+     "value_num": 38.6,
+     "unit": "%",
+     "ref": "36,0 - 46,0",
+     "ref_low": 36.0,
+     "ref_high": 46.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Αιμοπετάλια",
+     "value": "301",
+     "value_num": 301.0,
+     "unit": "10^3/μL",
+     "ref": "150 - 400",
+     "ref_low": 150,
+     "ref_high": 400,
+     "flag": "normal"
+    }
+   ],
+   "findings": [],
+   "expected": {
+    "outcome": "draft"
+   },
+   "render": {
+    "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΑΙΜΑΤΟΛΟΓΙΚΩΝ ΚΑΙ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
+    "blur": 0
+   },
+   "note": "CRP and ESR raised"
+  },
+  {
+   "n": 3,
+   "file": "03-blood-en-2026-10-22.jpg",
+   "kind": "blood_test",
+   "language": "en",
+   "issuer": "Athens Medical Laboratory",
+   "exam_date": "2026-10-22",
+   "exam_date_printed": "22 October 2026",
+   "printed_name": "PAPADOPOULOU MARIA",
+   "printed_id": "AK123456",
+   "results": [
+    {
+     "analyte": "C-reactive protein (CRP)",
+     "value": "3.8",
+     "value_num": 3.8,
+     "unit": "mg/L",
+     "ref": "0 - 5",
+     "ref_low": 0,
+     "ref_high": 5,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Erythrocyte sedimentation rate (ESR)",
+     "value": "17",
+     "value_num": 17.0,
+     "unit": "mm/h",
+     "ref": "0 - 20",
+     "ref_low": 0,
+     "ref_high": 20,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Rheumatoid factor (RF)",
+     "value": "31",
+     "value_num": 31.0,
+     "unit": "IU/mL",
+     "ref": "<14",
+     "ref_low": null,
+     "ref_high": 14,
+     "flag": "high"
+    },
+    {
+     "analyte": "Anti-CCP",
+     "value": "82",
+     "value_num": 82.0,
+     "unit": "U/mL",
+     "ref": "<20",
+     "ref_low": null,
+     "ref_high": 20,
+     "flag": "high"
+    },
+    {
+     "analyte": "Haemoglobin",
+     "value": "13.1",
+     "value_num": 13.1,
+     "unit": "g/dL",
+     "ref": "12.0 - 16.0",
+     "ref_low": 12.0,
+     "ref_high": 16.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "White blood cells",
+     "value": "7.7",
+     "value_num": 7.7,
+     "unit": "10^3/μL",
+     "ref": "4.0 - 10.0",
+     "ref_low": 4.0,
+     "ref_high": 10.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Red blood cells",
+     "value": "4.5",
+     "value_num": 4.5,
+     "unit": "10^6/μL",
+     "ref": "3.8 - 5.2",
+     "ref_low": 3.8,
+     "ref_high": 5.2,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Haematocrit",
+     "value": "39.4",
+     "value_num": 39.4,
+     "unit": "%",
+     "ref": "36.0 - 46.0",
+     "ref_low": 36.0,
+     "ref_high": 46.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Platelets",
+     "value": "288",
+     "value_num": 288.0,
+     "unit": "10^3/μL",
+     "ref": "150 - 400",
+     "ref_low": 150,
+     "ref_high": 400,
+     "flag": "normal"
+    }
+   ],
+   "findings": [],
+   "expected": {
+    "outcome": "draft"
+   },
+   "render": {
+    "title": "LABORATORY REPORT: HAEMATOLOGY AND BIOCHEMISTRY",
+    "blur": 0
+   },
+   "note": "CRP normal, RF and anti-CCP raised"
+  },
+  {
+   "n": 4,
+   "file": "04-xray-el-2026-03-18.jpg",
+   "kind": "imaging_report",
+   "language": "el",
+   "issuer": "Ακτινολογικό Κέντρο Αθηνών",
+   "exam_date": "2026-03-18",
+   "exam_date_printed": "18/03/2026",
+   "printed_name": "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ",
+   "printed_id": "AK123456",
+   "results": [],
+   "findings": [
+    {
+     "kind": "note",
+     "text": "Διατήρηση του άξονα του άκρου. Μικρά οστεόφυτα στις αρθρικές επιφάνειες του μηριαίου και της κνήμης.",
+     "date": "2026-03-18"
+    },
+    {
+     "kind": "conclusion",
+     "text": "Ήπια οστεοαρθρίτιδα του δεξιού γόνατος με στένωση του έσω διαρθρικού διαστήματος. Δεν παρατηρείται κάταγμα.",
+     "date": "2026-03-18"
+    }
+   ],
+   "expected": {
+    "outcome": "draft"
+   },
+   "render": {
+    "title": "ΑΚΤΙΝΟΓΡΑΦΙΑ ΓΟΝΑΤΟΣ ΔΕΞΙΟΥ (πρόσθια-οπίσθια και πλάγια)",
+    "blur": 0
+   },
+   "note": "referred by orthopaedics"
+  },
+  {
+   "n": 5,
+   "file": "05-letter-en-2026-04-02.jpg",
+   "kind": "doctor_letter",
+   "language": "en",
+   "issuer": "Dr Eleni Markou, Consultant Orthopaedic Surgeon, Athens Orthopaedic Clinic",
+   "exam_date": "2026-04-02",
+   "exam_date_printed": "2 April 2026",
+   "printed_name": "PAPADOPOULOU MARIA",
+   "printed_id": "AK123456",
+   "results": [],
+   "findings": [
+    {
+     "kind": "written_diagnosis",
+     "text": "Early osteoarthritis of the right knee.",
+     "date": "2026-04-02"
+    },
+    {
+     "kind": "note",
+     "text": "Morning stiffness in both hands lasting about 45 minutes; an inflammatory cause is to be excluded.",
+     "date": "2026-04-02"
+    },
+    {
+     "kind": "medication",
+     "text": "Ibuprofen 400 mg twice daily, only when needed.",
+     "date": "2026-04-02"
+    }
+   ],
+   "expected": {
+    "outcome": "draft"
+   },
+   "render": {
+    "title": "Letter to the patient",
+    "blur": 0
+   },
+   "note": ""
+  },
+  {
+   "n": 6,
+   "file": "06-blood-el-husband-2026-02-11.jpg",
+   "kind": "blood_test",
+   "language": "el",
+   "issuer": "Ιατρικό Εργαστήριο «Υγεία», Αθήνα",
+   "exam_date": "2026-02-11",
+   "exam_date_printed": "11/02/2026",
+   "printed_name": "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ",
+   "printed_id": "AB654321",
+   "results": [
+    {
+     "analyte": "Γλυκόζη νηστείας",
+     "value": "98",
+     "value_num": 98.0,
+     "unit": "mg/dL",
+     "ref": "70 - 100",
+     "ref_low": 70,
+     "ref_high": 100,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Ολική χοληστερόλη",
+     "value": "212",
+     "value_num": 212.0,
+     "unit": "mg/dL",
+     "ref": "<200",
+     "ref_low": null,
+     "ref_high": 200,
+     "flag": "high"
+    },
+    {
+     "analyte": "HDL χοληστερόλη",
+     "value": "48",
+     "value_num": 48.0,
+     "unit": "mg/dL",
+     "ref": ">40",
+     "ref_low": 40,
+     "ref_high": null,
+     "flag": "normal"
+    },
+    {
+     "analyte": "LDL χοληστερόλη",
+     "value": "138",
+     "value_num": 138.0,
+     "unit": "mg/dL",
+     "ref": "<130",
+     "ref_low": null,
+     "ref_high": 130,
+     "flag": "high"
+    },
+    {
+     "analyte": "Τριγλυκερίδια",
+     "value": "164",
+     "value_num": 164.0,
+     "unit": "mg/dL",
+     "ref": "<150",
+     "ref_low": null,
+     "ref_high": 150,
+     "flag": "high"
+    },
+    {
+     "analyte": "Κρεατινίνη",
+     "value": "0,92",
+     "value_num": 0.92,
+     "unit": "mg/dL",
+     "ref": "0,50 - 1,10",
+     "ref_low": 0.5,
+     "ref_high": 1.1,
+     "flag": "normal"
+    }
+   ],
+   "findings": [],
+   "expected": {
+    "outcome": "draft"
+   },
+   "render": {
+    "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
+    "blur": 0
+   },
+   "note": "another person: B1 refusal, demo step 2"
+  },
+  {
+   "n": 7,
+   "file": "07-blood-el-name-only-2026-06-30.jpg",
+   "kind": "blood_test",
+   "language": "el",
+   "issuer": "Ιατρικό Εργαστήριο «Υγεία», Αθήνα",
+   "exam_date": "2026-06-30",
+   "exam_date_printed": "30/06/2026",
+   "printed_name": "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ",
+   "printed_id": null,
+   "results": [
+    {
+     "analyte": "Γλυκόζη νηστείας",
+     "value": "91",
+     "value_num": 91.0,
+     "unit": "mg/dL",
+     "ref": "70 - 100",
+     "ref_low": 70,
+     "ref_high": 100,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Ολική χοληστερόλη",
+     "value": "187",
+     "value_num": 187.0,
+     "unit": "mg/dL",
+     "ref": "<200",
+     "ref_low": null,
+     "ref_high": 200,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Σίδηρος",
+     "value": "58",
+     "value_num": 58.0,
+     "unit": "μg/dL",
+     "ref": "60 - 150",
+     "ref_low": 60,
+     "ref_high": 150,
+     "flag": "low"
+    },
+    {
+     "analyte": "Φερριτίνη",
+     "value": "22",
+     "value_num": 22.0,
+     "unit": "ng/mL",
+     "ref": "15 - 150",
+     "ref_low": 15,
+     "ref_high": 150,
+     "flag": "normal"
+    },
+    {
+     "analyte": "TSH",
+     "value": "2,1",
+     "value_num": 2.1,
+     "unit": "μIU/mL",
+     "ref": "0,4 - 4,0",
+     "ref_low": 0.4,
+     "ref_high": 4.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Βιταμίνη D (25-OH)",
+     "value": "21",
+     "value_num": 21.0,
+     "unit": "ng/mL",
+     "ref": "30 - 100",
+     "ref_low": 30,
+     "ref_high": 100,
+     "flag": "low"
+    }
+   ],
+   "findings": [],
+   "expected": {
+    "outcome": "draft"
+   },
+   "render": {
+    "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
+    "blur": 0
+   },
+   "note": "name only, no ID printed"
+  },
+  {
+   "n": 8,
+   "file": "08-blood-en-id-mismatch-2026-08-05.jpg",
+   "kind": "blood_test",
+   "language": "en",
+   "issuer": "Athens Medical Laboratory",
+   "exam_date": "2026-08-05",
+   "exam_date_printed": "5 August 2026",
+   "printed_name": "PAPADOPOULOU MARIA",
+   "printed_id": "AK987654",
+   "results": [
+    {
+     "analyte": "Glucose (fasting)",
+     "value": "94",
+     "value_num": 94.0,
+     "unit": "mg/dL",
+     "ref": "70 - 100",
+     "ref_low": 70,
+     "ref_high": 100,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Creatinine",
+     "value": "0.71",
+     "value_num": 0.71,
+     "unit": "mg/dL",
+     "ref": "0.50 - 1.10",
+     "ref_low": 0.5,
+     "ref_high": 1.1,
+     "flag": "normal"
+    },
+    {
+     "analyte": "ALT",
+     "value": "19",
+     "value_num": 19.0,
+     "unit": "U/L",
+     "ref": "0 - 35",
+     "ref_low": 0,
+     "ref_high": 35,
+     "flag": "normal"
+    },
+    {
+     "analyte": "AST",
+     "value": "22",
+     "value_num": 22.0,
+     "unit": "U/L",
+     "ref": "0 - 35",
+     "ref_low": 0,
+     "ref_high": 35,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Uric acid",
+     "value": "4.4",
+     "value_num": 4.4,
+     "unit": "mg/dL",
+     "ref": "2.4 - 5.7",
+     "ref_low": 2.4,
+     "ref_high": 5.7,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Total cholesterol",
+     "value": "191",
+     "value_num": 191.0,
+     "unit": "mg/dL",
+     "ref": "<200",
+     "ref_low": null,
+     "ref_high": 200,
+     "flag": "normal"
+    }
+   ],
+   "findings": [],
+   "expected": {
+    "outcome": "draft"
+   },
+   "render": {
+    "title": "LABORATORY REPORT: BIOCHEMISTRY",
+    "blur": 0
+   },
+   "note": "Maria's name with a different ID: B1 refusal"
+  },
+  {
+   "n": 9,
+   "file": "09-blood-el-no-name-2026-07-01.jpg",
+   "kind": "blood_test",
+   "language": "el",
+   "issuer": "Ιατρικό Εργαστήριο «Υγεία», Αθήνα",
+   "exam_date": "2026-07-01",
+   "exam_date_printed": "01/07/2026",
+   "printed_name": null,
+   "printed_id": null,
+   "results": [
+    {
+     "analyte": "Γλυκόζη νηστείας",
+     "value": "102",
+     "value_num": 102.0,
+     "unit": "mg/dL",
+     "ref": "70 - 100",
+     "ref_low": 70,
+     "ref_high": 100,
+     "flag": "high"
+    },
+    {
+     "analyte": "Κρεατινίνη",
+     "value": "0,81",
+     "value_num": 0.81,
+     "unit": "mg/dL",
+     "ref": "0,50 - 1,10",
+     "ref_low": 0.5,
+     "ref_high": 1.1,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Ουρία",
+     "value": "29",
+     "value_num": 29.0,
+     "unit": "mg/dL",
+     "ref": "10 - 50",
+     "ref_low": 10,
+     "ref_high": 50,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Ολική χοληστερόλη",
+     "value": "205",
+     "value_num": 205.0,
+     "unit": "mg/dL",
+     "ref": "<200",
+     "ref_low": null,
+     "ref_high": 200,
+     "flag": "high"
+    }
+   ],
+   "findings": [],
+   "expected": {
+    "outcome": "refused",
+    "reason": "name_missing"
+   },
+   "render": {
+    "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
+    "blur": 0
+   },
+   "note": "no patient block at all"
+  },
+  {
+   "n": 10,
+   "file": "10-blurred-el.jpg",
+   "kind": "blood_test",
+   "language": "el",
+   "issuer": "Ιατρικό Εργαστήριο «Υγεία», Αθήνα",
+   "exam_date": "2026-05-20",
+   "exam_date_printed": "20/05/2026",
+   "printed_name": "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ",
+   "printed_id": "AK123456",
+   "results": [
+    {
+     "analyte": "Γλυκόζη νηστείας",
+     "value": "93",
+     "value_num": 93.0,
+     "unit": "mg/dL",
+     "ref": "70 - 100",
+     "ref_low": 70,
+     "ref_high": 100,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Ολική χοληστερόλη",
+     "value": "190",
+     "value_num": 190.0,
+     "unit": "mg/dL",
+     "ref": "<200",
+     "ref_low": null,
+     "ref_high": 200,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Κρεατινίνη",
+     "value": "0,78",
+     "value_num": 0.78,
+     "unit": "mg/dL",
+     "ref": "0,50 - 1,10",
+     "ref_low": 0.5,
+     "ref_high": 1.1,
+     "flag": "normal"
+    }
+   ],
+   "findings": [],
+   "expected": {
+    "outcome": "refused",
+    "reason": "unreadable"
+   },
+   "render": {
+    "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
+    "blur": 7
+   },
+   "note": "blurred beyond reading; the retake path"
+  }
+ ]
+}
