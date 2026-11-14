@@ -15,7 +15,8 @@ if (!password || password.length < 24) throw new Error("HEALTHAPP_PERSONA_PASSWO
 
 const admin = adminClient();
 const marker = { app: "healthapp", env };
-const personas = ["patient", "doctor"] as const;
+// "outsider" is signed in but has no profile: the RLS check proves it reads 0 rows.
+const personas = ["patient", "doctor", "outsider"] as const;
 
 const { data: list, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
 if (listErr) throw listErr;
