@@ -342,7 +342,7 @@ export const slides: Slide[] = [
         { gate: 'The pilot proves three numbers: the buyer names €40 a case or more; 1,000 cases a year or more; €5 cost per case or less', amount: '€400k', buys: 'Months 7 to 18: the first paying hospital, a second hospital, the certification proposal' },
       ],
     },
-    contact: { label: 'Scan or visit', link: 'healthapp-landing.pages.dev', email: '[email]', qr: QR },
+    contact: { label: 'Scan or visit', link: 'healthapp-landing.pages.dev', email: 'hello@onedotatatime.design', qr: QR },
   },
   {
     id: '15', template: 'table', theme: 'air', no: '15', kicker: 'Why the money', notes: N['15'],

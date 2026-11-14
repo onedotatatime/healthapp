@@ -37,7 +37,7 @@ export function TeamAsk({ s }: { s: TeamAskSlide }) {
         <div>
           <small>{s.contact.label}</small>
           <a href={`https://${s.contact.link}`} target="_blank" rel="noreferrer">{s.contact.link}</a>
-          <b>{s.contact.email}</b>
+          <a href={`mailto:${s.contact.email}`}>{s.contact.email}</a>
         </div>
         <img src={s.contact.qr} alt={`QR code to ${s.contact.link}`} />
       </div>
