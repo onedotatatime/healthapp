@@ -13,3 +13,6 @@ Series 1: matches growing as the network grows
    400 records |  33.5% | #################
 Series 2 (wrong/missed per 100 visits): 5.0 -> 4.66
 Series 3 (cost, % of spend):           11.0 -> 10.26
+Matches (records with a match):         0 -> 123
+Assumed effect of a match:              0.1 -> 0.2
+Euro, drop (EUR million, EU-27 2024):   0.0 -> 13571.4   | per inhabitant 0.0 -> 30.15
