@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Camera } from '@phosphor-icons/react';
 import { Link } from 'react-router';
 import { EmptyState, Spinner } from '../../components/Primitives';
 import { ExamRow, type SavedExtras } from './ExamRow';
@@ -60,6 +61,17 @@ function useExamList(api: ExamsApi) {
   return { items, setItems, failed, extras, refresh };
 }
 
+/** The first tile on the patient home: the action of direction 1. The same link and test id the list had (MIN-4587). */
+export function ScanTile() {
+  const { base } = useExams();
+  return (
+    <Link to={`${base}/add`} className="tile primary" data-testid="add-exam-link">
+      <Camera size={26} weight="bold" aria-hidden="true" />
+      Scan an exam
+    </Link>
+  );
+}
+
 /** "My exams": one row per upload, newest first. Saved and not-yet-saved exams share this one list. */
 export function RecordsList() {
   const { api, base } = useExams();
@@ -94,9 +106,8 @@ export function RecordsList() {
 
   return (
     <section data-testid="records">
-      <Link to={`${base}/add`} className="btn primary block" data-testid="add-exam-link">Scan an exam</Link>
-      <h2 style={{ marginTop: 'var(--space-6)' }}>My exams</h2>
-      <div style={{ marginTop: 'var(--space-3)' }}>
+      <h2>My exams</h2>
+      <div>
         {failed && <div className="note caution" data-testid="records-error">We could not load your exams. Reload the page to try again.</div>}
         {!failed && items === null && <Spinner label="Loading your exams" />}
         {items && items.length === 0 && <EmptyState>No exams yet. Scan your first one.</EmptyState>}

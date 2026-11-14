@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { callFunction, supabase } from '../../api/client';
 import { GrantStatusResponse } from '../handshake/contract';
 import { EmptyState, ErrorNote, Spinner } from '../../components/Primitives';
+import { PatientScreen } from '../../components/Shell';
 import { whoLine } from '../handshake/messages';
 import { describe, GRANT_LOG_COLUMNS, GrantLogRow } from './logic';
 
@@ -47,25 +48,27 @@ export function AccessLog() {
   }, []);
   const now = Date.now();
   return (
-    <main className="page" data-testid="access-log">
+    <PatientScreen data-testid="access-log">
       <h1>Who had access</h1>
       <p className="muted">Every doctor who asked to see your record, newest first.</p>
       {failed && <ErrorNote>The list could not be loaded. Check the connection and try again.</ErrorNote>}
       {!entries && !failed && <Spinner label="Loading" />}
       {entries && entries.length === 0 && <EmptyState>No doctor has asked to see your record yet.</EmptyState>}
       {entries && entries.length > 0 && (
-        <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: 'var(--space-4)' }}>
+        <ul className="group">
           {entries.map(({ row, who }) => (
             <li key={row.id} data-testid="access-row">
-              <strong>{who}</strong>
-              <div>{describe(row, now)}</div>
+              <div>
+                <strong>{who}</strong>
+                <div>{describe(row, now)}</div>
+              </div>
             </li>
           ))}
         </ul>
       )}
-      <p style={{ marginTop: 'var(--space-6)' }}>
+      <p style={{ marginTop: 'var(--space-5)' }}>
         <Link className="btn" to="/patient">Back to your record</Link>
       </p>
-    </main>
+    </PatientScreen>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { ErrorNote, Spinner } from '../../components/Primitives';
 import { ProvenanceMark } from '../../components/ProvenanceMark';
+import { PatientScreen } from '../../components/Shell';
 import { useExams } from './context';
 import { OutOfRange } from './Marks';
 import { FIXED_LINE, docMarks, KIND_LABEL, formatDate, isOutOfRange, printedRange, valueString, type RecordFull } from './logic';
@@ -26,8 +27,8 @@ export function RecordView() {
     return () => { live = false; };
   }, [api, id]);
 
-  if (failed) return <main className="page"><ErrorNote tone="caution">We could not open this record.</ErrorNote><p style={{ marginTop: 'var(--space-4)' }}><Link to={home} className="btn block">Back to your record</Link></p></main>;
-  if (!rec) return <main className="page"><Spinner label="Loading" /></main>;
+  if (failed) return <PatientScreen back={home}><ErrorNote tone="caution">We could not open this record.</ErrorNote><p style={{ marginTop: 'var(--space-4)' }}><Link to={home} className="btn block">Back to your record</Link></p></PatientScreen>;
+  if (!rec) return <PatientScreen back={home}><Spinner label="Loading" /></PatientScreen>;
   const d = rec.document;
   if (d.status === 'draft') return <Navigate to={`${base}/${id}/review`} replace />;
 
@@ -44,7 +45,7 @@ export function RecordView() {
   }
 
   return (
-    <main className="page wide" data-testid="record-view">
+    <PatientScreen back={home} className="wide" data-testid="record-view">
       {saved && <div className="saved" role="status" data-testid="saved">Saved to your record.</div>}
       <p><Link to={home} className="back">Back to your record</Link></p>
       <h1>{KIND_LABEL[d.kind]}</h1>
@@ -79,7 +80,7 @@ export function RecordView() {
         })}
       </ul>
 
-      {rec.findings.length > 0 && <h2 style={{ marginTop: 'var(--space-6)' }}>Written in the exam</h2>}
+      {rec.findings.length > 0 && <h2 style={{ marginTop: 'var(--space-5)' }}>Written in the exam</h2>}
       <ul className="rows">
         {rec.findings.map((f) => (
           <li key={f.id} className="rrow" data-testid="finding">
@@ -99,6 +100,6 @@ export function RecordView() {
       <p className="muted small">Unconfirmed, this exam leaves your doctor's view until you save it again.</p>
       </div>
       </div>
-    </main>
+    </PatientScreen>
   );
 }

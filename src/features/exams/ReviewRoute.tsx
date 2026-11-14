@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import type { DocumentDraft } from '../../api/contract';
 import { ErrorNote, Spinner } from '../../components/Primitives';
+import { PatientScreen } from '../../components/Shell';
 import { useExams } from './context';
 import { ReviewPanel } from './ReviewPanel';
 
@@ -23,12 +24,12 @@ export function ReviewRoute() {
 
   if (failed) {
     return (
-      <main className="page">
+      <PatientScreen back={home}>
         <ErrorNote tone="caution">We could not open this exam. It may already be saved or deleted.</ErrorNote>
         <p style={{ marginTop: 'var(--space-4)' }}><Link to={home} className="btn block">Back to my exams</Link></p>
-      </main>
+      </PatientScreen>
     );
   }
-  if (!draft || !photo) return <main className="page"><Spinner label="Loading" /></main>;
+  if (!draft || !photo) return <PatientScreen back={home}><Spinner label="Loading" /></PatientScreen>;
   return <ReviewPanel draft={draft} photoUrl={photo} backTo={home} onRetake={() => nav(`${base}/add`)} onSaved={(docId) => nav(`${base}/${docId}`, { state: { saved: true } })} />;
 }
