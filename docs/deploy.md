@@ -119,7 +119,17 @@ Not the demo app. A separate static page plus two Edge Functions. CTO decisions 
 
 **Anon key.** The fragment also carries conductor's public anon key (`&a=…`), so no JWT is ever tracked in the repo (CTO decision 2, MIN-4458). If conductor's legacy anon key is rotated or disabled, rerun `dashboard/install.sh` (no `--rotate`) and reopen the new link.
 
-**Pages order (no real content before Access answers, CTO decision 3):**
+**Which state applies (CTO decision on MIN-4458, 14 Nov 2026, after the founder's "Yes, go live now").** Two states; the bundle and the open order follow the state.
+
+| | Access off (now) | Access proven on |
+| --- | --- | --- |
+| Gate | The view key alone. The page shell is public; the data stays behind the feed (401 without the view key and the anon JWT) | Access, then the view key |
+| Upload set | **Stripped.** `pages-bundle.sh` writes same-shape stubs for `shared/content.js` (no workshop or deck text) and `sample-data.js` (only the four build times and the two cap pairs), and removes from the bundled `shared/common.js` the local deck path, the sample event log, the facilitator, ticket and Linear link. The source files are unchanged. The bundle fails on `/Users/` or `file://` anywhere, a stub over 2 KB, or an issue id in a stub or outside a comment in `common.js` | The full bundle (workshops and decks) may be uploaded, only after the Access curls below and `install.sh --rotate` (CTO change 6; a separate script change) |
+| Open order | The founder opens the clipboard link **directly**. The "bare URL and PIN first" order is suspended: with no Access redirect, the fragment never leaves our origin | First the bare `https://healthapp-dashboard.pages.dev/` and the Access PIN, **then** the clipboard link (step 6 below) |
+
+**Never, while Access is off:** a full bundle on any branch. Every Pages deployment stays reachable at its hash URL, so a wrong upload is deleted at once (`npx wrangler pages deployment delete <id> --project-name healthapp-dashboard`), with no question to anyone (CTO change 4). After each upload, curl `shared/content.js`, `sample-data.js` and `shared/common.js` on the production host and on the new hash URL: the sizes match the local stub bundle, and neither stub contains `/Users/` or an issue id. The link is never pasted into Linear, Slack, a chat or a screenshot; if it is, `install.sh --rotate` the same hour (CTO change 7).
+
+**Pages order with Access (no real content before Access answers, CTO decision 3; steps 2, 3, 6 and the Access curl in step 4 are suspended while Access is off):**
 1. Release creates the Pages project `healthapp-dashboard` and deploys a placeholder page (no dashboard content). Run the create **from an empty folder, with `--force`**: from wrangler 4.162, `wrangler pages project create` is delegated to Workers by default, writes a `wrangler.jsonc` in the current folder, picks up any static folder it finds there and publishes it on `*.workers.dev` without creating a Pages project (MIN-4459, 14 Nov 2026: the bundle was public for about 2 minutes before it was caught and the Worker deleted). Pass every upload folder as an **absolute path**. After any create or deploy, curl the printed URL and check `npx wrangler pages project list` before the next step.
 2. The founder turns on Access for the production host and the previews (steps on MIN-4456, "The minimum from the founder").
 3. Release proves the redirect without credentials, on production and on a preview: `curl -sI https://healthapp-dashboard.pages.dev/` and `curl -sI https://<preview>.healthapp-dashboard.pages.dev/` answer a redirect to `*.cloudflareaccess.com` or 403, never 200. Pasted on MIN-4459.
