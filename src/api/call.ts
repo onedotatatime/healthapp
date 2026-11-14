@@ -49,11 +49,17 @@ export function makeCall(env: OkEnv, fetchImpl: typeof fetch = (...a) => fetch(.
       /* not JSON */
     }
     if (!res.ok) {
-      const msg = json && typeof json === 'object' && 'error' in json ? String((json as { error: unknown }).error) : `HTTP ${res.status}`;
+      const msg = json && typeof json === 'object' && 'error' in json ? errorMessage((json as { error: unknown }).error) : `HTTP ${res.status}`;
       throw new ApiError(res.status, msg);
     }
     const parsed = schema.safeParse(json);
     if (!parsed.success) throw new ApiError(res.status, `Unexpected response from ${name}.`);
     return parsed.data;
   };
+}
+
+/** The server sends `{ error: { code, message } }`; fall back to a plain string. */
+function errorMessage(e: unknown): string {
+  if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message);
+  return String(e);
 }

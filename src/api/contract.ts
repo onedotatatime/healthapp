@@ -13,7 +13,11 @@ export type Role = z.infer<typeof Role>;
 export const DemoLoginRequest = z.object({ persona: Role, passcode: z.string().min(1) });
 export type DemoLoginRequest = z.infer<typeof DemoLoginRequest>;
 export const DemoLoginResponse = z.object({
-  session: z.object({ access_token: z.string().min(1), refresh_token: z.string().min(1) }),
+  access_token: z.string().min(1),
+  refresh_token: z.string().min(1),
+  expires_at: z.number().int(), // unix seconds
+  user_id: z.string(),
+  persona: z.enum(['patient', 'doctor']),
   role: Role,
 });
 export type DemoLoginResponse = z.infer<typeof DemoLoginResponse>;
@@ -22,7 +26,7 @@ export type DemoLoginResponse = z.infer<typeof DemoLoginResponse>;
 export const Profile = z.object({
   id: z.string(),
   role: Role,
-  display_name: z.string().nullish(),
+  full_name: z.string(),
 });
 export type Profile = z.infer<typeof Profile>;
 
