@@ -3,18 +3,18 @@
 | | |
 |---|---|
 | **Owner** | Anna Lytica (Marketing), MIN-4429. Deck story: CEO (MIN-4425). Design: Pix (MIN-4428), next. |
-| **Version** | **v3.3, 14 Nov 2026** (MIN-4503: slide 6b, the "Concept render" tag removed and the encryption point added; founder: "remove the concept render -> and mention that this device has our own encrypted software for the data so they are not in the cloud"; the eyebrow "Concept · not built" stays). v3.2, 14 Nov 2026 (MIN-4503: new slide 6b, Pathien Vault, a concept device for patients who want maximum privacy; founder: "what if someone that want's his privacy can buy our device that can hold his data. Anna and pix work on this and add one slide with a very super elegant image with our device that looks very premioum"; no other slide renumbered). v3.1, 14 Nov 2026 (MIN-4503: team and ask from the CEO plan v2, `docs/business/team-and-funding-plan.md` §7; slide 14 replaced, slide 15 new; founder: "put it in the deck when ready"). v3, 14 Nov 2026 (MIN-4503: name Pathien; new slide 11, revenue years 1 to 3, on the founder's ask "the numbers of how many money we can earn" and "Yes, update to v3"; Appendix A's SOM retired for the bottom-up line; demo slides say what is real and what is synthetic). v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
+| **Version** | **v3.4, 14 Nov 2026** (MIN-4462: every insurer mention removed from slides 6, 6b, 10, 11, 13 and both scripts; founder: "remove the never insurers -> not sure about this", then "Drop every insurer mention"; the internal data rule is unchanged). v3.3, 14 Nov 2026 (MIN-4503: slide 6b, the "Concept render" tag removed and the encryption point added; founder: "remove the concept render -> and mention that this device has our own encrypted software for the data so they are not in the cloud"; the eyebrow "Concept · not built" stays). v3.2, 14 Nov 2026 (MIN-4503: new slide 6b, Pathien Vault, a concept device for patients who want maximum privacy; founder: "what if someone that want's his privacy can buy our device that can hold his data. Anna and pix work on this and add one slide with a very super elegant image with our device that looks very premioum"; no other slide renumbered). v3.1, 14 Nov 2026 (MIN-4503: team and ask from the CEO plan v2, `docs/business/team-and-funding-plan.md` §7; slide 14 replaced, slide 15 new; founder: "put it in the deck when ready"). v3, 14 Nov 2026 (MIN-4503: name Pathien; new slide 11, revenue years 1 to 3, on the founder's ask "the numbers of how many money we can earn" and "Yes, update to v3"; Appendix A's SOM retired for the bottom-up line; demo slides say what is real and what is synthetic). v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
 | **Event** | Gen AI Summit Hackathon, Athens LifeTech Park, Biotech & AI track |
 | **Market** | Global. Founder: "Dont focus on the greek market. we need to focus on global market" |
 | **Sources** | Only `docs/research/` (Sales). Each number carries a source ID from the table at the end (S1 to S22; S21 and S22, added in v3.2, are retail price anchors for slide 6b found by Marketing, not by Sales) and its status from the research: **verified**, **secondary**, or **assumption**. Nothing from the research's "Do not put on a slide" list is used. |
-| **Skills** | c-level-skills:board-deck-builder, marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, competitor-alternatives (v1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v2); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer (v3); marketing-strategy-pmm, copywriting, copy-editing, brand-review (v3.1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v3.2) |
+| **Skills** | c-level-skills:board-deck-builder, marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, competitor-alternatives (v1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v2); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer (v3); marketing-strategy-pmm, copywriting, copy-editing, brand-review (v3.1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v3.2); marketing-strategy-pmm, copywriting, copy-editing, brand-review, content-humanizer (v3.4) |
 
 **Rules this deck keeps (check them again after any edit):**
 
 1. The patient side never diagnoses. The words "diagnosis" or "diagnose" never describe what the app does for a patient. Only the doctor sees possibilities, and they are labelled "for the doctor to evaluate".
 2. No data is sold. Possible matches are opt-in, unnamed, and can be withdrawn. Research use is "later, consent-gated", never a revenue line called data.
 3. No health data on any blockchain. We say "signed log of fingerprints and access grants".
-4. Insurers: never a buyer, never a reader.
+4. Insurers are not mentioned on any slide (founder, 14 Nov). Internal data rule unchanged: insurers never see records.
 5. Pilot names are **targets. Nobody has been contacted.** The slide says so.
 6. The product is **Pathien** (founder, 14 Nov 2026). Trademark clearance is pending, so no ™ or ® on any slide (section "Name").
 7. **Revenue is never framed as earning from diagnoses.** Hospitals and clinics pay per case or per seat for the complete, cited history, which leads to better first decisions and fewer repeated tests. Words to avoid on slide 11 and in the scripts: "diagnosis revenue", "paid per diagnosis", "we earn from better diagnoses".
@@ -22,7 +22,7 @@
 
 **Story (v2, founder 14 Nov):** "help people get rid of their 'google is my doctor' habit" and "save the industry lots of money by helping doctors make the best decisions". Digitising paper is the means, never the headline. The national file (Greece's MyHealth) is a neighbour, not a rival: we carry what it does not hold.
 
-**Brand note for Pix (v3):** The product is **Pathien**. Logo: the "p" is the symbol; its foot becomes a path that runs under the whole word and ends in one coral dot, where the dotless "i"'s dot would be. The path leads to the patient. Use `docs/brand/logo/pathien-lockup.svg` on light slides and `pathien-lockup-white.svg` on teal-night; never retype the wordmark (it is outlined Plus Jakarta Sans; slide type is Manrope). Colours and tokens: `docs/brand/brand-guidelines.md` and `docs/brand/tokens.css`. Coral is fill only. No red anywhere, including the "Never: Insurers" row and the revenue slide. No ™ or ® until the trademark check clears.
+**Brand note for Pix (v3):** The product is **Pathien**. Logo: the "p" is the symbol; its foot becomes a path that runs under the whole word and ends in one coral dot, where the dotless "i"'s dot would be. The path leads to the patient. Use `docs/brand/logo/pathien-lockup.svg` on light slides and `pathien-lockup-white.svg` on teal-night; never retype the wordmark (it is outlined Plus Jakarta Sans; slide type is Manrope). Colours and tokens: `docs/brand/brand-guidelines.md` and `docs/brand/tokens.css`. Coral is fill only. No red anywhere, including the revenue slide. No ™ or ® until the trademark check clears.
 
 **Arc (16 slides + 1 backup):** story → problem → why now → product → live demo → privacy → **the Vault, a concept for maximum privacy (slide 6b, new in v3.2)** → possible matches → impact → competition → who pays → **what we can earn (new in v3)** → go-to-market → **regulatory path (the closing content slide, founder: "We need to add it at a pitching deck as something at the end")** → **team today and what I ask** → **why: four people and a research partner (new in v3.1)**. Backup: Appendix A, market sizing.
 
@@ -134,20 +134,19 @@ Footer: Synthetic patient. Synthetic exams. No real health data.
 
 ## Slide 6: Privacy by design
 
-**Headline:** The patient holds the key. The log holds only fingerprints. Insurers hold nothing.
+**Headline:** The patient holds the key. The log holds only fingerprints.
 
 **Body:**
 - **By design, the key is on the patient's phone.** Records are stored encrypted. Without the patient, nobody reads them, including us. *(Demo: the key sits on our server tonight; slide 5.)*
 - **In person, for a set time.** A doctor gets in only by scanning the patient's code and getting a yes. Access ends by itself, or earlier with one tap.
 - **A log nobody can edit.** Every access is written to a signed, chained log the patient can read. The log holds fingerprints of documents and access grants. No health data ever goes on a chain.
-- **Never insurers.** No insurer account, no insurer export, no insurer as a customer.
 - **No diagnosis for the patient.** The patient side has no AI question box at all.
 
-**Visual note for Pix:** Centre: the patient's phone with a key icon. Around it, four short labels. One crossed-out icon for "Insurer". Keep it calm and plain; no padlock clip-art walls.
+**Visual note for Pix:** Centre: the patient's phone with a key icon. Around it, four short labels. Keep it calm and plain; no padlock clip-art walls.
 
-**Speaker notes (~30 s):** "We designed privacy in from the first line. The key lives on the patient's device. A doctor gets in only face to face, only with a yes, and only for a set time. Every access goes into a log the patient can read and nobody can edit; the log holds fingerprints, never health data. And insurers never get in. Not as readers, not as buyers. That is a product rule, not a setting."
+**Speaker notes (~30 s):** "We designed privacy in from the first line. The key lives on the patient's device. A doctor gets in only face to face, only with a yes, and only for a set time. Every access goes into a log the patient can read and nobody can edit; the log holds fingerprints, never health data. Those are product rules, not settings."
 
-**Sources:** `PRD.md` section 7 (principles P1 to P10). Q23 answered by `docs/submission/project-details.md` (S20): the signed log, the time-limited access, the no-insurer rule and the patient-side refusal run for real; the key on the phone is the design and sits on our server in the demo, so that line says "by design".
+**Sources:** `PRD.md` section 7 (principles P1 to P10). Q23 answered by `docs/submission/project-details.md` (S20): the signed log, the time-limited access and the patient-side refusal run for real; the key on the phone is the design and sits on our server in the demo, so that line says "by design".
 
 ---
 
@@ -192,7 +191,7 @@ The founder asked for it (14 Nov 2026, verbatim): *"what if someone that want's 
 
 **Price, as an assumption.** About **€249 once** for the device, plus an optional encrypted-backup subscription at a price we have not set. Anchors (secondary, retail listings, Nov 2026): a hardware wallet that holds only keys sells for about $99 to $149 (Ledger Nano X); a two-bay personal storage box sells for about €300 to €415 without disks (Synology DS224+). The Vault holds more than a key and less than a home server, so it sits between them. No revenue line: this is an option for a privacy-first segment, not part of slide 11.
 
-**Sources:** S21 (Ledger Nano X retail prices, secondary); S22 (Synology DS224+ retail prices, secondary). Founder's words above. Rules 1, 3, 4 and 8 kept: no diagnosis, nothing on a chain, no insurers, the concept labelled.
+**Sources:** S21 (Ledger Nano X retail prices, secondary); S22 (Synology DS224+ retail prices, secondary). Founder's words above. Rules 1, 3 and 8 kept: no diagnosis, nothing on a chain, the concept labelled.
 
 ---
 
@@ -270,7 +269,7 @@ Formula for questions (do not read out): savings a year = cost base × share avo
 
 ## Slide 10: Business model, who pays
 
-**Headline:** The patient never pays. The insurer never sees. Hospitals pay for a better first decision and fewer repeated tests.
+**Headline:** The patient never pays. Hospitals pay for a better first decision and fewer repeated tests.
 
 **Body:**
 
@@ -281,13 +280,12 @@ Formula for questions (do not read out): savings a year = cost base × share avo
 | Year 1 | Rare-disease networks | A pilot where possible matches matter most | Free pilot, grant-funded |
 | Year 1 | Lab networks | Results the patient carries, marked "Verified by source" | Partnership |
 | Year 2+ | National health-data agencies | A patient-held layer next to the national record | Tender, sandbox |
-| **Never** | **Insurers** | | **Excluded by design** |
 
 Footer: Models are hypotheses for pilots to test. Prices and volumes on slide 11 are assumptions.
 
-**Visual note for Pix:** Simple table, the "Never: Insurers" row visually separated (a rule above it, muted colour). The first row gets the accent: it is the wedge.
+**Visual note for Pix:** Simple table. The first row gets the accent: it is the wedge.
 
-**Speaker notes (~25 s):** "The patient is free. Insurers are excluded, by design. The first buyer is the hospital that treats patients from abroad: their records arrive in other languages, on paper, or not at all, and the hospital already asks for them before the trip. Clinic chains pay per doctor seat. Rare-disease networks are our free pilots. Later, national agencies. Research use, if ever, is opt-in and never a data sale."
+**Speaker notes (~25 s):** "The patient is free. The first buyer is the hospital that treats patients from abroad: their records arrive in other languages, on paper, or not at all, and the hospital already asks for them before the trip. Clinic chains pay per doctor seat. Rare-disease networks are our free pilots. Later, national agencies. Research use, if ever, is opt-in and never a data sale."
 
 **Sources:** `buyers.md` §1 and §5. Grants for rare-disease pilots and tenders with national agencies are not counted as revenue on slide 11.
 
@@ -324,7 +322,7 @@ The founder asked for it on the main deck (14 Nov 2026): *"let's see the pitchin
 
 **"A fraction of what they save", the arithmetic** *(our estimate, shown small on the slide)*: slide 8 says better records could save **€4M (conservative) to €75M (upside) a year on tests, in Greece alone**. Our year-3 revenue from every customer in every country is **€0.56M to €4.85M**: about **14%** of the conservative saving and about **6%** of the upside one. Savings outside Greece and the savings on diagnostic error itself are not counted, so the real ratio is smaller.
 
-Not counted: rare-disease pilots (free, grant-funded), national agencies (tenders, year 2+), research use (later, consent-gated, never a data sale), insurers (never).
+Not counted: rare-disease pilots (free, grant-funded), national agencies (tenders, year 2+), research use (later, consent-gated, never a data sale).
 
 Footer, required: Our estimate. Every price, customer count and volume is an assumption for the pilots to test. Not a forecast. We never earn from a diagnosis: Pathien never makes one.
 
@@ -376,7 +374,7 @@ Footer, required: Named organisations are targets from public research. None has
 | **2. The network** | Opt-in possible matches, doctor-to-doctor contact | **GDPR** explicit consent. **EHDS** gives the lawful route for research use. Our rule is stricter: opt-in only. |
 | **3. Decision support** | "Possibilities for the doctor to evaluate" | **EU MDR**: medical-device software, certified with a notified body. **EU AI Act**: high-risk obligations follow. **US FDA**: clinical decision-support guidance. |
 
-Footer: Every step keeps the same rules: no diagnosis to patients, no health data on a chain, no insurers.
+Footer: Every step keeps the same rules: no diagnosis to patients, no health data on a chain.
 
 **Visual note for Pix:** Three ascending steps, left to right, each with its "ships" line and its law badges (GDPR, HIPAA, EHDS, MDR, AI Act, FDA). Step 3 carries a small "certification" seal outline. Calm, confident; not a warning slide, no red.
 
@@ -501,7 +499,7 @@ The v2 name proposals (Anamna, Strand, Histra) are retired; their reasoning stay
 >
 > *(Demo, about 60 seconds.)* Maria photographs a blood test: date, lab, every value with its range. She tries to add her husband's exam: refused, not her name. At the orthopaedist she shows this DNA code, he scans, she approves, and a timer starts. He asks: "Has her CRP been raised before?" Dates, values, and each one links to the exam it came from. He asks for possibilities, and the assistant puts the orthopaedic and the rheumatology findings side by side, each with its source, for the doctor to evaluate. Time ends, his screen closes, and Maria sees who looked.
 >
-> Three rules hold everywhere. The patient holds the key. The patient never gets a diagnosis from us. Insurers never see a thing.
+> Two rules hold everywhere. The patient holds the key. The patient never gets a diagnosis from us.
 >
 > Why it matters: the OECD puts the cost of diagnostic error at 17.5 percent of health spending. In Greece that is about three and a half billion euros a year. We start with the smallest slice, repeated and unnecessary tests: on our estimate, 4 to 75 million euros a year in Greece alone, depending on adoption.
 >
@@ -515,7 +513,7 @@ The v2 name proposals (Anamna, Strand, Histra) are retired; their reasoning stay
 
 ## Pitch script: 30 seconds (about 90 words)
 
-> Up to 15 percent of diagnoses are wrong or late, and half of us ask Google before a doctor. Both happen because the history never reaches one desk. Pathien puts it there: the patient adds every exam once, and lets a doctor in by a DNA-shaped handshake. The doctor asks, and every answer shows its source. Patients never get a diagnosis from us. Insurers never see it. Hospitals pay per case or per seat, a small share of what better first decisions save: in Greece, diagnostic error costs about €3.5bn a year.
+> Up to 15 percent of diagnoses are wrong or late, and half of us ask Google before a doctor. Both happen because the history never reaches one desk. Pathien puts it there: the patient adds every exam once, and lets a doctor in by a DNA-shaped handshake. The doctor asks, and every answer shows its source. Patients never get a diagnosis from us. Hospitals pay per case or per seat, a small share of what better first decisions save: in Greece, diagnostic error costs about €3.5bn a year.
 
 ---
 
@@ -523,7 +521,7 @@ The v2 name proposals (Anamna, Strand, Histra) are retired; their reasoning stay
 
 | # | Question | Owner |
 |---|---|---|
-| Q23 | **Answered** by `docs/submission/project-details.md` (S20): signed log, time-limited access and the no-insurer rule run for real; the key sits on our server in the demo. Slides 5 and 6 updated. | Backend, CTO |
+| Q23 | **Answered** by `docs/submission/project-details.md` (S20): signed log and time-limited access run for real; the key sits on our server in the demo. Slides 5 and 6 updated. | Backend, CTO |
 | Q24 | **Answered for revenue** (founder, 14 Nov, verbatim: "the numbers of how many money we can earn based on good diagnoses?", then "Yes, update to v3"). The revenue line is on the main deck (slide 11), framed per case and per seat, never per diagnosis. SOM retired; TAM and SAM stay in Appendix A as a ceiling, for questions only. Open: whether Appendix A is shown at all. | Founder (revenue); CEO, with Sales (Appendix A) |
 | Q25 | Sheba ARC's reported sale: confirm before slide 12 names it. | Sales |
 | Q26 | **Answered in v3.1** by the CEO plan v2 and the founder's "put it in the deck when ready": slide 13 stays the closing content slide; team and ask follow as slides 14 and 15. | CEO, founder |

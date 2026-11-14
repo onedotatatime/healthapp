@@ -94,7 +94,6 @@ Your health history is scattered across paper, drawers and different doctors' of
 - Answers are cited and checked.
 - No AI interpretation for patients.
 - You see every access.
-- Insurers never see records.
 
 ## roadmap
 

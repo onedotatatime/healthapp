@@ -73,7 +73,7 @@ export type StatementSide =
       clock: { when: string; what: string }[];
     }
   | { kind: 'notice'; tag: DemoTag; blocks: { label: string; text: string }[] }
-  | { kind: 'phone'; caption: string; tag: DemoTag; crossed: string }
+  | { kind: 'phone'; caption: string; tag: DemoTag; crossed?: string }
   | { kind: 'matches'; pattern: { title: string; sub: string }; optIn: string; tag: DemoTag; contact: string };
 
 export interface StatementSlide extends SlideBase {

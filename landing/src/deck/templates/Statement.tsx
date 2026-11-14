@@ -58,7 +58,7 @@ function Side({ side, callout }: { side: StatementSide; callout?: StatementSlide
             <p>{rich(side.caption)}</p>
           </div>
           <Tag>{side.tag}</Tag>
-          <span className="crossed-chip">{side.crossed}</span>
+          {side.crossed && <span className="crossed-chip">{side.crossed}</span>}
         </aside>
       );
     case 'matches': {

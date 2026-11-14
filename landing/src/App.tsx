@@ -30,7 +30,7 @@ const tech = [
   ['Access that expires.', 'Time-limited access is enforced in the database.'],
   ['A log you can read.', 'Signed, hash-chained, and readable by the patient.']
 ];
-const promises = ['Answers are cited and checked.', 'No AI interpretation for patients.', 'You see every access.', 'Insurers never see records.'];
+const promises = ['Answers are cited and checked.', 'No AI interpretation for patients.', 'You see every access.'];
 const future = ['the key on your phone, so we cannot read records at rest.', "the model sees one request's facts, without your name.", 'records verified by the lab that issued them.'];
 
 const Check = () => (

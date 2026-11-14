@@ -45,7 +45,7 @@ A phone app for the patient and a screen for the doctor.
 
 ## What is real and what is simulated
 
-Real: reading photos into values; the identity match; the time-limited, patient-approved access enforced by the database; the signed log of fingerprints and grants; encryption at rest by the platform; cited answers; no insurer account type, no export; the server refusing interpretation on the patient side.
+Real: reading photos into values; the identity match; the time-limited, patient-approved access enforced by the database; the signed log of fingerprints and grants; encryption at rest by the platform; cited answers; no export; the server refusing interpretation on the patient side.
 
 Simulated or seeded: the encryption key sits on our server, not on the patient's phone (the product design puts it on the phone); the "verified by source" lab is our own demo lab (the signature check itself is real); possible matches come from a seeded synthetic set and doctor-to-doctor contact is simulated; the model provider sees the demo data.
 
@@ -55,7 +55,7 @@ Pilots, partners and regulators: none. Nobody has been contacted.
 
 - The patient side never diagnoses and shows nothing interpretive. There is no AI question box for patients. The only fixed text is: "If this is an emergency, call 112."
 - The doctor's assistant answers only from the patient's record and shows its sources. Any possibilities are for the doctor to evaluate.
-- Insurers never get access, as readers or as buyers. No data is sold.
+- No data is sold.
 - Possible matches are opt-in, off by default, unnamed, and can be withdrawn.
 - Our AI agents never read real patient data.
 
