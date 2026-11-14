@@ -307,6 +307,23 @@ strong{font-weight:700}
 .ap-row.total{background:var(--mint-soft);font-weight:700}
 .ap-table p{margin-top:22px;font-size:24px;line-height:30px}
 
+
+/* ---- Hero: full-bleed image, text column on the empty side, required concept tag ---- */
+.t-hero{position:absolute;inset:0}
+.hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:right center}
+.hero-col{position:absolute;left:120px;top:0;width:790px}
+.t-hero .slide-h{position:static;display:block;width:720px;margin-top:128px;font-size:58px;line-height:1.04;letter-spacing:-.02em}
+.hero-body{margin-top:30px;font-size:28px;line-height:36px;font-weight:400;color:var(--ink)}
+.hero-points{list-style:none;margin:38px 0 0;padding:0}
+.hero-points li{border-left:8px solid var(--teal);padding:2px 0 2px 20px;margin-bottom:16px;font-size:24px;line-height:30px;color:var(--ink);border-radius:2px}
+.hero-points strong{color:var(--ink);font-weight:700}
+.hero-flag{color:var(--teal);font-weight:700}
+.hero-tag{position:absolute;left:1303px;top:900px}
+.hero-lock{position:absolute;right:120px;bottom:42px;display:flex;align-items:baseline;gap:20px}
+.hero-lockup{width:150px}
+.hero-suffix{font-size:34px;font-weight:500;letter-spacing:-.01em;color:var(--ink)}
+.t-hero-slide .slide-foot{width:1290px;bottom:40px;font-size:22px}
+
 /* ---- Presenter chrome (never printed) ---- */
 .hud{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;gap:18px;padding:6px 16px;background:rgba(4,26,27,.72);color:#e7f3f2;font-size:14px;border-radius:999px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:5}
 .hud.on{opacity:1}

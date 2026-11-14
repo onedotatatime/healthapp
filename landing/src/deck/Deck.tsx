@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Slide } from './types';
 import { Lockup, typo } from './util';
-import { Appendix, Chart, Compare, Cover, Funnel, Product, Statement, Stats, Steps, Table, TeamAsk } from './templates';
+import { Appendix, Chart, Compare, Cover, Funnel, Hero, Product, Statement, Stats, Steps, Table, TeamAsk } from './templates';
 
 const W = 1920;
 const H = 1080;
@@ -9,6 +9,7 @@ const H = 1080;
 function SlideBody({ s }: { s: Slide }) {
   switch (s.template) {
     case 'cover': return <Cover s={s} />;
+    case 'hero': return <Hero s={s} />;
     case 'stats': return <Stats s={s} />;
     case 'statement': return <Statement s={s} />;
     case 'funnel': return <Funnel s={s} />;
@@ -25,6 +26,7 @@ function SlideBody({ s }: { s: Slide }) {
 function SlideView({ s, counter, current }: { s: Slide; counter?: string; current: boolean }) {
   const isCover = s.template === 'cover';
   const topLockup = s.template === 'teamask';
+  const isHero = s.template === 'hero';
   return (
     <section
       className={`slide theme-${s.theme} t-${s.template}-slide ${current ? 'is-current' : ''}`}
@@ -40,22 +42,24 @@ function SlideView({ s, counter, current }: { s: Slide; counter?: string; curren
       )}
       <SlideBody s={s} />
       {s.footer && <p className="slide-foot">{typo(s.footer)}</p>}
-      {!isCover && !topLockup && <Lockup theme={s.theme} className="foot-lockup" />}
+      {!isCover && !topLockup && !isHero && <Lockup theme={s.theme} className="foot-lockup" />}
     </section>
   );
 }
 
-const parseHash = (n: number) => {
+// The hash is the slide id: #1 ... #15, #6b, #16 (backup) or #a. Anything else falls back to the first slide.
+const parseHash = (slides: Slide[]) => {
   const h = window.location.hash.replace('#', '').toLowerCase();
-  if (h === 'a' || h === 'appendix') return n - 1;
-  const v = parseInt(h, 10);
-  return Number.isFinite(v) ? Math.min(Math.max(v, 1), n) - 1 : 0;
+  if (h === 'a' || h === 'appendix') return slides.length - 1;
+  const i = slides.findIndex((s) => s.id.toLowerCase() === h);
+  return i >= 0 ? i : 0;
 };
 
 export function Deck({ slides }: { slides: Slide[] }) {
   const n = slides.length;
-  const total = slides.filter((s) => !s.backup).length;
-  const [index, setIndex] = useState(() => parseHash(n));
+  const numbered = slides.filter((s) => !s.backup && !s.counter);
+  const total = numbered.length;
+  const [index, setIndex] = useState(() => parseHash(slides));
   const [scale, setScale] = useState(1);
   const [notes, setNotes] = useState(false);
   const [hud, setHud] = useState(true);
@@ -67,15 +71,15 @@ export function Deck({ slides }: { slides: Slide[] }) {
 
   // URL hash <-> slide
   useEffect(() => {
-    const target = `#${index + 1}`;
+    const target = `#${slides[index].id}`;
     if (window.location.hash !== target) window.history.replaceState(null, '', target);
-    document.title = `Pathien | Pitch deck | ${index + 1} / ${n}`;
-  }, [index, n]);
+    document.title = `Pathien | Pitch deck | ${slides[index].counter ?? index + 1} / ${n}`;
+  }, [index, n, slides]);
   useEffect(() => {
-    const onHash = () => setIndex(parseHash(n));
+    const onHash = () => setIndex(parseHash(slides));
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
-  }, [n]);
+  }, [slides]);
 
   // Fit 16:9 into any viewport, letterboxed
   useEffect(() => {
@@ -132,17 +136,18 @@ export function Deck({ slides }: { slides: Slide[] }) {
   };
 
   const cur = slides[index];
-  const counterFor = (s: Slide, i: number) => {
+  const counterFor = (s: Slide) => {
     if (s.template === 'cover') return undefined;
     if (s.backup) return 'Backup';
-    return `${i + 1} / ${total}`;
+    if (s.counter) return s.counter;
+    return `${numbered.indexOf(s) + 1} / ${total}`;
   };
 
   return (
     <div className="stage" onClick={onStageClick}>
       <div className={`frame ${pinned ? 'pinned' : ''}`} style={pinned ? undefined : { transform: `translate(-50%, -50%) scale(${scale})` }}>
         {slides.map((s, i) => (
-          <SlideView key={s.id} s={s} counter={counterFor(s, i)} current={i === index} />
+          <SlideView key={s.id} s={s} counter={counterFor(s)} current={i === index} />
         ))}
       </div>
 
@@ -154,7 +159,7 @@ export function Deck({ slides }: { slides: Slide[] }) {
       {notes && (
         <aside className="notes" role="complementary" aria-label="Speaker notes">
           <header>
-            <b>Speaker notes · slide {index + 1}</b>
+            <b>Speaker notes · slide {cur.counter ?? cur.id}</b>
             <button type="button" onClick={() => setNotes(false)} aria-label="Close notes">Close (N)</button>
           </header>
           {cur.notes.map((p, i) => <p key={i}>{typo(p)}</p>)}

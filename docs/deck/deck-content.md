@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Owner** | Anna Lytica (Marketing), MIN-4429. Deck story: CEO (MIN-4425). Design: Pix (MIN-4428), next. |
-| **Version** | **v3.1, 14 Nov 2026** (MIN-4503: team and ask from the CEO plan v2, `docs/business/team-and-funding-plan.md` §7; slide 14 replaced, slide 15 new; founder: "put it in the deck when ready"). v3, 14 Nov 2026 (MIN-4503: name Pathien; new slide 11, revenue years 1 to 3, on the founder's ask "the numbers of how many money we can earn" and "Yes, update to v3"; Appendix A's SOM retired for the bottom-up line; demo slides say what is real and what is synthetic). v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
+| **Version** | **v3.2, 14 Nov 2026** (MIN-4503: new slide 6b, Pathien Vault, a concept device for patients who want maximum privacy; founder: "what if someone that want's his privacy can buy our device that can hold his data. Anna and pix work on this and add one slide with a very super elegant image with our device that looks very premioum"; no other slide renumbered). v3.1, 14 Nov 2026 (MIN-4503: team and ask from the CEO plan v2, `docs/business/team-and-funding-plan.md` §7; slide 14 replaced, slide 15 new; founder: "put it in the deck when ready"). v3, 14 Nov 2026 (MIN-4503: name Pathien; new slide 11, revenue years 1 to 3, on the founder's ask "the numbers of how many money we can earn" and "Yes, update to v3"; Appendix A's SOM retired for the bottom-up line; demo slides say what is real and what is synthetic). v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
 | **Event** | Gen AI Summit Hackathon, Athens LifeTech Park, Biotech & AI track |
 | **Market** | Global. Founder: "Dont focus on the greek market. we need to focus on global market" |
-| **Sources** | Only `docs/research/` (Sales). Each number carries a source ID from the table at the end (S1 to S17) and its status from the research: **verified**, **secondary**, or **assumption**. Nothing from the research's "Do not put on a slide" list is used. |
-| **Skills** | c-level-skills:board-deck-builder, marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, competitor-alternatives (v1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v2); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer (v3); marketing-strategy-pmm, copywriting, copy-editing, brand-review (v3.1) |
+| **Sources** | Only `docs/research/` (Sales). Each number carries a source ID from the table at the end (S1 to S22; S21 and S22, added in v3.2, are retail price anchors for slide 6b found by Marketing, not by Sales) and its status from the research: **verified**, **secondary**, or **assumption**. Nothing from the research's "Do not put on a slide" list is used. |
+| **Skills** | c-level-skills:board-deck-builder, marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, competitor-alternatives (v1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v2); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer (v3); marketing-strategy-pmm, copywriting, copy-editing, brand-review (v3.1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v3.2) |
 
 **Rules this deck keeps (check them again after any edit):**
 
@@ -24,7 +24,7 @@
 
 **Brand note for Pix (v3):** The product is **Pathien**. Logo: the "p" is the symbol; its foot becomes a path that runs under the whole word and ends in one coral dot, where the dotless "i"'s dot would be. The path leads to the patient. Use `docs/brand/logo/pathien-lockup.svg` on light slides and `pathien-lockup-white.svg` on teal-night; never retype the wordmark (it is outlined Plus Jakarta Sans; slide type is Manrope). Colours and tokens: `docs/brand/brand-guidelines.md` and `docs/brand/tokens.css`. Coral is fill only. No red anywhere, including the "Never: Insurers" row and the revenue slide. No ™ or ® until the trademark check clears.
 
-**Arc (15 slides + 1 backup):** story → problem → why now → product → live demo → privacy → possible matches → impact → competition → who pays → **what we can earn (new in v3)** → go-to-market → **regulatory path (the closing content slide, founder: "We need to add it at a pitching deck as something at the end")** → **team today and what I ask** → **why: four people and a research partner (new in v3.1)**. Backup: Appendix A, market sizing.
+**Arc (16 slides + 1 backup):** story → problem → why now → product → live demo → privacy → **the Vault, a concept for maximum privacy (slide 6b, new in v3.2)** → possible matches → impact → competition → who pays → **what we can earn (new in v3)** → go-to-market → **regulatory path (the closing content slide, founder: "We need to add it at a pitching deck as something at the end")** → **team today and what I ask** → **why: four people and a research partner (new in v3.1)**. Backup: Appendix A, market sizing.
 
 ---
 
@@ -148,6 +148,51 @@ Footer: Synthetic patient. Synthetic exams. No real health data.
 **Speaker notes (~30 s):** "We designed privacy in from the first line. The key lives on the patient's device. A doctor gets in only face to face, only with a yes, and only for a set time. Every access goes into a log the patient can read and nobody can edit; the log holds fingerprints, never health data. And insurers never get in. Not as readers, not as buyers. That is a product rule, not a setting."
 
 **Sources:** `PRD.md` section 7 (principles P1 to P10). Q23 answered by `docs/submission/project-details.md` (S20): the signed log, the time-limited access, the no-insurer rule and the patient-side refusal run for real; the key on the phone is the design and sits on our server in the demo, so that line says "by design".
+
+---
+
+## Slide 6b: Pathien Vault (concept, new in v3.2)
+
+The founder asked for it (14 Nov 2026, verbatim): *"what if someone that want's his privacy can buy our device that can hold his data. Anna and pix work on this and add one slide with a very super elegant image with our device that looks very premioum"*. It sits right after slide 6 because it is the furthest point of the same promise: the patient holds the key, and here the patient holds the record too.
+
+**Label (eyebrow, same size as the headline eyebrow on every slide):** Concept · not built
+
+**Headline:** Pathien Vault. The whole record, on a device the patient owns.
+
+**Body (39 words):** For patients who want maximum privacy. A small device, bought once, holds the full record and every original, encrypted, at home or on a keyring. The phone opens it. A doctor gets in by the same code, for a set time.
+
+**Three points:**
+- **Our servers store none of it.** The record lives on the Vault. An encrypted backup exists only if the patient chooses one.
+- **Same product, same rules.** It stores and shares. It never interprets, so it never diagnoses.
+- **Bought once, backup optional.** About €249 for the device *(assumption)*, plus an optional encrypted-backup subscription.
+
+**Footer, required:** Concept, not built. The image is a concept render. Price is our assumption, anchored to hardware wallets (about €100 to €150) and personal storage boxes (about €300 to €400). An option for privacy-first patients; the core business is unchanged.
+
+**Visual note for Pix:** One object, alone, as a premium product shot. The exact form is yours; this note is about mood and composition only.
+- **Mood:** quiet, expensive, calm. Think of the way a good watch or a pair of earbuds is shot, not a gadget ad. Nothing medical, nothing "cyber".
+- **Composition:** the device slightly off-centre on a single natural surface (stone, linen or warm wood), soft daylight from one side, one long gentle shadow, plenty of empty space. Headline and points on the empty side.
+- **Colour:** teal-night background or the brand's warm light neutral (`docs/brand/tokens.css`). Coral appears once, if at all, as a small detail that echoes the dot at the end of the logo's path (a status light, a pull tab), never as a large fill.
+- **Optional second, smaller frame:** the same device on a keyring next to a phone, to show the size. Only if it does not crowd the hero.
+- **Never:** padlocks, shields, circuit boards, glowing blue data streams, floating holograms, hands in gloves, real people's faces, any medical cross. No ™ or ®.
+- **Honesty (rule 8):** the image carries a small "Concept render" tag, the same size as the "Working demo · synthetic data" tags on slide 5.
+- The Pathien lockup top-left as on every slide; "Vault" is set in Manrope next to it, never drawn into the wordmark.
+
+**Speaker notes (~20 s):** "Some people will not want their record on anyone's server, ours included. For them we are designing Pathien Vault: a small device they buy once, holding the whole record, encrypted, at home. The doctor still gets in by the code, for a set time. It is a concept, not built yet, and an option, not the business."
+
+**Behind the slide (for questions, not on the slide): the trade-offs.**
+1. **Losing the device.** Without a backup, a lost or broken Vault means a lost record. Answer: a recovery key printed at setup, and the optional encrypted backup. Both add steps that privacy-first buyers may skip.
+2. **Backup and recovery.** The backup holds only encrypted data we cannot read, so we cannot recover a record if the patient also loses the recovery key. That must be said at purchase, plainly.
+3. **The doctor's access when the Vault is at home.** If the patient is at the clinic and the Vault is at home, the doctor's session needs either an encrypted copy on the phone or a connection to the Vault, which makes the Vault a small server the patient runs, with updates and security to keep. Offline, a doctor sees only what the phone carries.
+4. **The doctor's questions need computing.** Cited answers ("Has her CRP been raised before?") run a language model. Either it runs on the device (slower, smaller), or the data passes through our servers for the session and is never stored. The slide says "store", not "process", for this reason. Backend and the CTO decide (Q33).
+5. **Possible matches (slide 7).** A Vault user joins the network only by sending an unnamed pattern, opt-in, as today. Without it, matches are off.
+6. **Cost.** Hardware means a bill of materials, stock, shipping, returns, repairs and support. It ties up cash a software company does not. At €249 the margin is unknown until a manufacturer quotes.
+7. **Certification.** A radio device sold in the EU needs CE marking under the Radio Equipment Directive (with EMC, electrical safety, RoHS and WEEE rules). It is not a medical device under the MDR as long as it only stores and shares; if it ever interpreted data it would become one, so it must not. GDPR still applies to any backup and to the app.
+8. **Firmware and supply chain.** A device that holds health records must get signed updates for years, and its chips and factory must be trusted. A security flaw found after sale needs a recall plan.
+9. **Name.** "Pathien Vault" is a descriptive name under Pathien, whose trademark clearance is still pending (Q32). No ™.
+
+**Price, as an assumption.** About **€249 once** for the device, plus an optional encrypted-backup subscription at a price we have not set. Anchors (secondary, retail listings, Nov 2026): a hardware wallet that holds only keys sells for about $99 to $149 (Ledger Nano X); a two-bay personal storage box sells for about €300 to €415 without disks (Synology DS224+). The Vault holds more than a key and less than a home server, so it sits between them. No revenue line: this is an option for a privacy-first segment, not part of slide 11.
+
+**Sources:** S21 (Ledger Nano X retail prices, secondary); S22 (Synology DS224+ retail prices, secondary). Founder's words above. Rules 1, 3, 4 and 8 kept: no diagnosis, nothing on a chain, no insurers, the concept labelled.
 
 ---
 
@@ -474,7 +519,7 @@ The v2 name proposals (Anamna, Strand, Histra) are retired; their reasoning stay
 
 ---
 
-## Open questions from Marketing (in PRD section 17 as Q23 to Q27; Q28 there covers the recap post; Q31 and Q32 new in v3)
+## Open questions from Marketing (in PRD section 17 as Q23 to Q27; Q28 there covers the recap post; Q31 and Q32 new in v3; Q33 and Q34 new in v3.2)
 
 | # | Question | Owner |
 |---|---|---|
@@ -487,6 +532,8 @@ The v2 name proposals (Anamna, Strand, Histra) are retired; their reasoning stay
 | Q30 | Greek copy: say "ιατρικές εξετάσεις" or "αποτελέσματα εξετάσεων", never "εξετάσεις" alone (Google reads it as school exams; treg Q2). | Marketing, for any Greek version |
 | Q31 | Slide 11's prices (€40 to €80 a case, €50 a seat a month) and volumes are assumptions. Ask the first buyers for their own figure (treg Q6, question 5) and replace them. | Sales, Founder at LifeTech Park |
 | Q32 | Trademark clearance for Pathien before any printed or public use beyond the hackathon; the Hmar meaning before any India launch. | Founder, attorney |
+| Q33 | Pathien Vault (slide 6b): where the doctor's cited questions run when the record lives on the Vault (on the device, or passed through our servers for the session and never stored), and how a doctor reaches a Vault left at home. The slide says "store", not "process", until this is decided. | Backend, CTO |
+| Q34 | Pathien Vault price: €249 is an assumption between a hardware wallet and a personal storage box. Founder approves it, and whether the slide is shown at all, before the pitch. | Founder |
 
 ---
 
@@ -514,6 +561,8 @@ The v2 name proposals (Anamna, Strand, Histra) are retired; their reasoning stay
 | S18 | Tandem Health pricing page: Tandem Pro €125 per user a month (a rival page says €109). A scribe, so a ceiling for a seat price, not a like-for-like price | company page, via `market-and-competitors.md` §2 | https://tandemhealth.ai/pricing |
 | S19 | Turkey health tourists, 2024: about 1.5M and about $3B (official USHAS figures, via a city health-tourism page) | secondary | https://health.istanbul.com/medical-tourism-stats ; `market-and-competitors.md` §1.4 |
 | S20 | The working demo's own record: what is real and what is simulated; measured results (235 of 235 fields read on the synthetic set) | internal, measured on staging | `docs/submission/project-details.md` |
+| S21 | Ledger Nano X retail prices, a hardware wallet that holds keys only: about $99 to $149 (official-site figure via a Finder review; Best Buy list $99; a ryder.id review "what 149 dollars buys") | secondary (retail, prices vary by region and promotion) | https://www.finder.com.au/cryptocurrency/wallets/ledger-nano-x ; https://www.bestbuy.com/site/6550420.p ; https://ryder.id/blogs/post/ledger-nano-x-review-what-149-dollars-buys-and-what-it-asks-you-to-trust |
+| S22 | Synology DS224+ retail prices, a two-bay personal storage box without disks: about $300 at launch (2023), £299 UK, €309 to €415 in EU shops | secondary (retail, dated 2023 to 2026) | https://pricespy.co.uk/computers-accessories/storage-media/nas-servers/synology-ds224+--p11777573 ; https://aio.lv/en/product--synology-ds224--10598969.md ; https://www.storagereview.com/de/review/synology-ds224-review |
 
 **Not used in v2 (pitch-numbers §5):** a count of wrong diagnoses per year for Greece or the EU (none in a primary); a euro figure for duplicate tests in Greece or the EU (none); the OECD 2017 "one fifth wasteful" line (commentary only); the Dutch 56% repeat-test figure (primary not opened); MyHealth's "1.5 million users" (vendor claim).
 

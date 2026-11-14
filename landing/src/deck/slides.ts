@@ -1,5 +1,5 @@
 // The pitch deck: the whole content of the presentation, as typed data.
-// Source of the words: docs/deck/deck-content.md (v3.1). Speaker notes are copied from the same file.
+// Source of the words: docs/deck/deck-content.md (v3.2). Speaker notes are copied from the same file.
 // Templates live in ./templates; to make another deck, copy this file and change the data (see README.md).
 import type { Slide } from './types';
 
@@ -23,6 +23,9 @@ const N: Record<string, string[]> = {
   ],
   "6": [
     "We designed privacy in from the first line. The key lives on the patient's device. A doctor gets in only face to face, only with a yes, and only for a set time. Every access goes into a log the patient can read and nobody can edit; the log holds fingerprints, never health data. And insurers never get in. Not as readers, not as buyers. That is a product rule, not a setting."
+  ],
+  "6b": [
+    "Some people will not want their record on anyone's server, ours included. For them we are designing Pathien Vault: a small device they buy once, holding the whole record, encrypted, at home. The doctor still gets in by the code, for a set time. It is a concept, not built yet, and an option, not the business."
   ],
   "7": [
     "The founder's question was simple: somewhere in the world, someone has Maria's pattern. If she says yes, her doctor can see that similar unnamed cases exist and ask to talk to the doctor treating one of them. Not to sell data. To shorten the years patients spend going from doctor to doctor. Opt-in only, and she can withdraw at any time."
@@ -176,6 +179,20 @@ export const slides: Slide[] = [
       { text: '**No diagnosis for the patient.** The patient side has no AI question box at all.' },
     ],
     side: { kind: 'phone', caption: "Key on the patient's phone", tag: 'Mock-up', crossed: 'Insurer' },
+  },
+  {
+    id: '6b', counter: '6b', template: 'hero', theme: 'air', kicker: 'Concept · not built', notes: N['6b'],
+    headline: 'Pathien Vault. The whole record, on a device the patient owns.',
+    body: 'For patients who want maximum privacy. A small device, bought once, holds the full record and every original, encrypted, at home or on a keyring. The phone opens it. A doctor gets in by the same code, for a set time.',
+    points: [
+      '**Our servers store none of it.** The record lives on the Vault. An encrypted backup exists only if the patient chooses one.',
+      '**Same product, same rules.** It stores and shares. It never interprets, so it never diagnoses.',
+      '**Bought once, backup optional.** **About €249** for the device [[(assumption)]], plus an optional encrypted-backup subscription.',
+    ],
+    image: { src: '/deck/vault-hero.jpg', alt: 'A slim teal-night aluminium device, a rounded pebble with a tone-on-tone Pathien mark and one small coral light, on a pale surface' },
+    tag: 'Concept render',
+    lockupSuffix: 'Vault',
+    footer: 'Concept, not built. The image is a concept render. Price is our assumption, anchored to hardware wallets (about €100 to €150) and personal storage boxes (about €300 to €400). An option for privacy-first patients; the core business is unchanged.',
   },
   {
     id: '7', template: 'statement', theme: 'air', no: '07', kicker: 'Possible matches', notes: N['7'],

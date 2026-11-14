@@ -9,3 +9,4 @@ export { Compare } from './Compare';
 export { Steps } from './Steps';
 export { TeamAsk } from './TeamAsk';
 export { Appendix } from './Appendix';
+export { Hero } from './Hero';

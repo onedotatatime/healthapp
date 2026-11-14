@@ -4,6 +4,9 @@
 /** Every product or demo visual must carry one of these two tags. */
 export type DemoTag = 'Mock-up' | 'Working demo · synthetic data';
 
+/** A Hero slide shows an image of something that does not exist yet, so its tag is one of these two. Required. */
+export type HeroTag = 'Concept render' | 'Mock-up';
+
 export type Theme = 'air' | 'mist' | 'night';
 
 export interface SlideBase {
@@ -18,11 +21,27 @@ export interface SlideBase {
   footer?: string;
   /** Speaker notes, one string per paragraph. Shown with N. */
   notes: string[];
+  /** Explicit counter label (e.g. "6b") for an inserted slide. It is not counted in "n / total" and the others keep their numbers. */
+  counter?: string;
   /** Backup slides show "Backup" instead of n / total and are not counted. */
   backup?: boolean;
 }
 
 export interface Rich { text: string }
+
+/* ---------- Hero (full-bleed image, text column, required concept tag) ---------- */
+export interface HeroSlide extends SlideBase {
+  template: 'hero';
+  headline: string;
+  body: string;
+  /** Text supports **bold** and [[accent]] (teal bold, e.g. "(assumption)"). */
+  points: string[];
+  image: { src: string; alt: string };
+  /** Required. Placed on the image, same size as the demo tags. */
+  tag: HeroTag;
+  /** Word set beside the lockup, bottom-right (e.g. "Vault"). */
+  lockupSuffix?: string;
+}
 
 /* ---------- Cover ---------- */
 export interface CoverSlide extends SlideBase {
@@ -171,6 +190,7 @@ export interface AppendixSlide extends SlideBase {
 
 export type Slide =
   | CoverSlide
+  | HeroSlide
   | StatsSlide
   | StatementSlide
   | FunnelSlide
