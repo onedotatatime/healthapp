@@ -1,1 +1,3 @@
 - [Healthapp dashboard feed](project_healthapp_dashboard_feed.md) — two edge functions, bucket object, launchd job, bucket MIME stand-in, deploy rules
+- [healthapp Data API exposure](project_healthapp_data_api_exposure.md) — healthapp_dev answers 406 until a human adds it to Exposed schemas; no safe agent route
+- [healthapp Gemini model ids](project_healthapp_gemini_model_ids.md) — gemini-2.5-flash 404s for this key; 3.8/3.5-flash work; zsh `$m:g` URL trap
