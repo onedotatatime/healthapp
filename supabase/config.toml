@@ -47,3 +47,7 @@ verify_jwt = false
 
 [functions.healthapp-doc-photo]
 verify_jwt = false
+
+# MIN-4487: the doctor's assistant. Called from the browser; the function verifies the session, the doctor role and a live grant itself.
+[functions.healthapp-assistant]
+verify_jwt = false
