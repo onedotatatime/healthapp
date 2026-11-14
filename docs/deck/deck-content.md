@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Owner** | Anna Lytica (Marketing), MIN-4429. Deck story: CEO (MIN-4425). Design: Pix (MIN-4428), next. |
-| **Version** | **v3.2, 14 Nov 2026** (MIN-4503: new slide 6b, Pathien Vault, a concept device for patients who want maximum privacy; founder: "what if someone that want's his privacy can buy our device that can hold his data. Anna and pix work on this and add one slide with a very super elegant image with our device that looks very premioum"; no other slide renumbered). v3.1, 14 Nov 2026 (MIN-4503: team and ask from the CEO plan v2, `docs/business/team-and-funding-plan.md` §7; slide 14 replaced, slide 15 new; founder: "put it in the deck when ready"). v3, 14 Nov 2026 (MIN-4503: name Pathien; new slide 11, revenue years 1 to 3, on the founder's ask "the numbers of how many money we can earn" and "Yes, update to v3"; Appendix A's SOM retired for the bottom-up line; demo slides say what is real and what is synthetic). v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
+| **Version** | **v3.3, 14 Nov 2026** (MIN-4503: slide 6b, the "Concept render" tag removed and the encryption point added; founder: "remove the concept render -> and mention that this device has our own encrypted software for the data so they are not in the cloud"; the eyebrow "Concept · not built" stays). v3.2, 14 Nov 2026 (MIN-4503: new slide 6b, Pathien Vault, a concept device for patients who want maximum privacy; founder: "what if someone that want's his privacy can buy our device that can hold his data. Anna and pix work on this and add one slide with a very super elegant image with our device that looks very premioum"; no other slide renumbered). v3.1, 14 Nov 2026 (MIN-4503: team and ask from the CEO plan v2, `docs/business/team-and-funding-plan.md` §7; slide 14 replaced, slide 15 new; founder: "put it in the deck when ready"). v3, 14 Nov 2026 (MIN-4503: name Pathien; new slide 11, revenue years 1 to 3, on the founder's ask "the numbers of how many money we can earn" and "Yes, update to v3"; Appendix A's SOM retired for the bottom-up line; demo slides say what is real and what is synthetic). v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
 | **Event** | Gen AI Summit Hackathon, Athens LifeTech Park, Biotech & AI track |
 | **Market** | Global. Founder: "Dont focus on the greek market. we need to focus on global market" |
 | **Sources** | Only `docs/research/` (Sales). Each number carries a source ID from the table at the end (S1 to S22; S21 and S22, added in v3.2, are retail price anchors for slide 6b found by Marketing, not by Sales) and its status from the research: **verified**, **secondary**, or **assumption**. Nothing from the research's "Do not put on a slide" list is used. |
@@ -162,11 +162,11 @@ The founder asked for it (14 Nov 2026, verbatim): *"what if someone that want's 
 **Body (39 words):** For patients who want maximum privacy. A small device, bought once, holds the full record and every original, encrypted, at home or on a keyring. The phone opens it. A doctor gets in by the same code, for a set time.
 
 **Three points:**
-- **Our servers store none of it.** The record lives on the Vault. An encrypted backup exists only if the patient chooses one.
+- **Our own encryption, on the device.** Pathien's software encrypts every record on the Vault itself. Nothing goes to the cloud unless the patient turns on an encrypted backup.
 - **Same product, same rules.** It stores and shares. It never interprets, so it never diagnoses.
 - **Bought once, backup optional.** About €249 for the device *(assumption)*, plus an optional encrypted-backup subscription.
 
-**Footer, required:** Concept, not built. The image is a concept render. Price is our assumption, anchored to hardware wallets (about €100 to €150) and personal storage boxes (about €300 to €400). An option for privacy-first patients; the core business is unchanged.
+**Footer, required:** Concept, not built. Price is our assumption, anchored to hardware wallets (about €100 to €150) and personal storage boxes (about €300 to €400). An option for privacy-first patients; the core business is unchanged.
 
 **Visual note for Pix:** One object, alone, as a premium product shot. The exact form is yours; this note is about mood and composition only.
 - **Mood:** quiet, expensive, calm. Think of the way a good watch or a pair of earbuds is shot, not a gadget ad. Nothing medical, nothing "cyber".
@@ -174,10 +174,10 @@ The founder asked for it (14 Nov 2026, verbatim): *"what if someone that want's 
 - **Colour:** teal-night background or the brand's warm light neutral (`docs/brand/tokens.css`). Coral appears once, if at all, as a small detail that echoes the dot at the end of the logo's path (a status light, a pull tab), never as a large fill.
 - **Optional second, smaller frame:** the same device on a keyring next to a phone, to show the size. Only if it does not crowd the hero.
 - **Never:** padlocks, shields, circuit boards, glowing blue data streams, floating holograms, hands in gloves, real people's faces, any medical cross. No ™ or ®.
-- **Honesty (rule 8):** the image carries a small "Concept render" tag, the same size as the "Working demo · synthetic data" tags on slide 5.
+- **Honesty (rule 8):** no "Concept render" tag on the image (founder, v3.3). The eyebrow "Concept · not built" and the footer carry the label.
 - The Pathien lockup top-left as on every slide; "Vault" is set in Manrope next to it, never drawn into the wordmark.
 
-**Speaker notes (~20 s):** "Some people will not want their record on anyone's server, ours included. For them we are designing Pathien Vault: a small device they buy once, holding the whole record, encrypted, at home. The doctor still gets in by the code, for a set time. It is a concept, not built yet, and an option, not the business."
+**Speaker notes (~20 s):** "Some people will not want their record on anyone's server, ours included. For them we are designing Pathien Vault: a small device they buy once, holding the whole record at home. The doctor still gets in by the code, for a set time. Pathien's own encryption runs on the device, so nothing sits in the cloud. It is a concept, not built yet, and an option, not the business."
 
 **Behind the slide (for questions, not on the slide): the trade-offs.**
 1. **Losing the device.** Without a backup, a lost or broken Vault means a lost record. Answer: a recovery key printed at setup, and the optional encrypted backup. Both add steps that privacy-first buyers may skip.

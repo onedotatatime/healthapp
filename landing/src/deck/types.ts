@@ -4,7 +4,7 @@
 /** Every product or demo visual must carry one of these two tags. */
 export type DemoTag = 'Mock-up' | 'Working demo · synthetic data';
 
-/** A Hero slide shows an image of something that does not exist yet, so its tag is one of these two. Required. */
+/** A Hero slide shows an image of something that does not exist yet, so when it carries a tag it is one of these two. The tag is optional. */
 export type HeroTag = 'Concept render' | 'Mock-up';
 
 export type Theme = 'air' | 'mist' | 'night';
@@ -29,7 +29,7 @@ export interface SlideBase {
 
 export interface Rich { text: string }
 
-/* ---------- Hero (full-bleed image, text column, required concept tag) ---------- */
+/* ---------- Hero (full-bleed image, text column, optional concept tag) ---------- */
 export interface HeroSlide extends SlideBase {
   template: 'hero';
   headline: string;
@@ -37,8 +37,8 @@ export interface HeroSlide extends SlideBase {
   /** Text supports **bold** and [[accent]] (teal bold, e.g. "(assumption)"). */
   points: string[];
   image: { src: string; alt: string };
-  /** Required. Placed on the image, same size as the demo tags. */
-  tag: HeroTag;
+  /** Optional. Placed on the image, same size as the demo tags. Without it the slide must say concept or mock-up elsewhere (kicker, footer). */
+  tag?: HeroTag;
   /** Word set beside the lockup, bottom-right (e.g. "Vault"). */
   lockupSuffix?: string;
 }

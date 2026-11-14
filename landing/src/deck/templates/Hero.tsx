@@ -16,7 +16,7 @@ export function Hero({ s }: { s: HeroSlide }) {
           {s.points.map((p, i) => <li key={i}>{withAccent(p)}</li>)}
         </ul>
       </div>
-      <span className="demo-tag hero-tag">{s.tag}</span>
+      {s.tag && <span className="demo-tag hero-tag">{s.tag}</span>}
       <div className="hero-lock">
         <Lockup theme={s.theme} className="hero-lockup" />
         {s.lockupSuffix && <span className="hero-suffix">{s.lockupSuffix}</span>}
