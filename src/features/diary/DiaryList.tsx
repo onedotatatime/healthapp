@@ -1,0 +1,29 @@
+import { useEffect, useState } from 'react';
+import type { DiaryEntry } from '../../api/contract';
+import { listDiaryEntries } from './diaryApi';
+import { formatWhen } from './format';
+
+/** Entries on the patient home, by date. Shows only the patient's own words and severity. */
+export function DiaryList() {
+  const [rows, setRows] = useState<DiaryEntry[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    void listDiaryEntries().then((r) => live && setRows(r));
+    return () => { live = false; };
+  }, []);
+  if (!rows || rows.length === 0) return null;
+  return (
+    <section aria-label="Diary" data-testid="diary-list" style={{ marginTop: 'var(--space-6)' }}>
+      <h2>Your diary</h2>
+      <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: 'var(--space-3)' }}>
+        {rows.map((r) => (
+          <li key={r.id} data-testid="diary-row">
+            <strong>{formatWhen(r.occurred_at)}</strong>
+            {r.time_edited ? ' (time edited by you)' : ''} · {r.severity}/10
+            <div>{r.text}</div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}

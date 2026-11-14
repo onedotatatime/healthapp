@@ -1,4 +1,6 @@
+import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthProvider';
+import { DiaryList } from '../features/diary/DiaryList';
 import { EmptyState } from '../components/Primitives';
 import { RecordsList } from '../features/exams/RecordsList';
 
@@ -19,6 +21,8 @@ export function PatientHome() {
       <h1>Your record</h1>
       <p className="muted" data-testid="signed-in-as">Signed in as {displayName ?? 'the patient'}.</p>
       <RecordsList />
+      <p style={{ marginTop: 'var(--space-4)' }}><Link className="btn primary" to="/patient/diary" data-testid="add-symptom">Add symptom</Link></p>
+      <DiaryList />
       <p style={{ marginTop: 'var(--space-6)' }}>
         <SignOut />
       </p>

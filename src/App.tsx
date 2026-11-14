@@ -6,6 +6,7 @@ import { Spinner } from './components/Primitives';
 import { ExamsRoutes } from './features/exams/ExamsRoutes';
 import { Health } from './Health';
 import { DoctorHome, PatientHome } from './pages/Homes';
+import { AddSymptom } from './features/diary/AddSymptom';
 import { Kit } from './pages/Kit';
 import { Login } from './pages/Login';
 
@@ -24,6 +25,7 @@ export function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/patient/exams/*" element={<RequireRole role="patient"><ExamsRoutes /></RequireRole>} />
           <Route path="/preview/exams/*" element={<ExamsRoutes preview />} />
+          <Route path="/patient/diary" element={<RequireRole role="patient"><AddSymptom /></RequireRole>} />
           <Route path="/patient/*" element={<RequireRole role="patient"><PatientHome /></RequireRole>} />
           <Route path="/doctor/*" element={<RequireRole role="doctor"><DoctorHome /></RequireRole>} />
           <Route path="/health" element={<Health />} />
