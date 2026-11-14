@@ -182,7 +182,29 @@ Deno.test("demo: patient and doctor sign in with the demo passcode and their dem
   const h = makeHandler(deps);
   assertEquals((await h(demoReq("doctor", DEMO_PASS))).status, 200);
   assertEquals((await h(demoReq("patient", PASS))).status, 401);
-  assertEquals(signIns, ["doctor.demo@healthapp.invalid"]);
+  assertEquals(signIns, ["user:doctor.demo@healthapp.invalid"]);
+});
+
+Deno.test("demo: every persona goes through the link path, signIn(password) is never called, even with no persona password set (MIN-4541 F1)", async () => {
+  const called: string[] = [];
+  const { deps } = fakeDeps({
+    secret: (n) => (n === "HEALTHAPP_DEMO_PASSCODE_DEMO" ? DEMO_PASS : n === "HEALTHAPP_DEMO_PASSCODE" ? PASS : undefined),
+    signIn: (email) => { called.push(`password:${email}`); return Promise.resolve(null); },
+  });
+  const h = makeHandler(deps);
+  for (const p of ["patient", "doctor", "founder"]) {
+    const res = await h(demoReq(p, DEMO_PASS, { "x-forwarded-for": `198.51.100.${p.length}` }));
+    assertEquals(res.status, 200);
+  }
+  assertEquals(called, []);
+});
+
+Deno.test("dev: personas still sign in with the persona password, not the link (MIN-4541 F1)", async () => {
+  const links: string[] = [];
+  const { deps, signIns } = fakeDeps({ signInUser: (e) => { links.push(e); return Promise.resolve(null); } });
+  assertEquals((await makeHandler(deps)(req({ persona: "patient", passcode: PASS }))).status, 200);
+  assertEquals(signIns, ["patient.dev@healthapp.invalid"]);
+  assertEquals(links, []);
 });
 
 Deno.test("demo: no demo passcode configured fails closed, even for the right dev passcode (MIN-4541)", async () => {
