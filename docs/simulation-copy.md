@@ -65,3 +65,60 @@ Empty state must never show a count, "fewer than 5", or "too few": it has to rea
 ## 5. Skipped (lean)
 
 Second language, alternative headlines, a USD figure for the US, per-condition baselines, the AHRQ "USD 100 billion" brief, chart colour and layout (Ren/Pix), deck slides, F3 contact copy, analytics wording.
+
+## 6. The euro outcome and the match-by-match wording (MIN-4604, decided on MIN-4605)
+
+Owner: Marketing (Anna). Candidates checked 15 Nov 2026. Status: **approved by the CEO seat on the founder's behalf, 15 Nov 2026 (MIN-4605), with conditions 1 to 8**.
+
+Source of this section: Anna's MIN-4604 comment 61ae9259 (her sections 1, 4 and 5, as written) and the CEO seat's fills in MIN-4605 comment de26aa96 (section 3). Her comment names the block under "Paste-ready"; that heading is not in the posted text, so this section is assembled from those sections. Anna checks it against her comment.
+
+### 6.1 The total the euro figure uses (CEO seat: option A, with C as the second line; Eurostat dataset hlth_sha11_hf, total, updated 4 Nov 2026)
+
+| | Figure | Unit / geography / year | Value as returned | Checked |
+|---|---|---|---|---|
+| A (used) | **€1,833,973.32 million = €1,834 billion** | current health expenditure, EU-27, 2024 | `1833973.32` | 15 Nov |
+| C (used, second line) | **€4,074.88 per inhabitant** | current health expenditure per inhabitant, EU-27, 2024 | `4074.88` | 15 Nov |
+| B (not used) | €19,869.37 million = €19.9 billion | Greece (EL), 2024 | `19869.37` | 15 Nov |
+| D | not found | OECD Working Paper 176 gives no absolute money figure for the 11% | n/a | 15 Nov |
+
+Source URL (A): https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/hlth_sha11_hf?format=JSON&unit=MIO_EUR&icha11_hf=TOT_HF&geo=EU27_2020&time=2024 . The Eurostat data browser table for the same dataset: https://ec.europa.eu/eurostat/databrowser/view/hlth_sha11_hf/default/table .
+
+### 6.2 On-screen wording for `/simulation`
+
+| Element | Text |
+|---|---|
+| Euro outcome line | In this model, the cost of wrong or missed diagnoses is {amount} a year lower for {geography}, on {year} spending. |
+| Formula line | {drop} points of health spending × {total} ({geography}, {year}) = {amount} a year |
+| Source line for the total | Health spending total: Eurostat, current health expenditure, {geography}, {year}. |
+| Unit label for the figure | a year, {geography}, {year} |
+| Counter label (cumulative) | Modelled drop so far |
+| Counter value | {amount} a year |
+| Second line (CEO seat) | {per_inhabitant} per inhabitant a year |
+
+Amount writing: billions with one decimal ("€13.6 billion"), millions with none ("€147 million"), per inhabitant with none ("€30"); the total in the formula with a thousands comma ("€1,834 billion"); "EU-27" as geography; year as four digits; "a year" always present. The word "saved" is deliberately not used: the counter says "drop", not "saved".
+
+Filled for the last frame (CEO seat): "In this model, the cost of wrong or missed diagnoses is €13.6 billion a year lower for EU-27, on 2024 spending." Formula: "0.74 points of health spending × €1,834 billion (EU-27, 2024) = €13.6 billion a year". Second line: "€30 per inhabitant a year". Source line: "Health spending total: Eurostat, current health expenditure, EU-27, 2024." with Anna's link.
+
+### 6.3 Match by match
+
+| Element | Text |
+|---|---|
+| Learning-curve assumption line (replaces the line in section 3; approved as written) | Assumption, not a finding: each match lowers the chance of a wrong or missed diagnosis by {start}, rising to {ceiling} as matches accumulate. |
+| Matches counter | Matches so far: {n} |
+| Assumed effect counter | Assumed effect of a match: {pct} |
+| Step caption, early | First matches: each one lowers the chance only a little. |
+| Step caption, middle | More matches: in the model, each new match is better than the last. |
+| Step caption, late | Most matches so far: the assumed effect is at its ceiling. |
+| Step caption, cost | ~~In the model, each step lowers the cost more than the one before.~~ **Not shown** (CEO seat, condition 8: false on the data). Replacement unless Anna writes another: In the model, the cost falls further as matches accumulate. |
+
+The four step captions are not built in this story (CTO, MIN-4610). They stay here as approved wording.
+
+Notes (Anna): the "Modelled drop so far" counter shows the drop at the current network size as a yearly figure, so it grows as matches accumulate; it is not money adding up over several years, and the screen must not suggest so ("a year" stays next to it). The assumption line contains "assumption"; the permanent label stays visible, and the 20% appears as the ceiling, always with "assumption" in the same sentence. No study is attached to the start or the ceiling. Never "anonymous"; none of the strings uses it. No exclamation mark.
+
+### 6.4 Conditions (CEO seat; 1 to 3 are the MIN-4506 ones)
+
+4. The euro figure is on screen only together with series 3's chart (axis from zero), the formula line, the source line and the permanent label.
+5. The euro sentence has "model" or "assumption" in it. Never "saved", "saves", "savings" or "will". The 10% follows the same rule as the 20%: never without "assume", "assumed" or "assumption" in the same sentence, and no study attached.
+6. The arithmetic on screen checks out at the precision shown: the euro values come from the published two-decimal cost (0.74 × €1,834 billion = €13.6 billion).
+7. Nothing says the matching software learns today. Asked "does it learn?": "Not in this prototype. The curve is our assumption of what a learning matcher would do. A pilot with doctors would measure it."
+8. The cost caption "In the model, each step lowers the cost more than the one before." is false on the data and is not shown.
