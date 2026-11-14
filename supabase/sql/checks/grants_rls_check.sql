@@ -64,7 +64,10 @@ begin
     'active.documents', pg_temp.as_user(D1, format('select 1 from __SCHEMA__.documents where patient_id = %L', P), 'count'),
     'active.results',   pg_temp.as_user(D1, format('select 1 from __SCHEMA__.results where patient_id = %L', P), 'count'),
     'active.findings',  pg_temp.as_user(D1, format('select 1 from __SCHEMA__.findings where patient_id = %L', P), 'count'),
-    'active.diary',     pg_temp.as_user(D1, format('select 1 from __SCHEMA__.diary_entries where patient_id = %L', P), 'count'),
+    -- the doctor reads every diary row of the patient, however many the live checks have added
+    'active.diary',     (pg_temp.as_user(D1, format('select 1 from __SCHEMA__.diary_entries where patient_id = %L', P), 'count')::int
+                         = (select count(*) from __SCHEMA__.diary_entries where patient_id = P)
+                         and (select count(*) from __SCHEMA__.diary_entries where patient_id = P) > 0)::text,
     'active.profile_name_and_specialty', pg_temp.as_user(D1, format('select id, role, full_name, specialty from __SCHEMA__.profiles where id = %L', P), 'count'),
     'active.assistant_turns_own', pg_temp.as_user(D1, 'select 1 from __SCHEMA__.assistant_turns', 'count'),
     'second_doctor.documents', pg_temp.as_user(D2, format('select 1 from __SCHEMA__.documents where patient_id = %L', P), 'count'),
@@ -146,7 +149,7 @@ declare
   exp jsonb := jsonb_build_object(
     'no_grant.documents','0','no_grant.results','0','no_grant.findings','0','no_grant.diary','0','no_grant.profile','0',
     'pending.documents','0','pending.results','0',
-    'active.documents','1','active.results','1','active.findings','1','active.diary','1',
+    'active.documents','1','active.results','1','active.findings','1','active.diary','true',
     'active.profile_name_and_specialty','1','active.assistant_turns_own','1',
     'second_doctor.documents','0','second_doctor.results','0','second_doctor.diary','0','second_doctor.grants_seen','0',
     'second_doctor.assistant_turns','0','patient.assistant_turns','0','patient.other_patient_diary','0','patient.other_patient_documents','0',

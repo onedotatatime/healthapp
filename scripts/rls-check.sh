@@ -16,7 +16,9 @@ for persona in patient doctor outsider; do
   [ -n "$token" ] || { echo "$persona: sign-in failed"; continue; }
   line="$persona:"
   for t in $tables; do
-    out=$(curl -s -D - -o /dev/null "$SUPABASE_URL/rest/v1/$t?select=*" -H "apikey: $SUPABASE_ANON_KEY" \
+    # select=id, never *: profiles grants clients its columns, not the table, so * is refused (42501).
+    col=id; [ "$t" = handshake_tokens ] && col=jti
+    out=$(curl -s -D - -o /dev/null "$SUPABASE_URL/rest/v1/$t?select=$col" -H "apikey: $SUPABASE_ANON_KEY" \
       -H "Authorization: Bearer $token" -H "Accept-Profile: healthapp_${env}" -H 'Prefer: count=exact' -H 'Range: 0-0')
     code=$(echo "$out" | head -1 | awk '{print $2}')
     count=$(echo "$out" | tr -d '\r' | awk -F'/' 'tolower($0) ~ /^content-range/ {print $2}')
