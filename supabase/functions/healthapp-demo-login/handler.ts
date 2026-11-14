@@ -53,8 +53,11 @@ export function makeHandler(deps: Deps) {
 
     // One passcode per deployment: the dev one never opens demo, so the shared panel code cannot reach his account.
     const passcode = deps.secret(env === "demo" ? "HEALTHAPP_DEMO_PASSCODE_DEMO" : "HEALTHAPP_DEMO_PASSCODE");
+    // On demo every persona signs in through the link path (MIN-4541 F1): their stored passwords are random
+    // and held by nobody, so the dev persona password never opens a demo account. Only dev uses the password.
+    const viaLink = persona === "founder" || env === "demo";
     const password = deps.secret("HEALTHAPP_PERSONA_PASSWORD");
-    if (!passcode || (persona !== "founder" && !password)) return fail(req, 500, "internal", "demo login is not configured");
+    if (!passcode || (!viaLink && !password)) return fail(req, 500, "internal", "demo login is not configured");
 
     const key = (await sha256Hex(`demo_login:${clientAddress(req)}`)).slice(0, 32);
     let allowed: boolean;
@@ -79,7 +82,7 @@ export function makeHandler(deps: Deps) {
     }
 
     const email = `${persona}.${env}@healthapp.invalid`;
-    const session = persona === "founder" ? await deps.signInUser(email) : await deps.signIn(email, password!);
+    const session = viaLink ? await deps.signInUser(email) : await deps.signIn(email, password!);
     if (!session) return fail(req, 500, "internal", "persona sign-in failed");
     const m = session.user.app_metadata ?? {};
     if (m.app !== "healthapp" || m.env !== env) return fail(req, 403, "no_profile", "not a healthapp persona");
