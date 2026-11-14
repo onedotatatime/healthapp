@@ -4,6 +4,7 @@
 #   dashboard/chat_service.sh install [--page-dir DIR] [--extra-dir NAME=DIR] [--port 8765]   copy the files, make chat.key, load the launchd job
 #   dashboard/chat_service.sh uninstall                                 unload the job (keys and chats stay)
 #   dashboard/chat_service.sh off | on                                  kill switch: chat.off makes the bridge refuse every new turn
+#   dashboard/chat_service.sh sync-agents                               append the agents the sample lists and your hand-set.json lacks (append-only, backup kept), restart the bridge if it changed
 #   dashboard/chat_service.sh rotate-key                                new chat.key (mode 600), restart the bridge, end every running turn
 #   dashboard/chat_service.sh status                                    job loaded, chat.off, key present, turns logged today
 #
@@ -63,6 +64,7 @@ EOF_EXTRA
     [ -s "$HOME_DIR/chat.key" ] || new_key
     chmod 600 "$HOME_DIR/chat.key"
     [ -f "$HOME_DIR/hand-set.json" ] || cp "$SRC/hand-set.sample.json" "$HOME_DIR/hand-set.json"
+    python3 "$SRC/sync_agents.py" "$SRC/hand-set.sample.json" "$HOME_DIR/hand-set.json" || echo "warning: could not add the sample's new agents to $HOME_DIR/hand-set.json" >&2      # an agent added to the sample reaches the installed config (MIN-4574)
     mkdir -p "$HOME/Library/LaunchAgents"
     cat > "$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -105,6 +107,20 @@ EOF
     rm -f "$HOME_DIR/chat.off"
     echo "chat is on"
     ;;
+  sync-agents)
+    [ -d "$HOME_DIR" ] || { echo "no $HOME_DIR; run install first" >&2; exit 3; }
+    OUT="$(python3 "$SRC/sync_agents.py" "$SRC/hand-set.sample.json" "$HOME_DIR/hand-set.json")" || exit $?
+    echo "$OUT"
+    case "$OUT" in
+      "agents added"*)
+        if loaded; then
+          launchctl kill SIGTERM "gui/$(id -u)/$LABEL"      # the bridge reads config.agents once at start; KeepAlive starts it again with the new list
+          echo "bridge restarted (a turn that was running ended). The feed picks the agents up on its next run."
+        else
+          echo "the bridge is not loaded as a job: restart it by hand so it reads the new list."
+        fi ;;
+    esac
+    ;;
   rotate-key)
     [ -d "$HOME_DIR" ] || { echo "no $HOME_DIR; run install first" >&2; exit 3; }
     new_key
@@ -122,5 +138,5 @@ EOF
     if [ -f "$HOME_DIR/chat.log" ]; then echo "turns today: $(grep -c "^$(date -u +%Y-%m-%d)T.* turn kind=" "$HOME_DIR/chat.log" || true)"; fi
     ;;
   *)
-    echo "usage: chat_service.sh install|uninstall|off|on|rotate-key|status" >&2; exit 2 ;;
+    echo "usage: chat_service.sh install|uninstall|off|on|sync-agents|rotate-key|status" >&2; exit 2 ;;
 esac

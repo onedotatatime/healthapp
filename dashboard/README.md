@@ -5,7 +5,7 @@ pushes it to the ingest function. Stdlib Python 3.9+. A launchd job on the found
 
 ```
 python3 dashboard/snapshot.py --home ~/.healthapp-dashboard --out /tmp/snap.json      # local file, no push
-python3 -m unittest discover -s dashboard/tests                                        # 204 tests, about 95 s (the branches tests build real git repositories; the chat tests stub claude)
+python3 -m unittest discover -s dashboard/tests                                        # 316 tests, about 105 s (the branches tests build real git repositories; the chat tests stub claude)
 deno test --allow-read supabase/functions/                                             # 23 tests (key matrix, limits, boundaries)
 deno check supabase/functions/*/index.ts && deno lint supabase/functions
 dashboard/install.sh [--viewer-url BASE] [--rotate]                                    # install or update the Mac job
@@ -193,6 +193,7 @@ conductor's own `rows_by_role` and `bin/require-agent-model` (`bad_row`), `estUs
 and today's budget (`budget_reached`), then shown with `status: open|refused`.
 **Config** (`~/.healthapp-dashboard/hand-set.json`, `config.chat` and `config.agents[].chat`, no secret): see `hand-set.sample.json`. Agent file =
 `agentFile`, else `agentType`. Default `chat` per agent is Sonnet at medium effort; the CTO is Fable at medium.
+**The roster** is `config.agents` of `~/.healthapp-dashboard/hand-set.json`, the same list the feed reads: all 13 agents (Scrum, SEO and JobScout answer-only like the rest, no `chat` row, so Sonnet at medium). The bridge reads it once at start. `hand-set.sample.json` is the source; the installed file is the founder's copy, so `install.sh`, `chat_service.sh install` and `chat_service.sh sync-agents` run `sync_agents.py`, which only **appends** agents the sample has and the installed file lacks (matched by `n` or `agentType`; a hand edit is never overwritten; the first change keeps `hand-set.json.before-sync`, mode 600). `sync-agents` also restarts the loaded bridge (SIGTERM, KeepAlive starts it again). No list of agents is written anywhere else (the dev server reads the sample).
 **Files and logs.** `~/.healthapp-dashboard/chat/<id>.json` (mode 600, folder 700) holds the messages; `chat.log` gets one line per turn (kind, agent,
 short id, result, seconds, cost) and **no message text, no reply, no key**; `chat-audit.log` (from the guard) one line per tool call: tool, allow or deny,
 the command's first word or a relative path. The raw `stream-json` is read line by line and never written to disk.

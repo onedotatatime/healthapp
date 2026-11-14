@@ -51,6 +51,7 @@ chmod 700 "$HOME_DIR"
 cp "$SRC/snapshot.py" "$SRC/rates.json" "$SRC/open.sh" "$HOME_DIR/"
 chmod 700 "$HOME_DIR/open.sh"
 [ -f "$HOME_DIR/hand-set.json" ] || cp "$SRC/hand-set.sample.json" "$HOME_DIR/hand-set.json"
+python3 "$SRC/sync_agents.py" "$SRC/hand-set.sample.json" "$HOME_DIR/hand-set.json" || echo "warning: could not add the sample's new agents to $HOME_DIR/hand-set.json" >&2      # append-only (MIN-4574)
 [ -f "$HOME_DIR/directions.json" ] || cp "$SRC/directions.sample.json" "$HOME_DIR/directions.json"      # never overwritten: the founder's statuses stay
 
 for k in push view; do
