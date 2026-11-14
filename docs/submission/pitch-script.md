@@ -16,7 +16,7 @@ Semifinal, about Sun 19:00. Judging: usefulness, craft, aura. Run the live demo;
 ## 0:55 to 1:25. The handshake
 
 *Screen: DNA code on her phone, doctor scans, she approves.*
-"At the orthopaedist she shows a code shaped like DNA. He scans, she approves. The doctor's view opens in 3.6 seconds, with a timer. In person, with her yes, for a set time. Her key rule: the database refuses anyone outside that grant."
+"At the orthopaedist she shows a code shaped like DNA. He scans, she approves. The doctor's view opens in 3.6 seconds, with a timer. In person, with her yes, for a set time. The database refuses anyone outside that grant."
 
 ## 1:25 to 2:10. The doctor asks
 
