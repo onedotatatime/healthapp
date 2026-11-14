@@ -550,6 +550,27 @@ class ProposalFlow(ChatCase):
         self.assertNotIn("Answer", log)
         self.assertNotIn("broken", log)
 
+    def test_the_row_check_runs_without_the_lock(self):
+        """The row check starts conductor's hook (a subprocess); while it runs, the bridge must keep answering."""
+        env = self.make()
+        entered, release = threading.Event(), threading.Event()
+
+        def slow(agent_file, task):
+            entered.set()
+            release.wait(10)
+            return "sonnet", "high"
+        env.chat.row_checker = slow
+        env.set_behavior(reply="ok\n" + block(good_proposal()))
+        env.start_chat("Cron")
+        self.assertTrue(entered.wait(10))
+        t0 = time.time()
+        st, body, _ = env.get("/chat/health")
+        self.assertEqual(st, 200)
+        self.assertLess(time.time() - t0, 1.0)
+        self.assertEqual(body["running"], 1)
+        release.set()
+        env.wait_idle()
+
     def test_the_founders_own_message_is_never_parsed(self):
         env = self.make()
         env.set_behavior(reply="plain answer")
@@ -715,10 +736,23 @@ class KillSwitches(ChatCase):
         st, body, _ = env.post("/chat/sessions/%s/stop" % sid, {})
         self.assertEqual(st, 200)
         env.wait_idle(8)
-        self.assertTrue(wait_for(lambda: not alive(child_pid), 8), "the child of the turn survived the stop")
-        self.assertTrue(wait_for(lambda: not alive(stub_pid), 8))
+        # inside the 3 s grace: the group got SIGTERM. A kill of the stub alone would leave the child for the later SIGKILL.
+        self.assertTrue(wait_for(lambda: not alive(child_pid), 2.0), "the child of the turn survived the stop")
+        self.assertTrue(wait_for(lambda: not alive(stub_pid), 2.0))
         last = env.get("/chat/sessions/%s" % sid)[1]["messages"][-1]
         self.assertEqual((last["role"], last["text"]), ("error", "Stopped by you."))
+
+    def test_a_turn_that_ignores_sigterm_is_killed_after_the_grace_period(self):
+        env = self.make()
+        env.set_behavior(sleep=60, child=True, ignore_term=True)
+        sid = env.start_chat()
+        self.assertTrue(wait_for(lambda: os.path.exists(os.path.join(env.dir, "child.pid")) and env.records()))
+        stub_pid, child_pid = env.record(0)["pid"], int(read(os.path.join(env.dir, "child.pid")))
+        env.post("/chat/sessions/%s/stop" % sid, {})
+        time.sleep(1.0)
+        self.assertTrue(alive(stub_pid) and alive(child_pid), "SIGTERM alone should not have ended these")
+        self.assertTrue(wait_for(lambda: not alive(stub_pid) and not alive(child_pid), 8), "SIGKILL after the grace period did not happen")
+        env.wait_idle(8)
 
     def test_stop_needs_auth_and_unknown_session_404(self):
         env = self.make()
@@ -740,7 +774,7 @@ class KillSwitches(ChatCase):
         self.assertEqual((st, body["refused"]), (503, "chat_off"))
 
     def test_timeout_kills_and_marks_an_error(self):
-        env = self.make(answerMinutes=0.03)           # 1.8 s
+        env = self.make(answerMinutes=0.1)            # 6 s
         env.set_behavior(sleep=60)
         sid = env.start_chat()
         self.assertTrue(wait_for(lambda: env.records()))

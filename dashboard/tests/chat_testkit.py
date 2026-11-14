@@ -14,13 +14,15 @@ import chat_bridge as B  # noqa: E402
 KEY = "k" * 40
 
 STUB = '''#!%(python)s
-import json, os, subprocess, sys, time
+import json, os, signal, subprocess, sys, time
 d = %(dir)r
 beh = {}
 try:
     beh = json.load(open(os.path.join(d, "behavior.json")))
 except Exception:
     pass
+if beh.get("ignore_term"):
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
 stdin = sys.stdin.read()
 env = {k: v for k, v in os.environ.items() if k != "__CF_USER_TEXT_ENCODING"}
 json.dump({"argv": sys.argv, "env": env, "cwd": os.getcwd(), "stdin": stdin, "pid": os.getpid()}, open(os.path.join(d, "rec-%%017.5f-%%d.json" %% (time.time(), os.getpid())), "w"))

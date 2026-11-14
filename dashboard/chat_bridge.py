@@ -194,6 +194,7 @@ def split_proposal(text):
     stripped = LONE_MARKER.sub("", PROPOSAL_SPAN.sub("", text)).strip()
     if not spans:
         return stripped, None, bool(LONE_MARKER.search(text))
+    # "Two blocks" is also caught by the trailing-text test (the first block is followed by the second); both are kept so each reads true alone.
     if len(spans) > 1 or text[spans[0].end():].strip():
         return stripped, None, True
     try:
@@ -580,7 +581,20 @@ class Chat:
             if turn.proc is not None:
                 self._kill(turn, None)
             self._log("turn error agent=%s sid=%s kind=%s" % (turn.agent, sid[:8], type(exc).__name__))
-        self._finish(turn, result, code, error, time.time() - started)
+        self._finish(turn, result, code, error, time.time() - started, self._prepare(turn, result))
+
+    def _prepare(self, turn, result):
+        """Parse the final text and check the proposal's row with NO lock held: the row check runs conductor's hook (a subprocess)."""
+        if result is None:
+            return None
+        text, proposal, rejected = split_proposal(str(result.get("result") or ""))
+        row = None
+        if proposal:
+            try:
+                row = self.row_checker(self.agent_file(self.agents[turn.agent]), proposal["taskType"])
+            except RowError:
+                row = RowError()
+        return text, proposal, rejected, row
 
     def _add_event(self, sid, tool, target):
         with self.lock:
@@ -588,7 +602,7 @@ class Chat:
             ev["n"] += 1
             ev["items"].append({"n": ev["n"], "at": iso(self.now()), "tool": short_tool(tool), "target": target})
 
-    def _finish(self, turn, result, code, start_error, seconds):
+    def _finish(self, turn, result, code, start_error, seconds, prepared):
         sid = turn.sid
         with self.lock:
             sess = self.sessions[sid]
@@ -615,12 +629,12 @@ class Chat:
                 if cost:
                     self.ledger.append((self.now(), cost))          # before the proposal, so its "spent today" includes this turn
                     cost_booked = True
-                text, proposal, rejected = split_proposal(str(result.get("result") or ""))
+                text, proposal, rejected, row = prepared
                 if rejected:
                     self._log("proposal_rejected sid=%s" % sid[:8])
                 msg = ("agent", text)
                 if proposal:
-                    msg_proposal = self._make_proposal(a=self.agents[agent], raw=proposal)
+                    msg_proposal = self._make_proposal(proposal, row)
             at = iso(self.now())
             role, body = msg
             sess["messages"].append({"role": role, "text": body, "at": at, "costUsd": round(cost, 4) if cost else None})
@@ -640,13 +654,14 @@ class Chat:
             self._save(sess)
             self._log("turn kind=answer agent=%s sid=%s result=%s seconds=%d cost=%.4f" % (agent, sid[:8], outcome, seconds, cost))
 
-    def _make_proposal(self, a, raw):
-        """Validate the agent's proposal before the founder sees it (run 1 only shows it; a Yes is `act_off`)."""
+    def _make_proposal(self, raw, row):
+        """Validate the agent's proposal before the founder sees it (run 1 only shows it; a Yes is `act_off`). `row` is the row check's
+        (model, effort), or a RowError instance."""
         refused, model, effort = None, None, None
-        try:
-            model, effort = self.row_checker(self.agent_file(a), raw["taskType"])
-        except RowError:
+        if isinstance(row, RowError):
             refused = "bad_row"
+        else:
+            model, effort = row
         if FORBIDDEN_WORDS.search(raw["summary"]) or raw["estUsd"] > self.s["perActUsd"]:
             refused = "forbidden"
         elif refused is None and self.spent_today() + raw["estUsd"] > self.s["dailyUsd"]:
