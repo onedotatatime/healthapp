@@ -62,11 +62,29 @@ function Ascend({ s }: { s: StepsSlide }) {
   );
 }
 
+/** Left-to-right flow: small teal numerals on a hairline, one line each, the last step ends on a coral dot. No images. */
+function Flow({ s }: { s: StepsSlide }) {
+  return (
+    <>
+      {s.body && <p className="sf-body">{rich(s.body)}</p>}
+      <ol className="sf-flow">
+        {s.steps.map((st, i) => (
+          <li key={st.title} className="sf-step">
+            <span className="sf-rail"><i>{i + 1}</i></span>
+            <h3>{rich(st.title)}</h3>
+            <p>{rich(st.text ?? '')}</p>
+          </li>
+        ))}
+      </ol>
+    </>
+  );
+}
+
 export function Steps({ s }: { s: StepsSlide }) {
   return (
     <div className={`t-steps v-${s.variant}`}>
       <Headline text={s.headline} />
-      {s.variant === 'path' ? <Path s={s} /> : <Ascend s={s} />}
+      {s.variant === 'path' ? <Path s={s} /> : s.variant === 'flow' ? <Flow s={s} /> : <Ascend s={s} />}
     </div>
   );
 }
