@@ -1,7 +1,7 @@
 export type HealthappEnv = 'dev' | 'demo';
 
 export type EnvState =
-  | { status: 'ok'; env: HealthappEnv; schema: string; supabaseUrl: string; anonKey: string }
+  | { status: 'ok'; env: HealthappEnv; schema: string; bucket: string; functionPrefix: string; supabaseUrl: string; anonKey: string }
   | { status: 'error'; message: string };
 
 export interface RawEnv {
@@ -32,6 +32,8 @@ export function parseEnv(raw: RawEnv): EnvState {
     status: 'ok',
     env,
     schema: `healthapp_${env}`,
+    bucket: `healthapp-${env}`,
+    functionPrefix: 'healthapp-',
     supabaseUrl: url.origin,
     anonKey: raw.VITE_SUPABASE_ANON_KEY!.trim(),
   };

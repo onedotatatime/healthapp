@@ -6,7 +6,7 @@ const good = { VITE_SUPABASE_URL: 'https://x.supabase.co', VITE_SUPABASE_ANON_KE
 describe('parseEnv', () => {
   it('derives the schema from the env name', () => {
     expect(parseEnv(good)).toMatchObject({ status: 'ok', env: 'dev', schema: 'healthapp_dev' });
-    expect(parseEnv({ ...good, VITE_HEALTHAPP_ENV: 'demo' })).toMatchObject({ schema: 'healthapp_demo' });
+    expect(parseEnv({ ...good, VITE_HEALTHAPP_ENV: 'demo' })).toMatchObject({ schema: 'healthapp_demo', bucket: 'healthapp-demo', functionPrefix: 'healthapp-' });
   });
   it('names every missing variable instead of crashing', () => {
     const r = parseEnv({});

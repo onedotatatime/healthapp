@@ -37,7 +37,15 @@ else {
   for (const f of walk('dist')) {
     if (!/\.(js|html|css|map|webmanifest)$/.test(f)) continue;
     const text = readFileSync(f, 'utf8');
-    if (/service_role|sb_secret_|SUPABASE_SERVICE_ROLE_KEY/.test(text)) fails.push(`secret name in bundle: ${f}`);
+    // supabase-js itself contains the bare prefix `sb_secret_` (it refuses secret keys in a browser), so a
+    // bare prefix is not a finding: a prefix followed by key characters is. A JWT whose role is service_role is.
+    if (/service_role|sb_secret_[A-Za-z0-9_-]{10,}|SUPABASE_SERVICE_ROLE_KEY/.test(text)) fails.push(`secret name or value in bundle: ${f}`);
+    for (const m of text.match(/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]*/g) ?? []) {
+      try {
+        const role = JSON.parse(Buffer.from(m.split('.')[1], 'base64url').toString()).role;
+        if (role === 'service_role') fails.push(`service_role JWT in bundle: ${f}`);
+      } catch { /* not a JWT */ }
+    }
     if (/password\s*[:=]\s*["'][^"']{4,}/i.test(text)) fails.push(`password literal in bundle: ${f}`);
   }
   // 4. dist/_headers holds the required lines.
