@@ -119,7 +119,7 @@ function paintCum(id, series, proj, fmt, nowVal){
   row._y = v => (+y(v))/YH*72;
 }
 function paintDyn(){
-  const hn = nowH(), now = H.now(), cur = H.curMs(now);
+  const hn = nowH(), now = H.now(), cur = H.curMs(now);   // cur is null while the feed has no milestones
   const nl = $('#nowline'); if(!nl) return;
   nl.style.setProperty('--nh', Math.min(TOTAL,Math.max(0,hn)).toFixed(4));
   $('#nowflag').textContent = 'NOW '+H.hhmm(now);
@@ -134,8 +134,8 @@ function paintDyn(){
   const v = H.verdict(), mt = H.verdictMeta[v], chip = $('#verdict');
   if(chip.dataset.v!==v){ const set=()=>{ chip.className='vchip '+mt.cls; chip.innerHTML='<span aria-hidden="true">'+mt.g+'</span>'+mt.w; chip.dataset.v=v; };
     if(!chip.dataset.v || H.reduced()) set(); else { chip.classList.add('swap'); setTimeout(()=>{ set(); chip.classList.add('swap'); void chip.offsetWidth; chip.classList.remove('swap'); if(v==='off'){chip.classList.add('pulse');setTimeout(()=>chip.classList.remove('pulse'),400);} },100); } }
-  const nextM = now < cur.e ? cur : H.ms[H.ms.indexOf(cur)+1];
-  $('#sentence').textContent = 'Submit by Sun 17:00. '+(nextM? 'Next gate: '+nextM.id+' closes '+nextM.end+': '+nextM.gate.charAt(0).toLowerCase()+nextM.gate.slice(1)+'.' : 'Every gate is behind us.');
+  const nextM = !cur ? null : now < cur.e ? cur : H.ms[H.ms.indexOf(cur)+1];
+  $('#sentence').textContent = 'Submit by Sun 17:00. '+(nextM? 'Next gate: '+nextM.id+' closes '+nextM.end+': '+nextM.gate.charAt(0).toLowerCase()+nextM.gate.slice(1)+'.' : (cur ? 'Every gate is behind us.' : 'No milestones from the feed yet.'));
   // vertical (phone) map
   H.ms.forEach(m => { const li = $('[data-vm="'+m.id+'"]'); if(!li) return; const d = S['m.'+m.id]||0; li.classList.toggle('cur', m===cur);
     li.querySelector('[data-vc]').textContent = m.total? d+' of '+m.total : 'no issues'; li.querySelector('.fill').style.setProperty('--f',(m.total? d/m.total : 0).toFixed(3));
@@ -202,9 +202,11 @@ function wireMap(){
 /* ---------- exercises ---------- */
 const seen = new Set();
 function renderExercises(){
-  $('#v-exercises').innerHTML = '<div class="pagehead"><h1>Exercises</h1><p class="muted">Seven workshop pages, one template. The room recommended; nothing is decided. '+H.src('none','SAMPLE · copied text')+'</p></div><div class="excovers">'+H.exCards(i=>'#/exercises/'+EX[i].n)+'</div>';
+  if(!EX.length){ $('#v-exercises').innerHTML = '<div class="pagehead"><h1>Exercises</h1><p class="muted">The workshop pages are not published on this page yet.</p></div>'; return; }
+  $('#v-exercises').innerHTML = '<div class="pagehead"><h1>Exercises</h1><p class="muted">Seven workshop pages, one template. The room recommended; nothing is decided. '+H.src('none','SAMPLE · copied text')+'</p></div>'+'<div class="excovers">'+H.exCards(i=>'#/exercises/'+EX[i].n)+'</div>';
 }
 function renderEx(i){
+  if(!EX.length){ $('#v-ex').innerHTML = '<div class="pagehead"><h1>Exercises</h1><p class="muted">The workshop pages are not published on this page yet.</p></div>'; return; }
   seen.add(i);
   const strip = '<div class="strip-s"><ol class="series" aria-label="Workshop series">'+EX.map((e,j)=>'<li><a href="#/exercises/'+e.n+'" title="'+esc(e.n+' · '+e.t)+'" aria-label="'+esc(e.t)+'"'+(j===i?' aria-current="page"':'')+(seen.has(j)&&j!==i?' class="seen"':'')+'>'+e.n+'</a>'+(j<EX.length-1?'<i></i>':'')+'</li>').join('')+'</ol></div>';
   $('#v-ex').innerHTML = strip + H.exercisePage(i,{href:j=>'#/exercises/'+EX[j].n});
@@ -215,12 +217,13 @@ function renderEx(i){
 /* ---------- decks ---------- */
 let viewerT0 = 0, viewerTimer = 0;
 function renderDecks(){
+  if(!CONTENT.decks.short.slides.length && !CONTENT.decks.full.slides.length){ $('#v-decks').innerHTML = '<div class="pagehead"><h1>Decks</h1><p class="muted">Decks are not published on this page yet.</p></div>'; return; }
   $('#v-decks').innerHTML = '<div class="pagehead"><h1>Decks</h1><p class="muted">Two decks, equal weight. Thumbnails show the slide title and headline from the content files; the real HTML decks open from a local file link. '+H.src('none','SAMPLE · copied text')+'</p></div><div class="posters">'
    + ['short','full'].map(k=>{ const d = H.deckInfo(k); return '<article class="card poster" data-k="'+k+'">'+H.slideTile(k,0)+'<h2>'+esc(d.label)+' · '+d.slides.length+' slides</h2><p class="muted">'+esc(d.sub)+' · '+esc(d.ver)+'</p><div class="actions"><a class="btn primary" href="#/decks/'+k+'/1" data-present>Present ▸</a><a class="btn" href="'+d.file+'" target="_blank" rel="noopener" title="Opens the deck HTML from the pix-pitching-deck-draft worktree on this machine">Open ↗</a></div></article>'; }).join('')+'</div>';
   $$('[data-present]').forEach(a => a.addEventListener('click', e => { const r = a.closest('.poster').getBoundingClientRect(); const v = $('#viewer'); v.style.setProperty('--ox', (r.left+r.width/2)+'px'); v.style.setProperty('--oy', (r.top+r.height/2)+'px'); }));
 }
 function renderViewer(k, n){
-  const v = $('#viewer'), d = H.deckInfo(k), tot = d.slides.length; n = Math.min(tot, Math.max(1,n||1));
+  const v = $('#viewer'), d = H.deckInfo(k), tot = d.slides.length; if(!tot){ closeViewer(); return; } n = Math.min(tot, Math.max(1,n||1));
   const wasOpen = v.classList.contains('open');
   v.innerHTML = '<div class="vh"><a class="btn" href="#/decks" aria-label="Close viewer (Esc)">✕</a><b>'+esc(d.label)+'</b><span class="mono num">'+n+' / '+tot+'</span><span style="margin-left:auto" class="mono" title="Rehearsal clock, counts up from Present">⏱ <span id="vt">00:00</span></span>'
     + '<a class="btn" href="#/decks/'+k+'/'+Math.max(1,n-1)+'" aria-label="Previous slide">‹</a><a class="btn" href="#/decks/'+k+'/'+Math.min(tot,n+1)+'" aria-label="Next slide">›</a><button class="btn" id="vf" title="Fullscreen (f)">⛶</button></div>'
@@ -240,6 +243,8 @@ function closeViewer(){ const v = $('#viewer'); v.classList.remove('open'); clea
 let sel = 4;
 function renderDemo(){
   const d = DATA.demo, st = d.steps;
+  if(!st.length){ $('#v-demo').innerHTML = '<div class="pagehead"><h1>Demo product</h1><p class="muted">No demo steps are published on this page yet.</p></div>'; return; }
+  if(sel >= st.length) sel = 0;
   const nodes = st.map((s,i)=>'<li><div class="node"><button role="radio" class="'+s.s+'" aria-checked="'+(i===sel)+'" tabindex="'+(i===sel?0:-1)+'" data-i="'+i+'" aria-label="Step '+s.n+', '+H.stepWord(s.s)+': '+esc(s.t)+'"><span aria-hidden="true">'+H.ragGlyph(s.s)+'</span>'+s.n+'</button><span class="seg '+s.s+'"></span></div><div class="lab">'+esc(s.t)+'</div></li>').join('');
   const cur = st[sel], hasUrl = /^https?:\/\//.test(d.url || '');
   $('#v-demo').innerHTML = '<div class="pagehead" data-blk="hand" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><h1 style="margin-right:auto">Demo product</h1>'+blkTag('hand')+'<span class="upd"></span></div>'
@@ -276,6 +281,7 @@ function route(){
 document.addEventListener('keydown', e => {
   const open = $('#viewer').classList.contains('open'); if(!open) return;
   const p = location.hash.replace(/^#\/?/,'').split('/'), k = p[1]==='full'?'full':'short', n = +p[2]||1, tot = CONTENT.decks[k].slides.length;
+  if(!tot) return;
   if(e.key==='Escape'){ location.hash = '#/decks'; }
   else if(e.key==='ArrowRight'){ location.hash = '#/decks/'+k+'/'+Math.min(tot,n+1); } else if(e.key==='ArrowLeft'){ location.hash = '#/decks/'+k+'/'+Math.max(1,n-1); }
   else if(e.key==='f'){ $('#vf').click(); }

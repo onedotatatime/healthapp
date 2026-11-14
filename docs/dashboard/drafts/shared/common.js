@@ -36,7 +36,7 @@ H.ms = DATA.milestones.map(m => {
   const f = t => { const [d,hm] = t.split(' '); return parseAthens('2026-11-' + (d==='Sat'?'14':'15') + 'T' + hm); };
   return Object.assign({}, m, { s:f(m.start), e:f(m.end), hours:(f(m.end)-f(m.start))/36e5 });
 });
-H.curMs = (now) => { now = now || H.now(); for(const m of H.ms){ if(now>=m.s && now<m.e) return m; } return now<H.ms[0].s ? H.ms[0] : H.ms[H.ms.length-1]; };
+H.curMs = (now) => { if(!H.ms.length) return null; now = now || H.now(); for(const m of H.ms){ if(now>=m.s && now<m.e) return m; } return now<H.ms[0].s ? H.ms[0] : H.ms[H.ms.length-1]; };
 H.fmtWin = m => m.start + ' to ' + m.end;
 
 /* ---------- formatting ---------- */
@@ -256,7 +256,7 @@ const EVENTS = [
   () => { const r = Math.random(); let from,to,ag = pick(['Ren','Pix','Back','Anna','Cron']);
     if(r<.4 && S['t.open']>0){ from='open'; to='inProgress'; } else if(r<.75 && S['t.inProgress']>0){ from='inProgress'; to='inReview'; } else if(S['t.inReview']>0){ from='inReview'; to='done'; } else return false;
     H.set('t.'+from, S['t.'+from]-1); H.set('t.'+to, S['t.'+to]+1);
-    if(to==='done'){ const m = H.curMs(); if(S['m.'+m.id]<m.total) H.set('m.'+m.id, S['m.'+m.id]+1); }
+    if(to==='done'){ const m = H.curMs(); if(m && S['m.'+m.id]<m.total) H.set('m.'+m.id, S['m.'+m.id]+1); }
     logEv(ag+' moved MIN-'+rnd(4430,4470)+' to '+({inProgress:'In Progress',inReview:'In Review',done:'Done'})[to]); return true; },
   () => { const a = pick(DATA.agents), now = S['ag.'+a.n]; const act = DATA.agents.filter(x=>S['ag.'+x.n]==='active').length;
     if(now==='active' && act<=2) return false; H.set('ag.'+a.n, now==='active'?'idle':'active'); logEv(a.n+(now==='active'?' went idle':' started on '+(a.issue!=='-'?a.issue:'a new task'))); return true; },
