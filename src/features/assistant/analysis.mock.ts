@@ -24,7 +24,7 @@ export const MOCK_SERIES_RECORD: RecordData = {
 };
 
 const base = (document_id: string): FileAnalysisRow => ({
-  document_id, status: 'done', error_code: null, doc_type: 'blood_test', pages: 2, readable: true, blurred: false, cropped: false, rotated: false, handwriting: false,
+  document_id, patient_id: MOCK_PATIENT_ID, analysed_at: '2026-10-30T09:03:00+02:00', status: 'done', error_code: null, doc_type: 'blood_test', pages: 2, readable: true, blurred: false, cropped: false, rotated: false, handwriting_present: false,
   issuer_present: true, date_present: true, stamp_or_signature_present: false, sha256: SHA, mime: 'image/jpeg', bytes: 483_210, uploaded_at: '2026-10-30T09:02:11+02:00', hash_verified: true, items_count: 0, items: [],
 });
 
@@ -33,5 +33,5 @@ export const MOCK_FILE_ANALYSIS: Record<string, FileAnalysisRow | null> = {
   [ID.docOct]: { ...base(ID.docOct), blurred: true, cropped: true, items_count: 2, items: [{ text_original: 'Ferritin 48 ng/mL (ref 30-400)', page: 2 }, { text_original: 'Note: sample taken after 12 h fasting.', page: 2 }] },
   [ID.docMar]: { ...base(ID.docMar), pages: 1, issuer_present: true, stamp_or_signature_present: true, mime: 'application/pdf', bytes: 91_034, uploaded_at: '2026-03-12T10:15:00+02:00' },
   [ID.docMri]: null,
-  [ID.docLetter]: { ...base(ID.docLetter), status: 'failed', error_code: 'model_unavailable', doc_type: null, pages: null, readable: null, blurred: null, cropped: null, rotated: null, handwriting: null, issuer_present: null, date_present: null, stamp_or_signature_present: null, hash_verified: null },
+  [ID.docLetter]: { ...base(ID.docLetter), status: 'failed', error_code: 'model_timeout', doc_type: null, pages: null, readable: null, blurred: null, cropped: null, rotated: null, handwriting_present: null, issuer_present: null, date_present: null, stamp_or_signature_present: null, hash_verified: null },
 };

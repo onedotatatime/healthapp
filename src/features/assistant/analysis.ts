@@ -16,12 +16,12 @@ export const FILE_DOC_TYPE_LABEL: Record<FileDocType, string> = {
 };
 
 /** The quality flags as words. Empty when the model flagged none. */
-export function qualityWords(r: Pick<FileAnalysisRow, 'readable' | 'blurred' | 'cropped' | 'rotated' | 'handwriting'>): string[] {
+export function qualityWords(r: Pick<FileAnalysisRow, 'readable' | 'blurred' | 'cropped' | 'rotated' | 'handwriting_present'>): string[] {
   const out: string[] = [];
   if (r.blurred) out.push('Blurred');
   if (r.cropped) out.push('Cropped');
   if (r.rotated) out.push('Rotated');
-  if (r.handwriting) out.push('Handwriting present');
+  if (r.handwriting_present) out.push('Handwriting present');
   return out;
 }
 
@@ -65,7 +65,7 @@ export const fmtNum = (n: number) => String(Number(n.toPrecision(4)));
 export const rangeWords = (p: { ref_low: number | null; ref_high: number | null }): string =>
   p.ref_low !== null && p.ref_high !== null ? `${fmtNum(p.ref_low)} to ${fmtNum(p.ref_high)}` : p.ref_high !== null ? `below ${fmtNum(p.ref_high)}` : p.ref_low !== null ? `above ${fmtNum(p.ref_low)}` : 'none printed';
 
-export const FLAG_WORDS = { low: 'below range', high: 'above range', normal: 'within range', unknown: 'no range printed' } as const;
+export const flagWord = (outOfRange: boolean | null) => (outOfRange === null ? 'no range printed' : outOfRange ? 'outside the printed range' : 'within the printed range');
 
 const DAY = 86_400_000;
 export const dayOf = (d: string) => Date.parse(`${d}T00:00:00Z`) / DAY;
@@ -123,7 +123,7 @@ export function buildChart(s: OverTimeSeries, w = 560, h = 260): Chart {
   const key = (p: { ref_low: number | null; ref_high: number | null }) => `${p.ref_low}|${p.ref_high}`;
   return {
     w, h, plot,
-    points: s.points.map((p) => ({ cite: p.cite, x: X(p.date), y: Y(p.value), date: p.date, value: p.value, outside: p.flag === 'low' || p.flag === 'high' })),
+    points: s.points.map((p) => ({ cite: p.cite, x: X(p.date), y: Y(p.value), date: p.date, value: p.value, outside: p.out_of_range === true })),
     band: hasBand ? { y1: Y(Math.min(bandHigh, hi)), y2: Y(Math.max(bandLow, lo)) } : null,
     rangesDiffer: s.points.some((p) => key(p) !== key(latest)),
     line: proj ? { x1: X(first), y1: Y(lineAt(first)), x2: X(proj.horizon_date), y2: Y(proj.value_at_horizon) } : null,

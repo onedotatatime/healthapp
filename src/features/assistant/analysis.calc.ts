@@ -27,13 +27,13 @@ export function computeOverTime(record: RecordData): OverTimeResponse {
       const my = ys.reduce((a, b) => a + b) / ys.length;
       const slope = xs.reduce((a, x, i) => a + (x - mx) * (ys[i] - my), 0) / xs.reduce((a, x) => a + (x - mx) ** 2, 0);
       const horizon = horizonFor(pts[0].date, pts[pts.length - 1].date);
-      projection = { n: pts.length, slope_per_day: slope, horizon_date: horizon, value_at_horizon: my + slope * (dayOf(horizon) - mx) };
+      projection = { n: pts.length, first_date: pts[0].date, last_date: pts[pts.length - 1].date, slope_per_day: slope, horizon_days: dayOf(horizon) - dayOf(pts[pts.length - 1].date), horizon_date: horizon, value_at_horizon: my + slope * (dayOf(horizon) - mx) };
     }
     series.push({
-      analyte_key: key,
+      key,
       analyte: pts[0].r.analyte,
-      unit: pts[0].r.unit ?? '',
-      points: pts.map((p) => ({ cite: `r:${p.r.id}`, date: p.date, value: p.r.value_num!, ref_low: p.r.ref_low, ref_high: p.r.ref_high, flag: p.r.flag })),
+      unit: pts[0].r.unit,
+      points: pts.map((p) => ({ cite: `r:${p.r.id}`, date: p.date, value: p.r.value_num!, ref_low: p.r.ref_low, ref_high: p.r.ref_high, out_of_range: p.r.flag === 'unknown' ? null : p.r.flag === 'low' || p.r.flag === 'high' })),
       out_of_range: { count: outside.length, first_date: outside[0]?.date ?? null, latest_date: outside[outside.length - 1]?.date ?? null },
       projection,
     });

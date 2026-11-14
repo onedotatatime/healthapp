@@ -9,7 +9,7 @@ import { Circle, Diamond } from '@phosphor-icons/react';
 import { CitationChip } from '../../components/CitationChip';
 import { EmptyState, Spinner } from '../../components/Primitives';
 import type { OverTimeResponse, OverTimeSeries } from './analysis.contract';
-import { FLAG_WORDS, NOT_ENOUGH, buildChart, fmtNum, outOfRangeLine, projectionLabel, rangeWords, type Chart } from './analysis';
+import { flagWord, NOT_ENOUGH, buildChart, fmtNum, outOfRangeLine, projectionLabel, rangeWords, type Chart } from './analysis';
 import { formatDate, type RecordIndex } from './record';
 
 export type OverTimeState = { status: 'loading' } | { status: 'error' } | { status: 'ready'; data: OverTimeResponse };
@@ -41,7 +41,7 @@ export function OverTimeView({ state, index, openCite, onOpenCite, onRetry }: Vi
       {state.status === 'ready' && state.data.series.length > 0 && (
         <>
           <ul className="ot-list">
-            {state.data.series.map((s) => <li key={s.analyte_key + s.unit}><SeriesRow s={s} index={index} openCite={openCite} onOpenCite={onOpenCite} /></li>)}
+            {state.data.series.map((s) => <li key={s.key + (s.unit ?? '')}><SeriesRow s={s} index={index} openCite={openCite} onOpenCite={onOpenCite} /></li>)}
           </ul>
           <p className="ot-counts mono" data-testid="over-time-counts">
             Records read {state.data.counts.records_read}, values with a series {state.data.counts.values_with_series}, projections {state.data.counts.projections_computed}, series excluded {state.data.counts.series_excluded}, errors {state.data.counts.errors}.
@@ -58,10 +58,10 @@ function SeriesRow({ s, index, openCite, onOpenCite }: { s: OverTimeSeries; inde
   const first = s.points[0].date;
   const last = s.points[s.points.length - 1].date;
   return (
-    <details className="ot-series" data-testid="ot-series" data-analyte={s.analyte_key}>
+    <details className="ot-series" data-testid="ot-series" data-analyte={s.key}>
       <summary>
         <span className="ot-name">{s.analyte}</span>
-        <span className="ot-sub">{s.unit}, {s.points.length} results, {formatDate(first)} to {formatDate(last)}</span>
+        <span className="ot-sub">{s.unit ? s.unit + ', ' : ''}{s.points.length} results, {formatDate(first)} to {formatDate(last)}</span>
       </summary>
       <div className="ot-body">
         <ChartSvg chart={chart} s={s} onOpenCite={onOpenCite} />
@@ -72,7 +72,7 @@ function SeriesRow({ s, index, openCite, onOpenCite }: { s: OverTimeSeries; inde
             <svg className="ot-swatch" width="36" height="8" viewBox="0 0 36 8" aria-hidden="true"><line x1="0" y1="4" x2="36" y2="4" stroke="currentColor" strokeWidth="2" strokeDasharray="5 4" /></svg>
             <div>
               <p data-testid="ot-projection-label">{projectionLabel(proj.n, first, last)}</p>
-              <p className="ot-horizon">The line ends at {fmtNum(proj.value_at_horizon)} {s.unit} on {formatDate(proj.horizon_date)}.</p>
+              <p className="ot-horizon">The line ends at {fmtNum(proj.value_at_horizon)}{s.unit ? ' ' + s.unit : ''} on {formatDate(proj.horizon_date)}.</p>
             </div>
           </div>
         ) : (
@@ -83,13 +83,13 @@ function SeriesRow({ s, index, openCite, onOpenCite }: { s: OverTimeSeries; inde
           <tbody>
             {s.points.map((p, i) => {
               const src = index.resolve(p.cite);
-              const outside = p.flag === 'low' || p.flag === 'high';
+              const outside = p.out_of_range === true;
               return (
                 <tr key={p.cite} data-outside={outside ? 'true' : undefined}>
                   <th scope="row">{formatDate(p.date)}</th>
                   <td className="mono">
-                    {fmtNum(p.value)} {s.unit}
-                    <span className="as-flag ot-flag">{outside ? <Diamond size={12} weight="fill" aria-hidden="true" /> : <Circle size={12} weight="bold" aria-hidden="true" />} {FLAG_WORDS[p.flag]}</span>
+                    {fmtNum(p.value)}{s.unit ? ' ' + s.unit : ''}
+                    <span className="as-flag ot-flag">{outside ? <Diamond size={12} weight="fill" aria-hidden="true" /> : <Circle size={12} weight="bold" aria-hidden="true" />} {flagWord(p.out_of_range)}</span>
                   </td>
                   <td className="mono">{rangeWords(p)}</td>
                   <td>{src ? <CitationChip n={i + 1} record={{ name: src.name, date: src.date, provenance: src.provenance }} open={openCite === p.cite} onOpen={() => onOpenCite(p.cite)} /> : <span className="muted">not available</span>}</td>

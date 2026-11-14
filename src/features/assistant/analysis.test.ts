@@ -15,18 +15,18 @@ const text = (markup: string) => markup.replace(/<[^>]+>/g, ' ').replace(/&#x27;
 const index = buildIndex(MOCK_SERIES_RECORD);
 
 // A literal response (not computed here): the numbers on screen are compared with these numbers, written by hand.
-const crp = (n: number, date: string, value: number, flag: 'normal' | 'high'): OverTimeSeries['points'][number] => ({ cite: `r:${[ID.crpMar, '00000000-0000-4000-8000-000000000206', '00000000-0000-4000-8000-000000000207', ID.crpOct][n]}`, date, value, ref_low: null, ref_high: 5, flag });
+const crp = (n: number, date: string, value: number, flag: 'normal' | 'high'): OverTimeSeries['points'][number] => ({ cite: `r:${[ID.crpMar, '00000000-0000-4000-8000-000000000206', '00000000-0000-4000-8000-000000000207', ID.crpOct][n]}`, date, value, ref_low: null, ref_high: 5, out_of_range: flag === 'high' });
 const SERIES: OverTimeSeries = {
-  analyte_key: 'crp', analyte: 'CRP', unit: 'mg/L',
+  key: 'crp', analyte: 'CRP', unit: 'mg/L',
   points: [crp(0, '2026-03-12', 3.1, 'normal'), crp(1, '2026-06-18', 8.9, 'high'), crp(2, '2026-08-20', 11, 'high'), crp(3, '2026-10-30', 14.2, 'high')],
   out_of_range: { count: 3, first_date: '2026-06-18', latest_date: '2026-10-30' },
-  projection: { n: 4, slope_per_day: 0.04716, horizon_date: '2027-04-28', value_at_horizon: 22.94 },
+  projection: { n: 4, slope_per_day: 0.04716, first_date: '2026-03-12', last_date: '2026-10-30', horizon_days: 232, horizon_date: '2027-04-28', value_at_horizon: 22.94 },
 };
 const TWO: OverTimeSeries = {
-  analyte_key: 'esr', analyte: 'ESR', unit: 'mm/h',
+  key: 'esr', analyte: 'ESR', unit: 'mm/h',
   points: [
-    { cite: `r:${ID.esrMar}`, date: '2026-03-12', value: 12, ref_low: 0, ref_high: 20, flag: 'normal' },
-    { cite: `r:${ID.esrOct}`, date: '2026-10-30', value: 28, ref_low: 0, ref_high: 20, flag: 'high' },
+    { cite: `r:${ID.esrMar}`, date: '2026-03-12', value: 12, ref_low: 0, ref_high: 20, out_of_range: false },
+    { cite: `r:${ID.esrOct}`, date: '2026-10-30', value: 28, ref_low: 0, ref_high: 20, out_of_range: true },
   ],
   out_of_range: { count: 1, first_date: '2026-10-30', latest_date: '2026-10-30' },
   projection: null,
@@ -38,17 +38,16 @@ const view = (state: OverTimeState) => html(h(OverTimeView, { state, index, open
 // Words the panels must never carry (CTO decision MIN-4548 section 2 and the issue's acceptance criteria).
 const FORBIDDEN = /\b(rising|falling|improv\w*|worsen\w*|declin\w*|trend\w*|increas\w*|decreas\w*|better|worse|abnormal|healthy|risk\w*|cause\w*|diagnos\w*|condition\w*|advice|score)\b/i;
 
-describe('the response shapes (a copy of the CTO decision, until Cron posts his)', () => {
+describe('the response shapes (Cron contract.ts)', () => {
   it('accepts the literal response and counts the five integers', () => {
     expect(OverTimeResponse.parse({ series: [SERIES, TWO], counts: COUNTS }).counts).toEqual(COUNTS);
   });
-  it('refuses a series of one result, and a projection through fewer than three', () => {
+  it('refuses a series of one result', () => {
     expect(OverTimeResponse.safeParse({ series: [{ ...TWO, points: [TWO.points[0]] }], counts: COUNTS }).success).toBe(false);
-    expect(OverTimeResponse.safeParse({ series: [{ ...SERIES, projection: { ...SERIES.projection!, n: 2 } }], counts: COUNTS }).success).toBe(false);
   });
   it('has no field for a crossing date, a direction or free text beyond the document words', () => {
     const keys = JSON.stringify(Object.keys(OverTimeResponse.shape.series.element.shape.projection.unwrap().shape));
-    expect(keys).toBe('["n","slope_per_day","horizon_date","value_at_horizon"]');
+    expect(keys).toBe('["n","first_date","last_date","slope_per_day","horizon_days","horizon_date","value_at_horizon"]');
   });
   it('the mock file analyses all parse; text_original is capped at 200 characters and 20 items', () => {
     for (const row of Object.values(MOCK_FILE_ANALYSIS)) if (row) expect(FileAnalysisRow.safeParse(row).success).toBe(true);
@@ -80,7 +79,7 @@ describe('Over time: what is on screen equals the response', () => {
   });
   it('marks a result outside its range with a word and a diamond, not by colour alone', () => {
     const m = view(ready([SERIES]));
-    expect(m.match(/above range/g)?.length).toBe(3);
+    expect(m.match(/outside the printed range/g)?.length).toBe(3);
     expect(m.match(/data-outside="true"/g)?.length).toBeGreaterThanOrEqual(3);
     expect(m.match(/ot-pt-out/g)?.length).toBe(3);
     expect(m.match(/<circle class="ot-pt"/g)?.length).toBe(1);
@@ -186,7 +185,7 @@ describe('About this file: the four states', () => {
   it('failed: the code, and the values are unchanged', () => {
     const m = file({ status: 'ready', row: row(ID.docLetter) });
     expect(m).toContain('data-state="failed"');
-    expect(text(m)).toContain('The analysis of this file failed (code: model_unavailable). The values above are unchanged.');
+    expect(text(m)).toContain('The analysis of this file failed (code: model_timeout). The values above are unchanged.');
     expect(text(m)).not.toContain('Readable');
   });
   it('a hash that does not match the stored file says so in words', () => {
