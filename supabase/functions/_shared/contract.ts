@@ -205,13 +205,16 @@ export const HelloResponse = z.object({ ok: z.literal(true), env: HealthappEnv }
 // supabase.auth.setSession({ access_token, refresh_token }).
 export const Persona = z.enum(["patient", "doctor"]);
 export type Persona = z.infer<typeof Persona>;
-export const DemoLoginRequest = z.object({ persona: Persona, passcode: z.string().min(1).max(200) });
+// "founder" is the founder's own account in the demo deployment only (MIN-4541): dev answers 400.
+export const DemoPersona = z.enum(["patient", "doctor", "founder"]);
+export type DemoPersona = z.infer<typeof DemoPersona>;
+export const DemoLoginRequest = z.object({ persona: DemoPersona, passcode: z.string().min(1).max(200) });
 export const DemoLoginResponse = z.object({
   access_token: z.string().min(1),
   refresh_token: z.string().min(1),
   expires_at: z.number().int(), // unix seconds
   user_id: Uuid,
-  persona: Persona,
+  persona: DemoPersona,
   role: Role,
 });
 export type DemoLoginResponse = z.infer<typeof DemoLoginResponse>;
@@ -270,6 +273,8 @@ export const ExtractResponse = z.discriminatedUnion("outcome", [
     outcome: z.literal("refused"),
     reason: RefusalReason,
     message: z.string(), // names what did not match; nothing was stored
+    /** name_mismatch and id_mismatch only: the two values that differ (MIN-4478). Both are the patient's own. */
+    mismatch: z.object({ printed: z.string(), profile: z.string() }).optional(),
   }),
 ]);
 export type ExtractResponse = z.infer<typeof ExtractResponse>;

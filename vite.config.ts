@@ -6,6 +6,8 @@ const commitSha = (process.env.CF_PAGES_COMMIT_SHA ?? process.env.GITHUB_SHA ?? 
 
 export default defineConfig({
   plugins: [react()],
+  // Cron's contract.ts is written for Deno (`npm:zod@4.6.7`). The drift test imports it as is.
+  resolve: { alias: { 'npm:zod@4.6.7': 'zod' } },
   define: { __COMMIT_SHA__: JSON.stringify(commitSha) },
   build: { outDir: 'dist', sourcemap: false },
   test: { include: ['src/**/*.test.ts'] },

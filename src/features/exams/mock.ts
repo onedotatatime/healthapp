@@ -1,5 +1,5 @@
 /**
- * In-memory fixtures for `/preview/exams` and for building before Cron's functions are live. Synthetic only:
+ * In-memory fixtures for unit tests (the app never imports it). Synthetic only:
  * the persona Maria Papadopoulou, ids shaped like Cron's `contract.fixtures.ts`. Steer the read with the URL:
  * `?outcome=unreadable | name | id | missing | offline | slow`.
  */

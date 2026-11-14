@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router';
 import { AccessTimer } from '../../components/AccessTimer';
 import { ErrorNote, Spinner } from '../../components/Primitives';
+import { recordDoctorOpen } from '../demo/timing';
 import { claimErrorMessage } from './api';
 import { localDeadlineIso, mmss, secondsLeft } from './clock';
 import { parseShortCode, typedCode } from './codes';
@@ -20,7 +21,7 @@ export const PENDING_TOKEN_KEY = 'healthapp-pending-token';
 
 /** Doctor: scan or type a code, wait for the patient, open the workspace, close it when access ends. */
 export function DoctorConnect() {
-  const { api, home, preview } = useHandshake();
+  const { api, home } = useHandshake();
   const feed = useGrantSession(api, { pollWhenNone: false });
   const { session } = feed;
   const [busy, setBusy] = useState(false);
@@ -55,16 +56,8 @@ export function DoctorConnect() {
     }
   }, [claim]);
 
-  // Preview only: "simulate a scan" from the review controls.
-  useEffect(() => {
-    if (!preview) return;
-    const on = (e: Event) => void claim({ token: (e as CustomEvent<string>).detail } as HandshakeClaimRequest);
-    window.addEventListener('hs-preview-scan', on);
-    return () => window.removeEventListener('hs-preview-scan', on);
-  }, [preview, claim]);
-
   if (session.phase === 'none') {
-    return <Connect busy={busy} error={error} onToken={(token) => void claim({ token } as HandshakeClaimRequest)} onCode={(short_code) => void claim({ short_code } as HandshakeClaimRequest)} home={home} preview={preview} />;
+    return <Connect busy={busy} error={error} onToken={(token) => void claim({ token } as HandshakeClaimRequest)} onCode={(short_code) => void claim({ short_code } as HandshakeClaimRequest)} home={home} />;
   }
   if (session.phase === 'pending') {
     const g = session.grant;
@@ -103,7 +96,7 @@ export function DoctorConnect() {
   );
 }
 
-function Connect({ busy, error, onToken, onCode, home, preview }: { busy: boolean; error: string | null; onToken(t: string): void; onCode(c: string): void; home: string; preview: boolean }) {
+function Connect({ busy, error, onToken, onCode, home }: { busy: boolean; error: string | null; onToken(t: string): void; onCode(c: string): void; home: string }) {
   const [typed, setTyped] = useState('');
   const [typedError, setTypedError] = useState<string | null>(null);
   const submit = (e: React.FormEvent) => {
@@ -117,7 +110,7 @@ function Connect({ busy, error, onToken, onCode, home, preview }: { busy: boolea
     <main className="page doctor hs-connect" data-testid="doctor-connect">
       <h1>Connect to a patient</h1>
       <p className="muted">Scan the code on the patient's phone, or type it.</p>
-      <Scanner active={!busy} onToken={onToken} disabledNote={preview && new URLSearchParams(location.search).get('camera') !== '1' ? 'The camera is off in the preview. Use "Simulate scan" or type the code. (?camera=1 turns it on.)' : undefined} />
+      <Scanner active={!busy} onToken={onToken} />
       <form onSubmit={submit} className="hs-typed">
         <label className="field">
           <span>Or type the code</span>
@@ -142,6 +135,13 @@ function Connect({ busy, error, onToken, onCode, home, preview }: { busy: boolea
  * component unmounts), and a read that comes back empty after data calls `useActiveGrant().onEmptyRead()`.
  */
 export function DoctorWorkspace({ feed, children }: { feed: ReturnType<typeof useGrantSession>; children?: React.ReactNode }) {
+  const grantId = feed.session.phase === 'active' ? feed.session.grant.grant_id : null;
+  const offsetMs = feed.offsetMs;
+  // The demo panel reads this to show the scan-to-open time (the server logs no such moment yet).
+  useEffect(() => {
+    if (grantId) recordDoctorOpen(grantId, Date.now() + offsetMs);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grantId]);
   if (feed.session.phase !== 'active' || !feed.session.grant.expires_at) return null;
   const g = feed.session.grant;
   return (

@@ -1,5 +1,5 @@
 /**
- * An in-memory handshake server for `/preview/handshake` and for building before Cron's functions are live.
+ * An in-memory handshake server for unit tests (the app never imports it).
  * Synthetic people only (Maria Papadopoulou, Dr. Eleni Raptis). It follows Cron's contract: single-use codes of
  * 120 s, typed errors, a grant length that only the server decides, `server_now` on every answer, and a
  * `skewMs` so the server's clock can disagree with the device's (the countdown must still be right).
@@ -40,7 +40,7 @@ export function createMockWorld(opts: MockOptions = {}) {
     grants: [] as MockGrant[],
     listeners: new Set<() => void>(),
     seq: 100,
-    /** The code the patient screen shows now, for the preview's "simulate scan". */
+    /** The code the patient screen shows now, for tests that simulate a scan. */
     lastCode: null as { token: string; short: string } | null,
   };
   const now = () => Date.now() + w.skewMs;
