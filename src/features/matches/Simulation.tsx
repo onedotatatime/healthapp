@@ -14,7 +14,7 @@ import {
 import './matches.css';
 
 const W = 320, H = 190, L = 38, R = 10, T = 10, B = 34;
-const COLORS: Record<number, string> = { 1: 'var(--teal)', 2: 'var(--slate)', 3: 'var(--amber-ink)' };
+const COLORS: Record<number, string> = { 1: 'var(--color-link)', 2: 'var(--color-info)', 3: 'var(--color-flag-text)' };
 
 function useProgress(duration: number, run: number, still: boolean) {
   const [p, setP] = useState(still ? 1 : 0);

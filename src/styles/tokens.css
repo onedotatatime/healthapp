@@ -32,15 +32,5 @@
   --tap-patient:52px;                               /* buttons */
   --tap-input:56px;                                 /* inputs */
   --tap-doctor:var(--target-min);
-
-  /* Stand-ins for the Drop 0 names the doctor side still reads. MIN-4588 moves it onto the brand names and deletes this block. */
-  --paper:var(--color-bg); --surface:var(--color-surface); --surface-2:var(--color-surface-quiet);
-  --line:var(--color-border); --line-strong:var(--color-border-strong);
-  --teal:var(--color-link); --teal-text:var(--color-link); --teal-tint:var(--color-surface-quiet);
-  --slate:var(--color-info); --slate-tint:var(--color-info-bg);
-  --amber-bg:var(--color-caution-bg); --amber-ink:var(--color-flag-text);
-  --red-bg:var(--color-surface); --red-ink:var(--color-flag-text);
-  --night:var(--color-inverse-bg); --night-ink:var(--color-inverse-text);
-  --helix-patient:var(--mint); --helix-doctor:var(--coral); --qr-ink:var(--ink);
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
