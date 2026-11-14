@@ -4,7 +4,7 @@
 // and the handler has already checked the session and the role (docs.ts authenticate).
 // The schema name comes from the validated env (dev | demo), never from input. Values are parameters.
 import postgres from "npm:postgres@3.4.5";
-import { FindingRow, type HealthappEnv, ResultRow } from "./contract.ts";
+import { bucketFor, FindingRow, type HealthappEnv, ResultRow } from "./contract.ts";
 import { type DocMeta, DocRecordSchema, type DocState, type PlanOutcome, type Role, type Saved, type Store } from "./docs.ts";
 import type { DraftIn } from "./extract.ts";
 
@@ -66,6 +66,49 @@ export const pgStore: Store = {
     return role === "patient" || role === "doctor" ? (role as Role) : null;
   },
 
+  async identityOf(env, uid) {
+    const rows = await db().unsafe(
+      `select full_name, full_name_latin, national_id_norm from ${schema(env)}.profiles where id = $1`,
+      [uid],
+    );
+    const r = rows[0];
+    return r ? { full_name: r.full_name, full_name_latin: r.full_name_latin, national_id_norm: r.national_id_norm } : null;
+  },
+
+  async objectMeta(env, path) {
+    const rows = await db().unsafe(
+      `select metadata->>'mimetype' as mime, (metadata->>'size')::bigint as size, to_json(created_at) #>> '{}' as created_at
+         from storage.objects where bucket_id = $1 and name = $2`,
+      [bucketFor(env), path],
+    );
+    const r = rows[0];
+    return r ? { mime: r.mime ?? null, size: r.size === null ? null : Number(r.size), created_at: r.created_at ?? null } : null;
+  },
+
+  async saveAnalysis(env, patientId, docId, f) {
+    await db().unsafe(
+      `insert into ${schema(env)}.file_analysis
+         (document_id, patient_id, status, error_code, doc_type, pages, readable, blurred, cropped, rotated, handwriting_present,
+          issuer_present, date_present, stamp_or_signature_present, sha256, mime, bytes, uploaded_at, hash_verified,
+          items_count, items, analysed_at)
+       select d.id, d.patient_id, $3, $4, $5, $6::int, $7::boolean, $8::boolean, $9::boolean, $10::boolean, $11::boolean,
+              $12::boolean, $13::boolean, $14::boolean, $15, $16, $17::bigint, $18::timestamptz, $19::boolean,
+              $20::int, $21::jsonb, now()
+         from ${schema(env)}.documents d where d.id = $1::uuid and d.patient_id = $2::uuid
+       on conflict (document_id) do update set
+         status = excluded.status, error_code = excluded.error_code, doc_type = excluded.doc_type, pages = excluded.pages,
+         readable = excluded.readable, blurred = excluded.blurred, cropped = excluded.cropped, rotated = excluded.rotated,
+         handwriting_present = excluded.handwriting_present, issuer_present = excluded.issuer_present,
+         date_present = excluded.date_present, stamp_or_signature_present = excluded.stamp_or_signature_present,
+         sha256 = excluded.sha256, mime = excluded.mime, bytes = excluded.bytes, uploaded_at = excluded.uploaded_at,
+         hash_verified = excluded.hash_verified, items_count = excluded.items_count, items = excluded.items,
+         analysed_at = excluded.analysed_at`,
+      [docId, patientId, f.status, f.error_code, f.doc_type, f.pages, f.readable, f.blurred, f.cropped, f.rotated,
+        f.handwriting_present, f.issuer_present, f.date_present, f.stamp_or_signature_present, f.sha256, f.mime, f.bytes,
+        f.uploaded_at, f.hash_verified, f.items_count, jsonb(f.items)],
+    );
+  },
+
   async createDraft(env, patientId, contentType) {
     const id = crypto.randomUUID();
     const path = `${patientId}/${id}`;
@@ -93,15 +136,15 @@ export const pgStore: Store = {
     return rows[0]?.e ?? null;
   },
 
-  async saveExtraction(env, patientId, docId, draft: DraftIn, sha256File): Promise<Saved | null> {
+  async saveExtraction(env, patientId, docId, draft: DraftIn, sha256File, identity): Promise<Saved | null> {
     const S = schema(env);
     return await db().begin(async (tx) => {
       const up = await tx.unsafe(
         `update ${S}.documents set kind = $3, language = $4, exam_date = $5, issuer = $6, printed_name = $7,
-                printed_id = $8, extract_confidence = $9::jsonb, sha256_file = $10
+                printed_id = $8, extract_confidence = $9::jsonb, sha256_file = $10, identity_status = $11
           where id = $1 and patient_id = $2 and status = 'draft' returning id`,
         [docId, patientId, draft.kind, draft.language, draft.exam_date, draft.issuer, draft.printed_name,
-          draft.printed_id, jsonb(draft.header_confidence), sha256File],
+          draft.printed_id, jsonb(draft.header_confidence), sha256File, identity],
       );
       if (up.length === 0) return null;
       await tx.unsafe(`delete from ${S}.results where document_id = $1`, [docId]);

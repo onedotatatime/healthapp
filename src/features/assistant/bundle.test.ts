@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 
-const SENTINELS = ['Ask about this patient', 'Not in this record.', 'General medical knowledge, not from this record', 'Could not confirm a source for one statement'];
+const SENTINELS = ['Ask about this patient', 'Not in this record.', 'General medical knowledge, not from this record', 'Could not confirm a source for one statement', 'Straight line through', 'About this file'];
 const out = mkdtempSync(join(tmpdir(), 'healthapp-bundle-'));
 afterAll(() => rmSync(out, { recursive: true, force: true }));
 

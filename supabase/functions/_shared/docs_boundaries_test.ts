@@ -5,7 +5,7 @@ import { assertEquals } from "jsr:@std/assert@1";
 const ROOT = new URL("../", import.meta.url);
 const HANDLERS = ["doc-create", "extract-exam", "confirm-doc", "doc-photo"].map((n) => `healthapp-${n}/handler.ts`);
 const INDEXES = ["doc-create", "extract-exam", "confirm-doc", "doc-photo"].map((n) => `healthapp-${n}/index.ts`);
-const SHARED = ["_shared/docs.ts", "_shared/pgstore.ts", "_shared/blobs.ts", "_shared/extract.ts"];
+const SHARED = ["_shared/docs.ts", "_shared/pgstore.ts", "_shared/blobs.ts", "_shared/extract.ts", "_shared/analysis.ts"];
 
 const code = (p: string) =>
   Deno.readTextFileSync(new URL(p, ROOT)).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\s\/\/.*$/gm, "");
@@ -37,7 +37,7 @@ Deno.test("logs carry codes and counts, never the document's words, a name or an
   }
 });
 function _SHARED_LOGGERS() {
-  return ["_shared/http.ts"];
+  return ["_shared/http.ts", "_shared/analysis.ts"];
 }
 
 Deno.test("only the pg store touches a table; handlers go through the Store seam", () => {

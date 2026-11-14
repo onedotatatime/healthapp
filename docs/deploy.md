@@ -68,6 +68,8 @@ Check it: `gh api repos/onedotatatime/healthapp/branches/main/protection` (and `
 | `CF_PAGES_COMMIT_SHA` | provided by Pages at build time | read in `vite.config`, shown on the health page; nothing to set |
 | `HEALTHAPP_*` | Supabase function secrets only (`supabase secrets set HEALTHAPP_… --project-ref fnbnhvgrnkrbsrwhgcgc`, one at a time) | never in Pages, never prefixed `VITE_` |
 
+Demo sign-in passcodes (MIN-4541), one per deployment: `HEALTHAPP_DEMO_PASSCODE` opens dev only, `HEALTHAPP_DEMO_PASSCODE_DEMO` opens demo only (patient, doctor, and the `founder` persona, demo only). Values live in `~/.config/healthapp/demo-login.env` and `demo-login.demo.env` (mode 600), never in chat, Linear or git.
+
 Status on 14 Nov 2026: none of the three Pages variables is set yet (Production and Preview both empty).
 
 `src/lib/env.ts` derives the schema (`healthapp_<env>`), the bucket and the function prefix from `VITE_HEALTHAPP_ENV`, and the app shows an error for any value other than `dev` or `demo`.

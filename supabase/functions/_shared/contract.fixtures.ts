@@ -3,6 +3,7 @@
 // contract_test.ts, so a fixture that drifts from the contract fails CI.
 // Ids are fixed so the app can cross-link (a cite id resolves to a row below).
 import type {
+  AnalyseResponse,
   AssistantResponse,
   ConfirmDocResponse,
   DemoLoginResponse,
@@ -12,6 +13,7 @@ import type {
   DocumentRow,
   ErrorBody,
   ExtractResponse,
+  FileAnalysisRow,
   FindingRow,
   GrantEnvelope,
   GrantStatusResponse,
@@ -194,13 +196,15 @@ export const extractDraft: ExtractResponse = {
 export const extractRefusedName: ExtractResponse = {
   outcome: "refused",
   reason: "name_mismatch",
-  message: "The name on the document is different.",
+  message: "The name on it (ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ) doesn't match your profile (Μαρία Παπαδοπούλου). Nothing was saved.",
+  mismatch: { printed: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", profile: "Μαρία Παπαδοπούλου" },
 };
 
 export const extractRefusedId: ExtractResponse = {
   outcome: "refused",
   reason: "id_mismatch",
-  message: "The ID on the document is different.",
+  message: "The ID on it (AK987654) doesn't match your profile (AK123456). Nothing was saved.",
+  mismatch: { printed: "AK987654", profile: "AK123456" },
 };
 
 export const extractRefusedUnreadable: ExtractResponse = {
@@ -343,3 +347,23 @@ export const possibleMatchesMaria: PossibleMatchesResponse = {
 export const possibleMatchesEmpty: PossibleMatchesResponse = { match_count: 0, groups: [] };
 export const matchesOptInOn: MatchesOptIn = { matching_opt_in: true, matching_opt_in_at: "2026-11-14T17:25:33.783784+00:00" };
 export const matchesOptInOff: MatchesOptIn = { matching_opt_in: false, matching_opt_in_at: null };
+
+// file_analysis (MIN-4549): synthetic, one per state the doctor panel shows. A missing row is "not analysed yet".
+export const fileAnalysisDone: FileAnalysisRow = {
+  document_id: IDS.docBlood, patient_id: IDS.patient, status: "done", error_code: null,
+  doc_type: "blood_test", pages: 1, readable: true, blurred: false, cropped: false, rotated: false,
+  handwriting_present: false, issuer_present: true, date_present: true, stamp_or_signature_present: false,
+  sha256: "d43bdf71c0a64f6f2d1d8f5f0b6f5c0a8e2f4d7c9b1a3e5f7d9c1b3a5e7f9d1b", mime: "image/jpeg", bytes: 105265,
+  uploaded_at: "2026-11-14T18:23:06.992+00:00", hash_verified: true,
+  items_count: 1, items: [{ text_original: "Αντι-CCP 85 U/mL <20 ↑", page: 1 }],
+  analysed_at: "2026-11-14T18:57:03.843+00:00",
+};
+export const fileAnalysisFailed: FileAnalysisRow = {
+  document_id: IDS.docImaging, patient_id: IDS.patient, status: "failed", error_code: "model_timeout",
+  doc_type: null, pages: null, readable: null, blurred: null, cropped: null, rotated: null, handwriting_present: null,
+  issuer_present: null, date_present: null, stamp_or_signature_present: null,
+  sha256: "9443e53b0a64f6f2d1d8f5f0b6f5c0a8e2f4d7c9b1a3e5f7d9c1b3a5e7f9d1b2", mime: "image/jpeg", bytes: 130730,
+  uploaded_at: "2026-11-14T18:30:00.000+00:00", hash_verified: true, items_count: 0, items: [],
+  analysed_at: "2026-11-14T18:31:00.000+00:00",
+};
+export const analyseDone: AnalyseResponse = { outcome: "analysed", status: "done", error_code: null, items_count: 1 };

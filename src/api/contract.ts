@@ -1,5 +1,5 @@
 /**
- * LOCAL STUB of Cron's `contract.ts` (MIN-4471; shapes from CTO review section 3 and MIN-4449 decision 1).
+ * Frontend copy of Cron's `contract.ts` (MIN-4471; shapes from CTO review section 3 and MIN-4449 decision 1).
  * Same file name and the same zod style, so the swap is: delete this file, copy Cron's `contract.ts`
  * (and its fixtures) from `staging`, fix the import names that differ. Nothing outside `src/api` and
  * `src/auth` reads the wire shapes.
@@ -8,19 +8,6 @@ import { z } from 'zod';
 
 export const Role = z.enum(['patient', 'doctor']);
 export type Role = z.infer<typeof Role>;
-
-/** healthapp-demo-login: no session needed; the passcode is typed by the presenter (MIN-4449 decision 1, 5). */
-export const DemoLoginRequest = z.object({ persona: Role, passcode: z.string().min(1) });
-export type DemoLoginRequest = z.infer<typeof DemoLoginRequest>;
-export const DemoLoginResponse = z.object({
-  access_token: z.string().min(1),
-  refresh_token: z.string().min(1),
-  expires_at: z.number().int(), // unix seconds
-  user_id: z.string(),
-  persona: z.enum(['patient', 'doctor']),
-  role: Role,
-});
-export type DemoLoginResponse = z.infer<typeof DemoLoginResponse>;
 
 /** A row of healthapp_<env>.profiles, read under RLS (own row). */
 export const Profile = z.object({
@@ -52,6 +39,23 @@ export const Flag = z.enum(["low", "high", "normal", "unknown"]);
 export const FindingKind = z.enum(["conclusion", "written_diagnosis", "medication", "note"]);
 export const Language = z.enum(["el", "en"]);
 export const UploadMime = z.enum(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
+
+/** healthapp-demo-login (copied from Cron's contract.ts; MIN-4515 replaced the local stub). */
+export const Persona = z.enum(["patient", "doctor"]);
+export type Persona = z.infer<typeof Persona>;
+// "founder" is the founder's own account in the demo deployment only (MIN-4541): dev answers 400.
+export const DemoPersona = z.enum(["patient", "doctor", "founder"]);
+export type DemoPersona = z.infer<typeof DemoPersona>;
+export const DemoLoginRequest = z.object({ persona: DemoPersona, passcode: z.string().min(1).max(200) });
+export const DemoLoginResponse = z.object({
+  access_token: z.string().min(1),
+  refresh_token: z.string().min(1),
+  expires_at: z.number().int(), // unix seconds
+  user_id: Uuid,
+  persona: DemoPersona,
+  role: Role,
+});
+export type DemoLoginResponse = z.infer<typeof DemoLoginResponse>;
 
 // ---------------------------------------------------------------------------------------------
 // Errors: every non-2xx answer has this body
@@ -146,7 +150,12 @@ export type DocCreateResponse = z.infer<typeof DocCreateResponse>;
 
 // healthapp-extract-exam (patient) --------------------------------------------------------------
 // Synchronous, up to 60 s. One honest label and an indeterminate bar on the client (no stages).
-export const ExtractRequest = z.object({ doc_id: Uuid });
+export const ExtractRequest = z.object({
+  doc_id: Uuid,
+  /** MIN-4549: run only the file analysis for an already-saved document of the caller (the dev backfill script).
+   *  The app never sends it. Answer: AnalyseResponse. */
+  analyse_only: z.boolean().optional(),
+});
 export const RefusalReason = z.enum([
   "unreadable", // the model says it cannot read the page
   "unsupported_kind", // not a blood test, imaging report or doctor's letter
@@ -182,6 +191,8 @@ export const ExtractResponse = z.discriminatedUnion("outcome", [
     outcome: z.literal("refused"),
     reason: RefusalReason,
     message: z.string(), // names what did not match; nothing was stored
+    /** name_mismatch and id_mismatch only: the two values that differ (MIN-4478). Both are the patient's own. */
+    mismatch: z.object({ printed: z.string(), profile: z.string() }).optional(),
   }),
 ]);
 export type ExtractResponse = z.infer<typeof ExtractResponse>;
@@ -223,20 +234,24 @@ export const DocPhotoResponse = z.object({
   fingerprint: z.enum(["match", "mismatch", "unchecked"]),
 });
 export type DocPhotoResponse = z.infer<typeof DocPhotoResponse>;
-/** diary_entries (review 3 row 12): a direct insert under RLS, no function. `recorded_at` is the server's `now()`. */
-export const DiaryEntry = z.object({
-  id: z.string(),
-  occurred_at: z.string(),
-  recorded_at: z.string().nullish(),
-  time_edited: z.boolean(),
+// Diary (MIN-4481): copied from Cron's contract.ts, same as the sections above (MIN-4515 replaced the local DiaryEntry stub).
+export const DiaryRow = z.object({
+  id: Uuid,
+  patient_id: Uuid,
+  occurred_at: Timestamp,
+  recorded_at: Timestamp, // server's now(), not settable by the client
+  time_edited: z.boolean(), // occurred_at differs from recorded_at by more than 5 minutes
   text: z.string(),
   severity: z.number().int().min(1).max(10),
 });
-export type DiaryEntry = z.infer<typeof DiaryEntry>;
+export type DiaryRow = z.infer<typeof DiaryRow>;
+export const DIARY_COLUMNS = "id,patient_id,occurred_at,recorded_at,time_edited,text,severity";
+
+/** Settlement 12: the diary is a direct insert through supabase-js. patient_id defaults to the
+ *  caller; recorded_at is the server's now() and cannot be sent. */
 export const DiaryInsert = z.object({
-  // patient_id defaults to the caller; recorded_at and time_edited are set by the database.
-  occurred_at: z.string().min(1),
-  text: z.string().trim().min(1),
+  text: z.string().min(1).max(2000),
   severity: z.number().int().min(1).max(10),
+  occurred_at: Timestamp.optional(),
 });
 export type DiaryInsert = z.infer<typeof DiaryInsert>;

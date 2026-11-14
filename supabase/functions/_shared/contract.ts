@@ -21,7 +21,7 @@
 // 12  diary is a direct insert, no function
 import { z } from "npm:zod@4.6.7";
 
-export const CONTRACT_VERSION = "2026-11-14.2";
+export const CONTRACT_VERSION = "2026-11-14.3";
 
 // ---------------------------------------------------------------------------------------------
 // Calling convention
@@ -155,6 +155,54 @@ export type FindingRow = z.infer<typeof FindingRow>;
 export const FINDING_COLUMNS =
   "id,document_id,patient_id,kind,text_original,text_lang,finding_date,specialty,confidence,edited_by_patient";
 
+// file_analysis (MIN-4549, direction 3; CTO decision on MIN-4548 §4): one row per stored original file, written by
+// the second pass inside healthapp-extract-exam, read by a DOCTOR in a live grant only (no patient policy, on
+// purpose: the patient's screens never show any of it). Read under RLS like documents:
+//   supabase.from("file_analysis").select(FILE_ANALYSIS_COLUMNS).eq("patient_id", patientId)
+// No row for a document = "not analysed yet". status "failed" = analysis failed (error_code says why, closed set).
+// The only free text in the row is items[].text_original: the document's own words, 200 characters at most, 20 items
+// at most. Everything else is an enum, a boolean or an integer, so there is nothing to word as health advice.
+export const FileDocType = z.enum(["blood_test", "imaging_report", "doctor_letter", "other"]);
+export const FileAnalysisStatus = z.enum(["done", "failed"]);
+export const FileAnalysisError = z.enum(["no_object", "unsupported_type", "budget", "model_timeout", "model_http", "model_invalid", "config", "error"]);
+export type FileAnalysisError = z.infer<typeof FileAnalysisError>;
+export const FILE_ITEMS_MAX = 20;
+export const FILE_ITEM_CHARS = 200;
+export const FileAnalysisItem = z.object({
+  text_original: z.string().max(FILE_ITEM_CHARS), // as printed on the file, not in the record
+  page: z.number().int().min(1), // the page the words are on
+});
+export type FileAnalysisItem = z.infer<typeof FileAnalysisItem>;
+export const FileAnalysisRow = z.object({
+  document_id: Uuid,
+  patient_id: Uuid,
+  status: FileAnalysisStatus,
+  error_code: FileAnalysisError.nullable(), // null when status is done
+  // The reading. All null when status is failed.
+  doc_type: FileDocType.nullable(),
+  pages: z.number().int().min(1).nullable(),
+  readable: z.boolean().nullable(),
+  blurred: z.boolean().nullable(),
+  cropped: z.boolean().nullable(),
+  rotated: z.boolean().nullable(),
+  handwriting_present: z.boolean().nullable(),
+  issuer_present: z.boolean().nullable(),
+  date_present: z.boolean().nullable(),
+  stamp_or_signature_present: z.boolean().nullable(),
+  // File facts computed by the server, no model. Null when the object could not be read (no_object).
+  sha256: z.string().regex(/^[0-9a-f]{64}$/).nullable(), // show the first 8 characters
+  mime: z.string().nullable(),
+  bytes: z.number().int().min(0).nullable(),
+  uploaded_at: Timestamp.nullable(), // when the object was stored
+  hash_verified: z.boolean().nullable(), // the object hashed the same after the run (and matches the extraction's hash)
+  items_count: z.number().int().min(0).max(FILE_ITEMS_MAX),
+  items: z.array(FileAnalysisItem).max(FILE_ITEMS_MAX), // on the file, absent from the extracted record
+  analysed_at: Timestamp,
+});
+export type FileAnalysisRow = z.infer<typeof FileAnalysisRow>;
+export const FILE_ANALYSIS_COLUMNS =
+  "document_id,patient_id,status,error_code,doc_type,pages,readable,blurred,cropped,rotated,handwriting_present,issuer_present,date_present,stamp_or_signature_present,sha256,mime,bytes,uploaded_at,hash_verified,items_count,items,analysed_at";
+
 export const DiaryRow = z.object({
   id: Uuid,
   patient_id: Uuid,
@@ -205,13 +253,16 @@ export const HelloResponse = z.object({ ok: z.literal(true), env: HealthappEnv }
 // supabase.auth.setSession({ access_token, refresh_token }).
 export const Persona = z.enum(["patient", "doctor"]);
 export type Persona = z.infer<typeof Persona>;
-export const DemoLoginRequest = z.object({ persona: Persona, passcode: z.string().min(1).max(200) });
+// "founder" is the founder's own account in the demo deployment only (MIN-4541): dev answers 400.
+export const DemoPersona = z.enum(["patient", "doctor", "founder"]);
+export type DemoPersona = z.infer<typeof DemoPersona>;
+export const DemoLoginRequest = z.object({ persona: DemoPersona, passcode: z.string().min(1).max(200) });
 export const DemoLoginResponse = z.object({
   access_token: z.string().min(1),
   refresh_token: z.string().min(1),
   expires_at: z.number().int(), // unix seconds
   user_id: Uuid,
-  persona: Persona,
+  persona: DemoPersona,
   role: Role,
 });
 export type DemoLoginResponse = z.infer<typeof DemoLoginResponse>;
@@ -234,7 +285,12 @@ export type DocCreateResponse = z.infer<typeof DocCreateResponse>;
 
 // healthapp-extract-exam (patient) --------------------------------------------------------------
 // Synchronous, up to 60 s. One honest label and an indeterminate bar on the client (no stages).
-export const ExtractRequest = z.object({ doc_id: Uuid });
+export const ExtractRequest = z.object({
+  doc_id: Uuid,
+  /** MIN-4549: run only the file analysis for an already-saved document of the caller (the dev backfill script).
+   *  The app never sends it. Answer: AnalyseResponse. */
+  analyse_only: z.boolean().optional(),
+});
 export const RefusalReason = z.enum([
   "unreadable", // the model says it cannot read the page
   "unsupported_kind", // not a blood test, imaging report or doctor's letter
@@ -270,9 +326,20 @@ export const ExtractResponse = z.discriminatedUnion("outcome", [
     outcome: z.literal("refused"),
     reason: RefusalReason,
     message: z.string(), // names what did not match; nothing was stored
+    /** name_mismatch and id_mismatch only: the two values that differ (MIN-4478). Both are the patient's own. */
+    mismatch: z.object({ printed: z.string(), profile: z.string() }).optional(),
   }),
 ]);
 export type ExtractResponse = z.infer<typeof ExtractResponse>;
+
+/** Answer to { analyse_only: true }. Counts and a status, nothing from the file. */
+export const AnalyseResponse = z.object({
+  outcome: z.literal("analysed"),
+  status: FileAnalysisStatus,
+  error_code: FileAnalysisError.nullable(),
+  items_count: z.number().int().min(0),
+});
+export type AnalyseResponse = z.infer<typeof AnalyseResponse>;
 
 // healthapp-confirm-doc (patient) ---------------------------------------------------------------
 // Edits to values, units and dates are accepted and marked edited_by_patient.
@@ -407,6 +474,60 @@ export const AssistantResponse = z.object({
 });
 export type AssistantResponse = z.infer<typeof AssistantResponse>;
 
+// healthapp-over-time (MIN-4551; CTO decision on MIN-4548): the doctor's view of a patient's numbers over time.
+// Doctor with a live grant only: 403 wrong_role for a patient, 403 grant_expired when the grant has ended.
+// Plain arithmetic in code, no model, nothing stored. One series per value (analyte_key, else the printed
+// name) with 2+ dated numeric results in one unit. No cause, advice, score, rank or word for a direction.
+// There is NO field for "the date the line crosses a range limit" on purpose (a forecast of an abnormal result).
+export const OverTimeRequest = z.object({ grant_id: Uuid });
+export const OverTimePoint = z.object({
+  date: IsoDate, // the document's date
+  value: z.number(),
+  cite: CiteId, // r:<uuid>, the same cite format the assistant uses
+  ref_low: z.number().nullable(), // the limits printed on that result's own document
+  ref_high: z.number().nullable(),
+  /** value below ref_low or above ref_high; null when the document prints no numeric limit. */
+  out_of_range: z.boolean().nullable(),
+});
+export const OverTimeProjection = z.object({
+  n: z.number().int(), // results used (3 or more, on 3 or more different dates)
+  first_date: IsoDate,
+  last_date: IsoDate,
+  /** one least-squares straight line through the n results, in the series' unit per day. */
+  slope_per_day: z.number(),
+  /** as far ahead as the data is long, at most 180, never further than last_date - first_date; shorter if the line would
+   *  go below 0 while every result is 0 or above. */
+  horizon_days: z.number().int(),
+  horizon_date: IsoDate,
+  value_at_horizon: z.number(),
+});
+export const OverTimeSeries = z.object({
+  key: z.string(), // analyte_key, else the printed name lower-cased
+  analyte: z.string(), // the printed name on the latest result
+  unit: z.string().nullable(),
+  points: z.array(OverTimePoint).min(2), // date order, oldest first
+  out_of_range: z.object({
+    count: z.number().int(), // results outside the range printed on their own document
+    first_date: IsoDate.nullable(),
+    latest_date: IsoDate.nullable(),
+  }),
+  /** null = "Not enough results for a projection" (fewer than 3 results or fewer than 3 different dates). */
+  projection: OverTimeProjection.nullable(),
+});
+export const OverTimeCounts = z.object({
+  records_read: z.number().int(), // result rows read for the patient
+  values_with_series: z.number().int(),
+  projections_computed: z.number().int(),
+  /** values with 2+ numeric results that were left out: mixed units, or fewer than 2 dated. Never guessed. */
+  series_excluded: z.number().int(),
+  errors: z.number().int(),
+});
+export const OverTimeResponse = z.object({
+  series: z.array(OverTimeSeries), // ordered by key; empty is a valid answer
+  counts: OverTimeCounts, // the same five integers the function logs; the panel prints them as its footer
+});
+export type OverTimeResponse = z.infer<typeof OverTimeResponse>;
+
 // ---------------------------------------------------------------------------------------------
 // Possible matches (MIN-4505, F1 and F2): Postgres functions, not Edge Functions.
 // ---------------------------------------------------------------------------------------------
@@ -483,6 +604,7 @@ export const FUNCTIONS = {
   "healthapp-grant-decide": { session: true, request: GrantDecideRequest, response: GrantDecideResponse },
   "healthapp-grant-revoke": { session: true, request: GrantRevokeRequest, response: GrantRevokeResponse },
   "healthapp-assistant": { session: true, request: AssistantRequest, response: AssistantResponse },
+  "healthapp-over-time": { session: true, request: OverTimeRequest, response: OverTimeResponse },
 } as const;
 export type FunctionName = keyof typeof FUNCTIONS;
 export type RequestOf<N extends FunctionName> = z.input<(typeof FUNCTIONS)[N]["request"]>;

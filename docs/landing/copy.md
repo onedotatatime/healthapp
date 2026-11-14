@@ -106,13 +106,13 @@ Your health history is scattered across paper, drawers and different doctors' of
 
 ## footer
 
-- [name]
+- Pathien
 - Built at GenAI Summit Hackathon · Athens · Nov 2026
 - [contact]
 
 ## Notes for Pix and Ren
 
-- `[name]` and `[contact]`: founder to supply.
+- `[contact]`: founder to supply.
 - Roadmap items must be visibly labelled "Future" (chip or muted style); nothing above the roadmap is future.
 - Left out on purpose: any numbers, testimonials, "possible causes" or diagnosis claims.
 

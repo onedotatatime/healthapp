@@ -1,6 +1,6 @@
 - [Isolated worktree tooling](feedback_isolated_worktree_tooling.md) — what Bash refuses in a worktree-isolated run, and the ways around it that worked
 - [Healthapp dashboard feed](project_healthapp_dashboard_feed.md) — two edge functions, bucket object, launchd job, bucket MIME stand-in, deploy rules
-- [healthapp Data API exposure](project_healthapp_data_api_exposure.md) — healthapp_dev exposed since 2026-11-14 17:15 UTC; curl-check before REST claims
+- [healthapp Data API exposure](project_healthapp_data_api_exposure.md) — healthapp_dev answers 406 until a human adds it to Exposed schemas; no safe agent route
 - [healthapp Gemini model ids](project_healthapp_gemini_model_ids.md) — gemini-2.5-flash 404s for this key; 3.8/3.5-flash work; zsh `$m:g` URL trap
 - [healthapp edge DB direct](project_healthapp_edge_db_direct.md) — functions use SUPABASE_DB_URL, not PostgREST; jsonb/uuid param traps; deploy and SQL rules
 - [healthapp extraction measured](project_healthapp_extraction_measured.md) — Greek lookalike IDs, finding granularity, timings, M2 harness
@@ -8,4 +8,7 @@
 - [healthapp assistant checks](project_healthapp_assistant_checks.md) — short-id citation check, measured 3 to 10 s, seed 011, short test grant then revoke
 - [healthapp handshake build lessons](project_healthapp_handshake_build_lessons.md) — policy subqueries obey RLS, RETURNING hides a missing insert policy, mutant functions, SQL check harness
 - [healthapp demo passcode](project_healthapp_demo_passcode.md) — passcode file ~/.config/healthapp/demo-login.env (600); rls-check tokens via demo-login
+- [healthapp demo created](project_healthapp_demo_created.md) — healthapp_demo since 2026-11-14 17:45 UTC; personas by hash copy; not exposed; founder sign-in gap
+- [healthapp identity match](project_healthapp_identity_match.md) — B1 matcher in identity.ts, harness via demo-login, 012 needs 011
+- [Isolated worktree tooling](feedback_isolated_worktree_tooling.md) — what Bash refuses in a worktree-isolated run, and the ways around it that worked
 - [Chat act path (MIN-4497)](project_healthapp_chat_act_path.md) — measured rg glob override, CI key-grep trap, what the act-path sweep found
