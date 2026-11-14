@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Owner** | Anna Lytica (Marketing), MIN-4429. Deck story: CEO (MIN-4425). Design: Pix (MIN-4428), next. |
-| **Version** | v1, 13 Nov 2026 |
+| **Version** | v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
 | **Event** | Gen AI Summit Hackathon, Athens LifeTech Park, Biotech & AI track |
 | **Market** | Global. Founder: "Dont focus on the greek market. we need to focus on global market" |
-| **Sources** | Only `docs/research/` (Sales). Each number carries a source ID from the table at the end (S1 to S9) and its status from the research: **verified**, **secondary**, or **assumption**. Nothing from the research's "Do not put on a slide" list is used. |
-| **Skills** | c-level-skills:board-deck-builder, marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, competitor-alternatives |
+| **Sources** | Only `docs/research/` (Sales). Each number carries a source ID from the table at the end (S1 to S17) and its status from the research: **verified**, **secondary**, or **assumption**. Nothing from the research's "Do not put on a slide" list is used. |
+| **Skills** | c-level-skills:board-deck-builder, marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, competitor-alternatives (v1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v2) |
 
 **Rules this deck keeps (check them again after any edit):**
 
@@ -18,21 +18,23 @@
 5. Pilot names are **targets. Nobody has been contacted.** The slide says so.
 6. `[Name]` stands for the product name until the founder picks one (section "Name").
 
-**Arc (13 slides):** story → problem → why now → product → live demo → privacy → possible matches → market → competition → who pays → go-to-market → **regulatory path (the closing content slide, founder: "We need to add it at a pitching deck as something at the end")** → team and ask.
+**Story (v2, founder 14 Nov):** "help people get rid of their 'google is my doctor' habit" and "save the industry lots of money by helping doctors make the best decisions". Digitising paper is the means, never the headline. The national file (Greece's MyHealth) is a neighbour, not a rival: we carry what it does not hold.
+
+**Arc (13 slides + 1 backup):** story → problem → why now → product → live demo → privacy → possible matches → impact → competition → who pays → go-to-market → **regulatory path (the closing content slide, founder: "We need to add it at a pitching deck as something at the end")** → team and ask. Backup: Appendix A, market sizing.
 
 ---
 
 ## Slide 1: Hook (cover)
 
-**Headline:** Maria's medical history fits in a folder. Her doctors never see all of it.
+**Headline:** Maria asks Google what her pain means. Her doctors each see one page of her history.
 
 **Body:**
-- `[Name]` · The patient-held record that doctors can question.
+- `[Name]` · The whole history in front of the doctor, so the first decision is the right one.
 - Gen AI Summit Hackathon · Biotech & AI · Athens LifeTech Park
 
-**Visual note for Pix:** Full-bleed photo-style illustration of a worn paper folder of exams on a waiting-room chair, a phone resting on it. Synthetic person, no real face, no real document. `[Name]` and the one-liner small, bottom-left. No numbers on this slide.
+**Visual note for Pix:** Full-bleed photo-style illustration of a worn paper folder of exams on a waiting-room chair, a phone resting on it with a search bar on screen (no real search engine logo). Synthetic person, no real face, no real document. `[Name]` and the one-liner small, bottom-left. No numbers on this slide.
 
-**Speaker notes (~25 s):** "This is Maria. She has knee pain and swollen joints. She has seen an orthopaedist and a rheumatologist. Her blood tests, her MRI report and two doctors' letters are in this folder, on paper. Each doctor sees the page Maria remembered to bring, and what she remembers to say. Neither sees what the other found. Maria is synthetic. Her folder is not unusual."
+**Speaker notes (~25 s):** "This is Maria. She has knee pain and swollen joints. At night she types her symptoms into a search bar. By day she sees an orthopaedist and a rheumatologist. Her blood tests, her MRI report and two doctors' letters sit in a folder, some on paper, some in an app, some from a private lab. Each doctor sees the page Maria remembered to bring. Neither sees what the other found. Maria is synthetic. Her story is not unusual."
 
 **Sources:** none (story slide).
 
@@ -40,59 +42,61 @@
 
 ## Slide 2: Problem
 
-**Headline:** Every new doctor starts from what the patient remembers to bring.
+**Headline:** Patients ask Google. Doctors decide from half a history. Both cost lives and money.
 
 **Body (three numbers, one line each):**
-- **5 to 20%** of doctor-patient encounters involve a diagnostic error. *(WHO, S1)*
-- **59%** of US adults have more than one patient portal. Only **7%** use an app to bring them together. *(US ONC, 2024, S2)*
-- **4.7 years:** the average wait for a rare-disease diagnosis in Europe. The more doctors a patient sees, the longer it takes. *(EURORDIS, 2024, S3)*
+- **Up to 15%** of diagnoses are inaccurate, delayed or wrong. *(OECD, 2025, S10)*
+- **795,000** people a year in the US die or are permanently disabled because a dangerous disease was misdiagnosed. *(Newman-Toker et al., BMJ Qual Saf, 2024, S11)*
+- **51%** of Greeks look up their health online. Symptom checkers put the right diagnosis first only **34%** of the time. *(Eurostat, 2025, S12; Semigran et al., BMJ, 2015, S13)*
 
-Footer line: Even where records are digital, they are split by provider. Old paper and records from abroad sit on top.
+Footer line: The history exists, split across providers, apps, private labs, paper and other countries. It never reaches one desk.
 
-**Visual note for Pix:** Three large numerals in a row, each with its one line and a small source tag. Behind them, faint: the folder from slide 1, now split into three piles labelled "Orthopaedist", "Rheumatologist", "Lab abroad".
+**Visual note for Pix:** Three large numerals in a row, each with its one line and a small source tag. Left two numerals under a small label "The doctor's side", the right one under "The patient's side". Behind them, faint: the folder from slide 1, split into piles labelled "Orthopaedist", "Rheumatologist", "Private lab", "Search history".
 
-**Speaker notes (~30 s):** "The WHO says about 1 in 10 patients is harmed in care, and diagnostic errors happen in 5 to 20 percent of encounters. In the most digital large market, the US, most adults already have several portals, and almost nobody combines them. For rare diseases it takes years, and seeing more doctors makes it slower, not faster. The information exists. It just never arrives at one desk."
+**Speaker notes (~30 s):** "The OECD says up to 15 percent of diagnoses are inaccurate, delayed or wrong. In the US alone, about 795,000 people a year die or are left permanently disabled by a missed dangerous disease. On the other side of the desk, half of Greeks, and 60 percent of Europeans, look up their health online, and symptom checkers get the diagnosis right first time only about a third of the time. The doctor guesses from half a history. The patient guesses from a search engine. The information exists. It just never arrives at one desk."
 
-**Sources:** S1 (verified), S2 (verified), S3 (verified). "1 in 10" in the notes: S1 (verified).
+**Sources:** S10 (verified), S11 (verified), S12 (verified), S13 (verified). EU 60.3% in the notes: S12 (verified). Removed from v1 for space: WHO 5 to 20% (S1) and the US portals line (S2), both still true and still in the sources table; EURORDIS 4.7 years stays on slide 7.
 
 ---
 
 ## Slide 3: Why now
 
-**Headline:** The law now opens the record to the patient, and AI can finally read the paper.
+**Headline:** AI already knows the medicine. What it lacks is the patient's history, and the state is now forcing doctors to find it.
 
 **Body:**
+- **AI is not the missing piece. The record is.** Language models alone named the right condition in **94.9%** of cases. People using the same models found it in fewer than **34.5%**, no better than searching on their own. What was missing was the patient's information. *(Bean et al., Nature Medicine, 2026, S14)*
+- **Repeat tests are being cut.** Since 1 November 2026, Greece's EOPYY posts lab results to one national file (MyHealth) and caps how often key tests can be repeated. A doctor who cannot re-order a test needs the earlier result in hand. *(Greek press, Nov 2026, S16)*
+- **Europe opens the record to the patient.** The EHDS is in force since March 2025: patients can add their own data, restrict access and see who looked. Patient summaries join in **2029**; lab results, images and discharge reports in **2031**. *(European Commission, S4)*
 - **AI reads documents.** A phone photo of a lab report becomes dates, values, units and ranges in seconds. *(Shown live in the demo, slide 5.)*
-- **Europe:** the EHDS is in force since March 2025. Patients get the right to add their own data, restrict access and see who looked. Patient summaries join in **2029**; lab results, images and discharge reports in **2031**. *(European Commission, S4)*
-- **United States:** information-blocking rules are in force and the national exchange network (TEFCA) is live. *(S5, secondary)*
-- **Patients already carry the device.** The key, the camera and the handshake are all on the phone in their pocket.
 
-**Visual note for Pix:** A horizontal timeline: 2025 EHDS in force → 2029 patient summaries → 2031 labs and images. Above it, a phone with a camera frame around a lab sheet. Mark the US line with a small "secondary source" tag in the source footer.
+**Visual note for Pix:** Left: two bars from S14, "Model alone 94.9%" and "Person with the model < 34.5%", with the gap labelled "the missing history". Right: a short timeline: Mar 2025 EHDS in force → Nov 2026 EOPYY repeat-test limits → 2029 patient summaries → 2031 labs and images.
 
-**Speaker notes (~25 s):** "Three things changed. Models can now read a photographed exam reliably enough to structure it. Europe's EHDS gives every patient the right to hold, add to and control their health data, with deadlines in 2029 and 2031. The US has opened records by law. The rails are coming. What is missing is the layer the patient carries across all of them."
+**Speaker notes (~30 s):** "Three things changed. First, a 2026 Nature Medicine study: the models alone found the right condition 95 percent of the time, but people using them got under 35 percent, because they gave the model incomplete information. A smarter chatbot is not the answer. The complete record, in front of the doctor, is. Second, this month Greece started putting lab results in MyHealth and limiting repeat tests, so doctors need the earlier result at hand. Third, Europe's EHDS gives patients the right to hold and add to their record. We are not a rival to the national file. We carry what it does not hold: private tests, imaging, old paper, records from abroad, and a summary for the doctor."
 
-**Sources:** S4 (verified), S5 (secondary). No number is used for the US line.
+**Sources:** S14 (verified), S16 (secondary: Greek press, the EOPYY decision itself not opened), S4 (verified). The US line from v1 (S5, secondary) is cut for space.
 
 ---
 
 ## Slide 4: Product
 
-**Headline:** One photo in. One history out. The doctor asks, and every answer shows its source.
+**Headline:** Everything the patient has, in one history. The doctor asks, and every answer shows its source.
 
 **Body (five steps, left to right):**
 1. **Photograph** an old exam. `[Name]` reads it: date, lab, every value with its unit and range.
 2. **It must be yours.** The name and ID on the exam must match the account. Someone else's exam is refused.
-3. **One timeline.** Exams and the symptom diary, in date order. The patient side records. It does not interpret.
+3. **One timeline.** Exams and the symptom diary, in date order. Patients log symptoms; the doctor gets the full picture; no self-diagnosis.
 4. **The DNA handshake.** The patient shows a helix-shaped code, the doctor scans it, the patient approves. Access runs for a set time.
 5. **The doctor asks.** "When was her CRP raised?" The answer lists dates and values, each linked to the exam it came from.
 
 Under step 5, small: Possibilities to evaluate, for the doctor only. Never shown to the patient.
 
+Under step 3, small: Instead of searching at night, Maria logs the symptom and taps **Send to my doctor**. Her doctor sees it with her whole history. The app does not explain it. Fixed line: "If this is an emergency, call 112."
+
 **Visual note for Pix:** Five phone and laptop frames in a row with one-word labels (Photograph · Match · Timeline · Handshake · Ask). Step 4 carries the DNA-shaped QR. Step 5 shows a cited answer with a source chip "Blood test · 12 Mar 2026 · Uploaded by patient". Use the two provenance marks exactly: "Verified by source" and "Uploaded by patient".
 
-**Speaker notes (~30 s):** "Maria photographs her exams once. We read them and check each one is hers, so nobody builds a record out of someone else's papers. Her symptoms go in a diary as they happen; the app says nothing about what they mean. At the orthopaedist she shows a DNA-shaped code. He scans, she approves, and for fifteen minutes he can ask her history anything. Every answer points to the page it came from."
+**Speaker notes (~30 s):** "Maria photographs her exams once. We read them and check each one is hers, so nobody builds a record out of someone else's papers. When a symptom starts at night, she logs it instead of searching, and taps send to my doctor. The app does not tell her what it means; her doctor sees it next to her whole history. At the orthopaedist she shows a DNA-shaped code. He scans, she approves, and for fifteen minutes he can ask her history anything. Every answer points to the page it came from."
 
-**Sources:** product spec, `PRD.md` sections 4 and 6. No numbers.
+**Sources:** product spec, `PRD.md` sections 4 and 6. No numbers. Photographing paper is the way in, not the pitch: the value is the complete history at the doctor's desk. Patient-side offer: route to the doctor (founder, 14 Nov, Q29). No interpretation, no urgency score, no suggested causes for the patient (that would be triage and fall under the EU MDR; CTO to assess later). The only fixed text is the 112 emergency line.
 
 ---
 
@@ -155,29 +159,31 @@ Footer: Synthetic patient. Synthetic exams. No real health data.
 
 ---
 
-## Slide 8: Market
+## Slide 8: Impact, what better decisions save
 
-**Headline:** Every doctor who sees a new patient is a seat: about $1.9B a year in the US, EU and India, on our assumptions.
+**Headline:** Wrong diagnoses cost 17.5% of health spending. Better first decisions are the biggest saving in healthcare.
 
-**Body (bottom-up, the doctor pays, the patient is free):**
+**Body:**
+- **17.5%** of health spending in a typical OECD country goes on the harm of diagnostic error, about **1.8% of GDP**. Halving it would free **8%**, about **USD 676 billion** a year across OECD countries. *(OECD, 2025, S10)*
+- **25 to 30%** of medical tests are unnecessary, about **2.5%** of health spending. *(OECD, 2025, S10)*
+- **Worked example, Greece** *(our estimate)*:
+  - The whole prize: about **€3.5 billion a year** of the €19.9 billion Greece spends on health is the cost of diagnostic error. *(S10 × S15)*
+  - Our first slice, unnecessary and repeated tests only: **about €4M a year (conservative) to about €75M a year (upside)**, depending on how many patients bring their record. *(our estimate, S10, S15, S17)*
 
-| | Doctors | At an assumed price | Per year |
-|---|---|---|---|
-| United States | 905,452 direct-care physicians *(AAMC 2025, S6, verified)* | $600 per seat *(assumption)* | $543M |
-| European Union | about 1.98M practising physicians *(Eurostat 2023, S7, secondary)* | $600 per seat *(assumption)* | $1,188M |
-| India | 1,386,157 registered doctors *(NMC via Parliament, S7, secondary)* | $120 per seat *(assumption)* | $166M |
-| **SAM** | | | **about $1.9B** |
+**One line on who pays:** Doctors and hospitals pay per seat or per case; the patient is free. 905,452 direct-care physicians in the US alone *(AAMC 2025, S6)*. Seat-based market sizing: Appendix A.
 
-- **TAM about $8.5B a year:** about 14.1M doctors worldwide at $600. *(Derived from a secondary density figure, S7; a ceiling, not a forecast.)*
-- **SOM about $19M a year by year 3:** 1% of SAM seats, about 42,700 doctors. *(Assumption.)*
+Footer, required: "Our estimate" means our arithmetic on sourced inputs. The share we prevent and the adoption rate are assumptions to be tested in pilots. Not a forecast.
 
-Footer, required: Seat price and share are assumptions to be tested in pilots. Not a forecast.
+**Visual note for Pix:** One big number left: "17.5% of health spending". Right: a funnel for Greece: €19.9bn spend → €3.5bn diagnostic-error cost → "our first slice: €4M to €75M a year, tests only". The words "our estimate" and "upside" visibly on the funnel, same size as the numbers. No market circles on this slide.
 
-**Visual note for Pix:** Three nested circles (TAM, SAM, SOM) with the dollar figure in each and the word "assumption" visibly attached to each. The US doctor count is the one verified number: give it weight. Small table beside the circles. No analyst market-size figures.
+**Speaker notes (~30 s):** "The OECD put a price on it last year: diagnostic error eats 17.5 percent of health spending, almost 2 percent of GDP. Halving it would free 8 percent. Take Greece, where we are standing: that is about three and a half billion euros a year. We start with the smallest, most measurable slice, unnecessary and repeated tests. On tests alone, between 4 and 75 million euros a year in Greece, depending on adoption. The bigger prize is the diagnosis itself."
 
-**Speaker notes (~30 s):** "We size the paying side only: doctors. The US alone has about 905,000 physicians in direct care. At an assumed fifty dollars a seat a month, which sits under paid AI scribes and above the free tools, the US, the EU and India are about a 1.9 billion dollar a year market. One percent of those seats by year three is about 19 million a year. These are our assumptions, and the pilots exist to test the price."
+Formula for questions (do not read out): savings a year = cost base × share avoidable × share we prevent × adoption.
+- Conservative: €810M (Greek stand-alone lab and imaging spend, 2024, S15) × 25% unnecessary (OECD low end, S10) × 20% we prevent (assumption) × 10% adoption (assumption) = **about €4M**.
+- Upside: €497M (OECD's 2.5% unnecessary-test share × €19.87bn Greek spend) × 50% we prevent (assumption, anchored to S17: duplicate-imaging odds 0.44 when doctors used a shared record) × 30% adoption (assumption) = **about €75M**.
+- Whole prize: €19.87bn × 17.5% = about €3.5bn (our estimate). Never say €75M without "upside" and the adoption assumption.
 
-**Sources:** S6 (verified), S7 (secondary; derived and assumption labels per `market-and-competitors.md` §1.2). **Note:** Sales lists "our TAM, SAM and SOM themselves, until the $600 seat price and 1% share are validated" under "Do not put on a slide". This slide shows them only because the brief asks for TAM/SAM/SOM, and every dollar figure carries its assumption label on the slide itself. If the CEO prefers, cut the dollar figures and keep the verified doctor count plus the model's formula (PRD Q24).
+**Sources:** S10 (verified), S15 (verified), S17 (verified), S6 (verified). No count of wrong diagnoses per year exists for Greece or the EU in a primary source, so none is on the slide. No euro figure for duplicate tests in Greece or the EU exists either; the €4M to €75M is ours and labelled so.
 
 ---
 
@@ -192,22 +198,22 @@ Footer, required: Seat price and share are assumptions to be tested in pilots. N
 | Where on the map | Who | What they do well | What they do not do |
 |---|---|---|---|
 | Institution-held, one provider | **Epic** (MyChart, Emmie, Art) | Chart summaries inside one health system | The patient's outside history, old paper, records from abroad |
-| State-held, one country | **National apps** (NHS App, India's ABDM, Abu Dhabi's Malaffi, Greece's myHealth) | Scale inside their borders | Old paper, other countries, a doctor-side assistant across all of it |
-| Patient side, US connected records | **ChatGPT Health** | Explains records to the patient | US only; answers go to the patient; no doctor handshake; no source marking |
+| State-held, one country | **National apps** (NHS App, India's ABDM, Abu Dhabi's Malaffi, Greece's MyHealth, which holds EOPYY lab results since Nov 2026) | Scale inside their borders; public lab results | Private and out-of-pocket tests, imaging, old paper, records from abroad, a doctor-side summary across all of it. We work next to them, not against them |
+| Patient side, US connected records | **ChatGPT Health**, symptom checkers | Explains records and symptoms to the patient | Answers go to the patient, from what the patient types in (slide 3: under 34.5% right); no doctor handshake; no source marking |
 | Off the map: not a record | **OpenEvidence** | Evidence answers for doctors | Answers from the literature, not from this patient's history |
 | **Patient-held, every provider and border** | **`[Name]`** | Old paper to one history; doctor-only assistant with sources; in-person handshake | Not yet certified for decision support (slide 12) |
 
 **Visual note for Pix:** A 2x2 map. `[Name]` alone in the top-right, in the accent colour. Epic bottom-left, national apps left-middle, ChatGPT Health right-middle. OpenEvidence as a small callout outside the frame: "answers from literature". Add a thin tag on each logo: "AI talks to: patient" (ChatGPT Health, Emmie) or "AI talks to: doctor" (Epic Art, OpenEvidence, `[Name]`). Use names in text, not logos, unless Design has usage rights.
 
-**Speaker notes (~30 s):** "Epic summarises what is inside one hospital. National apps hold what enters their own system, inside one country. ChatGPT Health talks to the patient, and only in the US. OpenEvidence answers doctors from the literature, not from this patient. We sit where none of them sits: the record the patient carries across every provider and border, with an assistant that answers only the doctor, and shows its source."
+**Speaker notes (~30 s):** "Epic summarises what is inside one hospital. National apps like MyHealth hold public lab results inside one country, and we complement them. ChatGPT Health and symptom checkers talk to the patient, from whatever the patient types in. OpenEvidence answers doctors from the literature, not from this patient. We sit where none of them sits: the record the patient carries across every provider and border, with an assistant that answers only the doctor, and shows its source."
 
-**Sources:** S8 (`market-and-competitors.md` §2, company pages). No competitor numbers are used: Epic's market share, ChatGPT's user count and OpenEvidence's valuation are on Sales' do-not-use list. Avoid "the only" and "the first" in speech: the research found no proof either way.
+**Sources:** S8 (`market-and-competitors.md` §2, company pages); MyHealth and EOPYY: S16 (secondary); chatbot accuracy: S14 (verified). No competitor numbers are used: Epic's market share, ChatGPT's user count and OpenEvidence's valuation are on Sales' do-not-use list. Avoid "the only" and "the first" in speech: the research found no proof either way.
 
 ---
 
 ## Slide 10: Business model, who pays
 
-**Headline:** The patient never pays. The insurer never sees. Hospitals pay for a better first visit.
+**Headline:** The patient never pays. The insurer never sees. Hospitals pay for a better first decision and fewer repeated tests.
 
 **Body:**
 
@@ -297,6 +303,34 @@ Footer: Every step keeps the same rules: no diagnosis to patients, no health dat
 
 ---
 
+## Appendix A: Market sizing (backup slide, shown only if asked)
+
+Moved here from slide 8 in v2 so the main deck carries the impact numbers the founder asked for. Q24 (keep the dollar figures at all) is still the CEO's call.
+
+**Headline:** Every doctor who sees a new patient is a seat: about $1.9B a year in the US, EU and India, on our assumptions.
+
+**Body (bottom-up, the doctor pays, the patient is free):**
+
+| | Doctors | At an assumed price | Per year |
+|---|---|---|---|
+| United States | 905,452 direct-care physicians *(AAMC 2025, S6, verified)* | $600 per seat *(assumption)* | $543M |
+| European Union | about 1.98M practising physicians *(Eurostat 2023, S7, secondary)* | $600 per seat *(assumption)* | $1,188M |
+| India | 1,386,157 registered doctors *(NMC via Parliament, S7, secondary)* | $120 per seat *(assumption)* | $166M |
+| **SAM** | | | **about $1.9B** |
+
+- **TAM about $8.5B a year:** about 14.1M doctors worldwide at $600. *(Derived from a secondary density figure, S7; a ceiling, not a forecast.)*
+- **SOM about $19M a year by year 3:** 1% of SAM seats, about 42,700 doctors. *(Assumption.)*
+
+Footer, required: Seat price and share are assumptions to be tested in pilots. Not a forecast.
+
+**Visual note for Pix:** Three nested circles (TAM, SAM, SOM) with the dollar figure in each and the word "assumption" visibly attached to each. The US doctor count is the one verified number: give it weight. Small table beside the circles. No analyst market-size figures.
+
+**Speaker notes (~30 s):** "We size the paying side only: doctors. The US alone has about 905,000 physicians in direct care. At an assumed fifty dollars a seat a month, which sits under paid AI scribes and above the free tools, the US, the EU and India are about a 1.9 billion dollar a year market. One percent of those seats by year three is about 19 million a year. These are our assumptions, and the pilots exist to test the price."
+
+**Sources:** S6 (verified), S7 (secondary; derived and assumption labels per `market-and-competitors.md` §1.2). **Note:** Sales lists "our TAM, SAM and SOM themselves, until the $600 seat price and 1% share are validated" under "Do not put on a slide". This slide shows them only because the brief asks for TAM/SAM/SOM, and every dollar figure carries its assumption label on the slide itself. If the CEO prefers, cut the dollar figures and keep the verified doctor count plus the model's formula (PRD Q24).
+
+---
+
 ## Name
 
 Three proposals. The founder chooses. Domains and trademarks have **not** been checked; Release or the founder checks before anything is registered or printed.
@@ -313,27 +347,25 @@ Tagline options, for the cover: (a) "The patient-held record that doctors can qu
 
 ---
 
-## Pitch script: 3 minutes (about 420 words, with the demo inside)
+## Pitch script: 3 minutes (about 440 words, with the demo inside)
 
-> Maria has knee pain and swollen joints. She has seen an orthopaedist and a rheumatologist. Her blood tests, her MRI report and two letters live in a paper folder. Each doctor sees the page she remembered to bring. Neither sees what the other found.
+> Maria has knee pain and swollen joints. At night she types her symptoms into a search bar. By day she sees an orthopaedist and a rheumatologist. Her blood tests, her MRI report and two letters are scattered: paper, an app, a private lab. Each doctor sees the page she remembered to bring.
 >
-> This is normal. The WHO puts diagnostic errors at 5 to 20 percent of encounters. In the US, 59 percent of adults have several patient portals and only 7 percent combine them. For a rare disease in Europe, a diagnosis takes 4.7 years on average, and seeing more doctors makes it slower.
+> This is normal. The OECD says up to 15 percent of diagnoses are inaccurate, delayed or wrong. In the US, 795,000 people a year die or are disabled by a missed dangerous disease. And half of Greeks look up their health online, where symptom checkers get it right first time about a third of the time.
 >
-> Two things changed. AI can now read a photographed exam. And the law now gives patients their record: Europe's EHDS from 2029, US rules already in force.
+> AI is not the missing piece. In a Nature Medicine study this year, the models alone named the right condition 95 percent of the time. People using them: under 35. What was missing was the patient's history.
 >
-> [Name] is the patient-held record that doctors can question. Let me show you.
+> [Name] puts the whole history in front of the doctor. Let me show you.
 >
 > *(Demo, about 60 seconds.)* Maria photographs a blood test: date, lab, every value with its range. She tries to add her husband's exam: refused, not her name. At the orthopaedist she shows this DNA code, he scans, she approves, and a timer starts. He asks: "Has her CRP been raised before?" Dates, values, and each one links to the exam it came from. He asks for possibilities, and the assistant puts the orthopaedic and the rheumatology findings side by side, each with its source, for the doctor to evaluate. Time ends, his screen closes, and Maria sees who looked.
 >
 > Three rules hold everywhere. The patient holds the key. The patient never gets a diagnosis from us. Insurers never see a thing.
 >
-> If Maria says yes, her doctor can see that unnamed patients elsewhere share her pattern, and talk to their doctors. Opt-in only.
+> Why it matters: the OECD puts the cost of diagnostic error at 17.5 percent of health spending. In Greece that is about three and a half billion euros a year. We start with the smallest slice, repeated and unnecessary tests: on our estimate, 4 to 75 million euros a year in Greece alone, depending on adoption.
 >
-> The patient is free. Hospitals pay, starting with the ones that treat patients from abroad and already ask for their records before they travel. On our assumptions, doctor seats in the US, EU and India are about a 1.9 billion dollar a year market.
+> And the timing is right. Since this month, Greece puts public lab results in MyHealth and limits repeat tests. We do not compete with that. We carry what it does not hold: private tests, imaging, old paper, records from abroad, and a summary for the doctor.
 >
-> Epic sees inside one hospital. National apps see inside one country. ChatGPT Health talks to the patient. We give the doctor the whole history, and the patient keeps the key.
->
-> And we know where the line is. The record ships first, under GDPR and HIPAA. The assistant's possibilities ship after certification as a medical device under the EU MDR. That is the plan.
+> The patient is free. Hospitals pay, starting with the ones that treat patients from abroad. The record ships first, under GDPR and HIPAA; the assistant's possibilities ship after certification under the EU MDR.
 >
 > We built this here. We need two doctors to try it, one international-patient department, one rare-disease group, and a regulatory adviser. Thank you.
 
@@ -341,7 +373,7 @@ Tagline options, for the cover: (a) "The patient-held record that doctors can qu
 
 ## Pitch script: 30 seconds (about 80 words)
 
-> Your medical history lives in a folder of paper, and every new doctor sees only the page you remembered to bring. [Name] turns that folder into one history from a few photos. You let a doctor in by a DNA-shaped handshake, for a set time. The doctor asks questions and every answer shows the exam it came from. You hold the key. You never get a diagnosis from us. Insurers never see it. Hospitals pay; patients don't.
+> Up to 15 percent of diagnoses are wrong or late, and half of us ask Google before a doctor. Both happen because the history never reaches one desk. [Name] puts it there: the patient adds every exam once, and lets a doctor in by a DNA-shaped handshake. The doctor asks, and every answer shows its source. Patients never get a diagnosis from us. Insurers never see it. Better first decisions: in Greece, diagnostic error costs about €3.5bn a year.
 
 ---
 
@@ -354,6 +386,8 @@ Tagline options, for the cover: (a) "The patient-held record that doctors can qu
 | Q25 | Sheba ARC's reported sale: confirm before slide 11 names it. | Sales |
 | Q26 | Deck ends on the regulatory slide (MIN-4429's acceptance criterion) or on team and ask after it (the coordinator's brief)? Both versions are written. | CEO |
 | Q27 | Team line and funding ask on slide 13. | Founder, through the CEO |
+| Q29 | **Answered** (founder, 14 Nov, verbatim: "Route to the doctor"). Patient-side offer: log the symptom, send it to the doctor, who sees it with the full history. No interpretation, urgency score or causes; fixed 112 line only. Slide 4 updated. | Founder |
+| Q30 | Greek copy: say "ιατρικές εξετάσεις" or "αποτελέσματα εξετάσεων", never "εξετάσεις" alone (Google reads it as school exams; treg Q2). | Marketing, for any Greek version |
 
 ---
 
@@ -370,5 +404,15 @@ Tagline options, for the cover: (a) "The patient-held record that doctors can qu
 | S7 | EU physician count (Eurostat 2023), India registered doctors (NMC via Lok Sabha), world physician density; TAM/SAM/SOM model with the $600 seat price and 1% share as assumptions | secondary + assumption | `docs/research/market-and-competitors.md` §1.2 |
 | S8 | Competitor teardown: Epic, national apps, ChatGPT Health, OpenEvidence | company pages, per research | `docs/research/market-and-competitors.md` §2 |
 | S9 | EU AI Act high-risk timing for medical-device AI; FDA CDS guidance update (6 Jan 2026) | secondary | https://meddeviceguide.com/blog/eu-ai-act-omnibus-amendment-2026-medical-device-impact-guide ; https://www.orrick.com/en/insights/2026/01/fda-eases-oversight-for-ai-enabled-clinical-decision-support-software-and-wearables |
+| S10 | OECD, *The Economics of Diagnostic Safety*, Health Working Paper No. 176, March 2025: up to 15% of diagnoses inaccurate, delayed or wrong; diagnostic error 17.5% of health spending, about 1.8% of GDP; halving frees 8%, about USD 676bn across the OECD; 25 to 30% of investigations unnecessary, about 2.5% of spending | verified | https://doi.org/10.1787/fc61057a-en |
+| S11 | Newman-Toker DE et al., BMJ Qual Saf 2024;33(2):109-120: 795,000 US serious harms a year from misdiagnosis of dangerous diseases (range 598,000 to 1,023,000) | verified (PubMed abstract) | https://doi.org/10.1136/bmjqs-2021-014130 |
+| S12 | Eurostat isoc_ci_ac_i (I_IHIF), 2025: 51.1% of Greeks and 60.3% of EU27 people (16 to 74) looked for health information online in the last 3 months | verified | https://ec.europa.eu/eurostat/databrowser/view/isoc_ci_ac_i/default/table |
+| S13 | Semigran HL et al., BMJ 2015;351:h3480: online symptom checkers list the right diagnosis first in 34% of cases | verified (PubMed abstract) | https://doi.org/10.1136/bmj.h3480 |
+| S14 | Bean AM et al., Nature Medicine 2026;32(2):609-615: people using GPT-4o, Llama 3 or Command R+ found relevant conditions in under 34.5% of cases, no better than control; the models alone 94.9% | verified (PubMed abstract) | https://doi.org/10.1038/s41591-025-04074-y |
+| S15 | Eurostat hlth_sha11_hf and hlth_sha11_hc, 2024: Greek current health expenditure €19,869M; stand-alone lab and imaging €810M (a floor) | verified | https://ec.europa.eu/eurostat/databrowser/view/hlth_sha11_hf/default/table |
+| S16 | EOPYY: lab results posted digitally to one national file from 1 Nov 2026, reachable in MyHealth; limits on repeating key tests in e-prescribing (Ta Nea 2 Nov 2026; Insider.gr; Ethnos) | secondary (Greek press; the EOPYY decision itself not opened) | https://www.tanea.gr/2026/11/02/science-technology/health/eopyy-psifiaka-pleon-i-anartisi-ton-diagnostikon-eksetaseon-poies-eksairountai-prosorina/ ; `docs/research/treg-findings-2026-11-14.md` Q5 |
+| S17 | JMIR Med Inform 2022;10(5):e32168, US VA/DoD Joint Longitudinal Viewer: doctors who used the shared record ordered fewer duplicate images, odds ratio 0.44 (95% CI 0.24 to 0.78) | verified (PubMed abstract) | https://doi.org/10.2196/32168 |
+
+**Not used in v2 (pitch-numbers §5):** a count of wrong diagnoses per year for Greece or the EU (none in a primary); a euro figure for duplicate tests in Greece or the EU (none); the OECD 2017 "one fifth wasteful" line (commentary only); the Dutch 56% repeat-test figure (primary not opened); MyHealth's "1.5 million users" (vendor claim).
 
 **Not used (Sales' do-not-use list):** any PHR or medical-tourism market size; the $42B medication-error figure; global medical-tourist head-count; OpenEvidence $15B; ChatGPT's 230M weekly health users; Epic's 42% share; Navina valuation; Heidi and Glass pricing; Eka Care, PatientsLikeMe, Clinerion and Riayati counts; Copilot Health and HealthEx; a dollar figure for duplicate tests. Also not used: every 🟡 figure from `buyers.md` (Bumrungrad's 50%, Cleveland Clinic Abu Dhabi's 35%), because none of its pages was opened.
