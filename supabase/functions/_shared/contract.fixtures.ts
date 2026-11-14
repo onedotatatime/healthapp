@@ -53,7 +53,7 @@ export const patientProfile: ProfileRow = {
 export const doctorProfile: ProfileRow = {
   id: IDS.doctor,
   role: "doctor",
-  full_name: "Dr. Nikos Andreou",
+  full_name: "Νίκος Ανδρέου",
   full_name_latin: "Nikos Andreou",
   specialty: "Orthopaedics",
   created_at: "2026-11-14T16:00:00.000+00:00",
@@ -170,7 +170,7 @@ export const extractDraft: ExtractResponse = {
       provenance: "uploaded_by_patient", status: "draft", created_at: NOW, confirmed_at: null,
     },
     printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ",
-    printed_id: "AK123456",
+    printed_id: "AK 123456",
     header_confidence: { exam_date: 0.95, issuer: 0.9, printed_name: 0.98, printed_id: 0.97 },
     results: [
       {
@@ -230,7 +230,7 @@ export const handshakeCreate: HandshakeCreateResponse = {
 
 const parties = {
   patient: { id: IDS.patient, full_name: "Μαρία Παπαδοπούλου", specialty: null },
-  doctor: { id: IDS.doctor, full_name: "Dr. Nikos Andreou", specialty: "Orthopaedics" },
+  doctor: { id: IDS.doctor, full_name: "Νίκος Ανδρέου", specialty: "Orthopaedics" },
 };
 
 export const grantPending: GrantEnvelope = {
