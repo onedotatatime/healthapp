@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { type IdentityProfile, matchIdentity, mismatchMessage, sameName } from "./identity.ts";
+import { type IdentityProfile, matchIdentity, mismatchMessage, nameTokens, sameName } from "./identity.ts";
 
 const MARIA: IdentityProfile = { full_name: "Μαρία Παπαδοπούλου", full_name_latin: "Maria Papadopoulou", national_id_norm: "AK123456" };
 const NO_ID: IdentityProfile = { ...MARIA, national_id_norm: null };
@@ -19,6 +19,16 @@ const TABLE: [string, string, string | null, IdentityProfile, Want][] = [
   ["surname first with a comma", "PAPADOPOULOU, MARIA", "AK123456", MARIA, "match"],
   ["a middle initial", "Maria K. Papadopoulou", "AK123456", MARIA, "match"],
   ["a father's name added", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΤΟΥ ΓΕΩΡΓΙΟΥ", "AK123456", MARIA, "match"],
+  // MIN-4478 widening: extra printed words pass only with the printed ID present and exact.
+  ["surname first + father's name + matching ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "AK123456", MARIA, "match"],
+  ["surname first + father's name + a different ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "AK987654", MARIA, "id_mismatch"],
+  ["extra printed word, no ID printed", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", null, MARIA, "name_mismatch"],
+  ["extra printed word, empty ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "  ", MARIA, "name_mismatch"],
+  ["extra printed word, profile has no ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "AK123456", NO_ID, "name_mismatch"],
+  ["a relative: same surname, other first name, father's name, no ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΕΛΕΝΗ ΓΕΩΡΓΙΟΥ", null, MARIA, "name_mismatch"],
+  ["a relative with the same-looking ID is still a different name", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΕΛΕΝΗ ΓΕΩΡΓΙΟΥ", "AK123456", MARIA, "name_mismatch"],
+  ["printed name lacks a profile part (the old reverse subset)", "ΜΑΡΙΑ", "AK123456", MARIA, "name_mismatch"],
+  ["the Latin profile name matches the extra-word print", "PAPADOPOULOU MARIA GEORGIOU", "AK123456", MARIA, "match"],
   ["same surname, other first name", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΕΛΕΝΗ", "AK123456", MARIA, "name_mismatch"],
   ["first name only is not a match", "ΜΑΡΙΑ", "AK123456", MARIA, "name_mismatch"],
   ["another person, same ID digits", "DIMITRIOU ELENI", "AK123456", MARIA, "name_mismatch"],
@@ -49,4 +59,39 @@ Deno.test("identity: a refusal names the two values that differ", () => {
 Deno.test("identity: Latin and Greek spellings of the same name meet", () => {
   assertEquals(sameName("ΕΛΕΝΗ ΔΗΜΗΤΡΙΟΥ", "Eleni Dimitriou"), true);
   assertEquals(sameName("ELENI DIMITRIOU", "Μαρία Παπαδοπούλου"), false);
+});
+
+// Each group is one name spelled the ways a Greek lab and a profile might. All must fold to the same parts.
+const FOLDS: [string, string[]][] = [
+  ["EI and I", ["ΔΕΙΝΑ", "DINA", "DEINA"]],
+  ["AI and E", ["ΑΙΜΙΛΙΑ", "EMILIA", "AIMILIA"]],
+  ["MP and B", ["ΜΠΑΡΜΠΑ", "BARBA", "MPARMPA"]],
+  ["NT and D", ["ΝΤΙΝΑ", "DINA", "NTINA"]],
+  ["PH and F", ["ΦΙΛΟΣ", "FILOS", "PHILOS"]],
+  ["KS and X", ["ΞΑΝΘΗ", "XANTHI", "KSANTHI"]],
+  ["C and K", ["CARA", "KARA", "ΚΑΡΑ"]],
+  ["H and I", ["ELENH", "ELENI", "ΕΛΕΝΗ"]],
+  ["OU, U and ΟΥ", ["ΟΥΡΑΝΟΣ", "URANOS", "OURANOS"]],
+  ["Χ, CH and X", ["ΧΡΙΣΤΟΣ", "CHRISTOS", "XRISTOS"]],
+];
+for (const [label, spellings] of FOLDS) {
+  Deno.test(`identity fold: ${label}`, () => {
+    const want = nameTokens(spellings[0]);
+    for (const w of spellings.slice(1)) assertEquals(nameTokens(w), want, w);
+  });
+}
+
+Deno.test("identity fold: different names stay different", () => {
+  assertEquals(nameTokens("ΜΑΡΙΑ")[0] === nameTokens("ΜΑΡΙΟΣ")[0], false);
+  assertEquals(nameTokens("DINA")[0] === nameTokens("TINA")[0], false);
+});
+
+Deno.test("identity fold: a Latin print of a Greek profile passes through the folds end to end", () => {
+  const p: IdentityProfile = { full_name: "Ξάνθη Μπαρμπά", full_name_latin: null, national_id_norm: "AK123456" };
+  const v = matchIdentity(p, "BARBA XANTHI NTINAS", "AK123456");
+  assertEquals(v.ok ? v.status : v.reason, "match");
+  const n = matchIdentity(p, "BARBA XANTHI NTINAS", null);
+  assertEquals(n.ok ? n.status : n.reason, "name_mismatch");
+  const s = matchIdentity(p, "BARBA XANTHI", null);
+  assertEquals(s.ok ? s.status : s.reason, "name_only");
 });
