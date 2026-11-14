@@ -10,14 +10,16 @@ export const Role = z.enum(['patient', 'doctor']);
 export type Role = z.infer<typeof Role>;
 
 /** healthapp-demo-login: no session needed; the passcode is typed by the presenter (MIN-4449 decision 1, 5). */
-export const DemoLoginRequest = z.object({ persona: Role, passcode: z.string().min(1) });
+export const DemoPersona = z.enum(['patient', 'doctor', 'founder']); // founder: the demo deployment only (MIN-4541)
+export type DemoPersona = z.infer<typeof DemoPersona>;
+export const DemoLoginRequest = z.object({ persona: DemoPersona, passcode: z.string().min(1) });
 export type DemoLoginRequest = z.infer<typeof DemoLoginRequest>;
 export const DemoLoginResponse = z.object({
   access_token: z.string().min(1),
   refresh_token: z.string().min(1),
   expires_at: z.number().int(), // unix seconds
   user_id: z.string(),
-  persona: z.enum(['patient', 'doctor']),
+  persona: DemoPersona,
   role: Role,
 });
 export type DemoLoginResponse = z.infer<typeof DemoLoginResponse>;
