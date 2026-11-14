@@ -172,6 +172,26 @@ export interface StepsSlide extends SlideBase {
   banner?: string;
 }
 
+/* ---------- TwoColumnRevenue (two titled columns of points + a full-width revenue strip) ---------- */
+export interface RevenueCell {
+  /** Small lead line above the number (optional). */
+  lead?: string;
+  /** The big figures, one or two. Each has the figure and its short label. */
+  figures: { value: string; label?: string }[];
+  /** Line under the figures. */
+  text?: string;
+  /** Honesty tag, same size as the figures: "(assumption)", "(our estimate)". */
+  tag?: string;
+  /** Source, small, e.g. "(Tufts CSDD, 2024)". */
+  source?: string;
+}
+export interface TwoColumnRevenueSlide extends SlideBase {
+  template: 'twocol';
+  headline: string;
+  columns: { title: string; points: string[] }[];
+  revenue: RevenueCell[];
+}
+
 /* ---------- Team and ask ---------- */
 export interface TeamAskSlide extends SlideBase {
   template: 'teamask';
@@ -204,5 +224,6 @@ export type Slide =
   | ProductSlide
   | CompareSlide
   | StepsSlide
+  | TwoColumnRevenueSlide
   | TeamAskSlide
   | AppendixSlide;

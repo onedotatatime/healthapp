@@ -363,3 +363,21 @@ strong{font-weight:700}
   .hud,.notes{display:none!important}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+/* ---- TwoColumnRevenue (slide 7b) ---- */
+.tc-cols{position:absolute;left:120px;top:272px;width:1680px;display:grid;grid-template-columns:1fr 1fr;gap:0 96px}
+.tc-col h3{padding-bottom:10px;margin-bottom:18px;border-bottom:3px solid var(--teal)}
+.tc-col ol{list-style:none;margin:0;padding:0}
+.tc-col li{position:relative;display:flex;gap:18px;align-items:baseline;margin-bottom:14px}
+.tc-col li i{flex:none;width:30px;font-style:normal;font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.03em;color:var(--teal)}
+.tc-col li p{font-size:28px;line-height:36px;color:var(--ink)}
+.tc-dot{display:inline-block;vertical-align:middle;margin-left:16px;width:22px;height:22px;border-radius:50%;background:var(--coral)}
+.tc-rev{position:absolute;left:120px;top:690px;width:1680px;height:262px;display:grid;grid-template-columns:1fr 1.25fr 1.1fr;gap:0 40px;padding:30px 40px;background:var(--mint-soft);border-radius:40px;align-items:start}
+.tc-cell{display:flex;flex-direction:column;min-width:0}
+.tc-lead{font-size:24px;line-height:29px;color:var(--ink);margin-bottom:6px}
+.tc-figs{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 28px}
+.tc-fig b{display:block;font-size:60px;line-height:64px;font-weight:800;letter-spacing:-.045em;color:var(--teal);white-space:nowrap}
+.tc-fig em{display:block;font-style:normal;font-size:24px;line-height:28px;font-weight:600;color:var(--ink)}
+.tc-tag{font-size:60px;line-height:64px;font-weight:600;letter-spacing:-.045em;color:var(--coral-900);white-space:nowrap}
+.tc-text{font-size:24px;line-height:29px;color:var(--ink)}
+.tc-src{font-size:22px;line-height:26px;color:var(--soft);margin-top:2px}

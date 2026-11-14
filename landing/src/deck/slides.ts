@@ -1,5 +1,5 @@
 // The pitch deck: the whole content of the presentation, as typed data.
-// Source of the words: docs/deck/deck-content.md (v3.8). Speaker notes are copied from the same file.
+// Source of the words: docs/deck/deck-content.md (v3.9). Speaker notes are copied from the same file.
 // Templates live in ./templates; to make another deck, copy this file and change the data (see README.md).
 import type { Slide } from './types';
 
@@ -31,7 +31,7 @@ const N: Record<string, string[]> = {
     "The founder's question was simple: somewhere in the world, someone has Maria's pattern. If she says yes, her doctor can see that similar unnamed cases exist and ask to talk to the doctor treating one of them. Not to sell data. To shorten the years patients spend going from doctor to doctor. Opt-in only, and she can withdraw at any time."
   ],
   "7b": [
-    "One step further. Athens LifeTech Park's clinical trials challenge names recruitment as the most common cause of delay. Many eligibility criteria are lab values against ranges and dates, and that is what we extract. With a separate consent, we pre-screen against public registries. The site confirms, the patient chooses. It is not built yet. It is our next step."
+    "Clinical trials. The challenge says recruitment is the most common cause of delay, and one day of delay costs a sponsor about forty thousand dollars. With a separate yes, we pre-screen the patient's record against a trial's published criteria. The site confirms, the patient chooses. Between visits, the trial team sees her diary in her own words and her values over time. Sponsors pay per trial and per randomised patient. Never the patient."
   ],
   "8": [
     "The OECD put a price on it last year: diagnostic error eats 17.5 percent of health spending, almost 2 percent of GDP. Halving it would free 8 percent. Take Greece, where we are standing: that is about three and a half billion euros a year. We start with the smallest, most measurable slice, unnecessary and repeated tests. On tests alone, between 4 and 75 million euros a year in Greece, depending on adoption. The bigger prize is the diagnosis itself."
@@ -215,16 +215,32 @@ export const slides: Slide[] = [
     side: { kind: 'matches', pattern: { title: "Maria's pattern", sub: '3 markers · 2 symptoms' }, optIn: 'Opt-in', tag: 'Mock-up', contact: 'Contact requested' },
   },
   {
-    id: '7b', counter: '7b', template: 'steps', variant: 'flow', theme: 'air', kicker: 'Not built yet · our next step', notes: N['7b'],
-    headline: 'The right trial finds the patient, only when the patient says yes.',
-    body: "Many trial criteria check lab values against ranges and dates. That is what we already extract. With a separate yes, we pre-screen a patient's record against public trial registries, and the investigator decides.",
-    steps: [
-      { title: 'Consent', text: 'The patient opts in to trial matching, separately from care.' },
-      { title: 'Match', text: "Their record is checked against a trial's published criteria." },
-      { title: 'Confirm', text: 'The doctor or trial site reviews: “possibly eligible”, never a diagnosis.' },
-      { title: 'Choose', text: 'The patient decides whether to be contacted.' },
+    id: '7b', counter: '7b', template: 'twocol', theme: 'air', kicker: 'Clinical trials', notes: N['7b'],
+    headline: 'We help trials find the right patients, and hear them between visits. Only when the patient says yes.',
+    columns: [
+      {
+        title: 'Patient selection and recruitment',
+        points: [
+          "With a separate yes, the patient's record (lab values, units, printed ranges, dates) is pre-screened against a trial's published criteria.",
+          'Each criterion comes back met, not met or unknown, with the source document.',
+          'The site confirms “possibly eligible”. The patient chooses whether to be contacted.',
+        ],
+      },
+      {
+        title: 'Patient experience',
+        points: [
+          "The symptom diary keeps the patient's words, with the time and a 1 to 10 severity. It never says what a symptom might be.",
+          'Each lab value is a series over time, across every lab and doctor.',
+          "With the patient's consent, the trial team sees both between visits.",
+        ],
+      },
     ],
-    footer: 'Consent only. A pre-screen, never a diagnosis. Never a data sale. Not in the demo.',
+    revenue: [
+      { lead: 'One day of delay costs a sponsor', figures: [{ value: 'About $40,000' }], text: 'in direct trial costs.', source: '(Tufts CSDD, 2024)' },
+      { lead: 'Sponsors and CROs pay. Never the patient.', figures: [{ value: '€5,000', label: 'per trial set-up' }, { value: '€1,500', label: 'per randomised patient' }], tag: '(assumption)' },
+      { lead: 'One trial, 50 referrals the site accepts, about 19 patients randomised:', figures: [{ value: 'about €33,500' }], tag: '(our estimate)' },
+    ],
+    footer: 'Consent only, separate from care. A pre-screen, never a diagnosis: the investigator decides. Never a data sale. Prices and volumes are assumptions; "our estimate" is our arithmetic on sourced inputs.',
   },
   {
     id: '8', template: 'funnel', theme: 'night', no: '08', kicker: 'Impact, what better decisions save', notes: N['8'],
@@ -304,7 +320,7 @@ export const slides: Slide[] = [
         { number: '€0.56M', label: 'conservative · assumption' },
         { number: '€4.85M', label: 'upside · assumption' },
       ],
-      note: 'Not counted: rare-disease pilots (free, grant-funded), national agencies (tenders, year 2+), research use (later, consent-gated, never a data sale).',
+      note: 'Not counted: rare-disease pilots (free, grant-funded), national agencies (tenders, year 2+), clinical-trial pre-screening (slide 7b: priced per trial and per randomised patient, not projected until a sponsor pilot sets the volume), research use (later, consent-gated, never a data sale).',
     },
     strip: [
       { caption: 'Tests, Greece (slide 8 funnel)', value: '€4M to €75M a year', tag: 'our estimate' },
