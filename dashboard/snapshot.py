@@ -178,8 +178,8 @@ def build_usage(cfg, now, since, root, usage_bin, name_filter):
     top = lambda c, n: [{'n': k, 'v': int(round(v))} for k, v in c.most_common(n)]
     # Every configured agent has a row, zeros included (MIN-4583); n and v keep their meaning, mins and runs are added.
     configured = {a['n'] for a in cfg['agents']}
-    for k in configured:
-        per_agent.setdefault(k, 0)
+    for a in cfg['agents']:                    # config order, never set order: zero rows must not reshuffle between runs
+        per_agent.setdefault(a['n'], 0)
     others = [k for k, _ in per_agent.most_common() if k not in configured][:5]      # built-in agents (Explore, general-purpose...), biggest first
     leaderboard = [{'n': k, 'v': int(round(v)), 'mins': round(float(mins[k]), 1), 'runs': runs[k]}
                    for k, v in per_agent.most_common() if k in configured or k in others]

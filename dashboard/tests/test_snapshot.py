@@ -102,6 +102,14 @@ class Usage(unittest.TestCase):
         self.assertEqual(by['Cron']['v'], 6)        # n and v are what they were: weighted tokens, 6 requests of 1 input token
         self.assertEqual(sum(a['runs'] for a in data['perAgent'] if a['n'] in ('Cron', 'Pix')), 3)
 
+    def test_zero_rows_follow_config_order_and_are_stable(self):
+        # the zero-token agents come in config order, never set order, so ranks do not reshuffle between runs
+        runs = [[a['n'] for a in sn.build_usage(self.cfg, NOW, self.since, self.tmp.name, USAGE_BIN, 'healthapp')[0]['perAgent'][1:]]
+                for _ in range(2)]
+        want = [a['n'] for a in self.cfg['agents'] if a['n'] != 'Cron']
+        self.assertEqual(runs[0], want)
+        self.assertEqual(runs[0], runs[1])
+
     def test_run_minutes_caps_idle_gaps_and_ignores_order(self):
         U = sn.load_usage_module(USAGE_BIN)
         t = lambda m: sn.parse('2026-11-14T12:00:00Z') + __import__('datetime').timedelta(minutes=m)
