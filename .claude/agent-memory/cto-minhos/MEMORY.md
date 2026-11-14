@@ -7,3 +7,5 @@
 - [Identity match review](project_identity_match_review.md) — MIN-4478 #32 pass; empty-ID and 3-part-name holes closed by founder entry + step-8 count; briefs go stale, check PR state first
 - [Dashboard browser checks](reference_dashboard_browser_checks.md) — Playwright route interception (no background servers), fixtures for late milestones, error.json is not "feed down"
 - [healthapp function deploys](project_healthapp_function_deploys.md) — no CI deploys functions; one function serves dev+demo; diff deployed copy before deploy
+- [Matches RPC review](project_matches_rpc_review.md) — MIN-4505 PR #25 pass; PR #51 coding pass with 3 fixes (glycated regex, ANA titre, 014); local PG18 replay recipe
+- [Doctor simulate page](project_doctor_simulate.md) — MIN-4504: no live boxd VM, recorded run replayed, browser matching on 5,000 synthetic, persona-rare, S from 6, consent before data
