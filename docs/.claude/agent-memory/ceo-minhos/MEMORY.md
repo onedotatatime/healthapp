@@ -1,1 +1,0 @@
-- [Health app: the bet and open decisions](project_healthapp_bet_and_open_decisions.md) — weekend decided, product not; gates G0/G1/G2; six founder decisions open on 13 Nov 2026; insurer edges not to be extended.

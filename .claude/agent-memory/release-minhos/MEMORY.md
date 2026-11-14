@@ -1,0 +1,2 @@
+- [wrangler Pages delegation](feedback_wrangler_pages_delegation.md) — `pages project create` now makes a public Worker from cwd; use --force from an empty folder
+- [healthapp memory is tracked on staging](project_healthapp_memory_tracked_rebase.md) — untracked memory in a main-based worktree blocks the rebase; save, rebase, merge index

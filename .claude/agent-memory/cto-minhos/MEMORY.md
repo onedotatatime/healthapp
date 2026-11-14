@@ -1,0 +1,7 @@
+- [Healthapp real-data regime](project_healthapp_real_data_regime.md) — founder's real exams inside the shared conductor Supabase project: two schemas, wipe by drop schema (never delete the project), backups not wipeable, ten-point gate (MIN-4426, MIN-4449)
+- [Frontend contract drift](project_frontend_contract_drift.md) — 2026-11-14: green CI hid stub vs contract.ts/grants mismatches; diff shapes against contract.ts + 002_core.sql
+- [Stacked PR merge simulation](project_stacked_pr_merge_sim.md) — 2026-11-14: green-alone PRs conflicted (#15/#17); simulate merge order with merge-tree before giving it
+- [Conductor clean check](project_conductor_clean_check.md) — schema_migrations must equal conductor's migration files; match 'healthapp' not 'health'; SQL via read-only helper
+- [Dashboard live feed](project_dashboard_feed.md) — MIN-4456/4458: conductor bucket healthapp-dev, E1/E2 yes, Lane C; post-build sound, Access login before the key link
+- [Demo env credentials](project_demo_env_credentials.md) — MIN-4541: dev persona hash copied to demo opened demo accounts; a live 'founder' 200 probe is a sign-in as him
+- [Identity match review](project_identity_match_review.md) — MIN-4478 #32 pass; empty-ID and 3-part-name holes closed by founder entry + step-8 count; briefs go stale, check PR state first

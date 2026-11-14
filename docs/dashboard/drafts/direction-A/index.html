@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-motion="full">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mission Control · Health app</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="../shared/alert.css">
+<link rel="stylesheet" href="a.css">
+</head>
+<body>
+<a class="sr" href="#main">Skip to the dashboard</a>
+<div class="app">
+  <nav class="rail" aria-label="Views" id="rail">
+    <a href="#/" data-view="overview" title="Overview (1)"><b>1</b>Over</a>
+    <a href="#/branches" data-view="branches" title="Branches (2)"><b>2</b>Bran</a>
+    <a href="#/exercises/00" data-view="exercises" title="Exercises (3)"><b>3</b>Exer</a>
+    <a href="#/decks" data-view="decks" title="Decks (4)"><b>4</b>Decks</a>
+    <a href="#/demo" data-view="demo" title="Demo (5)"><b>5</b>Demo</a>
+  </nav>
+  <header class="top">
+    <span class="brandname">Health app · Gen AI Summit</span>
+    <span class="src none" id="feedstat" role="status" aria-live="polite">Loading the feed…</span>
+    <div class="verdict"><span class="micro">Verdict</span><span class="vchip" id="verdict"></span></div>
+    <span class="clock" id="clock" title="Europe/Athens"></span>
+    <div class="tools">
+      <button class="btn ibtn" data-act="theme" aria-label="Toggle light and dark" title="Light / dark" aria-pressed="true">◐</button>
+      <button class="btn ibtn" data-act="motion" aria-label="Reduce motion" title="Reduce motion" aria-pressed="false">≋</button>
+      <button class="btn ibtn" data-act="pause" aria-label="Pause live updates" title="Pause live updates" aria-pressed="false">⏸</button>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"></main>
+</div>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drTitle" aria-hidden="true">
+  <div class="dr-head"><h2 id="drTitle">Drawer</h2><div id="drTabs" style="display:contents"></div><button class="btn ibtn x" id="drClose" aria-label="Close (Esc)" title="Close (Esc)">✕</button></div>
+  <div class="dr-body" id="drBody" tabindex="-1"></div>
+</aside>
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Deck viewer"></div>
+<script src="../sample-data.js"></script>
+<script src="../shared/feed-config.js"></script>
+<script src="../shared/live.js"></script>
+<script src="../shared/content.js"></script>
+<script src="../shared/common.js"></script>
+<script src="../shared/alert.js"></script>
+<script src="../shared/feed.js"></script>
+<script src="a.js"></script>
+</body>
+</html>

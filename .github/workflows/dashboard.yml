@@ -1,0 +1,44 @@
+# Lane `static` for the project dashboard (MIN-4456, MIN-4459; CTO decision 7 on MIN-4456).
+# Kept in its own file so it does not collide with `.github/workflows/pr.yml` from MIN-4451 (PR #4).
+# When PR #4 is on staging, Release moves these steps into pr.yml's `static` job and deletes this
+# file, so there is one `static` check, never two.
+name: Dashboard
+on:
+  pull_request:
+    branches: [staging, main]
+permissions:
+  contents: read
+concurrency:
+  group: dashboard-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+      - name: Generator tests (stdlib, no network)
+        run: python3 -m unittest discover -s dashboard/tests
+      - name: Edge function checks
+        # The root package.json (the PWA, MIN-4451) must not switch Deno to node_modules mode or its import-prefix lint.
+        run: |
+          deno check --node-modules-dir=none supabase/functions/healthapp-dashboard-ingest/index.ts supabase/functions/healthapp-dashboard-feed/index.ts
+          deno lint --rules-exclude=no-import-prefix supabase/functions/
+          deno test --node-modules-dir=none --allow-read supabase/functions/
+      - name: Key-pattern grep over tracked files (MIN-4449)
+        # scripts/static-checks.mjs (the PWA's check, MIN-4451) names the patterns it looks for.
+        run: |
+          if git grep -nE 'eyJ[A-Za-z0-9_-]{30,}|sb_''secret_|SUPABASE_SERVICE_''ROLE_KEY=[A-Za-z0-9_.-]{20,}|lin_''api_[A-Za-z0-9]{20,}|sb''p_[A-Za-z0-9]{20,}' -- . ':!scripts/static-checks.mjs'; then
+            echo "A key-shaped value is tracked. Remove it and rotate it." >&2
+            exit 1
+          fi
+          if git ls-files | grep -iE '(^|/)\.env($|\.)' | grep -v '\.env\.example$'; then
+            echo "An env file is tracked." >&2
+            exit 1
+          fi
+      - name: Pages upload set builds and is clean
+        run: dashboard/pages-bundle.sh "$RUNNER_TEMP/dashboard-pages"

@@ -1,0 +1,976 @@
+{
+  "version": "0.1.20261103",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "7.1168 sec.",
+  "cost": 0.09,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "11141453-2171-0367-0000-585969f27d27",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "7.0673 sec.",
+      "cost": 0.09,
+      "result_count": 18,
+      "path": [
+        "v3",
+        "keywords_data",
+        "google_ads",
+        "search_volume",
+        "live"
+      ],
+      "data": {
+        "api": "keywords_data",
+        "function": "search_volume",
+        "se": "google_ads",
+        "keywords": [
+          "\u03bc\u03b5\u03c4\u03b1\u03c6\u03bf\u03c1\u03ac \u03b5\u03be\u03b5\u03c4\u03ac\u03c3\u03b5\u03c9\u03bd",
+          "\u03b9\u03b1\u03c4\u03c1\u03b9\u03ba\u03cc \u03b9\u03c3\u03c4\u03bf\u03c1\u03b9\u03ba\u03cc \u03b5\u03c6\u03b1\u03c1\u03bc\u03bf\u03b3\u03ae",
+          "\u03c8\u03b7\u03c6\u03b9\u03b1\u03ba\u03ad\u03c2 \u03b5\u03be\u03b5\u03c4\u03ac\u03c3\u03b5\u03b9\u03c2",
+          "medical records app",
+          "scan lab results",
+          "\u03b1\u03c0\u03bf\u03c4\u03b5\u03bb\u03ad\u03c3\u03bc\u03b1\u03c4\u03b1 \u03b5\u03be\u03b5\u03c4\u03ac\u03c3\u03b5\u03c9\u03bd",
+          "\u03c6\u03ac\u03ba\u03b5\u03bb\u03bf\u03c2 \u03c5\u03b3\u03b5\u03af\u03b1\u03c2",
+          "\u03b5\u03be\u03b5\u03c4\u03ac\u03c3\u03b5\u03b9\u03c2 online",
+          "\u03b7\u03bb\u03b5\u03ba\u03c4\u03c1\u03bf\u03bd\u03b9\u03ba\u03cc\u03c2 \u03c6\u03ac\u03ba\u03b5\u03bb\u03bf\u03c2 \u03c5\u03b3\u03b5\u03af\u03b1\u03c2",
+          "myhealth app",
+          "\u03b9\u03b1\u03c4\u03c1\u03b9\u03ba\u03cc\u03c2 \u03c6\u03ac\u03ba\u03b5\u03bb\u03bf\u03c2",
+          "health records app",
+          "personal health record",
+          "medical history app",
+          "lab results app",
+          "store medical records",
+          "medical records",
+          "patient portal"
+        ]
+      },
+      "result": [
+        {
+          "keyword": "\u03bc\u03b5\u03c4\u03b1\u03c6\u03bf\u03c1\u03ac \u03b5\u03be\u03b5\u03c4\u03ac\u03c3\u03b5\u03c9\u03bd",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": null,
+          "competition_index": null,
+          "search_volume": null,
+          "low_top_of_page_bid": null,
+          "high_top_of_page_bid": null,
+          "cpc": null,
+          "monthly_searches": null
+        },
+        {
+          "keyword": "\u03b9\u03b1\u03c4\u03c1\u03b9\u03ba\u03cc \u03b9\u03c3\u03c4\u03bf\u03c1\u03b9\u03ba\u03cc \u03b5\u03c6\u03b1\u03c1\u03bc\u03bf\u03b3\u03ae",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": null,
+          "competition_index": null,
+          "search_volume": null,
+          "low_top_of_page_bid": null,
+          "high_top_of_page_bid": null,
+          "cpc": null,
+          "monthly_searches": null
+        },
+        {
+          "keyword": "\u03c8\u03b7\u03c6\u03b9\u03b1\u03ba\u03ad\u03c2 \u03b5\u03be\u03b5\u03c4\u03ac\u03c3\u03b5\u03b9\u03c2",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": null,
+          "competition_index": null,
+          "search_volume": null,
+          "low_top_of_page_bid": null,
+          "high_top_of_page_bid": null,
+          "cpc": null,
+          "monthly_searches": null
+        },
+        {
+          "keyword": "medical records app",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "LOW",
+          "competition_index": 16,
+          "search_volume": 590,
+          "low_top_of_page_bid": 2.13,
+          "high_top_of_page_bid": 9.83,
+          "cpc": 7.82,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 590
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 480
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 480
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 480
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 480
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 480
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 590
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 590
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 590
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 720
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 480
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 590
+            }
+          ]
+        },
+        {
+          "keyword": "scan lab results",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "LOW",
+          "competition_index": 0,
+          "search_volume": 10,
+          "low_top_of_page_bid": null,
+          "high_top_of_page_bid": null,
+          "cpc": null,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 10
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 0
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 10
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 10
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 10
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 10
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 20
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 10
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 10
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 10
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 10
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 10
+            }
+          ]
+        },
+        {
+          "keyword": "\u03b1\u03c0\u03bf\u03c4\u03b5\u03bb\u03ad\u03c3\u03bc\u03b1\u03c4\u03b1 \u03b5\u03be\u03b5\u03c4\u03ac\u03c3\u03b5\u03c9\u03bd",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "LOW",
+          "competition_index": 0,
+          "search_volume": 3600,
+          "low_top_of_page_bid": null,
+          "high_top_of_page_bid": null,
+          "cpc": null,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 3600
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 4400
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 2900
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 4400
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 5400
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 4400
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 3600
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 3600
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 2900
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 2400
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 1900
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 1900
+            }
+          ]
+        },
+        {
+          "keyword": "\u03c6\u03ac\u03ba\u03b5\u03bb\u03bf\u03c2 \u03c5\u03b3\u03b5\u03af\u03b1\u03c2",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": null,
+          "competition_index": null,
+          "search_volume": null,
+          "low_top_of_page_bid": null,
+          "high_top_of_page_bid": null,
+          "cpc": null,
+          "monthly_searches": null
+        },
+        {
+          "keyword": "\u03b5\u03be\u03b5\u03c4\u03ac\u03c3\u03b5\u03b9\u03c2 online",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": null,
+          "competition_index": null,
+          "search_volume": null,
+          "low_top_of_page_bid": null,
+          "high_top_of_page_bid": null,
+          "cpc": null,
+          "monthly_searches": null
+        },
+        {
+          "keyword": "\u03b7\u03bb\u03b5\u03ba\u03c4\u03c1\u03bf\u03bd\u03b9\u03ba\u03cc\u03c2 \u03c6\u03ac\u03ba\u03b5\u03bb\u03bf\u03c2 \u03c5\u03b3\u03b5\u03af\u03b1\u03c2",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": null,
+          "competition_index": null,
+          "search_volume": null,
+          "low_top_of_page_bid": null,
+          "high_top_of_page_bid": null,
+          "cpc": null,
+          "monthly_searches": null
+        },
+        {
+          "keyword": "myhealth app",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "LOW",
+          "competition_index": 4,
+          "search_volume": 18100,
+          "low_top_of_page_bid": 0.31,
+          "high_top_of_page_bid": 2.51,
+          "cpc": 1.98,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 14800
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 14800
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 12100
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 14800
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 18100
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 18100
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 18100
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 22200
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 14800
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 18100
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 18100
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 22200
+            }
+          ]
+        },
+        {
+          "keyword": "\u03b9\u03b1\u03c4\u03c1\u03b9\u03ba\u03cc\u03c2 \u03c6\u03ac\u03ba\u03b5\u03bb\u03bf\u03c2",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": null,
+          "competition_index": null,
+          "search_volume": null,
+          "low_top_of_page_bid": null,
+          "high_top_of_page_bid": null,
+          "cpc": null,
+          "monthly_searches": null
+        },
+        {
+          "keyword": "health records app",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "LOW",
+          "competition_index": 12,
+          "search_volume": 320,
+          "low_top_of_page_bid": 0.13,
+          "high_top_of_page_bid": 4.19,
+          "cpc": 2.08,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 320
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 260
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 260
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 260
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 260
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 260
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 480
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 480
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 320
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 390
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 260
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 260
+            }
+          ]
+        },
+        {
+          "keyword": "personal health record",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "LOW",
+          "competition_index": 1,
+          "search_volume": 6600,
+          "low_top_of_page_bid": 1.09,
+          "high_top_of_page_bid": 4.61,
+          "cpc": 5.06,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 6600
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 8100
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 5400
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 8100
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 6600
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 5400
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 5400
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 5400
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 5400
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 6600
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 5400
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 5400
+            }
+          ]
+        },
+        {
+          "keyword": "medical history app",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "LOW",
+          "competition_index": 9,
+          "search_volume": 110,
+          "low_top_of_page_bid": 0.57,
+          "high_top_of_page_bid": 4.62,
+          "cpc": 4.35,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 140
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 140
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 110
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 110
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 110
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 140
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 110
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 170
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 140
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 110
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 110
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 110
+            }
+          ]
+        },
+        {
+          "keyword": "lab results app",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "LOW",
+          "competition_index": 1,
+          "search_volume": 90,
+          "low_top_of_page_bid": null,
+          "high_top_of_page_bid": null,
+          "cpc": 8.28,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 140
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 110
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 90
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 140
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 70
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 90
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 90
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 90
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 70
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 90
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 70
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 50
+            }
+          ]
+        },
+        {
+          "keyword": "store medical records",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "MEDIUM",
+          "competition_index": 47,
+          "search_volume": 590,
+          "low_top_of_page_bid": 6.97,
+          "high_top_of_page_bid": 43.62,
+          "cpc": 27.68,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 720
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 720
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 590
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 480
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 480
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 720
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 720
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 880
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 590
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 590
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 390
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 390
+            }
+          ]
+        },
+        {
+          "keyword": "medical records",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "LOW",
+          "competition_index": 3,
+          "search_volume": 49500,
+          "low_top_of_page_bid": 0.84,
+          "high_top_of_page_bid": 4.77,
+          "cpc": 4.06,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 74000
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 74000
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 60500
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 60500
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 60500
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 49500
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 49500
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 49500
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 49500
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 49500
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 40500
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 49500
+            }
+          ]
+        },
+        {
+          "keyword": "patient portal",
+          "spell": null,
+          "location_code": null,
+          "language_code": null,
+          "search_partners": false,
+          "competition": "LOW",
+          "competition_index": 2,
+          "search_volume": 246000,
+          "low_top_of_page_bid": 1.12,
+          "high_top_of_page_bid": 4.35,
+          "cpc": 4.09,
+          "monthly_searches": [
+            {
+              "year": 2026,
+              "month": 10,
+              "search_volume": 201000
+            },
+            {
+              "year": 2026,
+              "month": 9,
+              "search_volume": 246000
+            },
+            {
+              "year": 2026,
+              "month": 8,
+              "search_volume": 246000
+            },
+            {
+              "year": 2026,
+              "month": 7,
+              "search_volume": 246000
+            },
+            {
+              "year": 2026,
+              "month": 6,
+              "search_volume": 246000
+            },
+            {
+              "year": 2026,
+              "month": 5,
+              "search_volume": 246000
+            },
+            {
+              "year": 2026,
+              "month": 4,
+              "search_volume": 246000
+            },
+            {
+              "year": 2026,
+              "month": 3,
+              "search_volume": 246000
+            },
+            {
+              "year": 2026,
+              "month": 2,
+              "search_volume": 246000
+            },
+            {
+              "year": 2026,
+              "month": 1,
+              "search_volume": 246000
+            },
+            {
+              "year": 2025,
+              "month": 12,
+              "search_volume": 246000
+            },
+            {
+              "year": 2025,
+              "month": 11,
+              "search_volume": 246000
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

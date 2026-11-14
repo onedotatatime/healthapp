@@ -1,0 +1,1 @@
+- [Scorecard normalisation](feedback_scorecard_normalisation.md) — merge seat scores by mapping each seat's "no evidence" floor to 0, never raw %

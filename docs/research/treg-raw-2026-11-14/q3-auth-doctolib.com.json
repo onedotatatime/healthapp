@@ -1,0 +1,34 @@
+{
+  "output": {
+    "metrics": {
+      "url": "doctolib.com",
+      "inlink_rank": 28,
+      "domain_inlink_rank": 83
+    }
+  },
+  "raw": {
+    "pages": [
+      {
+        "url": "doctolib.com",
+        "inlink_rank": 28,
+        "domain_inlink_rank": 83
+      }
+    ]
+  },
+  "_treg": {
+    "served_by": "seranking.web.url.metrics",
+    "provider": "seranking",
+    "tier": "platform",
+    "outcome": "hit",
+    "tried": [
+      {
+        "endpoint_id": "seranking.web.url.metrics",
+        "provider": "seranking",
+        "outcome": "hit",
+        "status": 200,
+        "charged_micro": 2685
+      }
+    ],
+    "charged_micro": 2685
+  }
+}

@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Health app lean room · six boards (recommended, not decided)</title>
+<style>
+  :root { --ink:#16181d; --muted:#4a4f5a; --line:#d5d8de; --paper:#ffffff; --bg:#f4f5f7;
+          --accent:#1f5f8b; --accent-bg:#e7f0f7; --warn:#8a4b00; --warn-bg:#fdf1e2; --ok:#1e6b3a; --ok-bg:#e6f4ea; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 -apple-system, "Segoe UI", Inter, Arial, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--paper); border-bottom:1px solid var(--line); padding:24px 32px; }
+  header h1 { margin:0 0 4px; font-size:24px; }
+  header p { margin:0; color:var(--muted); }
+  .status { display:inline-block; margin-top:12px; padding:4px 10px; border-radius:4px; background:var(--warn-bg); color:var(--warn); font-weight:600; }
+  nav { padding:12px 32px; background:var(--paper); border-bottom:1px solid var(--line); }
+  nav a { color:var(--accent); margin-right:16px; text-decoration:none; font-weight:600; }
+  main { max-width:1280px; margin:0 auto; padding:24px 32px 64px; }
+  section { background:var(--paper); border:1px solid var(--line); border-radius:8px; padding:24px; margin-bottom:24px; }
+  section h2 { margin:0 0 4px; font-size:20px; }
+  .rec { margin:0 0 16px; padding:8px 12px; background:var(--accent-bg); border-left:4px solid var(--accent); }
+  .grid { display:grid; gap:12px; }
+  .g2 { grid-template-columns:repeat(2, 1fr); } .g3 { grid-template-columns:repeat(3, 1fr); } .g4 { grid-template-columns:repeat(4, 1fr); }
+  .card { border:1px solid var(--line); border-radius:6px; padding:12px; }
+  .card h3 { margin:0 0 6px; font-size:15px; }
+  .card p { margin:0 0 4px; }
+  .tag { display:inline-block; font-size:12px; padding:1px 8px; border-radius:10px; background:var(--bg); color:var(--muted); margin-right:4px; }
+  .tag.first { background:var(--accent-bg); color:var(--accent); font-weight:600; }
+  .tag.block { background:var(--warn-bg); color:var(--warn); font-weight:600; }
+  .muted { color:var(--muted); }
+  table { border-collapse:collapse; width:100%; }
+  th, td { border:1px solid var(--line); padding:8px; text-align:left; vertical-align:top; }
+  th { background:var(--bg); }
+  .quad td { width:50%; }
+  .bmc { display:grid; grid-template-columns:repeat(5, 1fr); grid-template-rows:auto auto auto; gap:8px; }
+  .bmc .card { min-height:120px; }
+  .kp { grid-column:1; grid-row:1 / span 2; } .ka { grid-column:2; grid-row:1; } .kr { grid-column:2; grid-row:2; }
+  .vp { grid-column:3; grid-row:1 / span 2; } .cr { grid-column:4; grid-row:1; } .ch { grid-column:4; grid-row:2; }
+  .cs { grid-column:5; grid-row:1 / span 2; } .cost { grid-column:1 / span 3; grid-row:3; } .rev { grid-column:4 / span 2; grid-row:3; }
+  .bar { height:12px; background:var(--bg); border-radius:6px; overflow:hidden; }
+  .bar span { display:block; height:100%; background:var(--accent); }
+  .room .bar span { background:var(--ink); }
+  @media (max-width: 900px) {
+    .g3, .g4 { grid-template-columns:1fr 1fr; }
+    .bmc { grid-template-columns:1fr; grid-template-rows:none; }
+    .bmc .card { grid-column:auto; grid-row:auto; min-height:0; }
+  }
+  @media (max-width: 560px) {
+    .g2, .g3, .g4 { grid-template-columns:1fr; }
+    header, nav, main { padding-left:16px; padding-right:16px; }
+    section { padding:16px; }
+    th, td { padding:6px; font-size:14px; }
+  }
+  footer { color:var(--muted); font-size:13px; text-align:center; padding:16px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Health app lean room · six boards</h1>
+  <p>Facilitated by Pix Elidis (Design), MIN-4441 · 14 Nov 2026 · seats: CEO, Marketing, Sales, Product, CTO. Synthetic personas only. Interviews so far: 0.</p>
+  <span class="status" id="status">Recommended, not decided · founder decides on MIN-4442</span>
+</header>
+<nav>
+  <a href="#personas">1 Personas</a><a href="#empathy">2 Empathy maps</a><a href="#competitors">3 Competitors</a>
+  <a href="#vp">4 Value proposition</a><a href="#bmc">5 Business model</a><a href="#score">6 Market fit</a>
+</nav>
+<main>
+
+<section id="personas">
+  <h2>1 · Personas</h2>
+  <p class="rec">Test the buyer, the first-visit doctor and the coordinator, in that order. Maria stays the stage persona, not the first market.</p>
+  <div class="grid g4">
+    <div class="card"><span class="tag first">Test 1 · buyer</span><h3>Layla, head of international patients</h3><p>"A complete, consented file before the patient lands."</p><p class="muted">Blocked by: records open only in person (P6).</p></div>
+    <div class="card"><span class="tag first">Test 2 · decides</span><h3>Dr Nikos, first-visit specialist</h3><p>"Tell me what I'm missing, and show me the page."</p><p class="muted">Ten minutes; locked hospital PC.</p></div>
+    <div class="card"><span class="tag first">Test 3 · does the work</span><h3>Rania, coordinator</h3><p>"Get the file complete without chasing."</p><p class="muted">No role in the access model yet.</p></div>
+    <div class="card"><span class="tag">first asked user</span><h3>Karim, travelling patient</h3><p>"The foreign hospital has my history before I land."</p><p class="muted">Ahead-of-visit and translation not built.</p></div>
+    <div class="card"><span class="tag">stage persona</span><h3>Maria, the courier</h3><p>"Get the new doctor up to speed without me."</p><p class="muted">Nobody asks her; no payback (N1).</p></div>
+    <div class="card"><span class="tag block">blocked by B1</span><h3>Sofia, family archivist</h3><p>"Let each new doctor see everything."</p><p class="muted">App refuses exams that are not hers; dependants open.</p></div>
+    <div class="card"><span class="tag">second payer</span><h3>Omar, clinic-chain director</h3><p>"Fewer repeat tests, no IT project."</p><p class="muted">Seat price next to free tools.</p></div>
+    <div class="card"><span class="tag">no card</span><h3>Anti-personas</h3><p>The answer-seeker (N1). An insurer (data rule). The five commercial edges stay open.</p></div>
+  </div>
+</section>
+
+<section id="empathy">
+  <h2>2 · Empathy maps</h2>
+  <p class="rec">The patient does the work, the doctor gets the value, the buyer gains most. Design for an asker and a helper; interview the hospital side first.</p>
+  <div class="grid g3">
+    <div class="card"><h3>Patient (Maria, Karim)</h3>
+      <p><b>Says</b> "I need to tell him my history and dont forget to take my exams with me" (founder)</p>
+      <p><b>Thinks</b> "What do I get back? Who else sees this?"</p>
+      <p><b>Does</b> Folder, phone photos, several portals</p>
+      <p><b>Feels</b> Tired of retelling; wary of insurers</p>
+      <p><b>Pains</b> Courier and memory; no payback</p>
+      <p><b>Gains</b> "I walked in and she already knew."</p></div>
+    <div class="card"><h3>Doctor (Dr Nikos)</h3>
+      <p><b>Says</b> "What did the other specialist find?"</p>
+      <p><b>Thinks</b> "Where did this answer come from? It is my name on it."</p>
+      <p><b>Does</b> Skims the bag; repeats tests</p>
+      <p><b>Feels</b> Short of time; liable; sceptical of AI</p>
+      <p><b>Pains</b> Missing history; another login</p>
+      <p><b>Gains</b> Every answer opens the original</p></div>
+    <div class="card"><h3>Coordinator and buyer (Rania, Layla)</h3>
+      <p><b>Says</b> "Send us your records before you travel."</p>
+      <p><b>Thinks</b> "Will legal and IT block it? Is it a device?"</p>
+      <p><b>Does</b> Chases, translates, forwards</p>
+      <p><b>Feels</b> Measured on conversions</p>
+      <p><b>Pains</b> Late, partial, multilingual files</p>
+      <p><b>Gains</b> A readable packet before arrival</p></div>
+  </div>
+  <p class="muted">Open, to test: is the patient's job emotional (Marketing) or administrative (CEO, Sales)? Does the doctor want the source first (Marketing, CTO) or speed (Sales, CEO)?</p>
+</section>
+
+<section id="competitors">
+  <h2>3 · Competitor analysis</h2>
+  <p class="rec">Position on the doctor's side of the first visit, from the patient's own outside paper. The edge is position, not code. Never "the only" or "the first".</p>
+  <table class="quad">
+    <tr><th></th><th>AI answers the patient</th><th>AI answers the doctor</th></tr>
+    <tr><th>The patient's own outside paper</th><td>ChatGPT Health, Claude, the "photo and ask a chatbot" habit, Eka Care</td><td><b>[Name], hypothesis</b> (demo: 3 exam types, EL and EN). Neighbours: PicnicHealth, Patients Know Best</td></tr>
+    <tr><th>One institution's or country's record</th><td>Epic MyChart Emmie, Apple Health Records, national apps, Doctolib's planned vault</td><td>Epic Art, Navina, Metriport, scribes</td></tr>
+  </table>
+  <p class="muted">Off the map: OpenEvidence, Glass (answers from the literature). Biggest threat, by seat: Epic (CEO, Sales) · Doctolib in the EU (Product) · the chatbot habit and the inbox (Marketing) · "no technical moat" (CTO).</p>
+</section>
+
+<section id="vp">
+  <h2>4 · Value proposition</h2>
+  <p class="rec">Every new doctor starts from what the patient remembered to bring. The doctor asks; every answer opens the exam it came from. She decides who sees it, for how long. No diagnosis, no insurer view.</p>
+  <div class="grid g3">
+    <div class="card"><h3>Buyer</h3><p><b>Job</b> Records before arrival</p><p><b>Reliever</b> Sourced history at the desk <span class="tag">runs</span></p><p><b>Reliever</b> History before arrival <span class="tag block">not built</span></p></div>
+    <div class="card"><h3>Doctor</h3><p><b>Job</b> See the past fast, check it</p><p><b>Reliever</b> Cited answers <span class="tag">runs</span></p><p><b>Gain</b> Possible causes <span class="tag block">device</span></p></div>
+    <div class="card"><h3>Patient</h3><p><b>Job</b> Get a new doctor up to speed</p><p><b>Reliever</b> In-person, time-limited access <span class="tag">runs</span></p><p><b>Gain</b> Key on her phone <span class="tag block">product only</span></p></div>
+  </div>
+  <p class="muted">Deck lines to re-label (claim only what runs): slide 10 translated history before arrival · slide 9 every provider, every border · slide 6 you hold the key · slide 12 device line.</p>
+</section>
+
+<section id="bmc">
+  <h2>5 · Business Model Canvas</h2>
+  <p class="rec">Pilot-first, provider-paid, free for patients. Test a per-case fee on one international-patient department first. The clinician and the regulatory opinion are the first two costs.</p>
+  <div class="bmc">
+    <div class="card kp"><h3>Key partners</h3><p>Clinician, hospital pilot, lab or rail for "verified by source", patient group, regulatory adviser. None signed.</p></div>
+    <div class="card ka"><h3>Key activities</h3><p>Measure accuracy on real paper; consented share and log; stay on the safe side of the device line; DPIA.</p></div>
+    <div class="card kr"><h3>Key resources</h3><p>Clinical lead (missing); regulatory and DP competence (missing); zero-retention model access; trust.</p></div>
+    <div class="card vp"><h3>Value propositions</h3><p>Doctor: cited answers. Buyer: sourced history at the desk ("before arrival" to test). Patient: photograph once; you decide who sees it.</p></div>
+    <div class="card cr"><h3>Relationships</h3><p>Pilot with a named clinical lead; concierge onboarding through the coordinator.</p></div>
+    <div class="card ch"><h3>Channels</h3><p>The asker: a department or clinic asks its patients. No consumer acquisition. Nothing contacted.</p></div>
+    <div class="card cs"><h3>Customer segments</h3><p>First: international-patient departments. Next: clinic chains, telehealth, labs. Patients and doctors never pay. Five insurer edges: open, not placed.</p></div>
+    <div class="card cost"><h3>Cost structure</h3><p>Record-only pilot, one EU cell: 2–3 engineers, part-time security, a clinical lead, 4–6 months, legal in the low tens of thousands of euros (CTO estimate). Certification only if the assistant ships: class IIa about €300k–800k, 18–30 months.</p></div>
+    <div class="card rev"><h3>Revenue streams</h3><p>Per-case fee (test first); per-doctor seat (test second); lab partnership; grants as funding. No price sourced. No data sale.</p></div>
+  </div>
+</section>
+
+<section id="score">
+  <h2>6 · Market fit scorecard</h2>
+  <p class="rec">28 of 100, before fit. Park by default and test. Judge gates on rows: G1 about 41, G2 about 54.</p>
+  <table>
+    <tr><th>Seat</th><th>Raw</th><th style="width:50%">Normalised 0–100 (no evidence = 0)</th></tr>
+    <tr><td>CEO</td><td>30/100</td><td><div class="bar"><span style="width:30%"></span></div> 30</td></tr>
+    <tr><td>Sales</td><td>21/50</td><td><div class="bar"><span style="width:28%"></span></div> 28</td></tr>
+    <tr><td>Product</td><td>49/100</td><td><div class="bar"><span style="width:36%"></span></div> 36</td></tr>
+    <tr><td>Marketing</td><td>11/30</td><td><div class="bar"><span style="width:37%"></span></div> 37</td></tr>
+    <tr><td>CTO</td><td>not scored</td><td class="muted">nine ranked assumptions</td></tr>
+    <tr class="room"><td><b>Room</b></td><td>27.6/100</td><td><div class="bar"><span style="width:28%"></span></div> <b>28</b></td></tr>
+  </table>
+  <p class="muted">Riskiest assumptions R1–R11 with test, metric, threshold and gate: docs/lean/06-market-fit-scorecard.md §4.</p>
+</section>
+
+</main>
+<footer>Markdown in docs/lean/ is canonical. This board is a view of it. Nothing here is published or sent.</footer>
+</body>
+</html>

@@ -1,0 +1,66 @@
+{
+  "_doc": "Copy to ~/.healthapp-dashboard/hand-set.json and edit. Fields are documented in dashboard/README.md. No secrets belong in this file.",
+  "deadline": "2026-11-15T18:00:00+02:00",
+  "buildStart": "2026-11-14T12:00:00+02:00",
+  "freeze": "2026-11-15T13:00:00+02:00",
+  "submitBy": "2026-11-15T17:00:00+02:00",
+  "current": null,
+  "milestones": [
+    {"id": "M1", "name": "Setup and dashboard pick", "start": "Sat 15:00", "end": "Sat 18:00", "gate": "Both roles can log in as patient and doctor"},
+    {"id": "M2", "name": "Digitize and identity", "start": "Sat 18:00", "end": "Sat 22:00", "gate": "A1 at 90% on 5 docs, else cut to English and 2 exam types"},
+    {"id": "M3", "name": "Diary and handshake", "start": "Sat 22:00", "end": "Sun 02:00", "gate": "Demo steps 1, 2, 4 run end to end"},
+    {"id": "M4", "name": "Doctor's assistant", "start": "Sun 02:00", "end": "Sun 08:00", "gate": "Demo steps 5 and 6 run"},
+    {"id": "M5", "name": "P1 if P0 is green", "start": "Sun 08:00", "end": "Sun 13:00", "gate": "All 8 steps run"},
+    {"id": "M6", "name": "Freeze, 3 clean runs", "start": "Sun 13:00", "end": "Sun 15:30", "gate": "3 clean runs in a row"},
+    {"id": "M7", "name": "Submission and pitch prep", "start": "Sun 15:30", "end": "Sun 18:00", "gate": "Submitted by 17:00"}
+  ],
+  "credits": [
+    {"n": "Google AI (Gemini)", "granted": 300, "used": 0},
+    {"n": "fal", "granted": 50, "used": 0},
+    {"n": "Firecrawl", "granted": 100, "used": 0},
+    {"n": "treg", "granted": 50, "used": 0}
+  ],
+  "demo": {
+    "build": {"state": "idle", "label": "No build yet", "at": ""},
+    "deploy": {"state": "idle", "label": "Not deployed"},
+    "url": "",
+    "cleanRuns": 0,
+    "cleanTarget": 3,
+    "steps": [
+      {"n": 1, "t": "Photograph a blood test, record appears", "s": "idle"},
+      {"n": 2, "t": "Refuses a document with the wrong name and ID", "s": "idle"},
+      {"n": 3, "t": "Symptom diary records without interpreting", "s": "idle"},
+      {"n": 4, "t": "DNA-shaped QR handshake, countdown starts", "s": "idle"},
+      {"n": 5, "t": "Doctor asks, answer cites the source exam", "s": "idle"},
+      {"n": 6, "t": "Possible causes, for the doctor only", "s": "idle"},
+      {"n": 7, "t": "Possible matches, opt-in", "s": "idle"},
+      {"n": 8, "t": "Access ends, log shows who looked", "s": "idle"}
+    ],
+    "notes": {"1": "Not run yet.", "2": "Not run yet.", "3": "Not run yet.", "4": "Not run yet.", "5": "Not run yet.", "6": "Not run yet.", "7": "Not run yet.", "8": "Not run yet."}
+  },
+  "config": {
+    "linearProjectId": "98adf27d-c151-4afe-98d7-de783e280662",
+    "eurPerUsd": 0.92,
+    "projectFilter": "healthapp",
+    "founder": {"linear": "lefteris.georgaras@gmail.com", "role": "Founder"},
+    "agentCaps": {"soft": 300000, "hard": 400000},
+    "chatCaps": {"soft": 350000, "hard": 400000},
+    "agents": [
+      {"n": "Back", "role": "Product", "agentType": "product-minhos", "linear": "Back Logakis"},
+      {"n": "Anna", "role": "Marketing", "agentType": "marketing-minhos", "linear": "Anna Lytica"},
+      {"n": "Pix", "role": "Design", "agentType": "design-minhos", "linear": "Pix Elidis"},
+      {"n": "Ren", "role": "Frontend", "agentType": "frontend-minhos", "linear": "Ren Derakis"},
+      {"n": "Cron", "role": "Backend", "agentType": "backend-minhos", "linear": "Cron Jobbidis"},
+      {"n": "CTO", "role": "CTO", "agentType": "cto-minhos", "linear": null, "roleLabel": "System Architect"},
+      {"n": "Spast", "role": "Sales", "agentType": "sales-minhos", "linear": "Spast Arxidas"},
+      {"n": "Release", "role": "Release", "agentType": "release-minhos", "linear": null},
+      {"n": "CEO", "role": "CEO", "agentType": "ceo-minhos", "linear": null},
+      {"n": "E2E", "role": "E2E", "agentType": "e2e-minhos", "linear": null}
+    ],
+    "roleLabels": {
+      "Product Manager": "Product", "Product Designer": "Design", "Frontend Engineer": "Frontend",
+      "Backend Engineer": "Backend", "Marketing Lead": "Marketing", "Sales Lead": "Sales",
+      "System Architect": "CTO", "Repository Architect": "Release", "E2E": "E2E", "Founder": "Founder"
+    }
+  }
+}
