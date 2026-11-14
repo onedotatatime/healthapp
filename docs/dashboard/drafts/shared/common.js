@@ -385,6 +385,7 @@ H.wireExercise = function(root, scroller){ // scrollspy + contents clicks
 H.exCards = (href) => EX.map((e,i) => '<a class="excover" href="'+href(i)+'" data-i="'+i+'"><span class="exn mono">'+e.n+'</span><span class="ext">'+esc(e.t)+'</span><span class="exl">'+esc(e.line)+'</span><span class="exf"><b class="mono">'+esc(e.fig.v)+'</b> <span class="muted">'+esc(e.fig.l)+'</span></span><span class="exr muted">'+H.readMin(i)+' min read</span></a>').join('');
 
 /* ---------- deck tiles (slide titles from the .md sources; the deck HTML files are not copied) ---------- */
+H.deckUrl = 'https://healthapp-landing.pages.dev/deck/';   // the one public deck link (CTO decision, 15 Nov): a URL only, never slide text, a local path or another host
 H.deckInfo = k => ({ key:k, label:k==='short'?'Short pitch':'Pitch deck', sub:k==='short'?'6 slides · about 90 seconds':'13 slides · appendix for questions and for Monday', ver:CONTENT.decks[k].version, slides:CONTENT.decks[k].slides,
   file:'file:///Users/onedotatatime.design/AppDevelopment/healthapp/.claude/worktrees/pix-pitching-deck-draft-094214/'+CONTENT.decks[k].file });
 H.slideTile = (k,idx,cls) => { const s = CONTENT.decks[k].slides[idx]; return '<div class="slide '+(cls||'')+'"><span class="sn">'+pad(s.n)+' / '+pad(CONTENT.decks[k].slides.length)+'</span><div><div class="st">'+esc(s.t)+'</div><div class="sh">'+esc(s.h)+'</div></div></div>'; };
