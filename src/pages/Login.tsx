@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router';
 import { ApiError } from '../api/call';
-import type { Role } from '../api/contract';
+import type { DemoPersona } from '../api/contract';
 import { useAuth } from '../auth/AuthProvider';
 import { homeFor } from '../auth/guard';
 import { ErrorNote, Spinner } from '../components/Primitives';
@@ -22,12 +22,12 @@ function message(e: unknown): string {
 export function Login() {
   const { state, signInDemo } = useAuth();
   const [passcode, setPasscode] = useState('');
-  const [busy, setBusy] = useState<Role | null>(null);
+  const [busy, setBusy] = useState<DemoPersona | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (state.status === 'in') return <Navigate to={homeFor(state.role)} replace />;
 
-  async function go(persona: Role, e?: FormEvent) {
+  async function go(persona: DemoPersona, e?: FormEvent) {
     e?.preventDefault();
     if (!passcode.trim()) return setError('Enter the demo passcode first.');
     setError(null);
@@ -68,6 +68,11 @@ export function Login() {
             <button type="button" className="btn block" data-testid="login-doctor" disabled={busy !== null} onClick={() => go('doctor')}>
               Sign in as the doctor
             </button>
+            {envState.status === 'ok' && envState.env === 'demo' && (
+              <button type="button" className="btn block" data-testid="login-founder" disabled={busy !== null} onClick={() => go('founder')}>
+                Sign in as the founder
+              </button>
+            )}
           </div>
           <div style={{ marginTop: 'var(--space-4)' }} id="login-error">
             {busy && <Spinner label="Signing in" />}
