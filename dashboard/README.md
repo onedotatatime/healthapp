@@ -58,15 +58,16 @@ other blocks.
 
 ## Forecast block (MIN-4565, additive: `schema` stays 1)
 
-`forecast` is a top-level field of the feed, built inside the `linear` block from the same read (a failure keeps the last good value and sets `blocks.linear.error`). It reads
+`forecast` is a top-level field of the feed, built inside the `linear` block from the same read (a failure drops the block and sets `blocks.linear.error`; the rest of the linear block stays fresh). It reads
 each issue's description on the Mac only, to parse the `est. time: <n> min` line; the feed carries ids, titles and numbers, never description text. All times are Europe/Athens.
 
 - **Must-haves:** issues of the project in milestones M2 to M7, in Todo, In Progress or In Review (Done counts for pace when it moved to Done after `buildStart`). Backlog, Canceled, Duplicate, no
-  milestone and the whole subtree of MIN-4445 (followed up the parent chain) are out, on both sides: pace and work left use the same set. A parent with sub-issues counts 0.
+  milestone and the whole subtree of MIN-4445 (followed up the parent chain) are out, on both sides: pace and work left use the same set. A parent counts 0 only when one of its sub-issues is in scope (an open must-have, or Done since `buildStart`); otherwise it counts its own estimate. An issue with no milestone takes its nearest ancestor's, on both the done and the left side.
 - **Estimate:** the first number of `est. time: ~35 min` or `30-45 min`. Missing: the median of every estimated must-have (done and open), or 30 min when fewer than 5 are estimated (`default_source: "fallback"`).
 - **Pace** = estimated minutes done since `buildStart` / hours since `buildStart`. **Remaining** = Todo + In Progress minutes; In Review is 0 minutes and counted. **Finish** = now + remaining / pace.
-- **Verdict** (forecast only): `on` finish at or before `freeze` minus 1 h, `risk` up to `submitBy`, else `off`. Pace 0 with work left: `off`, `finish_at: null`. Fewer than 3 done issues: never `on` (`early_pace`).
-- **Cut** (only when `off`): drops issues until the finish is at or before the freeze. Order: `config.forecast.cutOrder` (a list of issue ids, Product's ordered list), then lowest priority first (no priority first), then largest estimate.
+- **Two finish times** (MIN-4564): M6 and M7 cannot start before the freeze. `remaining.pre_minutes` (M2 to M5) and `remaining.post_minutes` (M6, M7). `finish_at` = now + pre / pace (build work). `ready_at` = max(`finish_at`, `freeze`) + post / pace (the full plan, also `ready_label`).
+- **Verdict** (forecast only): `on` when `finish_at` <= `freeze` minus 1 h and `ready_at` <= `submitBy` minus 1 h; `risk` when `ready_at` <= `submitBy`; else `off`. Pace 0 with work left: `off`, `finish_at: null`. Fewer than 3 done issues: never `on` (`early_pace`).
+- **Cut** (only when `off`): drops build (pre) issues until `finish_at` is at or before the freeze, then post issues until `ready_at` is at or before `submitBy`. Order: `config.forecast.cutOrder` (a list of issue ids, Product's ordered list), then lowest priority first (no priority first), then largest estimate.
 - **Blocked:** must-haves with an unresolved blocking issue, with that issue's id and assignee.
 
 ## Branches block (MIN-4460, additive: `schema` stays 1)

@@ -279,5 +279,101 @@ class Feed(unittest.TestCase):
         self.assertNotIn('mutation', sn.LINEAR_QUERY)
 
 
+class ParentsAndInheritedMilestones(unittest.TestCase):
+    """CTO review F1 on #63 (MIN-4564): a parent counts 0 only when a sub-issue is in scope; no milestone = the ancestor's."""
+
+    def test_parent_whose_only_sub_issue_is_out_of_scope_counts_its_own_estimate(self):
+        P = {'identifier': 'P-1', 'parent': None}
+        nodes = [node('P-1', 'In Progress', 100, ms='M5 · Demo', kids=['C-1']),
+                 node('C-1', 'Backlog', 40, ms=None, parent=P)]            # Backlog: not an open must-have
+        r = fc(nodes, at(2))['remaining']
+        self.assertEqual((r['issues'], r['minutes']), (1, 100))            # was 0: the work was invisible
+
+    def test_parent_counts_zero_once_a_sub_issue_is_in_scope_and_the_sub_issue_inherits_the_milestone(self):
+        P = {'identifier': 'P-1', 'parent': None}
+        nodes = [node('P-1', 'In Progress', 100, ms='M5 · Demo', kids=['C-1']),
+                 node('C-1', 'In Progress', 40, ms=None, parent=P)]
+        r = fc(nodes, at(2))['remaining']
+        self.assertEqual((r['issues'], r['minutes']), (1, 40))
+
+    def test_milestone_is_inherited_through_several_levels_and_a_done_sub_issue_counts_as_done(self):
+        P = {'identifier': 'P-1', 'parent': None}
+        C = {'identifier': 'C-1', 'parent': P}
+        nodes = [node('P-1', 'In Progress', 500, ms='M4 · x', kids=['C-1']),
+                 node('C-1', 'In Progress', 500, ms=None, parent=P, kids=['G-1', 'G-2']),
+                 node('G-1', 'Todo', 25, ms=None, parent=C),
+                 node('G-2', 'Done', 40, ms=None, parent=C, done_at=sn.iso(at(1)))]
+        r = fc(nodes, at(2))
+        self.assertEqual((r['remaining']['issues'], r['remaining']['minutes']), (1, 25))
+        self.assertEqual((r['done']['issues'], r['done']['minutes']), (1, 40))      # inherited on the done side too
+
+    def test_a_sub_issue_with_its_own_out_of_range_milestone_does_not_inherit_and_does_not_zero_the_parent(self):
+        P = {'identifier': 'P-1', 'parent': None}
+        nodes = [node('P-1', 'Todo', 70, ms='M3 · x', kids=['C-1']), node('C-1', 'Todo', 40, ms='M1 · Setup', parent=P)]
+        r = fc(nodes, at(2))['remaining']
+        self.assertEqual((r['issues'], r['minutes']), (1, 70))
+
+    def test_a_parent_with_only_old_done_or_canceled_sub_issues_counts_itself(self):
+        P = {'identifier': 'P-1', 'parent': None}
+        nodes = [node('P-1', 'Todo', 70, ms='M3 · x', kids=['C-1', 'C-2']),
+                 node('C-1', 'Done', 40, ms=None, parent=P, done_at=sn.iso(SINCE - timedelta(hours=1))),
+                 node('C-2', 'Canceled', 40, ms=None, parent=P)]
+        self.assertEqual(fc(nodes, at(2))['remaining']['minutes'], 70)
+
+
+class PreAndPost(unittest.TestCase):
+    """CTO review F2 on #63 (MIN-4564): M6 and M7 cannot start before the freeze. Pace 30 min/h, now = Sat 18:00.
+    finish_at = now + pre/pace; ready_at = max(finish_at, freeze 13:00) + post/pace. On: finish <= 12:00 and ready <= 16:00."""
+
+    def setUp(self):
+        self.now = at(6)
+        self.done = done3(60, at(2))
+
+    def go(self, pre, post, extra=()):
+        nodes = self.done + [node('PRE', 'Todo', pre, ms='M5 · x'), node('POST', 'Todo', post, ms='M6 · y')] + list(extra)
+        return fc(nodes, self.now)
+
+    def test_two_times_and_the_split_of_the_minutes(self):
+        r = self.go(540, 60)                                              # 18 h -> Sun 12:00; then 13:00 + 2 h
+        self.assertEqual((r['remaining']['pre_minutes'], r['remaining']['post_minutes'], r['remaining']['minutes']), (540, 60, 600))
+        self.assertEqual((r['finish_label'], r['ready_at'], r['ready_label']), ('Sun 12:00', '2026-11-15T15:00:00+02:00', 'Sun 15:00'))
+        self.assertEqual(r['verdict'], 'on')
+
+    def test_post_work_never_starts_before_the_freeze_even_when_the_build_ends_early(self):
+        r = self.go(30, 60)                                               # build done Sat 19:00; M6 still waits for Sun 13:00
+        self.assertEqual(r['finish_label'], 'Sat 19:00')
+        self.assertEqual(r['ready_label'], 'Sun 15:00')                   # 13:00 + 2 h, not 19:00 + 2 h
+
+    def test_ready_boundary_16_on_17_risk_beyond_off(self):
+        self.assertEqual(self.go(540, 90)['verdict'], 'on')               # ready exactly 16:00
+        self.assertEqual(self.go(540, 91)['verdict'], 'risk')             # 16:02
+        self.assertEqual(self.go(540, 120)['verdict'], 'risk')            # exactly 17:00
+        self.assertEqual(self.go(540, 121)['verdict'], 'off')             # 17:02
+
+    def test_build_boundary_12_on_after_it_risk(self):
+        self.assertEqual(self.go(540, 0.0001)['verdict'], 'on')           # finish exactly 12:00
+        self.assertEqual(self.go(541, 0.0001)['verdict'], 'risk')         # 12:02, ready still well before 17:00
+
+    def test_post_work_can_make_the_plan_off_where_one_single_finish_said_risk(self):
+        r = self.go(300, 300)                                             # one finish for 600 min would be Sun 14:00 (risk); the plan is ready only Sun 23:00
+        self.assertEqual((r['finish_label'], r['ready_label'], r['verdict']), ('Sun 04:00', 'Sun 23:00', 'off'))
+
+    def test_cut_takes_pre_items_until_the_build_finishes_by_the_freeze_then_post_items_until_ready_by_the_submit(self):
+        extra = [node('PRE-b', 'Todo', 300, ms='M3 · x', prio=4), node('POST-b', 'Todo', 100, ms='M7 · z', prio=4)]
+        r = fc(self.done + [node('PRE-a', 'Todo', 400, ms='M3 · x', prio=3), node('POST-a', 'Todo', 200, ms='M6 · y', prio=3)] + extra, self.now)
+        # pre 700 -> Sun 17:20, post 300. Verdict off. Cut PRE-b: pre 400 -> Sun 07:20 (<= 13:00), ready 13:00 + 10 h = 23:00.
+        # Then POST-b: post 200 -> ready 19:40. Then POST-a: post 0 -> ready 13:00.
+        self.assertEqual(r['verdict'], 'off')
+        self.assertEqual([(c['id'], c['phase']) for c in r['cut']], [('PRE-b', 'pre'), ('POST-b', 'post'), ('POST-a', 'post')])
+        self.assertEqual([c['finish_after_label'] for c in r['cut']], ['Sun 07:20', 'Sun 07:20', 'Sun 07:20'])
+        self.assertEqual([c['ready_after_label'] for c in r['cut']], ['Sun 23:00', 'Sun 19:40', 'Sun 13:00'])
+        self.assertTrue(r['cut_reaches_freeze'])
+
+    def test_a_post_item_is_never_cut_to_fix_a_late_build(self):
+        r = fc(self.done + [node('PRE', 'Todo', 800, ms='M3 · x', prio=3), node('POST', 'Todo', 10, ms='M6 · y', prio=4)], self.now)
+        self.assertEqual(r['verdict'], 'off')
+        self.assertEqual([c['id'] for c in r['cut']], ['PRE'])
+
+
 if __name__ == '__main__':
     unittest.main()

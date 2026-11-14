@@ -415,9 +415,9 @@ def athens_label(t):
     return '%s %s' % (DAYS[a.weekday()], a.strftime('%H:%M'))
 
 
-def under_root(nodes, root):
-    """Identifiers of every issue whose parent chain reaches `root` (root included). The chain is followed through the
-    fetched nodes, with the query's grandparent as the fallback for a parent that is not in the project."""
+def parent_map(nodes):
+    """identifier -> parent identifier, from the fetched nodes, with the query's grandparent as the fallback for a parent
+    that is not in the project."""
     parent = {}
     for n in nodes:
         p = n.get('parent') or {}
@@ -426,6 +426,13 @@ def under_root(nodes, root):
             gp = (p.get('parent') or {}).get('identifier')
             if gp:
                 parent.setdefault(p['identifier'], gp)
+    return parent
+
+
+def under_root(nodes, root):
+    """Identifiers of every issue whose parent chain reaches `root` (root included). The chain is followed through the
+    fetched nodes, with the query's grandparent as the fallback for a parent that is not in the project."""
+    parent = parent_map(nodes)
     out = set()
     for n in nodes:
         cur, seen = n['identifier'], set()
@@ -447,35 +454,85 @@ def blockers_of(n):
     return out
 
 
-def cut_walk(items, order, minutes_left, pace, now, freeze):
-    """Drop issues in the cut order until the finish is at or before the freeze. `items` are open issues with minutes."""
+def forecast_times(pre_left, post_left, pace, now, freeze):
+    """(finish_at, ready_at). Build work (M2 to M5) runs from now; M6 and M7 cannot start before the freeze (MIN-4564)."""
+    finish = now + timedelta(hours=pre_left / pace) if pre_left > 0 else now
+    ready = max(finish, freeze) + timedelta(hours=post_left / pace)
+    return finish, ready
+
+
+def clamped_times(pre_left, post_left, pace, now, freeze):
+    """forecast_times for the cut walk: a finish too far away to represent is clamped to 100 years out, never an error."""
+    far = now + timedelta(days=36500)
+    try:
+        finish, ready = forecast_times(pre_left, post_left, pace, now, freeze)
+    except OverflowError:
+        return far, far
+    return min(finish, far), min(ready, far)
+
+
+def cut_walk(items, order, pre_left, post_left, pace, now, freeze, submit):
+    """Drop issues in the cut order. Pre items (M2 to M5) first, while the build finish is after the freeze; then post items
+    (M6 and M7), while the full plan is ready after the submit time. `items` are open issues with minutes and a `phase`."""
     rank = {i: k for k, i in enumerate(order)}
     prio = lambda it: 5 if not it['priority'] else it['priority']          # Linear: 1 urgent .. 4 low, 0 none (cut first)
-    listed = sorted((it for it in items if it['id'] in rank), key=lambda it: rank[it['id']])
-    rest = sorted((it for it in items if it['id'] not in rank), key=lambda it: (-prio(it), -it['minutes'], it['id']))
-    cuts, left = [], minutes_left
-    finish = None
-    for it in listed + rest:
-        left -= it['minutes']
-        finish = now + timedelta(hours=left / pace)
-        cuts.append({'id': it['id'], 'title': it['title'], 'minutes': it['minutes'],
-                     'finish_after': athens_iso(finish), 'finish_after_label': athens_label(finish)})
+
+    def ordered(phase):
+        its = [it for it in items if it['phase'] == phase]
+        listed = sorted((it for it in its if it['id'] in rank), key=lambda it: rank[it['id']])
+        rest = sorted((it for it in its if it['id'] not in rank), key=lambda it: (-prio(it), -it['minutes'], it['id']))
+        return listed + rest, bool(listed)
+
+    cuts = []
+    finish, ready = clamped_times(pre_left, post_left, pace, now, freeze)
+    pre, l1 = ordered('pre')
+    post, l2 = ordered('post')
+    for it in pre:
         if finish <= freeze:
             break
-    return cuts, bool(finish is not None and finish <= freeze), bool(listed)
+        pre_left -= it['minutes']
+        finish, ready = clamped_times(pre_left, post_left, pace, now, freeze)
+        cuts.append(cut_row(it, finish, ready))
+    for it in post:
+        if ready <= submit:
+            break
+        post_left -= it['minutes']
+        finish, ready = clamped_times(pre_left, post_left, pace, now, freeze)
+        cuts.append(cut_row(it, finish, ready))
+    return cuts, bool(finish <= freeze and ready <= submit), bool(l1 or l2)
+
+
+def cut_row(it, finish, ready):
+    return {'id': it['id'], 'title': it['title'], 'minutes': it['minutes'], 'phase': it['phase'],
+            'finish_after': athens_iso(finish), 'finish_after_label': athens_label(finish),
+            'ready_after': athens_iso(ready), 'ready_after_label': athens_label(ready)}
+
+
+POST_MILESTONES = ('M6', 'M7')                    # need the freeze first: "three clean runs after the freeze", then the submission
 
 
 def build_forecast(nodes, cfg, now, since, freeze, submit):
     fcfg = cfg.get('forecast') or {}
     out_of_scope = under_root(nodes, fcfg.get('dashboardRoot', DASHBOARD_ROOT))
-    scope = []
-    for n in nodes:
-        ms = ((n.get('projectMilestone') or {}).get('name') or '').split(' ')[0]
-        if ms not in MUST_MILESTONES or n['identifier'] in out_of_scope:
-            continue
-        if ((n.get('children') or {}).get('nodes')):
-            continue                                  # a parent counts 0; its sub-issues count
-        scope.append(n)
+    parent = parent_map(nodes)
+    own_ms = {n['identifier']: ((n.get('projectMilestone') or {}).get('name') or '').split(' ')[0] for n in nodes}
+
+    def ms_of(ident):
+        """The issue's milestone; none of its own: the nearest ancestor's, by the same walk as `under_root` (MIN-4564)."""
+        seen = set()
+        while ident and ident not in seen:
+            if own_ms.get(ident):
+                return own_ms[ident]
+            seen.add(ident)
+            ident = parent.get(ident)
+        return ''
+
+    cand = [n for n in nodes if ms_of(n['identifier']) in MUST_MILESTONES and n['identifier'] not in out_of_scope]
+    in_scope = lambda n: n['state']['name'] in OPEN_STATES or (
+        n['state']['type'] == 'completed' and n.get('completedAt') and parse(n['completedAt']) >= since)
+    # a parent counts 0 only when one of its sub-issues is itself in scope; otherwise it counts its own estimate
+    counted_by_kids = {parent[n['identifier']] for n in cand if in_scope(n) and n['identifier'] in parent}
+    scope = [n for n in cand if n['identifier'] not in counted_by_kids]
     est = {n['identifier']: parse_estimate(n.get('description')) for n in scope}
     done = [n for n in scope if n['state']['type'] == 'completed' and n.get('completedAt') and parse(n['completedAt']) >= since]
     opened = [n for n in scope if n['state']['name'] in OPEN_STATES]
@@ -486,50 +543,57 @@ def build_forecast(nodes, cfg, now, since, freeze, submit):
     else:
         default, source = DEFAULT_MINUTES, 'fallback'
     mins = lambda n: est[n['identifier']] if est[n['identifier']] is not None else default
+    phase = lambda n: 'post' if ms_of(n['identifier']) in POST_MILESTONES else 'pre'
     todo = [n for n in opened if n['state']['name'] in ('Todo', 'In Progress')]
     review = [n for n in opened if n['state']['name'] == 'In Review']
 
     done_min = sum(mins(n) for n in done)
-    rem_min = sum(mins(n) for n in todo)
+    pre_min = sum(mins(n) for n in todo if phase(n) == 'pre')
+    post_min = sum(mins(n) for n in todo if phase(n) == 'post')
+    rem_min = pre_min + post_min
     hours = (now - since).total_seconds() / 3600
     pace = done_min / hours if hours > 0 else 0.0
     on_by = freeze - ON_TRACK_MARGIN
+    ready_on_by = submit - ON_TRACK_MARGIN
 
-    finish = None
+    finish = ready = None
     if rem_min <= 0:
-        finish = now
+        finish, ready = forecast_times(0, 0, 1.0, now, freeze)
     elif pace > 0:
         try:
-            finish = now + timedelta(hours=rem_min / pace)
+            finish, ready = forecast_times(pre_min, post_min, pace, now, freeze)
         except OverflowError:
-            finish = None
+            finish = ready = None
     early = len(done) < EARLY_DONE
     if rem_min > 0 and finish is None:
         verdict = 'off'                               # pace 0 with work left
     else:
-        verdict = 'on' if finish <= on_by else 'risk' if finish <= submit else 'off'
+        verdict = 'on' if finish <= on_by and ready <= ready_on_by else 'risk' if ready <= submit else 'off'
         if early and verdict == 'on':
             verdict = 'risk'
 
     cut, reaches, listed = [], False, False
     if verdict == 'off' and pace > 0:
-        items = [{'id': n['identifier'], 'title': n['title'], 'minutes': mins(n), 'priority': n.get('priority') or 0}
+        items = [{'id': n['identifier'], 'title': n['title'], 'minutes': mins(n), 'priority': n.get('priority') or 0, 'phase': phase(n)}
                  for n in todo if mins(n) > 0]
-        cut, reaches, listed = cut_walk(items, [str(i) for i in fcfg.get('cutOrder') or []], rem_min, pace, now, freeze)
+        cut, reaches, listed = cut_walk(items, [str(i) for i in fcfg.get('cutOrder') or []], pre_min, post_min, pace, now, freeze, submit)
 
     blocked = [{'id': n['identifier'], 'title': n['title'], 'waits_on': b}
                for n in todo + review for b in [blockers_of(n)] if b]
     r1 = lambda v: round(v, 1)
     return {
         'tz': FORECAST_TZ, 'at': athens_iso(now), 'build_start': athens_iso(since), 'freeze': athens_iso(freeze),
-        'submit': athens_iso(submit), 'on_by': athens_iso(on_by), 'elapsed_hours': r1(max(hours, 0.0)),
+        'submit': athens_iso(submit), 'on_by': athens_iso(on_by), 'ready_on_by': athens_iso(ready_on_by),
+        'elapsed_hours': r1(max(hours, 0.0)),
         'done': {'issues': len(done), 'minutes': r1(done_min), 'no_estimate': [n['identifier'] for n in done if est[n['identifier']] is None]},
         'pace_min_per_hour': r1(pace), 'early_pace': early,
-        'remaining': {'issues': len(todo), 'minutes': r1(rem_min), 'in_review': len(review),
+        'remaining': {'issues': len(todo), 'minutes': r1(rem_min), 'pre_minutes': r1(pre_min), 'post_minutes': r1(post_min),
+                      'in_review': len(review),
                       'no_estimate': [n['identifier'] for n in todo if est[n['identifier']] is None],
                       'default_minutes': default, 'default_source': source},
         'blocked': blocked,
-        'finish_at': athens_iso(finish), 'finish_label': athens_label(finish), 'verdict': verdict,
+        'finish_at': athens_iso(finish), 'finish_label': athens_label(finish),
+        'ready_at': athens_iso(ready), 'ready_label': athens_label(ready), 'verdict': verdict,
         'cut': cut, 'cut_source': 'list' if listed else 'priority', 'cut_reaches_freeze': reaches,
     }
 
