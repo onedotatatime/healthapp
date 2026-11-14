@@ -14,3 +14,6 @@ dist/
 .claude/agents/
 .claude/settings.local.json
 .claude/worktrees/
+test-results/
+playwright-report/
+*.local
