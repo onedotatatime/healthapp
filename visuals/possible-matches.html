@@ -1,0 +1,333 @@
+<title>Possible Matches Test</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F8F9; --fg:#14232B; --muted:#4A5C66; --line:#CBD5DA; --grid:#E1E7EA;
+  --accent:#0B6E75; --accent-ink:#FFFFFF; --chip-bg:#E3F0F1; --chip-fg:#0A4F55;
+  --series-b:#3F4F8C; --series-c:#7A4A2B; --warn-bg:#FFF3D6; --warn-fg:#6B4700; --focus:#0B6E75;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1A20; --fg:#E6EEF1; --muted:#A3B4BC; --line:#33454E; --grid:#1F2E36;
+    --accent:#4FC3CB; --accent-ink:#06262A; --chip-bg:#173A3F; --chip-fg:#A9E4E8;
+    --series-b:#9DB0F0; --series-c:#E3AE86; --warn-bg:#3A2D0F; --warn-fg:#F2D590; --focus:#4FC3CB;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1A20; --fg:#E6EEF1; --muted:#A3B4BC; --line:#33454E; --grid:#1F2E36;
+  --accent:#4FC3CB; --accent-ink:#06262A; --chip-bg:#173A3F; --chip-fg:#A9E4E8;
+  --series-b:#9DB0F0; --series-c:#E3AE86; --warn-bg:#3A2D0F; --warn-fg:#F2D590; --focus:#4FC3CB;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:960px;margin:0 auto;padding-block:32px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:"Space Grotesk",Inter,system-ui,sans-serif;font-weight:600;letter-spacing:-0.01em;line-height:1.2;margin:0}
+h1{font-size:clamp(26px,5vw,36px)}
+h2{font-size:clamp(20px,3.4vw,24px);margin-bottom:8px}
+h3{font-size:16px;margin-bottom:4px}
+section{margin-top:48px}
+p{margin:0 0 12px;max-width:65ch}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.label{display:inline-block;padding:4px 10px;border:1px solid var(--line);border-radius:6px;font-weight:500;font-size:14px;color:var(--fg)}
+.big{font:600 clamp(28px,6vw,44px)/1.1 "Space Grotesk",Inter,sans-serif;margin:16px 0 4px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:16px 0}
+.chips li{background:var(--chip-bg);color:var(--chip-fg);padding:5px 12px;border-radius:6px;font-weight:500;font-size:15px}
+.chips.countries li{background:transparent;border:1px solid var(--line);color:var(--fg)}
+.cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px;margin-top:20px}
+.case{border-top:3px solid var(--line);padding-top:12px}
+.case.hit{border-top-color:var(--accent)}
+.case .q{font-size:14px;color:var(--muted);margin:0 0 8px}
+.case .a{font:600 20px/1.25 "Space Grotesk",Inter,sans-serif;margin:0}
+.note{margin-top:20px;padding-left:12px;border-left:3px solid var(--accent)}
+.controls{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:16px 0}
+button{font:600 15px Inter,sans-serif;background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:10px 18px;cursor:pointer;min-height:44px}
+button:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+button:active{transform:translateY(1px)}
+.readout{font-size:15px}
+.readout b{font-weight:600}
+.chart{width:100%}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.small-charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:32px;margin-top:32px}
+.status{display:inline-block;margin-top:6px;padding:3px 8px;border-radius:6px;background:var(--warn-bg);color:var(--warn-fg);font-size:13px;font-weight:500}
+.assume{margin-top:24px}
+ul.src{padding-left:18px;margin:8px 0 0;font-size:14px}
+ul.src li{margin-bottom:6px;max-width:75ch}
+a{color:var(--accent)}
+a:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+footer{margin-top:48px;padding-top:16px;border-top:1px solid var(--line)}
+.axis-text{fill:var(--muted);font:12px Inter,sans-serif}
+@media (prefers-reduced-motion: reduce){button{transition:none}}
+</style>
+
+<main>
+<header>
+  <h1>Possible matches, first test</h1>
+  <p class="muted">What the matching logic returned on the seeded synthetic cohort.</p>
+  <span class="label">Seeded synthetic data. Not real patients.</span>
+</header>
+
+<section aria-labelledby="s1">
+  <h2 id="s1">Maria's result, as the doctor sees it</h2>
+  <p class="big" id="matchLine"></p>
+  <p class="muted small">A match is a shared pattern in the seeded data. It is not a person and not a diagnosis.</p>
+  <h3>Shared pattern</h3>
+  <ul class="chips" id="pattern"></ul>
+  <h3>Countries of the matching records</h3>
+  <ul class="chips countries" id="countries"></ul>
+</section>
+
+<section aria-labelledby="s2">
+  <h2 id="s2">Three test cases</h2>
+  <div class="cases">
+    <div class="case hit"><p class="q">Maria, opted in</p><p class="a" id="c1"></p></div>
+    <div class="case"><p class="q">Rare pattern (3 seeded records share it, below k = 5)</p><p class="a">No matches in the seeded data.</p></div>
+    <div class="case"><p class="q">Same persona, not opted in</p><p class="a">No matches in the seeded data.</p></div>
+  </div>
+  <p class="note">The two empty answers read the same as a plain no match. In the test they are byte-identical. A group is only shown when at least 5 records share the pattern (k = 5), so a small group cannot be told apart from no group.</p>
+</section>
+
+<section aria-labelledby="s3">
+  <h2 id="s3">What matching could change</h2>
+  <p>30 seconds on seeded synthetic records. Watch matches grow as the network grows, and what a stated assumption would mean for wrong or missed diagnoses and what they cost.</p>
+  <span class="label">Simulation on synthetic data. A model, not a measurement</span>
+  <div class="controls">
+    <button type="button" id="play">Play again</button>
+    <div class="readout" id="readout" aria-hidden="true"></div>
+  </div>
+  <h3>Records that find a match</h3>
+  <p class="muted small">% of records, against synthetic records in the network. Axis starts at zero.</p>
+  <div class="chart" id="ch1" role="img" aria-label="Line chart. Records that find a match rise from 0% with 33 synthetic records to 33.5% with 400 synthetic records."></div>
+
+  <div class="small-charts">
+    <div>
+      <h3>Wrong or missed diagnoses</h3>
+      <p class="muted small">per 100 visits. Axis starts at zero.</p>
+      <div class="chart" id="ch2" role="img" aria-label="Line chart on a zero-based axis. Wrong or missed diagnoses per 100 visits fall from 5.00 to 4.66."></div>
+      <span class="status" id="st2"></span>
+    </div>
+    <div>
+      <h3>Cost of wrong or missed diagnoses</h3>
+      <p class="muted small">% of health spending. Axis starts at zero.</p>
+      <div class="chart" id="ch3" role="img" aria-label="Line chart on a zero-based axis. Cost as a share of health spending falls from 11.00% to 10.26%."></div>
+      <span class="status" id="st3"></span>
+    </div>
+  </div>
+  <p class="assume"><b>Assumption, not a finding:</b> a match lowers the chance of a wrong or missed diagnosis by 20%.</p>
+  <h3>Sources</h3>
+  <ul class="src" id="sources"></ul>
+</section>
+
+<footer class="small muted">Cohort of 400 synthetic patients generated offline on a boxd machine, seed 20261116, no real data.</footer>
+</main>
+
+<script>
+const D = {
+ "sim": {
+  "synthetic": true,
+  "label": "Simulation on synthetic data. A model, not a measurement",
+  "seed": 20261116,
+  "cohort_size": 400,
+  "k": 5,
+  "min_shared": 4,
+  "steps": 12,
+  "x": {
+   "label": "Synthetic records in the network",
+   "values": [
+    33,
+    67,
+    100,
+    133,
+    167,
+    200,
+    233,
+    267,
+    300,
+    333,
+    367,
+    400
+   ]
+  },
+  "assumption": {
+   "value": 0.2,
+   "status": "approved by the CEO seat on the founder's behalf, 2026-11-14 (an assumption, not a measurement)",
+   "text": "We assume that a match lowers the chance of a wrong or missed diagnosis by 20%.",
+   "sourced": false
+  },
+  "series": [
+   {
+    "id": 1,
+    "key": "match_rate",
+    "label": "Records that find a match",
+    "unit": "% of records",
+    "origin": "computed by running the matching logic on cohort samples of growing size",
+    "values": [
+     0.0,
+     0.0,
+     1.1,
+     5.7,
+     6.5,
+     10.3,
+     21.4,
+     24.8,
+     29.3,
+     31.0,
+     30.4,
+     33.5
+    ]
+   },
+   {
+    "id": 2,
+    "key": "wrong_or_missed_per_100",
+    "label": "Wrong or missed diagnoses",
+    "unit": "per 100 visits",
+    "status": "approved by the CEO seat on the founder's behalf, 2026-11-14 (an assumption, not a measurement)",
+    "baseline": 5,
+    "formula": "5 x (1 - 0.20 x match_rate)",
+    "sources": [
+     {
+      "name": "WHO, Patient safety fact sheet, 11 Sep 2023 (5-20% of physician-patient encounters; low end used)",
+      "url": "https://www.who.int/news-room/fact-sheets/detail/patient-safety"
+     }
+    ],
+    "values": [
+     5.0,
+     5.0,
+     4.99,
+     4.94,
+     4.93,
+     4.9,
+     4.79,
+     4.75,
+     4.71,
+     4.69,
+     4.7,
+     4.66
+    ]
+   },
+   {
+    "id": 3,
+    "key": "cost_pct_of_health_spend",
+    "label": "Cost of wrong or missed diagnoses",
+    "unit": "% of health spending",
+    "status": "approved by the CEO seat on the founder's behalf, 2026-11-14 (an assumption, not a measurement)",
+    "baseline": 11,
+    "formula": "11 x (1 - 0.20 x match_rate)",
+    "sources": [
+     {
+      "name": "OECD Health Working Paper No. 176, The economics of diagnostic safety, 2025 (about 11% of health spending; an OECD model estimate)",
+      "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/03/the-economics-of-diagnostic-safety_6e0ed50b/fc61057a-en.pdf"
+     }
+    ],
+    "values": [
+     11.0,
+     11.0,
+     10.98,
+     10.87,
+     10.86,
+     10.77,
+     10.53,
+     10.45,
+     10.35,
+     10.32,
+     10.33,
+     10.26
+    ]
+   }
+  ]
+ },
+ "maria": {
+  "features": [
+   "CRP high",
+   "RF positive",
+   "anti-CCP positive",
+   "joint pain",
+   "morning stiffness",
+   "rheumatology"
+  ],
+  "matchCount": 9,
+  "countries": [
+   "Germany",
+   "France",
+   "Greece",
+   "Italy",
+   "Netherlands",
+   "Sweden"
+  ]
+ }
+};
+const sim = D.sim, M = D.maria;
+const $ = id => document.getElementById(id);
+$('matchLine').textContent = M.matchCount + ' seeded synthetic records share this pattern.';
+$('c1').textContent = M.matchCount + ' seeded synthetic records share this pattern.';
+M.features.forEach(f => { const li=document.createElement('li'); li.textContent=f; $('pattern').appendChild(li); });
+M.countries.forEach(f => { const li=document.createElement('li'); li.textContent=f; $('countries').appendChild(li); });
+$('st2').textContent = 'Status: ' + sim.series[1].status;
+$('st3').textContent = 'Status: ' + sim.series[2].status;
+[sim.series[1], sim.series[2]].forEach(s => s.sources.forEach(src => {
+  const li=document.createElement('li'); const a=document.createElement('a');
+  a.href=src.url; a.textContent=src.name; a.target='_blank'; a.rel='noopener noreferrer';
+  li.appendChild(a); $('sources').appendChild(li);
+}));
+
+const NS='http://www.w3.org/2000/svg';
+function el(n,a,t){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(t!=null)e.textContent=t;return e;}
+const xs = sim.x.values, n = xs.length;
+const cssv = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+function chart(host, ys, o, p){
+  const W = Math.max(host.clientWidth, 240), H = o.h;
+  const m = {l:o.ml||40, r:16, t:12, b:34};
+  const svg = el('svg',{viewBox:'0 0 '+W+' '+H,width:W,height:H,'aria-hidden':'true'});
+  const X = x => m.l + (x - xs[0])/(xs[n-1]-xs[0])*(W-m.l-m.r);
+  const Y = y => H-m.b - y/o.max*(H-m.t-m.b);
+  o.ticks.forEach(t => {
+    svg.appendChild(el('line',{x1:m.l,x2:W-m.r,y1:Y(t),y2:Y(t),stroke:t===0?cssv('--line'):cssv('--grid'),'stroke-width':1}));
+    svg.appendChild(el('text',{x:m.l-6,y:Y(t)+4,'text-anchor':'end',class:'axis-text'},o.fmtTick(t)));
+  });
+  o.xt.forEach(x => svg.appendChild(el('text',{x:X(x),y:H-m.b+18,'text-anchor':x===xs[0]?'start':(x===xs[n-1]?'end':'middle'),class:'axis-text'},x)));
+  const fi = p*(n-1), i0 = Math.min(Math.floor(fi), n-1), fr = fi - i0;
+  const pts = [];
+  for(let i=0;i<=i0;i++) pts.push([X(xs[i]),Y(ys[i])]);
+  let head = pts[pts.length-1];
+  if(i0 < n-1 && fr>0){ head=[X(xs[i0]+(xs[i0+1]-xs[i0])*fr), Y(ys[i0]+(ys[i0+1]-ys[i0])*fr)]; pts.push(head); }
+  svg.appendChild(el('polyline',{points:pts.map(q=>q.join(',')).join(' '),fill:'none',stroke:cssv(o.color),'stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round'}));
+  svg.appendChild(el('circle',{cx:head[0],cy:head[1],r:4.5,fill:cssv(o.color)}));
+  const endVal = ys[i0] + (i0<n-1 ? (ys[i0+1]-ys[i0])*fr : 0);
+  const lx = head[0] > W*0.7 ? head[0]-8 : head[0]+8;
+  svg.appendChild(el('text',{x:lx,y:head[1]-10,'text-anchor':head[0] > W*0.7?'end':'start',fill:cssv('--fg'),style:'font:600 13px Inter,sans-serif'},o.fmt(endVal)));
+  host.replaceChildren(svg);
+  return {idx:fi, val:endVal};
+}
+const s1=sim.series[0].values, s2=sim.series[1].values, s3=sim.series[2].values;
+let prog = 1;
+function render(p){
+  prog = p;
+  const r = chart($('ch1'), s1, {h:280,max:40,ticks:[0,10,20,30,40],fmtTick:v=>v+'%',fmt:v=>v.toFixed(1)+'%',xt:[33,100,200,300,400],color:'--accent'}, p);
+  chart($('ch2'), s2, {h:170,max:6,ticks:[0,2,4,6],fmtTick:v=>v,fmt:v=>v.toFixed(2),xt:[33,400],color:'--series-b',ml:28}, p);
+  chart($('ch3'), s3, {h:170,max:12,ticks:[0,4,8,12],fmtTick:v=>v+'%',fmt:v=>v.toFixed(2)+'%',xt:[33,400],color:'--series-c',ml:36}, p);
+  const recs = Math.round(xs[0] + (xs[n-1]-xs[0]) * (p));
+  $('readout').innerHTML = 'Synthetic records in the network: <b>'+recs+'</b> &nbsp; Records that find a match: <b>'+r.val.toFixed(1)+'%</b>';
+}
+let raf = null;
+function play(){
+  if(raf) cancelAnimationFrame(raf);
+  const t0 = performance.now(), dur = 30000;
+  const step = now => {
+    const p = Math.min((now-t0)/dur, 1);
+    render(p);
+    raf = p < 1 ? requestAnimationFrame(step) : null;
+  };
+  raf = requestAnimationFrame(step);
+}
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+$('play').addEventListener('click', () => { if(reduce) render(1); else play(); });
+if(reduce) $('play').hidden = true;
+render(1);
+let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(()=>render(prog), 80); });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render(prog));
+</script>
