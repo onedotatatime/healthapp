@@ -735,10 +735,11 @@ class KillSwitches(ChatCase):
         self.assertTrue(alive(stub_pid) and alive(child_pid))
         st, body, _ = env.post("/chat/sessions/%s/stop" % sid, {})
         self.assertEqual(st, 200)
-        env.wait_idle(8)
         # inside the 3 s grace: the group got SIGTERM. A kill of the stub alone would leave the child for the later SIGKILL.
+        # (Checked before the turn ends: the orphaned child holds the stdout pipe open, so the turn ends only when it is gone.)
         self.assertTrue(wait_for(lambda: not alive(child_pid), 2.0), "the child of the turn survived the stop")
         self.assertTrue(wait_for(lambda: not alive(stub_pid), 2.0))
+        env.wait_idle(8)
         last = env.get("/chat/sessions/%s" % sid)[1]["messages"][-1]
         self.assertEqual((last["role"], last["text"]), ("error", "Stopped by you."))
 
