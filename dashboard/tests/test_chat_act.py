@@ -114,7 +114,17 @@ class YesRunsOneActTurn(ActCase):
         self.assertEqual(rec["stdin"], B.ACT_STDIN)
         self.assertEqual(sorted(rec["env"]), sorted(B.CHILD_ENV_KEYS))             # still built from nothing
         self.assertEqual(argv[argv.index("--agent") + 1], "backend-minhos")
-        self.assertIn("--resume", argv)                                            # the answer turn answered: its session continues
+        # CTO M3 (MIN-4497, 420bf529): the act turn starts a FRESH Claude session. It runs in a new worktree, where Claude keeps no session of the chat's.
+        self.assertNotIn("--resume", argv)
+        answer_argv = env.record(-2)["argv"]
+        self.assertIn("--session-id", answer_argv)                                 # (the first answer turn created the chat's session)
+        chat_session = answer_argv[answer_argv.index("--session-id") + 1]
+        act_session = argv[argv.index("--session-id") + 1]
+        self.assertNotEqual(act_session, chat_session)
+        self.assertEqual(str(__import__("uuid").UUID(act_session)), act_session)  # a valid UUID, which is what `--session-id` needs
+        stored = [m["proposal"] for m in env.chat.sessions[sid]["messages"] if m.get("proposal")][0]
+        self.assertEqual(stored["actSession"], act_session)                       # stored on the proposal
+        self.assertNotIn("actSession", json.dumps(env.get("/chat/sessions/%s" % sid)[1]))    # an internal id: never in a response
         for flag, want in (("--model", "sonnet"), ("--effort", "high"), ("--permission-mode", "dontAsk"), ("--max-budget-usd", "10"),
                            ("--output-format", "stream-json")):
             self.assertEqual(argv[argv.index(flag) + 1], want, flag)
@@ -125,7 +135,17 @@ class YesRunsOneActTurn(ActCase):
         self.assertIn("Edit(//%s/**)" % os.path.realpath(wt).lstrip("/"), allowed)
         self.assertIn("Write(//%s/**)" % os.path.realpath(wt).lstrip("/"), allowed)
         self.assertIn("Bash(git push origin feat/chat-cron-%s)" % pid[:8], allowed)
-        self.assertIn("Bash(~/.claude/bin/linear-as BACKEND:*)", allowed)
+        # CTO M1 and the linear-as ruling: nothing in the allowed list can run code the agent just wrote, and linear-as is gone
+        for word in ("npm", "npx", "pytest", "unittest", "linear-as", "node"):
+            self.assertFalse([a for a in allowed if word in a], word)
+        self.assertEqual([a for a in allowed if a.startswith("Bash(python3")], ["Bash(python3 %s --actuals)" % os.path.join(env.conductor, "scripts", "measure", "extract-runs.py")])
+        for want in ("Bash(npm:*)", "Bash(npx:*)", "Bash(pytest:*)", "Bash(python3 -m:*)", "Bash(~/.claude/bin/linear-as:*)"):
+            self.assertIn(want, never)
+        # CTO M2: the worktree's workflows, agent settings, MCP config and git hooks are denied for every write tool
+        w = os.path.realpath(wt).lstrip("/")
+        for tool in ("Edit", "Write", "MultiEdit"):
+            for tail in (".github/**", ".claude/**", ".husky/**", ".githooks/**", ".mcp.json"):
+                self.assertIn("%s(//%s/%s)" % (tool, w, tail), never)
         for want in ("Read", "Grep", "mcp__linear__get_issue", "mcp__linear__save_comment", "mcp__linear__save_issue"):
             self.assertIn(want, allowed)
         for forbidden in ("Bash", "Edit", "Write", "Bash(git push:*)", "Bash(git push origin main)", "mcp__linear__delete_comment", "mcp__linear__merge_diff",
@@ -145,6 +165,39 @@ class YesRunsOneActTurn(ActCase):
         self.assertIn("feat/chat-cron-" + pid[:8], prompt)
         self.assertIn('"summary": "Add a footer link"', prompt)                     # the approved proposal
         self.assertIn("<<<RESULT", prompt)
+        self.assertIn("save_comment and save_issue", prompt)                         # the CTO's three prompt lines (420bf529): Linear prefix, Skills, no tests
+        self.assertIn("(Cron ·)", prompt)
+        self.assertIn("Skills cannot be loaded in a dashboard chat", prompt)
+        self.assertIn("You cannot run tests or install packages here", prompt)
+        self.assertIn("Grep's type, not a glob", prompt)
+
+    def test_a_message_after_the_act_turn_still_resumes_the_answer_session(self):
+        """M3 keeps the two sessions apart: the act turn's session is its own, and the chat's answer session continues where it was."""
+        env = self.make_act()
+        sid, pid = self.proposal(env)
+        answer_argv = env.record(-1)["argv"]
+        chat_session = answer_argv[answer_argv.index("--session-id") + 1]
+        env.set_behavior(reply="Done.\n" + RESULT_OK)
+        self.yes(env, sid, pid)
+        env.wait_idle()
+        env.set_behavior(reply="Thanks.")
+        self.assertEqual(env.post("/chat/sessions/%s/messages" % sid, {"text": "and one more thing"})[0], 202)
+        env.wait_idle()
+        argv = env.record(-1)["argv"]
+        self.assertEqual(argv[argv.index("--resume") + 1], chat_session)
+        self.assertNotIn("--session-id", argv)
+
+    def test_two_act_turns_never_share_a_session_id(self):
+        env = self.make_act()
+        sessions = []
+        for _ in range(2):
+            sid, pid = self.proposal(env, branchType="fix")
+            env.set_behavior(reply="Done.\n" + RESULT_OK)
+            self.yes(env, sid, pid)
+            env.wait_idle()
+            argv = env.record(-1)["argv"]
+            sessions.append(argv[argv.index("--session-id") + 1])
+        self.assertEqual(len(set(sessions)), 2)
 
     def test_no_env_file_lands_in_the_worktree_and_nothing_is_copied_in(self):
         env = self.make_act()

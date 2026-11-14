@@ -207,6 +207,153 @@ class Blocks(unittest.TestCase):
         self.assertIsNone(snap['blocks']['linear']['error'])
 
 
+SAMPLE_DIRECTIONS = os.path.join(os.path.dirname(HERE), 'directions.sample.json')
+GOAL_TITLES = ['Scan \u2192 AI reads', 'Store extracted data', 'Store + analyse original files (staging and main)', 'Real analysis + projection', 'Real matching']
+
+
+def direction(n=1, **over):
+    d = {'n': n, 'title': 'T%s' % n, 'status': 'on_track', 'note': 'ok', 'updatedAt': '2026-11-14T22:00:00+02:00'}
+    d.update(over)
+    return d
+
+
+class Directions(unittest.TestCase):
+    """MIN-4497: the five directions of the project goal, from a hand-set file, in the snapshot as `directions`."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix='directions-')
+        self.addCleanup(lambda: __import__('shutil').rmtree(self.tmp, ignore_errors=True))
+        self.path = os.path.join(self.tmp, 'directions.json')
+
+    def write(self, doc):
+        with open(self.path, 'w') as f:
+            f.write(doc if isinstance(doc, str) else json.dumps(doc))
+
+    def snap(self, directions):
+        import unittest.mock as mock
+        with mock.patch.object(sn, 'fetch_linear', return_value=[]), mock.patch.object(sn, 'build_branches', return_value={}):
+            return sn.build(NOW, copy.deepcopy(HAND), RATES, {}, '/nonexistent', USAGE_BIN, lambda: FAKE_KEY, directions=directions)
+
+    def test_the_seed_example_has_the_five_titles_all_not_started(self):
+        seed = json.load(open(SAMPLE_DIRECTIONS))
+        self.assertEqual([d['title'] for d in seed['directions']], GOAL_TITLES)
+        self.assertEqual([d['n'] for d in seed['directions']], [1, 2, 3, 4, 5])
+        self.assertEqual({d['status'] for d in seed['directions']}, {'not_started'})
+        got, warn = sn.read_directions(SAMPLE_DIRECTIONS)
+        self.assertIsNone(warn)
+        self.assertEqual(len(got), 5)
+        snap = self.snap((got, warn))
+        self.assertEqual([d['title'] for d in snap['directions']], GOAL_TITLES)
+        self.assertEqual(sorted(snap['directions'][0]), ['n', 'note', 'status', 'title', 'updatedAt'])
+        self.assertIsNone(snap['blocks']['hand']['error'])
+        sn.assert_clean(json.dumps(snap))
+
+    def test_a_missing_file_omits_the_field_and_says_nothing(self):
+        self.assertEqual(sn.read_directions(self.path), (None, None))
+        snap = self.snap(sn.read_directions(self.path))
+        self.assertNotIn('directions', snap)
+        self.assertIsNone(snap['blocks']['hand']['error'])
+        self.assertNotIn('directions', self.snap(None))                      # build() called the old way (no argument) is the same
+
+    def test_every_status_and_a_hand_edited_file_come_through_sorted_by_n(self):
+        self.write({'directions': [direction(3, status='off_track', note='x'), direction(1, status='on_track'), direction(2, status='at_risk', note=''),
+                                   direction(5, status='not_started', note='')]})
+        got, warn = sn.read_directions(self.path)
+        self.assertIsNone(warn)
+        self.assertEqual([(d['n'], d['status']) for d in got], [(1, 'on_track'), (2, 'at_risk'), (3, 'off_track'), (5, 'not_started')])
+        self.assertEqual(sn.DIRECTION_STATUSES, ('on_track', 'at_risk', 'off_track', 'not_started'))
+
+    def test_a_bad_file_omits_the_field_and_puts_the_reason_on_the_hand_block_only(self):
+        bad = {
+            'not json': '{"directions": [',
+            'a list, not an object': '[]',
+            'no directions key': {'x': 1},
+            'empty list': {'directions': []},
+            'six entries': {'directions': [direction(i % 5 + 1) for i in range(6)]},
+            'duplicate n': {'directions': [direction(1), direction(1)]},
+            'n 0': {'directions': [direction(0)]},
+            'n 6': {'directions': [direction(6)]},
+            'n true': {'directions': [direction(True)]},
+            'n text': {'directions': [direction('1')]},
+            'bad status': {'directions': [direction(1, status='green')]},
+            'status case': {'directions': [direction(1, status='On_Track')]},
+            'missing key': {'directions': [{'n': 1, 'title': 'T', 'status': 'on_track', 'note': ''}]},
+            'extra key': {'directions': [dict(direction(1), owner='x')]},
+            'empty title': {'directions': [direction(1, title='  ')]},
+            'long title': {'directions': [direction(1, title='x' * 121)]},
+            'note not text': {'directions': [direction(1, note=None)]},
+            'long note': {'directions': [direction(1, note='x' * 301)]},
+            'no updatedAt time': {'directions': [direction(1, updatedAt='soon')]},
+            'updatedAt without offset': {'directions': [direction(1, updatedAt='2026-11-14T22:00:00')]},
+            'updatedAt not text': {'directions': [direction(1, updatedAt=1763150400)]},
+            'a key in the note': {'directions': [direction(1, note='see ' + FAKE_KEY)]},
+            'a key in the title': {'directions': [direction(1, title='eyJ' + 'a' * 40)]},
+        }
+        for name, doc in bad.items():
+            with self.subTest(name):
+                self.write(doc)
+                got, warn = sn.read_directions(self.path)
+                self.assertIsNone(got)
+                self.assertTrue(warn and warn.startswith('directions.json'), warn)
+                self.assertNotIn(FAKE_KEY, warn)                                   # the reason never repeats the text
+                snap = self.snap((got, warn))
+                self.assertNotIn('directions', snap)
+                self.assertEqual(snap['blocks']['hand']['error']['message'], warn)
+                self.assertEqual(snap['blocks']['hand']['asOf'], sn.iso(NOW))      # the hand data itself is fresh and complete
+                self.assertEqual(snap['deadline'], HAND['deadline'])
+                self.assertIn('demo', snap)
+                self.assertIsNone(snap['blocks']['linear']['error'])
+
+    def test_an_unreadable_file_is_a_warning_not_a_crash(self):
+        os.makedirs(self.path)                                                       # a folder where the file should be
+        got, warn = sn.read_directions(self.path)
+        self.assertIsNone(got)
+        self.assertIn('cannot be read', warn)
+
+    def test_a_hand_file_error_still_wins_on_the_hand_block(self):
+        hand = copy.deepcopy(HAND)
+        hand['demo']['steps'] = hand['demo']['steps'][:7]
+        import unittest.mock as mock
+        with mock.patch.object(sn, 'fetch_linear', return_value=[]), mock.patch.object(sn, 'build_branches', return_value={}):
+            snap = sn.build(NOW, hand, RATES, {}, '/nonexistent', USAGE_BIN, lambda: FAKE_KEY, directions=([direction(1)], None))
+        self.assertIn('8 entries', snap['blocks']['hand']['error']['message'])
+
+    def test_main_reads_the_file_from_the_home_folder_or_from_the_flag(self):
+        import io, unittest.mock as mock, contextlib
+        home = os.path.join(self.tmp, 'home')
+        os.makedirs(home)
+        out = os.path.join(self.tmp, 'out.json')
+        hand = os.path.join(os.path.dirname(HERE), 'hand-set.sample.json')
+
+        def run(*extra):
+            with mock.patch.object(sn, 'fetch_linear', return_value=[]), mock.patch.object(sn, 'build_branches', return_value={}), mock.patch.object(sn, 'linear_key', lambda *a, **k: FAKE_KEY), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                code = sn.main(['--home', home, '--hand', hand, '--root', '/nonexistent', '--out', out, '--now', '2026-11-14T15:00:00Z'] + list(extra))
+            self.assertEqual(code, 0)
+            return json.load(open(out))
+        self.assertNotIn('directions', run())                                         # no file in the home folder: omitted
+        self.write({'directions': [direction(2, status='at_risk', note='from the home folder')]})
+        os.replace(self.path, os.path.join(home, 'directions.json'))
+        got = run()['directions']
+        self.assertEqual([(d['n'], d['status'], d['note']) for d in got], [(2, 'at_risk', 'from the home folder')])
+        other = os.path.join(self.tmp, 'other.json')
+        with open(other, 'w') as f:
+            json.dump({'directions': [direction(4, status='off_track', note='from the flag')]}, f)
+        got = run('--directions', other)['directions']
+        self.assertEqual([(d['n'], d['status']) for d in got], [(4, 'off_track')])
+        with open(os.path.join(home, 'directions.json'), 'w') as f:                     # a typo: the snapshot is still written, the panel is empty
+            f.write('{"directions": [')
+        snap = run()
+        self.assertNotIn('directions', snap)
+        self.assertEqual(snap['blocks']['hand']['error']['message'], 'directions.json: not valid JSON')
+
+    def test_install_seeds_the_file_once_and_never_overwrites_it(self):
+        src = open(os.path.join(os.path.dirname(HERE), 'install.sh')).read()
+        lines = [l for l in src.splitlines() if 'directions' in l and not l.lstrip().startswith('#')]
+        self.assertEqual(len(lines), 1, lines)
+        self.assertTrue(lines[0].startswith('[ -f "$HOME_DIR/directions.json" ] || cp "$SRC/directions.sample.json"'), lines[0])
+
+
 class Safety(unittest.TestCase):
     def test_reader_has_no_write_operation(self):
         src = open(os.path.join(os.path.dirname(HERE), 'snapshot.py')).read()
