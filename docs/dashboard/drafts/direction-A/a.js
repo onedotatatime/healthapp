@@ -23,7 +23,7 @@ try{ const t = +sessionStorage.getItem('hdA-boot'); if(t && Date.now()-t < 6e5) 
 const span = H.T.deadline - H.T.start, fr = d => ((d - H.T.start)/span*100).toFixed(2);
 const liveMeters = (list, pfx, n) => { const top = list.slice().sort((a,b)=>b.v-a.v).slice(0,n), mx = Math.max(1, ...top.map(x=>x.v));
   return top.map(a => H.meter({key:pfx+a.n,label:a.n,mode:'total',max:mx,scale:mx,soft:0,hard:0})).join(''); };
-let rolesAll = false, agAll = false, dynSig = '';
+let rolesAll = false, dynSig = '';
 
 function renderMain(){
   main.innerHTML =
@@ -32,7 +32,7 @@ function renderMain(){
   +   '<div class="cd" id="cd" role="timer" aria-label="Time to the deadline, Sun 15 Nov 18:00 Athens"></div><div class="hero-words" id="words"></div>'
   +   '<div class="winwrap"><div class="winlabels"><span style="left:'+fr(H.T.submit)+'%;transform:translateX(-100%)">17:00 submit</span></div>'
   +   '<div class="wintrack"><div class="winbar" id="bar"><i class="fill"></i></div><i class="wintick" style="left:'+fr(H.T.freeze)+'%;top:0"></i><i class="wintick" style="left:'+fr(H.T.submit)+'%;top:0"></i></div>'
-  +   '<div class="winlabels below"><span style="left:0">Sat 12:00 build start</span><span class="lf" style="left:'+fr(H.T.freeze)+'%;transform:translateX(-100%)">13:00 freeze</span><span style="right:0">18:00 deadline</span></div></div></div>'
+  +   '<div class="winlabels below"><span style="left:0">Sat 12:00 build start</span><span class="lf" style="left:'+fr(H.T.freeze)+'%;transform:translateX(-100%)">13:00 freeze</span><span style="right:0">18:00 deadline</span></div></div><div id="heroRepo"></div></div>'
   + '<div class="card now-panel" data-enter><div id="nowp"></div><div class="fc" id="fc" aria-live="polite"></div><div class="flags" id="flags" aria-live="polite"></div></div>'
   + '</section>'
   + '<section class="card dirs" id="dirs" data-enter aria-labelledby="dirsH"><div class="card-h"><span class="chip brand goal">Project goal</span><h2 id="dirsH">Five directions, in parallel</h2><span class="muted dcount mono" id="dirsN"></span></div>'
@@ -54,34 +54,48 @@ function bandHTML(){
     + '<div class="cursor" id="cursor" aria-hidden="true"></div></div><div class="laxis" id="laxis"><span id="ax0"></span><span id="ax1"></span><span id="ax2"></span></div></div></section>';
 }
 
-/* repo numbers (MIN-4569): twelve tiles from the feed's `repo` block, near Branches. A field the feed did not read is "n/a, not reported yet", never 0;
+/* repo numbers (MIN-4569): twelve tiles from the feed's `repo` block. They sit in the empty area of the deadline card under the countdown (founder, 14 Nov: "here we can add
+   numbers like branch nubers, prs, commits, lines of code"), and at the top of the Branches drawer. A field the feed did not read is "n/a, not reported yet", never 0;
    a feed with no repo block at all is one quiet sentence. The reason text comes from the feed, so it only goes through esc(). */
-function repoCard(wide){
-  const load = Live.loaded ? 'ok' : Live.feedErr ? 'error' : 'loading', rec = Live.rec.repo, v = RepoNumbers.view(DATA.repo, load, rec && rec.error && rec.error.message);
-  return '<section class="card repo-card blk" data-enter data-blk="repo" id="'+(wide?'repo':'repoDr')+'" aria-labelledby="'+(wide?'repoH':'repoDrH')+'" data-state-view="'+v.state+'">'
-    + '<div class="card-h"><h2 id="'+(wide?'repoH':'repoDrH')+'">Repo numbers</h2>'+blkTag('repo')+'<span class="upd"></span></div>'
-    + (v.state==='ok'
-      ? '<div class="rtiles'+(wide?' wide':'')+'" role="group" aria-label="Repo numbers">'+v.tiles.map(t =>
-          '<div class="bt" data-id="'+esc(t.id)+'"'+(t.missing?' data-missing="1"':'')+'><span class="k">'+esc(t.k)+'</span><b'+(t.missing?' class="unk"':'')+'>'+esc(t.v)+'</b><span class="s">'+esc(t.s)+'</span></div>').join('')+'</div>'
-      : BRE(v.empty))
-    + '</section>';
+function repoCard(where){
+  const hero = where==='hero', load = Live.loaded ? 'ok' : Live.feedErr ? 'error' : 'loading', rec = Live.rec.repo, v = RepoNumbers.view(DATA.repo, load, rec && rec.error && rec.error.message);
+  const head = '<h2 id="'+(hero?'repoH':'repoDrH')+'">Repo numbers</h2>'+blkTag('repo')+'<span class="upd"></span>';
+  const body = v.state==='ok'
+    ? '<div class="rtiles" role="group" aria-label="Repo numbers">'+v.tiles.map(t =>
+        '<div class="bt" data-id="'+esc(t.id)+'"'+(t.missing?' data-missing="1"':'')+'><span class="k">'+esc(t.k)+'</span><b'+(t.missing?' class="unk"':'')+'>'+esc(t.v)+'</b><span class="s">'+esc(t.s)+'</span></div>').join('')+'</div>'
+    : BRE(v.empty);
+  return hero
+    ? '<section class="hero-repo blk" data-blk="repo" id="repo" aria-labelledby="repoH" data-state-view="'+v.state+'"><div class="hr-h">'+head+'</div>'+body+'</section>'
+    : '<section class="card repo-card blk" data-enter data-blk="repo" id="repoDr" aria-labelledby="repoDrH" data-state-view="'+v.state+'"><div class="card-h">'+head+'</div>'+body+'</section>';
+}
+
+/* agent leaderboard (MIN-4584): every agent of tokens.perAgent is a row, ranked by tokens, time worked second. The model is shared/leaderboard.js. */
+function leaderboard(){
+  const load = Live.loaded ? 'ok' : Live.feedErr ? 'error' : 'loading', v = Leaderboard.view(DATA.tokens.perAgent, (DATA.agents||[]).map(a => a.n), load);
+  if(v.state!=='ok') return BRE(v.empty);
+  return '<ol class="lb" aria-label="Agents ranked by tokens used, then time worked">'+v.rows.map(r =>
+    '<li class="lbrow'+(r.idle?' idle':'')+'" data-agent="'+esc(r.n)+'"'+(r.builtin?' data-builtin="1"':'')+'><span class="rk">'+r.rank+'</span>'
+    + '<span class="nm"><b>'+esc(r.n)+'</b>'+(r.builtin?'<span class="tag">built-in agent</span>':'')+'</span>'
+    + '<span class="tk'+(r.tokMissing?' na':'')+'" title="weighted tokens">'+esc(r.tokens)+'</span>'
+    + '<span class="tm'+(r.timeMissing?' na':'')+'"'+(r.runs?' title="'+esc(r.runs)+'"':'')+'>'+esc(r.time)+'</span></li>').join('')+'</ol>';
 }
 function renderDyn(force){
   const dyn = $('#dyn'); if(!dyn) return;
   const sig = JSON.stringify([H.ms.map(m=>[m.id,m.name,m.start,m.end,m.gate,m.total,m.done]), DATA.tasks, DATA.tokens.perAgent, DATA.tokens.perChat, DATA.tokens.scope,
-    DATA.money.credits, DATA.money.estimateEUR, DATA.money.estimateSeries, DATA.money.rateCard, DATA.agents, DATA.demo, rolesAll, agAll, DATA.repo, Live.loaded, Live.feedErr, Live.rec.repo]);
+    DATA.money.credits, DATA.money.estimateEUR, DATA.money.estimateSeries, DATA.money.rateCard, DATA.agents, DATA.demo, rolesAll, DATA.repo, Live.loaded, Live.feedErr, Live.rec.repo]);
   if(!force && sig===dynSig) return; dynSig = sig;
   const tk = DATA.tokens, rc = DATA.money.rateCard, ag = DATA.agents, dm = DATA.demo, st = dm.steps || [];
   const rateNote = rc ? esc(rc.label||'estimate at API list price, not a bill')+'.'+(rc.aliased && Object.keys(rc.aliased).length ? ' '+Object.keys(rc.aliased).map(k=>esc(k.replace('claude-',''))).join(', ')+' priced at the nearest rate row.' : '') : '';
   const bt = ((dm.build.label||'')+' '+(dm.build.at||'')).trim(), dp = dm.deploy.label || '';
-  dyn.innerHTML = bandHTML() + repoCard(true)
+  const slot = $('#heroRepo'); if(slot) slot.innerHTML = repoCard('hero');
+  dyn.innerHTML = bandHTML()
   + '<section class="panels">'
   + '<div class="card panel p-tasks blk" data-enter data-flash data-blk="linear"><div class="card-h"><h2>Tasks</h2>'+blkTag('linear')+'<span class="upd"></span></div><p class="blkmsg"></p><div class="body bb">'
   +   '<div class="segbar" id="segbar">'+H.TSEG.map(s=>'<i data-seg="'+s[0]+'" title="'+s[1]+'"></i>').join('')+'</div>'
   +   '<div class="leg">'+H.TSEG.map(s=>'<div data-flash><span class="sw '+s[2]+'"></span>'+s[1]+'<b class="num" data-v="t.'+s[0]+'"></b></div>').join('')+'</div>'
   +   '<div class="sub"><span>By role</span>'+(Object.keys(DATA.tasks.byRole||{}).length>3 ? '<button class="linkbtn" id="roleMore" aria-expanded="'+rolesAll+'">'+(rolesAll?'show top 5':'show all')+'</button>' : '')+'</div><div id="roles" class="roles'+(rolesAll?' all':'')+'">'+H.byRole()+'</div></div></div>'
   + '<div class="card panel p-tokens blk" data-enter data-blk="usage"><div class="card-h"><h2>Tokens · weighted</h2>'+blkTag('usage')+'<span class="upd"></span></div><p class="blkmsg"></p><div class="body compact bb">'
-  +   '<div class="sub"><span>Agents</span>'+(tk.perAgent.length>5 ? '<button class="linkbtn" id="agMore" aria-expanded="'+agAll+'">'+(agAll?'show 5':'show 10')+'</button>' : '')+'</div>'+liveMeters(tk.perAgent,'ta.',agAll?10:5)
+  +   '<div class="sub"><span>Agent leaderboard</span><span class="lbh">tokens · time worked</span></div>'+leaderboard()
   +   '<div class="sub"><span>Chats</span></div>'+liveMeters(tk.perChat,'tc.',4)
   +   '<p class="muted note">Weighted tokens since build start (in x1, cache write x2, cache read x0.1, out x5).'+(tk.scope?' Scope: '+esc(tk.scope)+'.':'')+'</p></div></div>'
   + '<div class="card panel p-money" data-enter><div class="card-h"><h2>Money</h2></div><div class="body compact">'
@@ -265,7 +279,7 @@ function branchesView(){
     + '<div class="bt"><span class="k">Closed</span>'+cnt(t.closed)+'<span class="s">closed without merging</span></div></div>';
   const emptyClosed = noPr ? 'Pull request state is unknown without GitHub access, so merged and closed branches are not listed.' : 'No merged or closed branches yet.';
   return '<p class="muted drintro">Which branches are open, what was merged, and how big each one is. Newest first.</p>'
-    + repoCard(false)
+    + repoCard('drawer')
     + '<section class="card brcard blk" data-blk="branches"><div class="card-h"><h2>'+esc((B && B.repo) || 'Branches')+'</h2>'+blkTag('branches')+'<span class="upd"></span></div><p class="blkmsg"></p>'
     + (err ? '<p class="brwarn" role="note"><b>Partial reading.</b> '+esc(err.message)+'. Pull request state may be missing; branch names, commits and file counts are from local git.</p>' : '')
     + tiles
@@ -430,7 +444,6 @@ paintDirections(); paintLadder(); paintNow(); paintForecast(); paintFlags(); pai
 window.addEventListener('resize', placeCursor);
 main.addEventListener('click', e => {
   if(e.target.closest('#roleMore')){ rolesAll = !rolesAll; renderDyn(true); }
-  else if(e.target.closest('#agMore')){ agAll = !agAll; renderDyn(true); }
 });
 if(boot){
   document.body.classList.add('booting'); H.enter(main);
