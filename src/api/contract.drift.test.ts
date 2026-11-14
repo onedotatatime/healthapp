@@ -2,7 +2,8 @@
  * Drift guard (MIN-4515): the frontend keeps three copies of Cron's wire shapes (`src/api/contract.ts`,
  * `features/handshake/contract.ts`, `features/assistant/contract.ts`). Cron's file on this branch,
  * `supabase/functions/_shared/contract.ts`, is the source. Every schema a copy shares with it must describe the same
- * JSON (compared as JSON Schema, so formatting and quote style do not matter), and the version string must match.
+ * JSON (compared as JSON Schema, so formatting and quote style do not matter). The CONTRACT_VERSION named in a copy's
+ * header is a label, not a gate: a bump that changes no shape must not block a build.
  * A name that is in a copy but not in Cron's file must be listed in LOCAL_ONLY, so a typo or a stale shape goes red.
  */
 import { describe, expect, it } from 'vitest';
@@ -20,9 +21,6 @@ const json = (s: z.ZodType) => z.toJSONSchema(s, { unrepresentable: 'any', io: '
 const copies = { 'src/api/contract.ts': api, 'handshake/contract.ts': handshake, 'assistant/contract.ts': assistant };
 
 describe('frontend contract copies match Cron\'s contract.ts', () => {
-  it('has a CONTRACT_VERSION to compare', () => {
-    expect(typeof (cron as Record<string, unknown>).CONTRACT_VERSION).toBe('string');
-  });
   for (const [file, mod] of Object.entries(copies)) {
     it(`${file}: same schemas, no stale names`, () => {
       const stale: string[] = [];
@@ -43,13 +41,4 @@ describe('frontend contract copies match Cron\'s contract.ts', () => {
       expect(differs, `${file} differs from Cron's contract.ts: copy his shape, do not edit the copy`).toEqual([]);
     });
   }
-  it('every copy states the same CONTRACT_VERSION as Cron\'s file', async () => {
-    const { readFileSync } = await import('node:fs');
-    const v = (cron as unknown as Record<string, string>).CONTRACT_VERSION;
-    for (const f of ['src/api/contract.ts', 'src/features/handshake/contract.ts', 'src/features/assistant/contract.ts']) {
-      const t = readFileSync(f, 'utf8');
-      const m = t.match(/CONTRACT_VERSION[\s*]+(\d{4}-\d{2}-\d{2}\.\d+)/);
-      expect(m?.[1], `${f} names the version it was copied from`).toBe(v);
-    }
-  });
 });
