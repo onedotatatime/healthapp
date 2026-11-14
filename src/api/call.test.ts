@@ -37,7 +37,7 @@ describe('callFunction', () => {
     await expect(makeCall(env, f as unknown as typeof fetch)('hello', undefined, z.unknown())).rejects.toMatchObject({ status: 0 });
   });
   it('accepts a valid demo-login answer', async () => {
-    const f = reply(200, { session: { access_token: 'a', refresh_token: 'b' }, role: 'doctor' });
+    const f = reply(200, { access_token: 'a', refresh_token: 'b', expires_at: 4102444800, user_id: 'u-1', persona: 'doctor', role: 'doctor' });
     await expect(makeCall(env, f as unknown as typeof fetch)('demo-login', {}, DemoLoginResponse)).resolves.toMatchObject({ role: 'doctor' });
   });
 });
