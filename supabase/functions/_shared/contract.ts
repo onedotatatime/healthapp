@@ -21,7 +21,7 @@
 // 12  diary is a direct insert, no function
 import { z } from "npm:zod@4.6.7";
 
-export const CONTRACT_VERSION = "2026-11-14.2";
+export const CONTRACT_VERSION = "2026-11-14.3";
 
 // ---------------------------------------------------------------------------------------------
 // Calling convention
@@ -155,6 +155,54 @@ export type FindingRow = z.infer<typeof FindingRow>;
 export const FINDING_COLUMNS =
   "id,document_id,patient_id,kind,text_original,text_lang,finding_date,specialty,confidence,edited_by_patient";
 
+// file_analysis (MIN-4549, direction 3; CTO decision on MIN-4548 §4): one row per stored original file, written by
+// the second pass inside healthapp-extract-exam, read by a DOCTOR in a live grant only (no patient policy, on
+// purpose: the patient's screens never show any of it). Read under RLS like documents:
+//   supabase.from("file_analysis").select(FILE_ANALYSIS_COLUMNS).eq("patient_id", patientId)
+// No row for a document = "not analysed yet". status "failed" = analysis failed (error_code says why, closed set).
+// The only free text in the row is items[].text_original: the document's own words, 200 characters at most, 20 items
+// at most. Everything else is an enum, a boolean or an integer, so there is nothing to word as health advice.
+export const FileDocType = z.enum(["blood_test", "imaging_report", "doctor_letter", "other"]);
+export const FileAnalysisStatus = z.enum(["done", "failed"]);
+export const FileAnalysisError = z.enum(["no_object", "unsupported_type", "budget", "model_timeout", "model_http", "model_invalid", "config", "error"]);
+export type FileAnalysisError = z.infer<typeof FileAnalysisError>;
+export const FILE_ITEMS_MAX = 20;
+export const FILE_ITEM_CHARS = 200;
+export const FileAnalysisItem = z.object({
+  text_original: z.string().max(FILE_ITEM_CHARS), // as printed on the file, not in the record
+  page: z.number().int().min(1), // the page the words are on
+});
+export type FileAnalysisItem = z.infer<typeof FileAnalysisItem>;
+export const FileAnalysisRow = z.object({
+  document_id: Uuid,
+  patient_id: Uuid,
+  status: FileAnalysisStatus,
+  error_code: FileAnalysisError.nullable(), // null when status is done
+  // The reading. All null when status is failed.
+  doc_type: FileDocType.nullable(),
+  pages: z.number().int().min(1).nullable(),
+  readable: z.boolean().nullable(),
+  blurred: z.boolean().nullable(),
+  cropped: z.boolean().nullable(),
+  rotated: z.boolean().nullable(),
+  handwriting_present: z.boolean().nullable(),
+  issuer_present: z.boolean().nullable(),
+  date_present: z.boolean().nullable(),
+  stamp_or_signature_present: z.boolean().nullable(),
+  // File facts computed by the server, no model. Null when the object could not be read (no_object).
+  sha256: z.string().regex(/^[0-9a-f]{64}$/).nullable(), // show the first 8 characters
+  mime: z.string().nullable(),
+  bytes: z.number().int().min(0).nullable(),
+  uploaded_at: Timestamp.nullable(), // when the object was stored
+  hash_verified: z.boolean().nullable(), // the object hashed the same after the run (and matches the extraction's hash)
+  items_count: z.number().int().min(0).max(FILE_ITEMS_MAX),
+  items: z.array(FileAnalysisItem).max(FILE_ITEMS_MAX), // on the file, absent from the extracted record
+  analysed_at: Timestamp,
+});
+export type FileAnalysisRow = z.infer<typeof FileAnalysisRow>;
+export const FILE_ANALYSIS_COLUMNS =
+  "document_id,patient_id,status,error_code,doc_type,pages,readable,blurred,cropped,rotated,handwriting_present,issuer_present,date_present,stamp_or_signature_present,sha256,mime,bytes,uploaded_at,hash_verified,items_count,items,analysed_at";
+
 export const DiaryRow = z.object({
   id: Uuid,
   patient_id: Uuid,
@@ -237,7 +285,12 @@ export type DocCreateResponse = z.infer<typeof DocCreateResponse>;
 
 // healthapp-extract-exam (patient) --------------------------------------------------------------
 // Synchronous, up to 60 s. One honest label and an indeterminate bar on the client (no stages).
-export const ExtractRequest = z.object({ doc_id: Uuid });
+export const ExtractRequest = z.object({
+  doc_id: Uuid,
+  /** MIN-4549: run only the file analysis for an already-saved document of the caller (the dev backfill script).
+   *  The app never sends it. Answer: AnalyseResponse. */
+  analyse_only: z.boolean().optional(),
+});
 export const RefusalReason = z.enum([
   "unreadable", // the model says it cannot read the page
   "unsupported_kind", // not a blood test, imaging report or doctor's letter
@@ -278,6 +331,15 @@ export const ExtractResponse = z.discriminatedUnion("outcome", [
   }),
 ]);
 export type ExtractResponse = z.infer<typeof ExtractResponse>;
+
+/** Answer to { analyse_only: true }. Counts and a status, nothing from the file. */
+export const AnalyseResponse = z.object({
+  outcome: z.literal("analysed"),
+  status: FileAnalysisStatus,
+  error_code: FileAnalysisError.nullable(),
+  items_count: z.number().int().min(0),
+});
+export type AnalyseResponse = z.infer<typeof AnalyseResponse>;
 
 // healthapp-confirm-doc (patient) ---------------------------------------------------------------
 // Edits to values, units and dates are accepted and marked edited_by_patient.

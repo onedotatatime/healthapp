@@ -150,7 +150,12 @@ export type DocCreateResponse = z.infer<typeof DocCreateResponse>;
 
 // healthapp-extract-exam (patient) --------------------------------------------------------------
 // Synchronous, up to 60 s. One honest label and an indeterminate bar on the client (no stages).
-export const ExtractRequest = z.object({ doc_id: Uuid });
+export const ExtractRequest = z.object({
+  doc_id: Uuid,
+  /** MIN-4549: run only the file analysis for an already-saved document of the caller (the dev backfill script).
+   *  The app never sends it. Answer: AnalyseResponse. */
+  analyse_only: z.boolean().optional(),
+});
 export const RefusalReason = z.enum([
   "unreadable", // the model says it cannot read the page
   "unsupported_kind", // not a blood test, imaging report or doctor's letter
