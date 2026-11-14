@@ -12,6 +12,7 @@ import {
   type Store,
 } from "./docs.ts";
 import type { DraftIn } from "./extract.ts";
+import type { IdentityProfile } from "./identity.ts";
 
 export const PATIENT = "11111111-1111-4111-8111-111111111111";
 export const PATIENT2 = "22222222-2222-4222-8222-222222222222";
@@ -19,6 +20,11 @@ export const DOCTOR = "33333333-3333-4333-8333-333333333333";
 export const OUTSIDER = "44444444-4444-4444-8444-444444444444";
 export const TOKENS: Record<string, string> = { tp: PATIENT, tp2: PATIENT2, td: DOCTOR, to: OUTSIDER };
 const ROLES: Record<string, Role> = { [PATIENT]: "patient", [PATIENT2]: "patient", [DOCTOR]: "doctor" };
+
+const PROFILES: Record<string, IdentityProfile> = {
+  [PATIENT]: { full_name: "Μαρία Παπαδοπούλου", full_name_latin: "Maria Papadopoulou", national_id_norm: "AK123456" },
+  [PATIENT2]: { full_name: "Ελένη Δημητρίου", full_name_latin: "Eleni Dimitriou", national_id_norm: "AB555555" },
+};
 
 export const fakeAuth: Auth = { verify: (t) => Promise.resolve(TOKENS[t] ?? null) };
 
@@ -30,6 +36,7 @@ export function fakeStore() {
   const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
   const store: Store = {
     roleOf: (_e, uid) => Promise.resolve(ROLES[uid] ?? null),
+    identityOf: (_e, uid) => Promise.resolve(PROFILES[uid] ?? null),
     createDraft(_e, patientId, contentType) {
       const id = uuid(++seq);
       const path = `${patientId}/${id}`;
@@ -51,12 +58,12 @@ export function fakeStore() {
       const g = grants.get(gid);
       return Promise.resolve(g && g.doctor === doctor && g.patient === patient && Date.parse(g.end) > Date.now() ? g.end : null);
     },
-    saveExtraction(_e, patientId, docId, d: DraftIn, sha): Promise<Saved | null> {
+    saveExtraction(_e, patientId, docId, d: DraftIn, sha, identity): Promise<Saved | null> {
       calls.push("saveExtraction");
       const cur = docs.get(docId);
       if (!cur || cur.document.patient_id !== patientId || cur.document.status !== "draft") return Promise.resolve(null);
       let n = 0;
-      cur.document = { ...cur.document, kind: d.kind, language: d.language, exam_date: d.exam_date, issuer: d.issuer };
+      cur.document = { ...cur.document, kind: d.kind, language: d.language, exam_date: d.exam_date, issuer: d.issuer, identity_status: identity };
       cur.meta = { ...cur.meta, sha256_file: sha, printed_name: d.printed_name, printed_id: d.printed_id };
       cur.results = d.results.map((r) => ({ ...r, id: uuid(1000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
       cur.findings = d.findings.map((f) => ({ ...f, id: uuid(2000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
