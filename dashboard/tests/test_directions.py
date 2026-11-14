@@ -19,10 +19,10 @@ RUNNER = r"""
 const vm = require('vm'), fs = require('fs'); const w = {};
 vm.runInNewContext(fs.readFileSync(process.argv[1], 'utf8'), { window: w }); const D = w.Directions;
 const now = Date.parse('2026-11-14T20:00:00Z');
-const e = (n, status, o) => Object.assign({ n, status, note: 'note ' + n, updatedAt: '2026-11-14T19:48:00Z' }, o || {});
+const e = (n, status, o) => Object.assign({ n, status, title: 'T' + n, note: 'note ' + n, updatedAt: '2026-11-14T19:48:00Z' }, o || {});
 const v = (list, load) => D.view(list, now, load || 'ok');
-const out = { titles: D.TITLES };
-out.none = [v(undefined), v(null), v({}), v('x'), v([]), v([null, 3, 'a', [], {}])].map(x => ({ n: x.rows.map(r => r.n), rep: x.reported, notes: x.rows.map(r => r.note), reported: x.rows.map(r => r.reported), count: x.count }));
+const out = { hasTitles: 'TITLES' in D };
+out.none = [v(undefined), v(null), v({}), v('x'), v([]), v([null, 3, 'a', [], {}])].map(x => ({ n: x.rows.map(r => r.n), rep: x.reported, notes: x.rows.map(r => r.note), titles: x.rows.map(r => r.title), titled: x.rows.map(r => r.titled), reported: x.rows.map(r => r.reported), count: x.count }));
 out.full = v([e(5, 'not_started'), e(3, 'off_track'), e(1, 'on_track'), e(4, 'at_risk'), e(2, 'on_track')]);
 out.names = ['on_track', 'On track', 'ON-TRACK', ' at risk ', 'at_risk', 'off-track', 'Off Track', 'not started', 'Not_Started'].map(s => { const r = v([e(1, s)]).rows[0]; return [s, r.cls, r.word]; });
 out.badStatus = ['green', 'done', '', null, undefined, 3, {}].map(s => v([e(1, s)]).rows[0].reported);
@@ -30,6 +30,9 @@ out.partial = v([e(2, 'on_track'), e(4, 'weird')]);
 out.dup = v([e(1, 'on_track', { note: 'first' }), e(1, 'off_track', { note: 'second' })]).rows[0];
 out.ranges = v([e(0, 'on_track'), e(6, 'on_track'), e(1.5, 'on_track'), e('2', 'at_risk'), e('x', 'on_track'), e(NaN, 'on_track')]).rows.map(r => r.reported);
 out.titleFromFeed = v([e(1, 'on_track', { title: '<b>hijack</b>' })]).rows[0].title;
+out.titleCases = [undefined, null, 5, '   ', 'ok'].map(t => { const r = v([e(1, 'on_track', { title: t })]).rows[0]; return [r.title === 'ok' ? 'ok' : r.title, r.titled]; });
+out.titleLong = v([e(1, 'on_track', { title: 'x'.repeat(300) })]).rows[0].title.length;
+out.titleLongEnd = v([e(1, 'on_track', { title: 'x'.repeat(300) })]).rows[0].title.slice(-1);
 out.long = v([e(1, 'on_track', { note: 'x'.repeat(500) })]).rows[0].note.length;
 out.longEnd = v([e(1, 'on_track', { note: 'x'.repeat(500) })]).rows[0].note.slice(-1);
 out.ws = v([e(1, 'on_track', { note: '  one\n two\t three  ' })]).rows[0].note;
@@ -53,15 +56,17 @@ class Model(unittest.TestCase):
         assert r.returncode == 0, r.stderr
         cls.o = json.loads(r.stdout)
 
-    def test_the_five_titles_are_the_founders_goal(self):
-        self.assertEqual(self.o["titles"], {"1": "Scan → AI reads", "2": "Store extracted data", "3": "Store + analyse original files (staging and main)",
-                                            "4": "Real analysis + projection", "5": "Real matching"})
+    def test_the_page_owns_no_title(self):
+        self.assertFalse(self.o["hasTitles"])                       # F2: the titles come only from the key-gated feed
+        self.assertEqual([r["title"] for r in self.o["full"]["rows"]], ["T1", "T2", "T3", "T4", "T5"])
 
     def test_no_field_an_empty_array_or_junk_gives_five_not_reported_rows_and_never_throws(self):
         for x in self.o["none"]:
             self.assertEqual(x["n"], [1, 2, 3, 4, 5])
             self.assertEqual((x["rep"], x["reported"], x["count"]), (0, [False] * 5, "0 of 5 reported"))
             self.assertEqual(x["notes"], ["not reported yet"] * 5)
+            self.assertEqual(x["titles"], ["Direction %d" % n for n in range(1, 6)])             # neutral rows: no title text
+            self.assertEqual(x["titled"], [False] * 5)
 
     def test_rows_come_out_in_order_whatever_order_the_feed_sends(self):
         rows = self.o["full"]["rows"]
@@ -89,8 +94,11 @@ class Model(unittest.TestCase):
         self.assertEqual((self.o["dup"]["note"], self.o["dup"]["word"]), ("first", "On track"))
         self.assertEqual(self.o["ranges"], [False, True, False, False, False])                  # only the string "2" (the one in range and whole) counts
 
-    def test_the_title_is_the_pages_never_the_feeds(self):
-        self.assertEqual(self.o["titleFromFeed"], "Scan → AI reads")
+    def test_the_title_is_the_feeds_as_text_capped_and_neutral_when_missing(self):
+        self.assertEqual(self.o["titleFromFeed"], "<b>hijack</b>")  # kept as text; the page escapes it (PageSource test)
+        self.assertEqual(self.o["titleCases"], [["Direction 1", False], ["Direction 1", False], ["Direction 1", False], ["Direction 1", False], ["ok", True]])
+        self.assertEqual((self.o["titleLong"], self.o["titleLongEnd"]), (80, "…"))
+        self.assertEqual(self.o["partial"]["rows"][0]["title"], "Direction 1")      # not reported: neutral, no title
 
     def test_a_note_is_one_line_of_text_and_capped(self):
         self.assertEqual(self.o["long"], 200)
@@ -144,6 +152,38 @@ class PageSource(unittest.TestCase):
     def test_no_em_dash_in_the_panel_text(self):
         self.assertNotIn("—", open(MODEL).read())
         self.assertNotIn("—", self.paint())
+
+
+FIVE_TITLES = ("Scan → AI reads", "Store extracted data", "Store + analyse original files", "Real analysis + projection", "Real matching")
+
+
+class NoTitlesInThePublicPage(unittest.TestCase):
+    """CTO must-fix F2: the five titles are not public. The page source and the Pages bundle hold none of them; they come only from the key-gated feed."""
+
+    def hits(self, root):
+        found = []
+        for base, dirs, files in os.walk(root):
+            if os.path.basename(base) == "dev" and root == DRAFTS:       # the dev feeds are not part of the page (and the bundle script refuses them)
+                dirs[:] = []
+                continue
+            for f in files:
+                if f.endswith((".woff2", ".txt")):
+                    continue
+                text = open(os.path.join(base, f), encoding="utf-8", errors="replace").read()
+                found += [(os.path.join(base, f), t) for t in FIVE_TITLES if t in text]
+        return found
+
+    def test_the_page_source_holds_none_of_the_five_titles(self):
+        self.assertEqual(self.hits(DRAFTS), [])
+
+    @unittest.skipUnless(shutil.which("bash"), "bash is needed")
+    def test_the_pages_bundle_holds_none_of_the_five_titles(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as out:
+            dest = os.path.join(out, "bundle")
+            r = subprocess.run(["bash", os.path.join(ROOT, "dashboard", "pages-bundle.sh"), dest], capture_output=True, text=True, timeout=120)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            self.assertEqual(self.hits(dest), [])
 
 
 class Fixtures(unittest.TestCase):

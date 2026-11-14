@@ -126,7 +126,7 @@ function paintDirections(){
   const el = $('#dlist'); if(!el) return;
   const v = Directions.view(DATA.directions, Date.now(), Live.loaded ? 'ok' : Live.feedErr ? 'error' : 'loading');
   const html = v.rows.map(r => '<li class="d '+(r.reported ? 'rep d-'+r.cls : 'unrep')+'" data-n="'+r.n+'"><span class="dn mono" aria-hidden="true">'+r.n+'</span>'
-    + '<span class="dt"><span class="sr">Direction '+r.n+': </span>'+esc(r.title)+'</span>'
+    + '<span class="dt">'+(r.titled ? '<span class="sr">Direction '+r.n+': </span>' : '')+esc(r.title)+'</span>'
     + (r.reported ? '<span class="chip '+r.cls+' dpill"><span class="g" aria-hidden="true">'+r.g+'</span>'+esc(r.word)+'</span>' : '<span class="dpill"></span>')
     + '<span class="dnote'+(r.reported ? '' : ' muted')+'"'+(r.reported && r.note ? ' title="'+esc(r.note)+'"' : '')+'>'+esc(r.note)+'</span>'
     + (r.updated ? '<span class="dupd mono muted">'+esc(r.updated)+'</span>' : '')+'</li>').join('');

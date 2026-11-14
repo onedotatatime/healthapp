@@ -218,10 +218,10 @@ build yet (Yes, acting, result, Stop). Open `http://127.0.0.1:<port>/direction-A
 Tests: `dashboard/tests/test_chat_ui.py` (the model run in node, guards on the page source, the fixture, the mock).
 
 ## The five directions panel (project goal, via coordinator, founder 2026-11-14)
-Direction A, under the clock: a "Project goal" card with five rows, "1 Scan → AI reads", "2 Store extracted data", "3 Store + analyse original files (staging and main)",
-"4 Real analysis + projection", "5 Real matching". **Feed field** `directions` (hand-set, optional): an array of `{n, title, status, note, updatedAt}`, `n` 1 to 5,
+Direction A, under the clock: a "Project goal" card with five rows. **The page holds no title text** (CTO must-fix F2, MIN-4499): the titles come only from the key-gated
+feed, so they are not in the public page or the Pages bundle. **Feed field** `directions` (hand-set, optional): an array of `{n, title, status, note, updatedAt}`, `n` 1 to 5, `title` one short line (cut at 80 characters),
 `status` one of `on_track`, `at_risk`, `off_track`, `not_started` (spaces, hyphens and capitals are read too), `note` one sentence (cut at 200 characters), `updatedAt` an
-ISO time. The page owns the five titles and ignores `title`. A direction the feed does not send, sends with an unknown status, or a feed with no field, an empty array or
-junk, shows "not reported yet" (dashed row); nothing throws. Before the first snapshot the rows say "Loading the feed…", after a failed first read "The feed could not be
+ISO time. A direction the feed does not send, sends with an unknown status, or a feed with no field (the public stub bundle, no key, a missing file), an empty array or
+junk, shows the neutral "Direction N" and "not reported yet" (dashed row, no title); nothing throws. Before the first snapshot the rows say "Loading the feed…", after a failed first read "The feed could not be
 read yet." Files: `shared/directions.js` (pure), the paint in `direction-A/a.js`, `shared/live.js` (reads the field), `a.css`. Dev feeds: `dev/directions.json` (field, four
 pills, direction 5 missing) and `dev/fresh.json` (no field). Tests: `dashboard/tests/test_directions.py`.
