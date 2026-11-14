@@ -535,6 +535,8 @@
       "main",
       "staging"
     ],
+    "base": "staging",
+    "staleRefs": 0,
     "prSource": "gh",
     "truncated": false,
     "totals": {

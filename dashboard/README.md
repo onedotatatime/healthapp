@@ -5,7 +5,7 @@ pushes it to the ingest function. Stdlib Python 3.9+. A launchd job on the found
 
 ```
 python3 dashboard/snapshot.py --home ~/.healthapp-dashboard --out /tmp/snap.json      # local file, no push
-python3 -m unittest discover -s dashboard/tests                                        # 34 tests, about 15 s (the branches tests build real git repositories)
+python3 -m unittest discover -s dashboard/tests                                        # 40 tests, about 15 s (the branches tests build real git repositories)
 deno test --allow-read supabase/functions/                                             # 23 tests (key matrix, limits, boundaries)
 deno check supabase/functions/*/index.ts && deno lint supabase/functions
 dashboard/install.sh [--viewer-url BASE] [--rotate]                                    # install or update the Mac job
@@ -47,19 +47,19 @@ Closed lid while it must keep running: `sudo pmset -a disablesleep 1`, and `0` a
 | `usage` | `~/.claude/projects` through `scan()`/`build_run()` loaded from conductor `bin/usage` (read-only), so weights (in x1, cache write x2, cache read x0.1, out x5) and request dedupe are the same code | since `buildStart`, only project folders whose name contains `config.projectFilter` (`healthapp`). To compare with the CLI: symlink those folders into one directory and run `bin/usage --root <dir> --since <buildStart UTC>` (same total, checked 39.8M at 13:40Z) |
 | `money` | tokens by model x `rates.json` x `config.eurPerUsd` | an estimate at API list price, cache writes at the 5-minute rate; models not in the table map to the nearest family (`rateCard.aliased`); a model with no family counts in `rateCard.unpricedTokens` |
 | `hand` | `~/.healthapp-dashboard/hand-set.json` | only source for credits, demo steps, clean runs, build/deploy labels, milestone names and gates |
-| `branches` | the healthapp repo's local git (read-only, plus one `git fetch --prune origin`) and its PRs through `gh pr list --state all` (MIN-4460) | see "Branches block" below. Local git alone gives the branches; `gh` adds PR state. A missing or logged-out `gh` is not a failed block |
+| `branches` | the healthapp repo's local git (read-only: no fetch, no lock, no write) and its PRs through one `gh pr list --state all` call (MIN-4460) | see "Branches block" below. Local git alone gives the branches; `gh` adds PR state. A missing or logged-out `gh` is not a failed block |
 
 A failed block keeps its last good value (from `<home>/state.json`), gets a newer `error`, keeps its old `asOf`.
 `money` fails with `usage` (it needs its events).
 `branches` can also be **partial**: when only `gh` fails (not installed, not logged in, error), the block is fresh (`asOf` now) and carries
 the local-git data, with PR fields `null`, `prSource: "none"` and `blocks.branches.error` set (`gh not installed`, `gh not authenticated`,
-`gh failed: ...`). A failed `git fetch` is the same: fresh data from the last fetched state, plus an error. Nothing in this block can fail the
+`gh failed: ...`, a `gh` call that takes over 10 s is `gh failed: timed out after 10s`). Nothing in this block can fail the
 other blocks.
 
 ## Branches block (MIN-4460, additive: `schema` stays 1)
 `blocks.branches` is `{asOf, error}` like the others; the data is the top-level key `branches`:
 ```
-branches: { repo: "owner/repo"|null, bases: ["main","staging"], prSource: "gh"|"none", truncated: bool,
+branches: { repo: "owner/repo"|null, bases: ["main","staging"], base: "staging", staleRefs: int|null, prSource: "gh"|"none", truncated: bool,
   totals: { open, openOnRemote, merged|null, mergedToday|null, closed|null, total },
   items: [ { name, state: "open"|"merged"|"closed", onRemote, hasWorktree,
              pr: null | {number, state: "OPEN"|"MERGED"|"CLOSED", url, base, mergedAt, closedAt},
@@ -73,10 +73,15 @@ branches: { repo: "owner/repo"|null, bases: ["main","staging"], prSource: "gh"|"
   `gh pr list --state open`). A fresh worktree branch with nothing on it shows as `open` with `vsMain.ahead` 0; the page can dim it.
 - **Totals** `merged`, `closed`, `mergedToday` are `null` without `gh` (unknown, never a guess). `mergedToday` = merged since 00:00 in the
   time zone of `buildStart` (+02:00), not UTC.
-- **List cap.** All open branches (up to 60) and the 30 newest merged/closed; `truncated` says it was cut; totals still count everything.
+- **List cap.** All open branches (up to 60) and the 50 newest merged/closed; `truncated` says it was cut; totals still count everything.
   Order: open first, newest commit first; then merged/closed, newest first.
-- **ahead/behind** are `git rev-list --left-right --count <base>...<branch>` against `origin/main` and `origin/staging`
-  (the local branch if there is no remote). `null` when the ref is gone (deleted after merge).
+- **ahead/behind** are `git rev-list --left-right --count <base>...<branch>` against `origin/staging` (`vsStaging`, the integration branch;
+  the block's `base` says so) and, as an extra that costs one more `rev-list` per listed branch, `origin/main` (`vsMain`). The local branch is
+  used if there is no remote. `null` when the ref is gone (deleted after merge).
+- **Stale refs.** The job never fetches (CTO, MIN-4460), so `origin/*` refs are as old as the founder's last `git fetch`. Remote state comes
+  from `gh`. `staleRefs` counts open PRs whose head `gh` knows at a commit the local `origin/<branch>` does not have (or has not at all);
+  when it is above 0 the block carries a warning (`blocks.branches.error`) and ahead/behind/file counts for those branches may be old.
+  `null` without `gh`. Run `git fetch` by hand in the repo to clear it.
 - **files/added/removed** are `git diff --numstat <base>...<branch>`: the PR's base, else the nearer base (smaller `ahead`; main on a tie).
   `statsBase` names it. When the ref is gone the PR's own numbers are used. A binary file counts as a file with 0 lines.
 - **Last commit** is the committer time of the newer of the local and remote tip, and the git author *name* (never an e-mail).
@@ -84,14 +89,16 @@ branches: { repo: "owner/repo"|null, bases: ["main","staging"], prSource: "gh"|"
   (assignee, or Role label for the CTO; same rules as the `linear` block), else from an author address `hello+<role>@minhos.ai`;
   `agentFrom` says which. Unknown stays `null`, never guessed. Linear down in that run means no issue match, only the author rule.
 - **Not in the snapshot:** worktree paths (a boolean `hasWorktree` only, MIN-4458), e-mail addresses, tokens. Error texts have the home folder
-  replaced by `~`, and a `gh` token pattern is refused like any key (`assert_clean`).
-- **Commands run** (read-only; a test pins the list): `git rev-parse`, `git remote get-url`, `git fetch --prune --quiet origin` (updates
-  remote-tracking refs only), `git for-each-ref`, `git worktree list --porcelain`, `git rev-list`, `git diff --numstat`, and one
-  `gh pr list --state all --limit 200 --json ...`. No merge, delete, push, checkout or write of any kind. `gh` is looked up on PATH, then at
-  `/opt/homebrew/bin`, `/usr/local/bin`, `/usr/bin` (launchd's PATH has none of them). It uses the login the founder already has on the Mac.
+  and any `/Users/<name>` or `/home/<name>` replaced by `~`, and a `gh` token pattern is refused like any key (`assert_clean`).
+- **Commands run** (read-only; a test pins the list, another fails on write words in the source): `git rev-parse`, `git remote get-url`,
+  `git for-each-ref`, `git worktree list --porcelain`, `git rev-list`, `git diff --numstat`, all with `GIT_OPTIONAL_LOCKS=0`, and exactly one
+  `gh pr list --state all --limit 200 --json ...` per run with a 10 s timeout. No fetch, pull, merge, delete, push, checkout or write of any kind.
+  `gh` is looked up on PATH, then at `/opt/homebrew/bin`, `/usr/local/bin`, `/usr/bin`, and `install.sh` also puts `gh`'s folder on the job's
+  PATH (launchd's has none of them). It uses the login the founder already has on the Mac. Every run logs a line to `run.log`:
+  `branches: prSource=gh, staleRefs=0, gh=/opt/homebrew/bin/gh, error=none`.
 - **Config** (all optional, in `hand-set.json` under `config.branches`): `repoPath` (default `~/AppDevelopment/healthapp`), `slug`
   (default: read from `origin`), `bases` (default `["main","staging"]`).
-- **Size.** About 0.5 KB per branch; 12 branches add about 6 KB to a 20 KB snapshot. The ingest limit is 256 KB.
+- **Size.** About 0.5 KB per branch; 12 branches add about 6 KB to a 20 KB snapshot; the caps (60 open, 50 closed) keep it far under the ingest limit of 256 KB.
 
 ## hand-set.json fields (copy `hand-set.sample.json`, edit, next run picks it up)
 `deadline`, `buildStart`, `freeze`, `submitBy`: ISO with offset. `current`: milestone id or null (null = first milestone not finished).

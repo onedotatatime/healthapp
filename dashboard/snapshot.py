@@ -8,7 +8,7 @@ Stdlib only (Python 3.9+). Five blocks, each with its own asOf and error:
   usage   ~/.claude/projects transcripts, read through the same scan()/build_run() code as conductor's bin/usage
   money   usage tokens by model x rates.json x eurPerUsd. An estimate at API list price, never a bill
   hand    ~/.healthapp-dashboard/hand-set.json (credits, demo steps, clean runs, milestone metadata)
-  branches  the healthapp repo's branches: local git (read-only, plus a `git fetch --prune`) and PRs through `gh` (MIN-4460)
+  branches  the healthapp repo's branches: local git (read-only: no fetch, no lock, no write) and PRs through one `gh pr list` call (MIN-4460)
 A block that fails keeps its last good value, gets a newer `error`, keeps its old `asOf`; the others stay fresh.
 No key is ever printed, logged or put in the snapshot (see assert_clean).
 """
@@ -47,6 +47,7 @@ def clean(msg):
     home = os.path.expanduser('~')
     if len(home) > 1:
         msg = msg.replace(home, '~')              # a local path never leaves the Mac (MIN-4458)
+    msg = re.sub(r'/(?:Users|home)/[^/\s:]+', '~', msg)   # and no other account's home folder either
     return msg[:300]
 
 
@@ -371,15 +372,18 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
 REPO_DEFAULT = '~/AppDevelopment/healthapp'
 BRANCH_BASES = ('main', 'staging')
 GH_CANDIDATES = ('/opt/homebrew/bin/gh', '/usr/local/bin/gh', '/usr/bin/gh')   # launchd's PATH has none of them
-GH_FIELDS = 'number,state,headRefName,baseRefName,url,title,mergedAt,closedAt,additions,deletions,changedFiles,author'
+GH_FIELDS = 'number,state,headRefName,headRefOid,baseRefName,url,title,mergedAt,closedAt,additions,deletions,changedFiles,author'
 ISSUE_RE = re.compile(r'(?<![a-z0-9])min-(\d{1,6})(?!\d)', re.I)
 AUTHOR_TAG_RE = re.compile(r'^hello\+([a-z0-9]+)@', re.I)
-MAX_OPEN_LISTED, MAX_CLOSED_LISTED = 60, 30
+MAX_OPEN_LISTED, MAX_CLOSED_LISTED = 60, 50      # the CTO's cap: at most 50 closed/merged branches (MIN-4460)
+GH_TIMEOUT = 10                                     # seconds, one gh call per run
+PRIMARY_BASE = 'staging'                            # the integration branch: ahead/behind is counted against it
 
 
 def default_runner(argv, cwd, timeout):
     """(returncode, stdout, stderr). A missing binary raises FileNotFoundError; a timeout answers 124."""
-    env = dict(os.environ, GH_PROMPT_DISABLED='1', GH_NO_UPDATE_NOTIFIER='1', GIT_TERMINAL_PROMPT='0', NO_COLOR='1', LC_ALL='C')
+    # GIT_OPTIONAL_LOCKS=0: `git status`-style reads must not take the index lock while agents use the same repo.
+    env = dict(os.environ, GIT_OPTIONAL_LOCKS='0', GH_PROMPT_DISABLED='1', GH_NO_UPDATE_NOTIFIER='1', GIT_TERMINAL_PROMPT='0', NO_COLOR='1', LC_ALL='C')
     try:
         p = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=timeout, env=env)
     except subprocess.TimeoutExpired:
@@ -426,7 +430,7 @@ def slug_of(url):
 def read_gh_prs(runner, repo, gh_bin):
     """({head branch: its PR}, None) or (None, reason). Never raises: a missing or logged-out gh is data, not a failure."""
     try:
-        rc, out, err = runner([gh_bin, 'pr', 'list', '--state', 'all', '--limit', '200', '--json', GH_FIELDS], repo, 40)
+        rc, out, err = runner([gh_bin, 'pr', 'list', '--state', 'all', '--limit', '200', '--json', GH_FIELDS], repo, GH_TIMEOUT)
     except FileNotFoundError:
         return None, 'gh not installed'
     if rc != 0:
@@ -501,9 +505,8 @@ def build_branches(bcfg, now, tz, nodes, agents_cfg, role_labels, runner=default
         rc, url, _ = runner(['git', 'remote', 'get-url', 'origin'], repo, 10)
         slug = slug_of(url) if rc == 0 else None
     warnings = []
-    rc, _, err = runner(['git', 'fetch', '--prune', '--quiet', 'origin'], repo, 40)
-    if rc != 0:
-        warnings.append('git fetch failed, showing the last fetched state: %s' % (clean(err.strip()) or 'exit %d' % rc))
+    # No `git fetch` here (CTO, MIN-4460): the job only reads. Remote state comes from `gh`; the remote-tracking refs are
+    # used as they are, and `staleRefs` / a warning say when `gh` knows better than they do.
     refs = read_refs(runner, repo)
     base_ref = {}
     for b in bases:
@@ -517,6 +520,14 @@ def build_branches(bcfg, now, tz, nodes, agents_cfg, role_labels, runner=default
     if gh_err:
         warnings.append(gh_err)
     prs = prs or {}
+    stale = None
+    if not gh_err:
+        # an open PR whose head the local origin/<branch> does not have, or has at another commit: the refs are behind gh
+        stale = sum(1 for h, p in prs.items() if p['state'] == 'OPEN' and h not in bases
+                    and (refs.get(h, {}).get('remote') or {}).get('sha') != p.get('headRefOid'))
+        if stale:
+            warnings.append('local remote-tracking refs are behind gh for %d open PR%s; ahead/behind and file counts may be old '
+                            '(this job never fetches)' % (stale, '' if stale == 1 else 's'))
     nodes_by_id = {n['identifier']: n for n in (nodes or [])}
     day_start = now.astimezone(tz).replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -577,7 +588,7 @@ def build_branches(bcfg, now, tz, nodes, agents_cfg, role_labels, runner=default
             'lastCommitAt': iso(tip['t']) if tip else None,
             'lastCommitAuthor': (tip['author'] if tip else ((pr or {}).get('author') or {}).get('login')) or None,
             'issue': issue, 'issueFrom': issue_from, 'agent': agent, 'agentFrom': agent_from})
-    data = {'repo': slug, 'bases': list(bases), 'prSource': 'none' if gh_err else 'gh',
+    data = {'repo': slug, 'bases': list(bases), 'base': PRIMARY_BASE if PRIMARY_BASE in bases else bases[0], 'staleRefs': stale, 'prSource': 'none' if gh_err else 'gh',
             'truncated': truncated, 'totals': totals, 'items': items}
     if warnings:
         data['_warning'] = '; '.join(warnings)
@@ -741,6 +752,10 @@ def main(argv=None):
         code = push(text, conf['url'], conf['key'], conf['anon'])
         status += ', pushed HTTP %s' % code
     print('%s %s (%d bytes)' % (iso(now), status, len(text)))
+    # One line for the job's log (CTO, MIN-4460): proves `gh` ran and could read its login under launchd's PATH.
+    br, berr = snap.get('branches') or {}, snap['blocks']['branches']['error']
+    print('%s branches: prSource=%s, staleRefs=%s, gh=%s, error=%s' % (
+        iso(now), br.get('prSource', 'none'), br.get('staleRefs'), find_gh(), berr['message'] if berr else 'none'))
     return 0
 
 

@@ -32,10 +32,10 @@ def commit(repo, path, lines, when, who='Tester', mail='t@example.com', msg='c')
        GIT_COMMITTER_DATE=when, GIT_AUTHOR_DATE=when)
 
 
-def pr(n, head, state, base='staging', title=None, merged=None, closed=None, add=1, dele=0, files=1, login='onedotatatime'):
+def pr(n, head, state, base='staging', title=None, merged=None, closed=None, add=1, dele=0, files=1, login='onedotatatime', oid=None):
     return {'number': n, 'state': state, 'headRefName': head, 'baseRefName': base, 'url': 'https://github.com/o/r/pull/%d' % n,
             'title': title or 't%d' % n, 'mergedAt': merged, 'closedAt': closed or merged, 'additions': add, 'deletions': dele,
-            'changedFiles': files, 'author': {'login': login}}
+            'changedFiles': files, 'author': {'login': login}, 'headRefOid': oid or '0' * 40}
 
 
 class World:
@@ -90,24 +90,25 @@ class World:
             # ref gone: merged 21:30Z on the 13th = 23:30 Athens on the 13th (yesterday)
             pr(10, 'chore/gone-old', 'MERGED', base='staging', merged='2026-11-13T21:30:00Z'),
         ]
+        self.prs[0]['headRefOid'] = sh(r, 'rev-parse', 'origin/feat/min-4450-a')      # gh and the local refs agree
 
-    def runner(self, gh, log=None, fail_fetch=False):
+    def runner(self, gh, log=None, timeouts=None):
         def run(argv, cwd, timeout):
             if log is not None:
                 log.append(list(argv))
+            if timeouts is not None:
+                timeouts.append((argv[0], timeout))
             if argv[0] == GH:
                 return gh(argv)
-            if fail_fetch and argv[1:2] == ['fetch']:
-                return 128, '', 'fatal: unable to access remote %s' % os.path.expanduser('~')
             return sn.default_runner(argv, cwd, timeout)
         return run
 
     def ok_gh(self):
         return lambda argv: (0, json.dumps(self.prs), '')
 
-    def block(self, gh=None, nodes=None, log=None, fail_fetch=False, bcfg=None):
+    def block(self, gh=None, nodes=None, log=None, timeouts=None, bcfg=None):
         return sn.build_branches(dict(repoPath=self.repo, **(bcfg or {})), NOW, TZ, nodes, CFG['agents'], CFG['roleLabels'],
-                                 self.runner(gh or self.ok_gh(), log, fail_fetch), GH)
+                                 self.runner(gh or self.ok_gh(), log, timeouts), GH)
 
 
 def node(ident, who=None, label=None):
@@ -165,6 +166,25 @@ class Contract(BranchesBase):
         self.assertEqual((ns['statsBase'], ns['vsStaging']['ahead'], ns['vsMain']['ahead']), ('staging', 2, 3))
         self.assertEqual((ns['files'], ns['added'], ns['removed']), (2, 5, 0))      # n.txt 5 lines + a binary file that has none
 
+    def test_ahead_behind_is_counted_against_staging_and_the_block_says_so(self):
+        d = self.w.block()
+        self.assertEqual(d['base'], 'staging')
+        a = self.items(d)['feat/min-4450-a']
+        self.assertEqual((a['vsStaging'], a['vsMain']), ({'ahead': 2, 'behind': 0}, {'ahead': 3, 'behind': 0}))   # vsMain stays as the extra
+
+    def test_stale_remote_refs_show_up_when_gh_knows_better(self):
+        d = self.w.block()
+        self.assertEqual((d['staleRefs'], d.get('_warning')), (0, None))
+        moved = copy.deepcopy(self.w.prs)
+        moved[0]['headRefOid'] = 'f' * 40                                   # gh says the head is elsewhere: the local ref is old
+        d = self.w.block(gh=lambda argv: (0, json.dumps(moved), ''))
+        self.assertEqual(d['staleRefs'], 1)
+        self.assertEqual(d['_warning'], 'local remote-tracking refs are behind gh for 1 open PR; ahead/behind and file counts may be old (this job never fetches)')
+        unfetched = self.w.prs + [pr(30, 'feat/never-fetched', 'OPEN'), pr(31, 'feat/never-fetched-2', 'OPEN')]
+        d = self.w.block(gh=lambda argv: (0, json.dumps(unfetched), ''))   # open PRs with no local origin/ ref at all
+        self.assertEqual(d['staleRefs'], 2)
+        self.assertIn('2 open PRs', d['_warning'])
+
     def test_states_and_totals(self):
         d = self.w.block()
         it = self.items(d)
@@ -199,7 +219,7 @@ class Contract(BranchesBase):
         many = self.w.prs + [pr(100 + i, 'old/b%d' % i, 'MERGED', merged='2026-11-12T10:%02d:00Z' % (i % 60)) for i in range(50)]
         d = self.w.block(gh=lambda argv: (0, json.dumps(many), ''))
         self.assertTrue(d['truncated'])
-        self.assertEqual(sum(i['state'] != 'open' for i in d['items']), sn.MAX_CLOSED_LISTED)
+        self.assertEqual(sum(i['state'] != 'open' for i in d['items']), 50)      # the CTO's cap, written as the literal
         self.assertEqual(d['totals']['total'], 8 + 50)
         self.assertEqual(d['totals']['merged'], 3 + 50)
         self.assertEqual(d['totals']['open'], 4)                            # every open branch is listed
@@ -207,7 +227,7 @@ class Contract(BranchesBase):
     def test_fixture_and_generated_items_have_the_same_keys(self):
         fx = json.load(open(os.path.join(os.path.dirname(HERE), 'fixtures', 'snapshot.example.json')))
         gen = self.w.block()
-        self.assertEqual(sorted(fx['branches']), sorted(k for k in gen))
+        self.assertEqual(sorted(fx['branches']), sorted(k for k in gen))      # includes `base` and `staleRefs`
         self.assertEqual(sorted(fx['branches']['totals']), sorted(gen['totals']))
         for i in fx['branches']['items'] + gen['items']:
             self.assertEqual(sorted(i), sorted(gen['items'][0]))
@@ -271,11 +291,10 @@ class Failures(BranchesBase):
         d = self.w.block(gh=lambda argv: (0, '<html>', ''))
         self.assertEqual(d['_warning'], 'gh failed: answer was not JSON')
 
-    def test_failed_fetch_still_returns_the_last_fetched_state(self):
-        d = self.w.block(fail_fetch=True)
-        self.assertTrue(d['_warning'].startswith('git fetch failed'))
-        self.assertNotIn(os.path.expanduser('~'), d['_warning'])            # the home path is scrubbed from every message
-        self.assertEqual(d['prSource'], 'gh')
+    def test_a_gh_timeout_is_a_warning_with_local_data_not_a_failed_snapshot(self):
+        d = self.w.block(gh=lambda argv: (124, '', 'timed out after 10s'))
+        self.assertEqual(d['_warning'], 'gh failed: timed out after 10s')
+        self.assertEqual((d['prSource'], d['staleRefs']), ('none', None))
         self.assertGreater(len(d['items']), 0)
 
     def test_partial_block_is_fresh_data_with_an_error_and_never_fails_the_snapshot(self):
@@ -313,16 +332,49 @@ class Safety(BranchesBase):
     def test_only_read_commands_run(self):
         log = []
         self.w.block(log=log)
-        git_cmds = {a[1] if a[1] != '-C' else a[3] for a in log if a[0] == 'git'}
-        self.assertEqual(git_cmds, {'rev-parse', 'remote', 'fetch', 'for-each-ref', 'worktree', 'rev-list', 'diff'})
+        git_cmds = {a[1] for a in log if a[0] == 'git'}
+        self.assertEqual(git_cmds, {'rev-parse', 'remote', 'for-each-ref', 'worktree', 'rev-list', 'diff'})   # no fetch (CTO, MIN-4460)
         for a in log:
             if a[0] == 'git' and a[1] == 'worktree':
                 self.assertEqual(a[2:4], ['list', '--porcelain'])           # never `worktree add|remove|prune`
-            if a[0] == 'git' and a[1] == 'fetch':
-                self.assertEqual(a[2:], ['--prune', '--quiet', 'origin'])   # remote-tracking refs only, never a pull or a push
         gh = [a for a in log if a[0] == GH]
         self.assertEqual(len(gh), 1)
         self.assertEqual(gh[0][1:4], ['pr', 'list', '--state'])             # one list call, no `pr merge|close|edit`
+
+    def test_the_branches_code_has_no_write_word(self):
+        # The CTO: a test fails on these words. Scan the executable source of the branches section, comments stripped.
+        src = open(os.path.join(os.path.dirname(HERE), 'snapshot.py')).read()
+        sec = src[src.index('- branches (MIN-4460)'):src.index('- hand\n')]
+        code = '\n'.join(l.split('  #')[0] for l in sec.splitlines() if not l.strip().startswith('#'))
+        for w in ("'fetch'", "'pull'", "'push'", "'merge'", "'prune'", "'remove'", "'checkout'", "'reset'", "'clean'", "'gc'",
+                  "'-d'", "'-D'", "'close'", "'edit'", "'create'", "'--delete'", "'delete'", "'mutation'", '"fetch"', '"mutation"'):
+            self.assertNotIn(w, code, w)
+        self.assertNotIn('git fetch', code)
+        self.assertEqual(code.count("'pr', 'list'"), 1)                     # one gh call
+
+    def test_every_command_runs_without_optional_locks(self):
+        rc, out, _ = sn.default_runner(['sh', '-c', 'printf %s "$GIT_OPTIONAL_LOCKS"'], self.w.repo, 10)
+        self.assertEqual((rc, out), (0, '0'))
+
+    def test_one_gh_call_with_a_ten_second_timeout(self):
+        timeouts = []
+        self.w.block(timeouts=timeouts)
+        gh = [t for t in timeouts if t[0] == GH]
+        self.assertEqual(gh, [(GH, 10)])
+
+    def test_the_whole_snapshot_has_no_home_folder_path(self):
+        home = os.path.expanduser('~')
+        err = 'boom reading %s/.config/gh/hosts.yml and /Users/somebody/x' % home
+        good = copy.deepcopy(HAND)
+        good['config'] = dict(good['config'], branches={'repoPath': self.w.repo})
+        def nokey():
+            raise sn.BlockError('no key at %s/.claude/.env.agents' % home)
+        snap = sn.build(NOW, good, {'models': {}, 'source': 's'}, {}, home + '/nonexistent', home + '/nonexistent/bin/usage', nokey,
+                        runner=self.w.runner(lambda argv: (1, '', err)), gh_bin=GH)
+        text = json.dumps(snap)
+        self.assertIn('gh failed', text)                                    # the dirty text really went through the block
+        self.assertNotIn(home, text)
+        self.assertNotIn('/Users/', text)
 
     def test_nothing_local_or_personal_leaves_the_block(self):
         text = json.dumps(self.w.block())
