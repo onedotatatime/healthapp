@@ -123,7 +123,7 @@ function Connect({ busy, error, onToken, onCode, home }: { busy: boolean; error:
       <p id="typed-help" className="muted" style={{ fontSize: 13 }}>The code works once and lasts two minutes.</p>
       {(error || typedError) && <ErrorNote>{error ?? typedError}</ErrorNote>}
       <p>
-        <Link to={home}>Back</Link>
+        <Link to={home} className="back">Back</Link>
       </p>
     </main>
   );

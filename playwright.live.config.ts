@@ -4,6 +4,7 @@ import { defineConfig } from '@playwright/test';
 // Not a PR gate and not in the smoke job. Run: HEALTHAPP_LIVE_URL=... HEALTHAPP_DEMO_PASSCODE=... npx playwright test -c playwright.live.config.ts
 export default defineConfig({
   testDir: 'e2e-live',
+  testMatch: 'exam-journey.spec.ts',
   timeout: 150_000,
   retries: 0,
   workers: 1,

@@ -25,10 +25,10 @@ export function Health() {
   }, []);
 
   return (
-    <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 480, margin: '0 auto', padding: '2rem 1rem' }}>
+    <main style={{ fontFamily: 'var(--font)', maxWidth: 480, margin: '0 auto', padding: '2rem 1rem' }}>
       <h1 style={{ fontSize: '1.25rem' }}>healthapp health check</h1>
       {envState.status === 'error' ? (
-        <p role="alert" data-testid="env-error" style={{ color: '#b91c1c' }}>
+        <p role="alert" data-testid="env-error" style={{ color: 'var(--color-flag-text)' }}>
           {envState.message}
         </p>
       ) : (

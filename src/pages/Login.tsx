@@ -42,44 +42,47 @@ export function Login() {
 
   return (
     <main className="page">
-      <h1>Sign in to the demo</h1>
-      <p className="muted">Synthetic people only. Type the demo passcode, then choose who to sign in as.</p>
-      {envState.status === 'error' ? (
-        <ErrorNote>{envState.message}</ErrorNote>
-      ) : (
-        <form onSubmit={(e) => go('patient', e)} noValidate>
-          <label className="field">
-            <span>Demo passcode</span>
-            <input
-              type="password"
-              name="passcode"
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              value={passcode}
-              onChange={(e) => setPasscode(e.target.value)}
-              aria-describedby={error ? 'login-error' : undefined}
-            />
-          </label>
-          <div className="btn-stack">
-            <button type="button" className="btn primary block" data-testid="login-patient" disabled={busy !== null} onClick={() => go('patient')}>
-              Sign in as the patient
-            </button>
-            <button type="button" className="btn block" data-testid="login-doctor" disabled={busy !== null} onClick={() => go('doctor')}>
-              Sign in as the doctor
-            </button>
-            {envState.status === 'ok' && envState.env === 'demo' && (
-              <button type="button" className="btn block" data-testid="login-founder" disabled={busy !== null} onClick={() => go('founder')}>
-                Sign in as the founder
+      <div className="signin">
+        <img className="lockup" src="/brand/pathien-lockup.svg" alt="Pathien" width={150} height={40} />
+        <h1>Sign in to the demo</h1>
+        <p className="muted">Synthetic people only. Type the demo passcode, then choose who to sign in as.</p>
+        {envState.status === 'error' ? (
+          <ErrorNote>{envState.message}</ErrorNote>
+        ) : (
+          <form onSubmit={(e) => go('patient', e)} noValidate>
+            <label className="field">
+              <span>Demo passcode</span>
+              <input
+                type="password"
+                name="passcode"
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                value={passcode}
+                onChange={(e) => setPasscode(e.target.value)}
+                aria-describedby={error ? 'login-error' : undefined}
+              />
+            </label>
+            <div className="btn-stack">
+              <button type="button" className="btn primary block" data-testid="login-patient" disabled={busy !== null} onClick={() => go('patient')}>
+                Sign in as the patient
               </button>
-            )}
-          </div>
-          <div style={{ marginTop: 'var(--space-4)' }} id="login-error">
-            {busy && <Spinner label="Signing in" />}
-            {error && <ErrorNote>{error}</ErrorNote>}
-          </div>
-        </form>
-      )}
+              <button type="button" className="btn block" data-testid="login-doctor" disabled={busy !== null} onClick={() => go('doctor')}>
+                Sign in as the doctor
+              </button>
+              {envState.status === 'ok' && envState.env === 'demo' && (
+                <button type="button" className="btn block" data-testid="login-founder" disabled={busy !== null} onClick={() => go('founder')}>
+                  Sign in as the founder
+                </button>
+              )}
+            </div>
+            <div style={{ marginTop: 'var(--space-4)' }} id="login-error">
+              {busy && <Spinner label="Signing in" />}
+              {error && <ErrorNote>{error}</ErrorNote>}
+            </div>
+          </form>
+        )}
+      </div>
     </main>
   );
 }

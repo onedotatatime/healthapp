@@ -5,6 +5,7 @@ import { ApiError } from '../../api/call';
 import type { DocumentDraft } from '../../api/contract';
 import { ErrorNote, Spinner } from '../../components/Primitives';
 import { ProvenanceMark } from '../../components/ProvenanceMark';
+import { PatientScreen } from '../../components/Shell';
 import { useExams } from './context';
 import { CheckThis, OutOfRange } from './Marks';
 import {
@@ -48,7 +49,7 @@ export function ReviewPanel({ draft, photoUrl, backTo, onRetake, onSaved }: { dr
   }
 
   return (
-    <main className="page wide" data-testid="review">
+    <PatientScreen back={backTo ?? '/patient'} className="wide" data-testid="review">
       {backTo && <p><Link to={backTo} className="back" data-testid="review-back">Back to my exams</Link></p>}
       <h1>Check what we read</h1>
       <p className="muted">Fix anything that is wrong, then save. Until you save it, this exam stays out of your record.</p>
@@ -122,6 +123,6 @@ export function ReviewPanel({ draft, photoUrl, backTo, onRetake, onSaved }: { dr
           </div>
         </form>
       </div>
-    </main>
+    </PatientScreen>
   );
 }

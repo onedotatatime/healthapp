@@ -1,6 +1,9 @@
 """Generate the blind synthetic cohort + the test personas (MIN-4505). Seeded: same seed, same files.
 Synthetic only. Not tuned to any real person. No names, no real ids, country only.
-Usage: python3 generate.py <out_dir>
+Usage: python3 generate.py <out_dir> [--n 400] [--sarcoid S]
+--n       cohort size (default 400; the default output is byte-identical to the committed data/synthetic files).
+          Common patterns scale with n/400; the rare patterns keep their size (fewer than 5, never shown).
+--sarcoid size of the rare_sarcoid_like pattern (the demo patient's pattern). Default 3. Used for the 5,000 run (MIN-4504).
 """
 import json, random, sys, os
 from match import LAB_DEFS, IMAGING, SYMPTOMS, SPECIALTIES, features
@@ -106,17 +109,21 @@ def build(rng, pid, intended, country, age, sex, opt_in):
             "symptoms": sorted(symptoms), "specialties": sorted(set(specs))}
 
 
-def make_cohort(rng):
+def make_cohort(rng, n=N, sarcoid=None):
     cw = [c for c, w in COUNTRIES for _ in range(w)]
     people, tags = [], []
     for name, size, core, ages, f_share in CLUSTERS:
+        if name == "rare_sarcoid_like" and sarcoid is not None:
+            size = sarcoid
+        elif n != N and not name.startswith("rare_"):
+            size = round(size * n / N)
         for _ in range(size):
             intended = {c for c, p in core.items() if rng.random() < p}
             for c in rng.sample(NOISE_CODES, rng.choice([0, 0, 1, 2])):   # incidental extras
                 intended.add(c)
             people.append((intended, rng.choice(ages), "F" if rng.random() < f_share else "M"))
             tags.append(name)
-    while len(people) < N:   # noise patients: scattered, no shared pattern
+    while len(people) < n:   # noise patients: scattered, no shared pattern
         intended = set(rng.sample(NOISE_CODES, rng.randint(1, 4)))
         people.append((intended, rng.randrange(6), "F" if rng.random() < .5 else "M"))
         tags.append("noise")
@@ -136,18 +143,22 @@ def make_persona(rng, pid, intended, opt_in, country="GR", age="50-59", sex="F")
     return build(rng, pid, set(intended), country, age, sex, opt_in)
 
 
-def main(out):
-    os.makedirs(out, exist_ok=True)
-    rng = random.Random(SEED)
-    cohort, truth = make_cohort(rng)
+def make_personas():
     prng = random.Random(SEED + 1)
     maria_codes = ["CRP_high", "RF_positive", "anti_CCP_positive", "joint_pain", "morning_stiffness", "spec_rheumatology"]
-    personas = {
+    return {
         "maria": make_persona(prng, "persona-maria", maria_codes, True),
         "maria_not_opted_in": make_persona(prng, "persona-maria-no-optin", maria_codes, False),
         "rare": make_persona(prng, "persona-rare", ["ACE_high", "img_hilar_lymphadenopathy", "cough", "dry_eyes", "spec_pulmonology"], True, "DE", "40-49", "M"),
         "no_pattern": make_persona(prng, "persona-no-pattern", ["spec_gp"], True, "FR", "30-39", "F"),
     }
+
+
+def main(out, n=N, sarcoid=None):
+    os.makedirs(out, exist_ok=True)
+    rng = random.Random(SEED)
+    cohort, truth = make_cohort(rng, n, sarcoid)
+    personas = make_personas()
     dump = lambda name, obj: open(os.path.join(out, name), "w").write(json.dumps(obj, indent=1, sort_keys=True) + "\n")
     dump("cohort.json", {"synthetic": True, "label": "seeded, synthetic", "seed": SEED, "records": cohort})
     dump("persona-maria.json", personas["maria"])
@@ -157,9 +168,17 @@ def main(out):
     for t in truth.values(): sizes[t] = sizes.get(t, 0) + 1
     dump("cohort-seed-summary.json", {"seed": SEED, "cohort_size": len(cohort), "opted_in": sum(r["matching_opt_in"] for r in cohort),
                                       "seeded_patterns": sizes})
+    if n != N:   # which seeded pattern made each row: for the dot colours of the demo page only, never read by the matching
+        dump("cohort-truth.json", {"seed": SEED, "n": n, "sarcoid": sarcoid, "truth": truth})
     print("cohort", len(cohort), "opted_in", sum(r["matching_opt_in"] for r in cohort))
     print("seeded patterns", json.dumps(sizes, sort_keys=True))
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "out")
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("out", nargs="?", default="out")
+    ap.add_argument("--n", type=int, default=N)
+    ap.add_argument("--sarcoid", type=int, default=None)
+    a = ap.parse_args()
+    main(a.out, a.n, a.sarcoid)

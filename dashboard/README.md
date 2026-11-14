@@ -5,7 +5,7 @@ pushes it to the ingest function. Stdlib Python 3.9+. A launchd job on the found
 
 ```
 python3 dashboard/snapshot.py --home ~/.healthapp-dashboard --out /tmp/snap.json      # local file, no push
-python3 -m unittest discover -s dashboard/tests                                        # 204 tests, about 95 s (the branches tests build real git repositories; the chat tests stub claude)
+python3 -m unittest discover -s dashboard/tests                                        # 412 tests, about 145 s (the branches and repo tests build real git repositories; the chat tests stub claude)
 deno test --allow-read supabase/functions/                                             # 23 tests (key matrix, limits, boundaries)
 deno check supabase/functions/*/index.ts && deno lint supabase/functions
 dashboard/install.sh [--viewer-url BASE] [--rotate]                                    # install or update the Mac job
@@ -48,6 +48,7 @@ Closed lid while it must keep running: `sudo pmset -a disablesleep 1`, and `0` a
 | `money` | tokens by model x `rates.json` x `config.eurPerUsd` | an estimate at API list price, cache writes at the 5-minute rate; models not in the table map to the nearest family (`rateCard.aliased`); a model with no family counts in `rateCard.unpricedTokens` |
 | `hand` | `~/.healthapp-dashboard/hand-set.json` | only source for credits, demo steps, clean runs, build/deploy labels, milestone names and gates |
 | `branches` | the healthapp repo's local git (read-only: no fetch, no lock, no write) and its PRs through one `gh pr list --state all` call (MIN-4460) | see "Branches block" below. Local git alone gives the branches; `gh` adds PR state. A missing or logged-out `gh` is not a failed block |
+| `repo` | the same repo, **numbers only** (MIN-4568): git read-only plus one more `gh pr list` | see "Repo block" below. Each group of fields fails on its own; a field that cannot be read is left out and the reason goes in `blocks.repo.error` |
 
 A failed block keeps its last good value (from `<home>/state.json`), gets a newer `error`, keeps its old `asOf`.
 `money` fails with `usage` (it needs its events).
@@ -55,6 +56,32 @@ A failed block keeps its last good value (from `<home>/state.json`), gets a newe
 the local-git data, with PR fields `null`, `prSource: "none"` and `blocks.branches.error` set (`gh not installed`, `gh not authenticated`,
 `gh failed: ...`, a `gh` call that takes over 10 s is `gh failed: timed out after 10s`). Nothing in this block can fail the
 other blocks.
+
+## Agent leaderboard: `tokens.perAgent` (MIN-4583, additive: `schema` stays 1)
+
+`tokens.perAgent` is the build leaderboard, one row per agent: `{ "n": "Cron", "v": 101214493, "mins": 514.7, "runs": 43 }`.
+
+| Field | Meaning |
+| -- | -- |
+| `n` | agent name (as before) |
+| `v` | weighted tokens since `buildStart` (as before: in x1, cache write x2, cache read x0.1, out x5) |
+| `mins` | minutes worked since `buildStart`, one decimal |
+| `runs` | number of runs since `buildStart` |
+
+- **A run** is one subagent transcript file (one dispatch of that agent) with at least one request after `buildStart`. Requests are the same
+  deduped events that give the tokens, so a request is never counted in two runs.
+- **A run's minutes** are the gaps between its consecutive requests (first to last), **each gap capped at 300 s** (the idle rule of conductor
+  `bin/usage`, `PAUSE_S`). A long CI wait or an idle gap counts 5 minutes, never more, so the figure is active time, not wall clock. A run of
+  one request has no span and counts 0. The last model call of a run has no end timestamp, so it adds nothing: the figure is a little low, never high.
+- **An agent's `mins`** is the sum over its runs, so two runs in parallel add up: `mins` can exceed the minutes elapsed since `buildStart`. It
+  measures work done, like tokens do.
+- **Zeros:** all 13 configured agents are always present (an agent with no runs is `v: 0, mins: 0, runs: 0`). Built-in agents that are not in
+  `config.agents` (`general-purpose`, `web-fetch`, `Explore`) appear too, the biggest five by tokens. Sorted by `v`, biggest first, configured zeros
+  last in config order.
+- **Old feeds:** a feed without `mins` and `runs` (older snapshots, the Pages stub) is valid: readers treat them as absent, not as an error.
+- **Public Pages bundle:** `pages-bundle.sh` writes `perAgent: []` (an empty list, not fake values), and this change leaves it so: the
+  public stub carries no agent numbers, the live feed (behind the view key) does. Whether real per-agent numbers belong in the public stub is the
+  CTO's call (MIN-4583).
 
 ## Forecast block (MIN-4565, additive: `schema` stays 1)
 
@@ -114,6 +141,35 @@ branches: { repo: "owner/repo"|null, bases: ["main","staging"], base: "staging",
   (default: read from `origin`), `bases` (default `["main","staging"]`).
 - **Size.** About 0.5 KB per branch; 12 branches add about 6 KB to a 20 KB snapshot; the caps (60 open, 50 closed) keep it far under the ingest limit of 256 KB.
 
+## Repo block (MIN-4568, additive: `schema` stays 1)
+`blocks.repo` is `{asOf, error}` like the others; the data is the top-level key `repo`. **Numbers only: no branch name, path, title, author or
+e-mail** (CTO decision 7d254d3d), so it is safe in the public stub bundle. Every value is an integer; key order is fixed.
+```
+repo: { branchesOpen, branchesMerged, prsOpen, prsMerged, prsTotal,
+        commitsStaging, commitsStaging24h, commitsMain, commitsMain24h,
+        linesAdded, linesRemoved, filesChanged, codeLines, codeFiles }
+```
+| Field | Source and rule |
+| -- | -- |
+| `branchesOpen` | remote branches that are not `main`/`staging`: `git for-each-ref refs/remotes/origin` plus the heads of open PRs from `gh`, minus every branch whose newest PR is merged or closed. A branch with no PR counts as open |
+| `branchesMerged` | `gh pr list`: distinct head branches of merged PRs, `main` and `staging` excluded (the staging-to-main release PR is a PR, not a branch). Counts branches already deleted on origin |
+| `prsOpen`, `prsMerged`, `prsTotal` | `gh pr list --state all --limit 1000` (one call, 10 s timeout): the PRs in each state; `prsTotal` is every PR, closed-without-merge ones included |
+| `commitsStaging`, `commitsMain` | `git rev-list --count origin/<branch>` (the local branch if origin has none): every commit reachable from the branch |
+| `commitsStaging24h`, `commitsMain24h` | `git rev-list --count --since=<now - 24 h> origin/<branch>`: commits whose committer time is in the last 24 hours. A total and its 24 h figure are written together or left out together |
+| `linesAdded`, `linesRemoved`, `filesChanged` | `git log --first-parent -M --numstat --since=<buildStart> origin/staging`: the sum over every commit integrated into staging since the build start, with the same exclusions as `codeLines` (below) (a squash merge is one commit; a merge commit shows its diff against the first parent), so it is the size of the merged work, not of work in open branches. `filesChanged` counts distinct paths; a binary file counts as a file with no lines |
+| `codeLines`, `codeFiles` | `git grep -I -c '' origin/staging`: lines (and file count) of tracked text files at that commit, not the working copy. `-I` skips binary files; left out (code only, MIN-4568, measured on the real repo: `data/` json and `docs/` had inflated 45k lines of code to 87k): lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `*.lock`, `*.lockb`), `node_modules`, `vendor`, `third_party`, `*.min.js`, `*.min.css`, `*.map`, and data and prose files (`*.json`, `*.jsonl`, `*.ndjson`, `*.md`, `*.mdx`, `*.csv`, `*.svg`) |
+- **Failure.** Groups fail on their own: `prs` (gh: not installed, not authenticated, failed, not JSON), `commits staging`, `commits main`, `lines`, `code`
+  (`no staging branch found`, a git error, a timeout). A failed group is left out of `repo` (never `null`, never zero) and the block is fresh with
+  `blocks.repo.error` set, for example `prs: gh not authenticated`. Only when nothing at all could be read (folder gone, not a repository, every group
+  failed) does the block fail like the others: the last good `repo` stays, with its old `asOf` and the new error. Nothing here can fail another block.
+- **Fresh or stale.** The job never fetches (same rule as `branches`), so the git numbers are as new as the founder's last `git fetch` of that repo.
+  PR numbers come from `gh` and are live. When `gh` knows an open PR head that `origin/<branch>` does not have, the block says so
+  (`local remote-tracking refs are behind gh for n open PRs; commit and line numbers may be old`). Run `git fetch` by hand to clear it.
+- **Commands run** (read-only; a test pins the list): `git rev-parse`, `git for-each-ref`, `git rev-list --count`, `git log --numstat`, `git grep -I -c`, all
+  with `GIT_OPTIONAL_LOCKS=0`, and exactly one `gh pr list --state all`. No fetch, checkout, merge, delete or write. Paths read by `git grep` and `git log`
+  are counted and dropped, never stored or published.
+- **Config** (optional, `hand-set.json`): `config.repo.repoPath`, else `config.branches.repoPath`, else `~/AppDevelopment/healthapp`.
+
 ## directions.json (the project goal's five directions, MIN-4497)
 `~/.healthapp-dashboard/directions.json` is a second hand-set file, read at every run (`--directions PATH` overrides). `install.sh` seeds it from
 `directions.sample.json` once (all five `not_started`, the five titles) and never overwrites it. Shape: `{"directions": [{"n": 1..5, "title", "status", "note", "updatedAt"}]}`,
@@ -129,7 +185,7 @@ by `n`. A missing file omits the field (the page says "not reported yet"); a fil
 `credits[]`: `n`, `granted`, `used` (the founder or CTO types these; no source). `demo`: `build{state,label,at}`, `deploy{state,label}`, `url`,
 `cleanRuns`, `cleanTarget`, `steps[8]{n,t,s}` with `s` = pass|warn|fail|idle, `notes{"1".."8"}`. States are free to change by hand only.
 `config`: `forecast.cutOrder` (optional, issue ids), `linearProjectId`, `eurPerUsd`, `projectFilter`, caps, `agents[]` (display name, role, transcript `agentType`, Linear assignee name `linear`,
-or `roleLabel` for an agent that writes under the founder's account, the CTO: matched by its Role label, never by the assignee), `founder` (his Linear account name: issues
+or `roleLabel` for an agent that writes under the founder's account, the CTO: matched by its Role label, never by the assignee; `linear: null` for an agent with no Linear identity of its own: Release, CEO, E2E, and Scrum, SEO and JobScout, which write as Back, Anna and Spast under the same Role labels, so Linear cannot tell them apart and they show idle. One identity belongs to one agent: if two share it, the first keeps it and the block carries a warning). All 13 agents are listed in `agents[]` and `lanes[]`, `founder` (his Linear account name: issues
 assigned to him with no Role label count as `Founder`), `roleLabels` (Linear Role label -> role name in `tasks.byRole`). No secret belongs in this file.
 
 ## Dashboard chat bridge (MIN-4497: run 1 the answer path, run 2 the act path)
@@ -193,6 +249,7 @@ conductor's own `rows_by_role` and `bin/require-agent-model` (`bad_row`), `estUs
 and today's budget (`budget_reached`), then shown with `status: open|refused`.
 **Config** (`~/.healthapp-dashboard/hand-set.json`, `config.chat` and `config.agents[].chat`, no secret): see `hand-set.sample.json`. Agent file =
 `agentFile`, else `agentType`. Default `chat` per agent is Sonnet at medium effort; the CTO is Fable at medium.
+**The roster** is `config.agents` of `~/.healthapp-dashboard/hand-set.json`, the same list the feed reads: all 13 agents (Scrum, SEO and JobScout answer-only like the rest, no `chat` row, so Sonnet at medium). The bridge reads it once at start. `hand-set.sample.json` is the source; the installed file is the founder's copy, so `install.sh`, `chat_service.sh install` and `chat_service.sh sync-agents` run `sync_agents.py`, which only **appends** agents the sample has and the installed file lacks (matched by `n` or `agentType`; a hand edit is never overwritten; the first change keeps `hand-set.json.before-sync`, mode 600). `sync-agents` also restarts the loaded bridge (SIGTERM, KeepAlive starts it again). No list of agents is written anywhere else (the dev server reads the sample).
 **Files and logs.** `~/.healthapp-dashboard/chat/<id>.json` (mode 600, folder 700) holds the messages; `chat.log` gets one line per turn (kind, agent,
 short id, result, seconds, cost) and **no message text, no reply, no key**; `chat-audit.log` (from the guard) one line per tool call: tool, allow or deny,
 the command's first word or a relative path. The raw `stream-json` is read line by line and never written to disk.
@@ -243,3 +300,30 @@ busy or full; **one turn per agent** (`agent_busy`), 3 turns at once, and today'
   origin with the result's commits, files and pushed matching git, (g) `--fallback-model` accepted, (h) Stop during a second act turn gives `stopped` and no process,
   (i) canary, key and message text in no log. It costs about $1 to $3. The script is checked against a stub `claude` (`LIVE_CHECK_CLAUDE_BIN`) for its plumbing; the guard lines
   need the real thing.
+
+## Dashboard chat, the page side (MIN-4498)
+Direction A's "Who is working" card is the chat list: each agent is a row that opens `#/chat/<Agent>`, the chat drawer (480 px). Files:
+`docs/dashboard/drafts/shared/chat-model.js` (pure: texts, the one-word-per-agent rule, formats), `shared/chat.js` (key, calls, polling, drawer),
+`shared/chat.css`; `direction-A/a.js` only mounts it. **The key** arrives once as `#c=<key>` (MIN-4500's `open.sh` adds it to the local URL), is removed from
+the address bar and lives in memory: a reload needs `open.sh` again. **Where it works:** only on `http://127.0.0.1` with a key and a bridge that answers
+`/chat/health`. On the Pages bundle (another host), on a plain file server, or with no key, the rows are the old plain rows plus one sentence ("Chat works
+on this Mac only. Open the dashboard with open.sh."), `#/chat/<Agent>` shows the same sentence, and no `/chat` call is made. **Polling:** every 10 s
+(health, then one `GET /chat/sessions?agent=` per agent), every 2 s only while the open chat is `working` or `acting` (the thread and `events?after=`),
+nothing while the tab is hidden. **States:** answered, sending, waiting for the answer (live events list: time, tool, path), no open chat, agent busy,
+cap hit, chat off, bridge not reachable (Try again), error, loading, finished or full; proposal card (Yes, No, expired, declined, refused, acting off),
+acting strip (Stop, branch, "See it in Branches"), result card (done, stopped, failed, timed out). `/chat/health` `act: false` shows "Answers only" in the
+header and a proposal with no Yes. Typing while a proposal is open declines it (the bridge does that; the card shows Declined after the next read).
+**Demo drawer:** a "How it works" link to `../how-it-works/index.html#how-it-works`, only on 127.0.0.1 and only when a HEAD request finds the file.
+**Looking at it without a model:** `python3 dashboard/tests/chat_dev_server.py` runs the real bridge with the stub `claude` from the test kit;
+`python3 dashboard/tests/chat_mock_server.py --act` serves every state from `dashboard/fixtures/chat.example.json`, including the act states the bridge does not
+build yet (Yes, acting, result, Stop). Open `http://127.0.0.1:<port>/direction-A/index.html?feed=../dev/fresh.json#c=<the throw-away key>` once.
+Tests: `dashboard/tests/test_chat_ui.py` (the model run in node, guards on the page source, the fixture, the mock).
+
+## The five directions panel (project goal, via coordinator, founder 2026-11-14)
+Direction A, under the clock: a "Project goal" card with five rows. **The page holds no title text** (CTO must-fix F2, MIN-4499): the titles come only from the key-gated
+feed, so they are not in the public page or the Pages bundle. **Feed field** `directions` (hand-set, optional): an array of `{n, title, status, note, updatedAt}`, `n` 1 to 5, `title` one short line (cut at 80 characters),
+`status` one of `on_track`, `at_risk`, `off_track`, `not_started` (spaces, hyphens and capitals are read too), `note` one sentence (cut at 200 characters), `updatedAt` an
+ISO time. A direction the feed does not send, sends with an unknown status, or a feed with no field (the public stub bundle, no key, a missing file), an empty array or
+junk, shows the neutral "Direction N" and "not reported yet" (dashed row, no title); nothing throws. Before the first snapshot the rows say "Loading the feed…", after a failed first read "The feed could not be
+read yet." Files: `shared/directions.js` (pure), the paint in `direction-A/a.js`, `shared/live.js` (reads the field), `a.css`. Dev feeds: `dev/directions.json` (field, four
+pills, direction 5 missing) and `dev/fresh.json` (no field). Tests: `dashboard/tests/test_directions.py`.

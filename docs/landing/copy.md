@@ -94,7 +94,6 @@ Your health history is scattered across paper, drawers and different doctors' of
 - Answers are cited and checked.
 - No AI interpretation for patients.
 - You see every access.
-- Insurers never see records.
 
 ## roadmap
 
@@ -108,11 +107,11 @@ Your health history is scattered across paper, drawers and different doctors' of
 
 - Pathien
 - Built at GenAI Summit Hackathon · Athens · Nov 2026
-- [contact]
+- hello@onedotatatime.design
 
 ## Notes for Pix and Ren
 
-- `[contact]`: founder to supply.
+- `hello@onedotatatime.design`: supplied by the founder, 2026-11-14.
 - Roadmap items must be visibly labelled "Future" (chip or muted style); nothing above the roadmap is future.
 - Left out on purpose: any numbers, testimonials, "possible causes" or diagnosis claims.
 
@@ -174,7 +173,7 @@ The flag shows only the label and the printed range. No colour-coded meaning, no
 |---|---|---|---|
 | `cta-patients` | For patients | Scrolls to the patient card in `who` | Nav, hero (secondary link) |
 | `cta-doctors` | For doctors | Scrolls to the doctor card in `who` | Nav, hero (secondary link) |
-| `cta-updates` | Get updates | Opens `mailto:[contact]?subject=Get updates` | Nav (button, replaces "Get in touch"), footer band, small link at the end of each `who` card |
+| `cta-updates` | Get updates | Opens `mailto:hello@onedotatatime.design?subject=Get updates` | Nav (button, replaces "Get in touch"), footer band, small link at the end of each `who` card |
 
 **Footer band (`cta-updates`):**
 - **headline:** Hackathon prototype. Hear when we pilot.
@@ -182,7 +181,7 @@ The flag shows only the label and the printed range. No colour-coded meaning, no
 - **button:** Get updates
 
 Notes
-- The update form has no backend yet. It must be a `mailto:[contact]` link, nothing stored. If Ren fills the typed address into the mail body, fine; otherwise drop the input and keep the button, so nothing implies we collect it.
+- The update form has no backend yet. It must be a `mailto:hello@onedotatatime.design` link, nothing stored. If Ren fills the typed address into the mail body, fine; otherwise drop the input and keep the button, so nothing implies we collect it.
 - The nav "Get in touch" label is replaced by "Get updates".
 - Hero keeps "See how it works" as primary; the two role links sit beside it.
 - Screen microcopy is only what the demo shows. If a screen is not built by launch, drop it rather than fake it.

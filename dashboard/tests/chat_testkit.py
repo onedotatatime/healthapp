@@ -88,7 +88,7 @@ AGENTS = [{"n": n, "role": r, "agentType": f} for n, r, f in [
 class Env:
     """A temp dashboard home, a fake healthapp and conductor, a stub claude, and a bridge listening on 127.0.0.1 port 0."""
 
-    def __init__(self, repo=False, static=False, **cfg):
+    def __init__(self, repo=False, static=False, agents=None, **cfg):
         self.tmp = tempfile.mkdtemp(prefix="chatkit-")
         self.tmp = os.path.realpath(self.tmp)
         j = lambda *p: os.path.join(self.tmp, *p)
@@ -114,7 +114,7 @@ class Env:
                               "ruleFile": os.path.join(self.conductor, "docs", "agents", "dashboard-chat.md")})
         self.settings.update(cfg)
         self.set_behavior()
-        self.server = B.make_server(self.home, self.pages, 0, self.settings, [dict(a) for a in AGENTS], key=KEY, row_checker=fake_rows,
+        self.server = B.make_server(self.home, self.pages, 0, self.settings, [dict(a) for a in (AGENTS if agents is None else agents)], key=KEY, row_checker=fake_rows,
                                     extra_dirs=self.extra_dirs)
         self.chat, self.port = self.server.chat, self.server.port
         self.thread = threading.Thread(target=lambda: self.server.serve_forever(poll_interval=0.02), daemon=True)

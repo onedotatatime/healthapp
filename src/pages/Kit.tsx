@@ -6,6 +6,27 @@ import { ProvenanceMark } from '../components/ProvenanceMark';
 const T0 = Date.parse('2026-11-14T12:00:00Z');
 const iso = (s: number) => new Date(T0 + s * 1000).toISOString();
 
+/** One set of the glass primitives: card glass, tiles, a list, buttons and one chrome bar. The solid form is the same markup under
+ *  `.solid`, which sets the glass tokens to what `prefers-reduced-transparency` and the no-backdrop-filter fallback use. */
+function Surfaces({ title }: { title: string }) {
+  return (
+    <div className="kit-set">
+      <h3>{title}</h3>
+      <div className="card"><p>Card</p></div>
+      <div className="tiles">
+        <div className="tile primary">Tile</div>
+        <div className="tile">Tile</div>
+      </div>
+      <div className="group"><div>Row</div><div>Row</div></div>
+      <div className="row">
+        <button type="button" className="btn primary">Primary</button>
+        <button type="button" className="btn">Ghost</button>
+      </div>
+      <div className="kit-bar"><button type="button" className="btn primary">Bar</button></div>
+    </div>
+  );
+}
+
 /** Review page for the shared parts (not linked from anywhere). The clock is frozen so every state shows. */
 export function Kit() {
   return (
@@ -45,6 +66,11 @@ export function Kit() {
       <h2>Primitives</h2>
       <p><Spinner label="Reading the record" /></p>
       <ErrorNote>This is how a doctor-side error reads.</ErrorNote>
+      <h2>Glass and solid</h2>
+      <div className="kit-pair">
+        <Surfaces title="Glass" />
+        <div className="solid"><Surfaces title="Solid" /></div>
+      </div>
     </main>
   );
 }

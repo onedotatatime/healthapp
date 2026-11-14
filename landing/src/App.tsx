@@ -5,7 +5,7 @@ import { prefersReducedMotion, useSmoothScroll } from './useSmoothScroll';
 import { Screens } from './DemoScreens';
 
 // Swap in one place. Shown as-is until the founder supplies the address; never claim the typed email is stored.
-const CONTACT_EMAIL = "[contact]";
+const CONTACT_EMAIL = "hello@onedotatatime.design";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -30,7 +30,7 @@ const tech = [
   ['Access that expires.', 'Time-limited access is enforced in the database.'],
   ['A log you can read.', 'Signed, hash-chained, and readable by the patient.']
 ];
-const promises = ['Answers are cited and checked.', 'No AI interpretation for patients.', 'You see every access.', 'Insurers never see records.'];
+const promises = ['Answers are cited and checked.', 'No AI interpretation for patients.', 'You see every access.'];
 const future = ['the key on your phone, so we cannot read records at rest.', "the model sees one request's facts, without your name.", 'records verified by the lab that issued them.'];
 
 const Check = () => (
@@ -283,7 +283,7 @@ export default function App() {
         <div className="wrap foot">
           <img src="/brand/pathien-lockup-white.svg" alt="Pathien" style={{ height: 32, width: "auto" }} />
           <span>Built at GenAI Summit Hackathon · Athens · Nov 2026</span>
-          <a className="btn" href="#top">[contact]</a>
+          <a className="btn" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
         </div>
       </footer>
     </div>

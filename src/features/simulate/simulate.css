@@ -1,0 +1,73 @@
+/* /doctor/simulate (MIN-4594, glass MIN-4588). Brand tokens only; no shadows, no gradients, no webfont loads. */
+.sm{min-height:100dvh}
+.sm-label{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:var(--space-2);margin:calc(var(--space-6) * -1) calc(var(--space-4) * -1) var(--space-4);padding:var(--space-3) var(--space-4);background:var(--color-info);color:var(--color-inverse-text);font:var(--text-label);font-size:16px;line-height:24px}
+.sm-label svg{flex:none}
+.sm-intro{max-width:62ch;margin:0 0 var(--space-4);color:var(--color-muted)}
+.sm-fixed{margin:0;padding:var(--space-2) var(--space-3);background:var(--color-info-bg);color:var(--ink);border:1px solid var(--color-info);border-radius:var(--radius-sm);font:var(--text-label)}
+.sm-small{font-size:13px;line-height:18px;margin:0}
+
+.sm-card{margin:0 0 var(--space-4);padding:var(--space-4);display:grid;gap:var(--space-3);min-width:0;background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft)}
+.sm-card h2{display:flex;align-items:center;gap:var(--space-2);margin:0;font:var(--text-h2)}
+.sm-card h2 b{display:inline-grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;background:var(--color-link);color:var(--color-inverse-text);font:var(--text-label)}
+.sm-card p{margin:0}
+.sm-h3{margin:var(--space-2) 0 0;font:var(--text-label);font-size:16px}
+
+/* 1 The machine */
+.sm-states{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-2)}
+.sm-states li{display:flex;flex-direction:column;align-items:center;gap:6px;padding:var(--space-3) 6px;border:1px solid var(--color-border);border-radius:var(--radius-sm);color:var(--color-muted);font-size:14px}
+.sm-states li.now{border-color:var(--color-link);color:var(--ink);background:var(--color-surface-quiet)}
+.sm-states li.past{color:var(--ink)}
+.sm-box{width:34px;height:26px;border-radius:5px;background:var(--color-border)}
+li.now .sm-box[data-s=created]{background:var(--color-info)}
+li.now .sm-box[data-s=running]{background:var(--color-link);animation:sm-pulse 1s ease-in-out infinite}
+li.now .sm-box[data-s=done]{background:var(--color-link)}
+li.now .sm-box[data-s=deleted]{background:var(--color-border-strong);opacity:.4;transform:scale(.8)}
+li.past .sm-box{background:var(--color-link);opacity:.5}
+@keyframes sm-pulse{50%{opacity:.45}}
+.sm-log{list-style:none;margin:0;padding:0;display:grid;gap:2px;font-size:14px;min-height:22px}
+.sm-log span{color:var(--color-muted)}
+
+/* 2 The records */
+.sm-dots{width:100%;line-height:0;border:1px solid var(--color-border);border-radius:var(--radius-sm);background:var(--color-surface);overflow:hidden}
+.sm-dots canvas{display:block}
+.sm-legend{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:var(--space-1) var(--space-3);font-size:13px;line-height:20px}
+.sm-legend li{display:inline-flex;align-items:center;gap:6px}
+.sm-legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+
+/* 3 The matching */
+.sm-steps{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-2)}
+.sm-steps li{display:flex;flex-direction:column;gap:2px;min-height:48px;padding:10px var(--space-3);border-left:3px solid var(--color-border);opacity:.35;transition:opacity .3s,border-color .3s}
+.sm-steps li.show{opacity:1;border-color:var(--color-link)}
+.sm-steps li span{font-size:14px;color:var(--color-muted);overflow-wrap:anywhere}
+
+/* 4 The matches */
+.sm-big{font:var(--text-h2)}
+.sm-kicker{font:var(--text-label);color:var(--color-muted)}
+.sm-chips{list-style:none;margin:0 0 var(--space-3);padding:0;display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.sm-chip{padding:2px 10px;min-height:28px;display:inline-flex;align-items:center;border-radius:var(--radius-pill);background:var(--color-surface-quiet);border:1px solid var(--color-link);color:var(--color-link);font:var(--text-label)}
+.sm-chip.plain{background:var(--color-surface-quiet);border-color:var(--color-border-strong);color:var(--ink)}
+.sm-group{padding:var(--space-3);background:var(--color-surface-quiet);border:1px solid var(--color-border);border-radius:var(--radius-sm)}
+.sm-cards{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-3);grid-template-columns:minmax(0,1fr)}
+@media (min-width:720px){.sm-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.sm-match[data-unlocked='true']{grid-column:1 / -1}}
+.sm-match{display:grid;gap:var(--space-2);align-content:start;min-width:0;padding:var(--space-3);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-image)}
+.sm-match h4{margin:0;font:var(--text-label);font-size:16px}
+.sm-match p{margin:0}
+.sm-match .btn{min-height:var(--tap-doctor);justify-self:start}
+.sm-asks{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-1)}
+.sm-asks li{padding-left:var(--space-3);border-left:3px solid var(--color-border);color:var(--color-muted);opacity:.45}
+.sm-asks li.show{opacity:1;color:var(--ink);border-color:var(--color-link)}
+.sm-unlocked{display:grid;gap:var(--space-3);min-width:0}
+.sm-unlocked h5{margin:0;font:var(--text-label);color:var(--color-muted)}
+.sm-tablewrap{overflow-x:auto}
+.sm-table{border-collapse:collapse;width:100%;font-size:14px}
+.sm-table th,.sm-table td{text-align:left;padding:6px var(--space-3) 6px 0;border-bottom:1px solid var(--color-border);white-space:nowrap}
+.sm-table th{color:var(--color-muted);font-weight:500}
+.sm-table tr.out td{color:var(--color-flag-text);font-weight:500}
+.sm-facts{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px var(--space-4);margin:0}
+.sm-facts dt{color:var(--color-muted)}
+.sm-facts dd{margin:0;overflow-wrap:anywhere}
+.sm-sent{font:var(--text-label);color:var(--color-link)}
+.sm-logs{list-style:none;margin:0;padding:0;display:grid;gap:2px;font-size:13px;line-height:18px;color:var(--color-muted)}
+.sm-links{margin-top:var(--space-2)!important}
+
+@media (max-width:480px){.sm-states{grid-template-columns:repeat(2,minmax(0,1fr))}.sm-card{padding:var(--space-3)}}

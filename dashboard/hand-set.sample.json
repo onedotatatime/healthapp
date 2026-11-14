@@ -59,7 +59,10 @@
       {"n": "Spast", "role": "Sales", "agentType": "sales-minhos", "linear": "Spast Arxidas"},
       {"n": "Release", "role": "Release", "agentType": "release-minhos", "linear": null},
       {"n": "CEO", "role": "CEO", "agentType": "ceo-minhos", "linear": null},
-      {"n": "E2E", "role": "E2E", "agentType": "e2e-minhos", "linear": null}
+      {"n": "E2E", "role": "E2E", "agentType": "e2e-minhos", "linear": null},
+      {"n": "Scrum", "role": "Scrum", "agentType": "scrum-minhos", "linear": null},
+      {"n": "SEO", "role": "SEO", "agentType": "seo-minhos", "linear": null},
+      {"n": "JobScout", "role": "Job scout", "agentType": "jobscout-minhos", "linear": null}
     ],
     "roleLabels": {
       "Product Manager": "Product", "Product Designer": "Design", "Frontend Engineer": "Frontend",

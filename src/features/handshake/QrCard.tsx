@@ -17,7 +17,7 @@ const HELIX_PAD = 84; // Pix: the card sits 84 px below the helix's top (card y 
 
 /**
  * Pix's QR card (MIN-4473 section 5): opaque white, radius 8, a standard code with error correction Q, integer module
- * size 6 to 8, a 4-module white quiet zone inside the card, ink #0B1F27 (16.94:1), nothing over it. The helix is drawn
+ * size 6 to 8, a 4-module white quiet zone inside the card, ink (brand --ink on white, 16:1), nothing over it. The helix is drawn
  * behind it and can be switched off (the scan test needs that).
  */
 export function QrCard({ text, available, helix, expired, secondsLeft }: Props) {
@@ -46,8 +46,8 @@ export function QrCard({ text, available, helix, expired, secondsLeft }: Props) 
             role="img"
             aria-label={`Code to share your record, valid for ${secondsLeft} seconds`}
           >
-            <rect width={n + 2 * QUIET} height={n + 2 * QUIET} fill="#FFFFFF" />
-            <path d={path} fill="var(--qr-ink)" />
+            <rect width={n + 2 * QUIET} height={n + 2 * QUIET} fill="var(--white)" />
+            <path d={path} fill="var(--ink)" />
           </svg>
         )}
       </div>
