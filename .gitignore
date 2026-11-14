@@ -1,0 +1,16 @@
+.DS_Store
+node_modules/
+.env
+.env.*
+!.env.example
+.astro/
+dist/
+.next/
+.vercel/
+.wrangler/
+*.log
+
+# Agent files: the only source is conductor/agents. Never commit a project copy.
+.claude/agents/
+.claude/settings.local.json
+.claude/worktrees/

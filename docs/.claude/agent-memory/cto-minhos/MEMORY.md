@@ -1,0 +1,1 @@
+- [Healthapp real-data regime](project_healthapp_real_data_regime.md) — founder's real exams: dev/demo split, Vertex EU, wipe by project deletion, real-data gate (MIN-4426)
