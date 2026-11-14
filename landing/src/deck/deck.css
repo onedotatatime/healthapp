@@ -317,6 +317,11 @@ strong{font-weight:700}
 .hero-points{list-style:none;margin:38px 0 0;padding:0}
 .hero-points li{border-left:8px solid var(--teal);padding:2px 0 2px 20px;margin-bottom:16px;font-size:24px;line-height:30px;color:var(--ink);border-radius:2px}
 .hero-points strong{color:var(--ink);font-weight:700}
+.hero-steps{margin-top:26px}
+.hero-steps h3{margin:0 0 10px;font-size:22px;line-height:28px;font-weight:700;color:var(--ink)}
+.hero-steps ol{list-style:none;margin:0;padding:0;counter-reset:st}
+.hero-steps li{counter-increment:st;position:relative;padding-left:40px;margin-bottom:8px;font-size:21px;line-height:27px;color:var(--ink)}
+.hero-steps li::before{content:counter(st);position:absolute;left:0;top:0;font-weight:700;color:var(--teal)}
 .hero-flag{color:var(--teal);font-weight:700}
 .hero-tag{position:absolute;left:1303px;top:900px}
 .hero-lock{position:absolute;right:120px;bottom:42px;display:flex;align-items:baseline;gap:20px}

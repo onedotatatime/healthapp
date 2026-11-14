@@ -36,6 +36,9 @@ export interface HeroSlide extends SlideBase {
   body: string;
   /** Text supports **bold** and [[accent]] (teal bold, e.g. "(assumption)"). */
   points: string[];
+  /** Optional "how it's used" list: a small heading and numbered steps (numbers in teal). */
+  stepsTitle?: string;
+  steps?: string[];
   image: { src: string; alt: string };
   /** Optional. Placed on the image, same size as the demo tags. Without it the slide must say concept or mock-up elsewhere (kicker, footer). */
   tag?: HeroTag;
