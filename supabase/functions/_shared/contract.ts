@@ -474,6 +474,60 @@ export const AssistantResponse = z.object({
 });
 export type AssistantResponse = z.infer<typeof AssistantResponse>;
 
+// healthapp-over-time (MIN-4551; CTO decision on MIN-4548): the doctor's view of a patient's numbers over time.
+// Doctor with a live grant only: 403 wrong_role for a patient, 403 grant_expired when the grant has ended.
+// Plain arithmetic in code, no model, nothing stored. One series per value (analyte_key, else the printed
+// name) with 2+ dated numeric results in one unit. No cause, advice, score, rank or word for a direction.
+// There is NO field for "the date the line crosses a range limit" on purpose (a forecast of an abnormal result).
+export const OverTimeRequest = z.object({ grant_id: Uuid });
+export const OverTimePoint = z.object({
+  date: IsoDate, // the document's date
+  value: z.number(),
+  cite: CiteId, // r:<uuid>, the same cite format the assistant uses
+  ref_low: z.number().nullable(), // the limits printed on that result's own document
+  ref_high: z.number().nullable(),
+  /** value below ref_low or above ref_high; null when the document prints no numeric limit. */
+  out_of_range: z.boolean().nullable(),
+});
+export const OverTimeProjection = z.object({
+  n: z.number().int(), // results used (3 or more, on 3 or more different dates)
+  first_date: IsoDate,
+  last_date: IsoDate,
+  /** one least-squares straight line through the n results, in the series' unit per day. */
+  slope_per_day: z.number(),
+  /** as far ahead as the data is long, at most 180, never further than last_date - first_date; shorter if the line would
+   *  go below 0 while every result is 0 or above. */
+  horizon_days: z.number().int(),
+  horizon_date: IsoDate,
+  value_at_horizon: z.number(),
+});
+export const OverTimeSeries = z.object({
+  key: z.string(), // analyte_key, else the printed name lower-cased
+  analyte: z.string(), // the printed name on the latest result
+  unit: z.string().nullable(),
+  points: z.array(OverTimePoint).min(2), // date order, oldest first
+  out_of_range: z.object({
+    count: z.number().int(), // results outside the range printed on their own document
+    first_date: IsoDate.nullable(),
+    latest_date: IsoDate.nullable(),
+  }),
+  /** null = "Not enough results for a projection" (fewer than 3 results or fewer than 3 different dates). */
+  projection: OverTimeProjection.nullable(),
+});
+export const OverTimeCounts = z.object({
+  records_read: z.number().int(), // result rows read for the patient
+  values_with_series: z.number().int(),
+  projections_computed: z.number().int(),
+  /** values with 2+ numeric results that were left out: mixed units, or fewer than 2 dated. Never guessed. */
+  series_excluded: z.number().int(),
+  errors: z.number().int(),
+});
+export const OverTimeResponse = z.object({
+  series: z.array(OverTimeSeries), // ordered by key; empty is a valid answer
+  counts: OverTimeCounts, // the same five integers the function logs; the panel prints them as its footer
+});
+export type OverTimeResponse = z.infer<typeof OverTimeResponse>;
+
 // ---------------------------------------------------------------------------------------------
 // Possible matches (MIN-4505, F1 and F2): Postgres functions, not Edge Functions.
 // ---------------------------------------------------------------------------------------------
@@ -550,6 +604,7 @@ export const FUNCTIONS = {
   "healthapp-grant-decide": { session: true, request: GrantDecideRequest, response: GrantDecideResponse },
   "healthapp-grant-revoke": { session: true, request: GrantRevokeRequest, response: GrantRevokeResponse },
   "healthapp-assistant": { session: true, request: AssistantRequest, response: AssistantResponse },
+  "healthapp-over-time": { session: true, request: OverTimeRequest, response: OverTimeResponse },
 } as const;
 export type FunctionName = keyof typeof FUNCTIONS;
 export type RequestOf<N extends FunctionName> = z.input<(typeof FUNCTIONS)[N]["request"]>;

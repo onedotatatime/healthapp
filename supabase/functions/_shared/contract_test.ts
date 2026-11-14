@@ -85,7 +85,7 @@ Deno.test("the contract refuses what the settlements forbid", () => {
 
 Deno.test("the function table names every P0 function with the healthapp- prefix", () => {
   for (const name of Object.keys(C.FUNCTIONS)) assert(name.startsWith("healthapp-"), name);
-  assertEquals(Object.keys(C.FUNCTIONS).length, 12);
+  assertEquals(Object.keys(C.FUNCTIONS).length, 13);
 });
 
 Deno.test("possible matches: one empty answer, nothing below country, nothing below k", () => {
