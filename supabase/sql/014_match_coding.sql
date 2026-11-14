@@ -1,4 +1,4 @@
--- Per env. Rendered by `scripts/hdb render <env> 013_match_coding.sql` (__SCHEMA__ -> healthapp_<env>).
+-- Per env. Rendered by `scripts/hdb render <env> 014_match_coding.sql` (__SCHEMA__ -> healthapp_<env>).
 -- Possible matches, round 2 of the patient's feature coding (MIN-4505). Needs 005 (tables, RPC) and 006
 -- (match_lab_defs). Replaces match_patient_codes only: the RPC, exact-set grouping, k = 5 and the one empty
 -- answer are 005's and do not change. Nothing derived is stored; the extraction (extract-exam) is not touched.
@@ -29,7 +29,7 @@ delete from __SCHEMA__.match_analyte_alias;
 insert into __SCHEMA__.match_analyte_alias (analyte_key, pattern, not_pattern) values
   ('ana', '(^|[^a-z0-9α-ω])f?ana([^a-z0-9α-ω]|$)|anti-? ?nuclear|αντιπυρηνικ', null),
   ('hla_b27', 'hla[- ]?b[- ]?27|(^|[^a-z0-9α-ω])b27([^a-z0-9α-ω]|$)', null),
-  ('hba1c', 'hb ?a1c|(^|[^a-z0-9α-ω])a1c|glyc(at|osyl)ated ha?emoglobin|γλυκο[ζσ]υλιωμεν|γλυκιωμεν', null),
+  ('hba1c', 'hb ?a1c|(^|[^a-z0-9α-ω])a1c|glyc(osyl)?ated ha?emoglobin|γλυκο[ζσ]υλιωμεν|γλυκιωμεν', null),
   ('ace', '(^|[^a-z0-9α-ω])s?ace([^a-z0-9α-ω]|$)|angiotensin[- ]?(i[- ])?converting|μετατρεπτικ[α-ω]* ενζυμ|αγγειοτ[αε]ν?σιν', null),
   ('ceruloplasmin', 'ca?eruloplasmin|σερουλοπλασμιν|κυανοπλασμιν', null),
   ('ck', '(^|[^a-z0-9α-ω])(ck|cpk)([^a-z0-9α-ω]|$)|creatine?[- ]?(phospho)?kinase|κρεατιν[α-ω]* (φωσφο)?κινασ|κρεατινοφωσφοκινασ',
@@ -73,20 +73,23 @@ as $$
 $$;
 
 -- 2. A qualitative result written as text: true = positive, false = negative, null = decides nothing.
--- Negative words are tested first ("not detected" contains "detected"). A titre counts from 1:80
--- (the EULAR/ACR 2019 ANA entry criterion); "<1:80" is negative.
+-- The word and the titre are read separately. A titre counts from 1:80 (the EULAR/ACR 2019 ANA entry
+-- criterion); "<1:80" is negative. When both are printed and disagree ("Positive 1:40"), it decides nothing.
 create or replace function __SCHEMA__.match_qual_text(t text) returns boolean
 language sql immutable set search_path = ''
 as $$
-  select case
-    when z.s ~ '(^|[^a-z0-9α-ω])(negativ|neg([^a-z]|$)|not detected|non-? ?reactive|not present|absent|undetectable|αρνητικ|δεν ανιχνευ|μη ανιχνευσ|απουσ)'
-      then false
-    when z.s ~ '(^|[^a-z0-9α-ω])(positiv|pos([^a-z]|$)|detected|reactive|present|θετικ|ανιχνευ)'
-      then true
-    when z.s ~ '^[<≤] *1 *[:/]' then false
-    when z.s ~ '(^|[^0-9])1 *[:/] *[0-9]+' then substring(z.s from '(?:^|[^0-9])1 *[:/] *([0-9]+)')::numeric >= 80
-  end
-  from (select __SCHEMA__.match_fold(btrim(coalesce(t, ''))) as s) z
+  select case when w.word is not null and w.titre is not null and w.word <> w.titre then null
+              else coalesce(w.titre, w.word) end
+  from (select
+    case
+      when z.s ~ '(^|[^a-z0-9α-ω])(negativ|neg([^a-z]|$)|not detected|non-? ?reactive|not present|absent|undetectable|αρνητικ|δεν ανιχνευ|μη ανιχνευσ|απουσ)' then false
+      when z.s ~ '(^|[^a-z0-9α-ω])(positiv|pos([^a-z]|$)|detected|reactive|present|θετικ|ανιχνευ)' then true
+    end as word,
+    case
+      when z.s ~ '[<≤] *1 *[:/] *[0-9]' then false
+      when z.s ~ '(^|[^0-9])1 *[:/] *[0-9]+' then substring(z.s from '(?:^|[^0-9])1 *[:/] *([0-9]+)')::numeric >= 80
+    end as titre
+    from (select __SCHEMA__.match_fold(btrim(coalesce(t, ''))) as s) z) w
 $$;
 
 -- What one result row says about its marker: the codes it gives ('{}' = decided, nothing to code) or
@@ -204,4 +207,4 @@ grant execute on function __SCHEMA__.match_marker(text, text), __SCHEMA__.match_
   __SCHEMA__.match_read(text, numeric, text, text, text), __SCHEMA__.match_text_has(text, text),
   __SCHEMA__.match_codes_from(jsonb, jsonb, jsonb), __SCHEMA__.match_patient_codes(uuid) to service_role;
 
-insert into __SCHEMA__._applied (file) values ('013_match_coding.sql') on conflict (file) do nothing;
+insert into __SCHEMA__._applied (file) values ('014_match_coding.sql') on conflict (file) do nothing;

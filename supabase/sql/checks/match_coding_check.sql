@@ -1,5 +1,5 @@
--- Checks for the patient's feature coding (013_match_coding.sql, MIN-4505). Renders with __SCHEMA__ ->
--- healthapp_<env> (sed, as the other checks). Needs 005, 006 and 013. Writes no row: the coding is checked
+-- Checks for the patient's feature coding (014_match_coding.sql, MIN-4505). Renders with __SCHEMA__ ->
+-- healthapp_<env> (sed, as the other checks). Needs 005, 006 and 014. Writes no row: the coding is checked
 -- through match_codes_from, which reads plain values. Synthetic data only.
 -- Output, one row per part (a part passes when failures = 0):
 --   cases    hand-written cases: each of the six markers positive, negative and as text, units, the
@@ -24,6 +24,8 @@ with c (name, labs, texts, specs, want) as (values
   ('ANA index within printed range', '[{"o":1,"a":"ANA screen","n":0.4,"u":"index","f":"normal"}]', '[]', '[]', '{}'),
   ('ANA number without a printed range decides nothing', '[{"o":1,"a":"ANA","n":3,"f":"unknown"}]', '[]', '[]', '{}'),
   ('ANA equivocal decides nothing', '[{"o":1,"a":"ANA","x":"Equivocal"}]', '[]', '[]', '{}'),
+  ('ANA word and titre disagree: Positive 1:40 decides nothing', '[{"o":1,"a":"ANA","x":"Positive 1:40"}]', '[]', '[]', '{}'),
+  ('ANA word and titre disagree: newer Negative (1:80) decides nothing, older positive stands', '[{"o":1,"a":"ANA","x":"Negative (1:80)"},{"o":2,"a":"ANA","x":"Positive"}]', '[]', '[]', '{ANA_positive}'),
   -- HLA-B27
   ('HLA-B27 θετικό', '[{"o":1,"a":"HLA-B27","x":"Θετικό"}]', '[]', '[]', '{HLA_B27_positive}'),
   ('HLA-B27 detected', '[{"o":1,"a":"HLA B27 (PCR)","x":"Detected"}]', '[]', '[]', '{HLA_B27_positive}'),
@@ -33,6 +35,7 @@ with c (name, labs, texts, specs, want) as (values
   ('HbA1c 7.1 % high', '[{"o":1,"a":"HbA1c","n":7.1,"u":"%","f":"high"}]', '[]', '[]', '{HbA1c_high}'),
   ('HbA1c 5.2 % normal', '[{"o":1,"a":"HbA1c","n":5.2,"u":"%","f":"normal"}]', '[]', '[]', '{}'),
   ('HbA1c keyed as haemoglobin by the extraction', '[{"o":1,"a":"Glycated haemoglobin (HbA1c)","k":"hemoglobin","n":6.8,"u":"%","f":"high"}]', '[]', '[]', '{HbA1c_high}'),
+  ('Glycated hemoglobin without HbA1c in the name, keyed as haemoglobin', '[{"o":1,"a":"Glycated hemoglobin","k":"hemoglobin","n":5.4,"u":"%","f":"normal"}]', '[]', '[]', '{}'),
   ('HbA1c in Greek, keyed as haemoglobin, normal', '[{"o":1,"a":"Γλυκοζυλιωμένη αιμοσφαιρίνη","k":"hemoglobin","n":5.1,"u":"%","f":"normal"}]', '[]', '[]', '{}'),
   ('HbA1c 53 mmol/mol high', '[{"o":1,"a":"Hb A1c","n":53,"u":"mmol/mol","f":"high"}]', '[]', '[]', '{HbA1c_high}'),
   ('HbA1c 36 mmol/mol normal', '[{"o":1,"a":"HbA1c (IFCC)","n":36,"u":"mmol/mol","f":"normal"}]', '[]', '[]', '{}'),
