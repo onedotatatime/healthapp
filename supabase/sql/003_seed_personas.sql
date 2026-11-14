@@ -7,6 +7,8 @@ select u.id, p.role, p.full_name, p.full_name_latin, p.full_name_norm, p.nationa
 from (values
   ('patient.__ENV__@healthapp.invalid', 'patient', 'Μαρία Παπαδοπούλου', 'Maria Papadopoulou',
    'MARIA PAPADOPOULOU', 'AK123456', null, null),
+  ('patient2.__ENV__@healthapp.invalid', 'patient', 'Ελένη Δημητρίου', 'Eleni Dimitriou',
+   'ELENI DIMITRIOU', 'AB555555', null, null),
   ('doctor.__ENV__@healthapp.invalid', 'doctor', 'Νίκος Ανδρέου', 'Nikos Andreou',
    'NIKOS ANDREOU', null, 'Orthopaedics', 'provider')
 ) as p (email, role, full_name, full_name_latin, full_name_norm, national_id_norm, specialty, org_type)
