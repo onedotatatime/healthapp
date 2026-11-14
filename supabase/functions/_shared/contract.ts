@@ -270,6 +270,8 @@ export const ExtractResponse = z.discriminatedUnion("outcome", [
     outcome: z.literal("refused"),
     reason: RefusalReason,
     message: z.string(), // names what did not match; nothing was stored
+    /** name_mismatch and id_mismatch only: the two values that differ (MIN-4478). Both are the patient's own. */
+    mismatch: z.object({ printed: z.string(), profile: z.string() }).optional(),
   }),
 ]);
 export type ExtractResponse = z.infer<typeof ExtractResponse>;

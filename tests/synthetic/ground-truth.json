@@ -106,7 +106,8 @@
    ],
    "findings": [],
    "expected": {
-    "outcome": "draft"
+    "outcome": "draft",
+    "identity": "match"
    },
    "render": {
     "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΑΙΜΑΤΟΛΟΓΙΚΩΝ ΚΑΙ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
@@ -218,7 +219,8 @@
    ],
    "findings": [],
    "expected": {
-    "outcome": "draft"
+    "outcome": "draft",
+    "identity": "match"
    },
    "render": {
     "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΑΙΜΑΤΟΛΟΓΙΚΩΝ ΚΑΙ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
@@ -330,7 +332,8 @@
    ],
    "findings": [],
    "expected": {
-    "outcome": "draft"
+    "outcome": "draft",
+    "identity": "match"
    },
    "render": {
     "title": "LABORATORY REPORT: HAEMATOLOGY AND BIOCHEMISTRY",
@@ -362,7 +365,8 @@
     }
    ],
    "expected": {
-    "outcome": "draft"
+    "outcome": "draft",
+    "identity": "match"
    },
    "render": {
     "title": "ΑΚΤΙΝΟΓΡΑΦΙΑ ΓΟΝΑΤΟΣ ΔΕΞΙΟΥ (πρόσθια-οπίσθια και πλάγια)",
@@ -399,7 +403,8 @@
     }
    ],
    "expected": {
-    "outcome": "draft"
+    "outcome": "draft",
+    "identity": "match"
    },
    "render": {
     "title": "Letter to the patient",
@@ -481,13 +486,14 @@
    ],
    "findings": [],
    "expected": {
-    "outcome": "draft"
+    "outcome": "refused",
+    "reason": "name_mismatch"
    },
    "render": {
     "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
     "blur": 0
    },
-   "note": "another person: B1 refusal, demo step 2"
+   "note": "another person: B1 refusal name_mismatch, demo step 2"
   },
   {
    "n": 7,
@@ -563,7 +569,8 @@
    ],
    "findings": [],
    "expected": {
-    "outcome": "draft"
+    "outcome": "draft",
+    "identity": "name_only"
    },
    "render": {
     "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
@@ -645,13 +652,14 @@
    ],
    "findings": [],
    "expected": {
-    "outcome": "draft"
+    "outcome": "refused",
+    "reason": "id_mismatch"
    },
    "render": {
     "title": "LABORATORY REPORT: BIOCHEMISTRY",
     "blur": 0
    },
-   "note": "Maria's name with a different ID: B1 refusal"
+   "note": "Maria's name with a different ID: B1 refusal id_mismatch"
   },
   {
    "n": 9,

@@ -5,6 +5,7 @@ import { bucketFor, type DocumentDraft, DocumentRow, ExtractRequest, type Extrac
 import { type Auth, authenticate, type Blobs, readJson, type Store } from "../_shared/docs.ts";
 import { build, EXTRACT_SYSTEM, ModelExtract } from "../_shared/extract.ts";
 import { fail, headersFor, json } from "../_shared/http.ts";
+import { matchIdentity, mismatchMessage } from "../_shared/identity.ts";
 import { type JsonCall, type JsonResult, ModelError } from "../_shared/model.ts";
 
 /** The whole function stays under 60 s: the model gets what is left after the download. */
@@ -12,7 +13,7 @@ export const MODEL_BUDGET_MS = 52_000;
 
 export interface Deps {
   auth: Auth;
-  store: Pick<Store, "roleOf" | "getOwn" | "saveExtraction" | "discardDraft">;
+  store: Pick<Store, "roleOf" | "getOwn" | "identityOf" | "saveExtraction" | "discardDraft">;
   blobs: Pick<Blobs, "download" | "remove">;
   generate(call: JsonCall<ModelExtract>): Promise<JsonResult<ModelExtract>>;
   log(line: Record<string, unknown>): void;
@@ -85,7 +86,26 @@ export function makeHandler(deps: Deps) {
       return json(req, 200, out);
     }
 
-    const saved = await deps.store.saveExtraction(who.env, who.uid, cur.document.id, built.draft, sha);
+    // B1 (MIN-4478): whose document is it? Decided here, on the model's output and the caller's own
+    // profile row; the request carries nothing but doc_id. A refusal leaves no record, like any other.
+    const profile = await deps.store.identityOf(who.env, who.uid);
+    if (!profile) return fail(req, 403, "no_profile", "This account has no healthapp profile.");
+    const who_ = matchIdentity(profile, built.draft.printed_name, built.draft.printed_id);
+    if (!who_.ok) {
+      await deps.store.discardDraft(who.env, who.uid, cur.document.id);
+      await deps.blobs.remove(bucket, path);
+      deps.log({
+        fn: "extract-exam", status: "refused", reason: who_.reason, model: result.model,
+        attempts: result.attempts, ms: deps.now() - started,
+      });
+      const out: ExtractResponse = {
+        outcome: "refused", reason: who_.reason, message: mismatchMessage(who_),
+        mismatch: { printed: who_.printed, profile: who_.profile },
+      };
+      return json(req, 200, out);
+    }
+
+    const saved = await deps.store.saveExtraction(who.env, who.uid, cur.document.id, built.draft, sha, who_.status);
     if (!saved) return fail(req, 400, "bad_request", "This document is already saved.");
     const draft: DocumentDraft = {
       document: DocumentRow.parse(saved.document), // kind is set by now; unknown keys are stripped

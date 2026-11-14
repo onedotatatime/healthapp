@@ -192,13 +192,15 @@ export const extractDraft: ExtractResponse = {
 export const extractRefusedName: ExtractResponse = {
   outcome: "refused",
   reason: "name_mismatch",
-  message: "The name on the document is different.",
+  message: "The name on it (ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ) doesn't match your profile (Μαρία Παπαδοπούλου). Nothing was saved.",
+  mismatch: { printed: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", profile: "Μαρία Παπαδοπούλου" },
 };
 
 export const extractRefusedId: ExtractResponse = {
   outcome: "refused",
   reason: "id_mismatch",
-  message: "The ID on the document is different.",
+  message: "The ID on it (AK987654) doesn't match your profile (AK123456). Nothing was saved.",
+  mismatch: { printed: "AK987654", profile: "AK123456" },
 };
 
 export const extractRefusedUnreadable: ExtractResponse = {
