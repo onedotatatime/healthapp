@@ -8,6 +8,23 @@
 [functions.healthapp-hello]
 verify_jwt = false
 
+# MIN-4484: called from the browser, so the gateway lets the CORS preflight through; each function
+# verifies the session itself (GoTrue + a profile in healthapp_<env> + the role) before anything else.
+[functions.healthapp-handshake-create]
+verify_jwt = false
+
+[functions.healthapp-handshake-claim]
+verify_jwt = false
+
+[functions.healthapp-grant-status]
+verify_jwt = false
+
+[functions.healthapp-grant-decide]
+verify_jwt = false
+
+[functions.healthapp-grant-revoke]
+verify_jwt = false
+
 [functions.healthapp-dashboard-ingest]
 verify_jwt = true
 
@@ -29,4 +46,8 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.healthapp-doc-photo]
+verify_jwt = false
+
+# MIN-4487: the doctor's assistant. Called from the browser; the function verifies the session, the doctor role and a live grant itself.
+[functions.healthapp-assistant]
 verify_jwt = false

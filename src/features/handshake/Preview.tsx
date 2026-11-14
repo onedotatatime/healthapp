@@ -3,6 +3,8 @@ import { AssistantContext } from '../assistant/context';
 import { createMockAssistant } from '../assistant/mock';
 import { HandshakeContext } from './context';
 import { DoctorConnect } from './DoctorConnect';
+import { MatchesContext } from '../matches/context';
+import { createMockMatchesApi } from '../matches/mock';
 import { createMockWorld } from './mock';
 import { PatientShare } from './PatientShare';
 import './handshake.css';
@@ -26,6 +28,7 @@ export function HandshakePreview() {
   world.realtime = realtime;
 
   const assistant = useMemo(() => createMockAssistant(), [run]);
+  const matches = useMemo(() => createMockMatchesApi(true), [run]); // the doctor's panel in the workspace: this patient has opted in
   const patient = useMemo(() => ({ api, home: '/preview/handshake', preview: true }), [api]);
   const doctor = patient;
 
@@ -81,7 +84,9 @@ export function HandshakePreview() {
           <div className="hs-pane-box" data-testid="pane-doctor">
             <HandshakeContext.Provider value={doctor}>
               <AssistantContext.Provider value={assistant}>
-                <DoctorConnect />
+                <MatchesContext.Provider value={matches}>
+                  <DoctorConnect />
+                </MatchesContext.Provider>
               </AssistantContext.Provider>
             </HandshakeContext.Provider>
           </div>

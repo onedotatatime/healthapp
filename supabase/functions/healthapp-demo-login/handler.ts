@@ -7,6 +7,10 @@ import { clientAddress, fail, headersFor, json, sameSecret, sha256Hex } from "..
 
 export const MAX_TRIES = 5;
 export const WINDOW_SECONDS = 60;
+/** A ceiling across every caller (MIN-4492 fix 2): the per-address limit trusts the first
+ *  x-forwarded-for hop, which a caller can set, so on its own it limits nobody. */
+export const GLOBAL_MAX_TRIES = 30;
+export const GLOBAL_KEY = "global";
 
 export interface Session {
   access_token: string;
@@ -51,6 +55,15 @@ export function makeHandler(deps: Deps) {
       return fail(req, 503, "internal", "rate limit store unavailable");
     }
     if (!allowed) return fail(req, 429, "rate_limited", "Too many tries. Wait a minute.");
+    // Then the shared ceiling. Tries refused above are not counted here, so one noisy address cannot
+    // eat the ceiling alone, but a caller who rotates addresses reaches it and everyone waits a minute.
+    let globalAllowed: boolean;
+    try {
+      globalAllowed = await deps.allowTry(env, GLOBAL_KEY, GLOBAL_MAX_TRIES, WINDOW_SECONDS);
+    } catch {
+      return fail(req, 503, "internal", "rate limit store unavailable");
+    }
+    if (!globalAllowed) return fail(req, 429, "rate_limited", "Too many tries. Wait a minute.");
 
     if (!(await sameSecret(parsed.data.passcode, passcode))) {
       return fail(req, 401, "bad_passcode", "Wrong passcode.");

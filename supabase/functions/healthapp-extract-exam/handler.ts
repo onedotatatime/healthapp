@@ -1,6 +1,7 @@
 // healthapp-extract-exam (MIN-4475; PRD 10.4): one synchronous call, 60 s at most. Reads the patient's
 // uploaded photo, asks the model once (forced schema), then the server validates and decides. A refusal
 // stores nothing and deletes the upload. Logs only a status, a reason code and timings.
+import { bytesToBase64 } from "../_shared/b64.ts";
 import { bucketFor, type DocumentDraft, DocumentRow, ExtractRequest, type ExtractResponse } from "../_shared/contract.ts";
 import { type Auth, authenticate, type Blobs, readJson, type Store } from "../_shared/docs.ts";
 import { build, EXTRACT_SYSTEM, ModelExtract } from "../_shared/extract.ts";
@@ -17,12 +18,6 @@ export interface Deps {
   generate(call: JsonCall<ModelExtract>): Promise<JsonResult<ModelExtract>>;
   log(line: Record<string, unknown>): void;
   now(): number;
-}
-
-function b64(bytes: Uint8Array): string {
-  let s = "";
-  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(s);
 }
 
 async function sha256Bytes(b: Uint8Array): Promise<string> {
@@ -58,7 +53,7 @@ export function makeHandler(deps: Deps) {
     try {
       result = await deps.generate({
         system: EXTRACT_SYSTEM,
-        parts: [{ inline_data: { mime_type: mime, data: b64(bytes) } }, { text: "Read this document." }],
+        parts: [{ inline_data: { mime_type: mime, data: bytesToBase64(bytes) } }, { text: "Read this document." }],
         schema: ModelExtract,
         timeoutMs: Math.max(5_000, MODEL_BUDGET_MS - (deps.now() - started)),
       });
