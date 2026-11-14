@@ -1,1 +1,2 @@
 - [Health app: the bet and open decisions](project_healthapp_bet_and_open_decisions.md) — weekend decided, product not; gates G0/G1/G2; six founder decisions open on 13 Nov 2026; insurer edges not to be extended.
+- [Founder wants results, not wording questions](feedback_founder_wants_results_not_wording_questions.md) — hackathon demo: small reversible copy calls get delegated; decide, log, report in one line
