@@ -13,6 +13,7 @@ const MatchesPreview = lazy(() => import('./features/matches/MatchesPreview'));
 // Dev server only: import.meta.env.DEV is false in a build, so this route and its mock data are not in the shipped bundle.
 const DoctorAnalysisPreview = import.meta.env.DEV ? lazy(() => import('./features/assistant/Preview')) : null;
 import { DoctorHome, PatientHome } from './pages/Homes';
+import { AccessLog } from './features/accesslog/AccessLog';
 import { AddSymptom } from './features/diary/AddSymptom';
 import { Kit } from './pages/Kit';
 import { Login } from './pages/Login';
@@ -40,6 +41,7 @@ export function App() {
           {DoctorAnalysisPreview && <Route path="/preview/doctor-analysis" element={<Suspense fallback={<Spinner label="Loading" />}><DoctorAnalysisPreview /></Suspense>} />}
           <Route path="/preview/matches" element={<Suspense fallback={<Spinner label="Loading" />}><MatchesPreview /></Suspense>} />
           <Route path="/patient/exams/*" element={<RequireRole role="patient"><ExamsRoutes /></RequireRole>} />
+          <Route path="/patient/access" element={<RequireRole role="patient"><AccessLog /></RequireRole>} />
           <Route path="/patient/diary" element={<RequireRole role="patient"><AddSymptom /></RequireRole>} />
           <Route path="/patient/*" element={<RequireRole role="patient"><PatientHome /></RequireRole>} />
           <Route path="/doctor/*" element={<RequireRole role="doctor"><DoctorHome /></RequireRole>} />
