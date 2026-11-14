@@ -55,3 +55,10 @@ verify_jwt = false
 # MIN-4551: a doctor's numbers over time (plain arithmetic, no model). Called from the browser; the function verifies the session, the doctor role and a live grant itself.
 [functions.healthapp-over-time]
 verify_jwt = false
+
+# MIN-4556: the patient's upload list and delete, called from the browser (the function verifies the session itself).
+[functions.healthapp-my-exams]
+verify_jwt = false
+
+[functions.healthapp-exam-delete]
+verify_jwt = false

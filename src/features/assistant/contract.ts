@@ -18,7 +18,7 @@ export const CiteId = z.string().regex(/^[rfd]:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{
 export type CiteId = z.infer<typeof CiteId>;
 
 export const DocumentKind = z.enum(['blood_test', 'imaging_report', 'doctor_letter']);
-export const DocumentStatus = z.enum(['draft', 'confirmed']);
+export const DocumentStatus = z.enum(['queued', 'reading', 'draft', 'refused', 'failed', 'confirmed']);
 export const IdentityStatus = z.enum(['match', 'name_only']);
 export const Provenance = z.enum(['uploaded_by_patient', 'verified_by_source']);
 export const Flag = z.enum(['low', 'high', 'normal', 'unknown']);

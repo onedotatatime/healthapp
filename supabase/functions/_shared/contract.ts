@@ -13,7 +13,7 @@
 //  1  assistant answers are one JSON response, never streamed
 //  2  block kinds: record_fact, general_knowledge, not_in_record, possibilities[]
 //  3  cite ids are full: r:<uuid> (result), f:<uuid> (finding), d:<uuid> (diary)
-//  5  doc-create (doc_id + signed upload), then the upload, then extract-exam {doc_id}, synchronous
+//  5  doc-create (doc_id + signed upload), then the upload, then extract-exam {doc_id}: 202 at once, the reading runs in the background (MIN-4556)
 //  6  QR payload is a fragment: https://<app>/s#hs1.<jti>
 //  7  codes live 120 s, no auto-refresh
 //  8  grant-status takes grant_id as optional
@@ -21,7 +21,7 @@
 // 12  diary is a direct insert, no function
 import { z } from "npm:zod@4.6.7";
 
-export const CONTRACT_VERSION = "2026-11-14.3";
+export const CONTRACT_VERSION = "2026-11-14.4";
 
 // ---------------------------------------------------------------------------------------------
 // Calling convention
@@ -56,7 +56,8 @@ export type CiteId = z.infer<typeof CiteId>;
 
 export const Role = z.enum(["patient", "doctor"]);
 export const DocumentKind = z.enum(["blood_test", "imaging_report", "doctor_letter"]);
-export const DocumentStatus = z.enum(["draft", "confirmed"]);
+/** queued -> reading -> draft | refused | failed, then draft -> confirmed (MIN-4556). A doctor only ever sees `confirmed`. */
+export const DocumentStatus = z.enum(["queued", "reading", "draft", "refused", "failed", "confirmed"]);
 export const IdentityStatus = z.enum(["match", "name_only"]);
 export const Provenance = z.enum(["uploaded_by_patient", "verified_by_source"]);
 export const Flag = z.enum(["low", "high", "normal", "unknown"]);
@@ -284,7 +285,9 @@ export const DocCreateResponse = z.object({
 export type DocCreateResponse = z.infer<typeof DocCreateResponse>;
 
 // healthapp-extract-exam (patient) --------------------------------------------------------------
-// Synchronous, up to 60 s. One honest label and an indeterminate bar on the client (no stages).
+// MIN-4556: the phone sends the call with keepalive and does not wait. The function claims the upload, answers 202
+// {outcome:"queued"} and reads in the background; the result is the row's status (healthapp-my-exams). Before it was one
+// synchronous call of up to 60 s.
 export const ExtractRequest = z.object({
   doc_id: Uuid,
   /** MIN-4549: run only the file analysis for an already-saved document of the caller (the dev backfill script).
@@ -320,7 +323,14 @@ export const DocumentDraft = z.object({
 export type DocumentDraft = z.infer<typeof DocumentDraft>;
 export const LOW_CONFIDENCE = 0.6;
 
+export const ExtractAccepted = z.object({ outcome: z.literal("queued") });
+export type ExtractAccepted = z.infer<typeof ExtractAccepted>;
+
+/** MIN-4556: the call answers 202 {outcome:"queued"} at once and never reads the model's answer. The draft and the
+ *  refusal variants are what it returned before; they are not returned any more and stay only so client code that
+ *  still names them compiles until MIN-4557 removes them. */
 export const ExtractResponse = z.discriminatedUnion("outcome", [
+  ExtractAccepted,
   z.object({ outcome: z.literal("draft"), draft: DocumentDraft }),
   z.object({
     outcome: z.literal("refused"),
@@ -340,6 +350,60 @@ export const AnalyseResponse = z.object({
   items_count: z.number().int().min(0),
 });
 export type AnalyseResponse = z.infer<typeof AnalyseResponse>;
+
+// healthapp-my-exams and healthapp-exam-delete (patient) -----------------------------------------
+// MIN-4556 (CTO decision on MIN-4555). The patient's own uploads, one row each, newest first. Every call first
+// sweeps the caller's stuck rows (reading > 3 min, queued > 10 min) to failed. No value, no mark, no verdict here:
+// the row says where the upload is, and for a draft or a saved exam what kind it is, its date and how many values.
+// Poll every 4 s while any row is queued or reading, stop when none is and while the tab is hidden.
+export const FailReason = z.enum([
+  "model_timeout", // the reader did not answer in time (after its one retry)
+  "model_http", // the reader answered with an error (after its one retry)
+  "model_invalid", // the reader's answer was not usable (after its one retry)
+  "config", // reading is not configured on the server
+  "too_many_attempts", // read three times and still failed: Delete only
+  "stuck", // waiting or reading for too long
+  "no_file", // the photo never arrived (the upload did not finish)
+  "delete_failed", // refused, but the file could not be deleted: the row stays failed, never refused with a file
+  "unsupported_type", // not a photo
+  "error", // anything else
+]);
+export type FailReason = z.infer<typeof FailReason>;
+/** Rows from before this change: a draft that was never read is shown as failed with this code, computed at read, never stored. */
+export const NOT_READ = "not_read" as const;
+export const ExamReason = z.union([RefusalReason, FailReason, z.literal(NOT_READ)]);
+export type ExamReason = z.infer<typeof ExamReason>;
+
+export const ExamListItem = z.object({
+  id: Uuid,
+  status: DocumentStatus,
+  /** refused: a RefusalReason. failed: a FailReason, or "not_read" for an old draft that was never read. Otherwise null. */
+  reason: ExamReason.nullable(),
+  uploaded_at: Timestamp,
+  /** When the status last changed. */
+  status_at: Timestamp,
+  /** draft and confirmed only. */
+  kind: DocumentKind.nullable(),
+  exam_date: IsoDate.nullable(),
+  /** draft and confirmed only: how many values were read. No value, no flag. */
+  values_read: z.number().int().min(0).nullable(),
+  /** failed only, and only while it has been read fewer than three times and the file exists. The retry is a new call to extract-exam. */
+  can_retry: z.boolean(),
+  /** Every row that is not saved. */
+  can_delete: z.boolean(),
+});
+export type ExamListItem = z.infer<typeof ExamListItem>;
+/** No body needed. With { doc_id } the answer is that upload's draft (ExamDraftResponse) instead of the list. */
+export const MyExamsRequest = z.object({ doc_id: Uuid.optional() });
+export const MyExamsResponse = z.object({ exams: z.array(ExamListItem), server_now: Timestamp });
+export type MyExamsResponse = z.infer<typeof MyExamsResponse>;
+/** The review beside the photo: what extract-exam used to return, read from the stored draft. 404 not_found unless the upload is the caller's and is a draft. */
+export const ExamDraftResponse = z.object({ draft: DocumentDraft });
+export type ExamDraftResponse = z.infer<typeof ExamDraftResponse>;
+/** Deletes an upload that is not saved, file included. 404 not_found for a saved or someone else's. */
+export const ExamDeleteRequest = z.object({ doc_id: Uuid });
+export const ExamDeleteResponse = z.object({ deleted: z.literal(true), doc_id: Uuid });
+export type ExamDeleteResponse = z.infer<typeof ExamDeleteResponse>;
 
 // healthapp-confirm-doc (patient) ---------------------------------------------------------------
 // Edits to values, units and dates are accepted and marked edited_by_patient.

@@ -12,7 +12,10 @@ import type {
   DocPhotoResponse,
   DocumentRow,
   ErrorBody,
+  ExamDeleteResponse,
+  ExamDraftResponse,
   ExtractResponse,
+  MyExamsResponse,
   FileAnalysisRow,
   FindingRow,
   GrantEnvelope,
@@ -212,6 +215,28 @@ export const extractRefusedUnreadable: ExtractResponse = {
   reason: "unreadable",
   message: "The page could not be read. Try a sharper photo in more light.",
 };
+
+// MIN-4556: the call answers at once; the result is the row's status in the list.
+export const extractQueued: ExtractResponse = { outcome: "queued" };
+
+const ago = (s: number) => new Date(Date.parse(NOW) - s * 1000).toISOString().replace("Z", "+00:00");
+/** One row per status the screen has to draw, newest first. Synthetic. */
+export const myExams: MyExamsResponse = {
+  server_now: NOW,
+  exams: [
+    { id: "e1000000-0000-4000-8000-000000000001", status: "queued", reason: null, uploaded_at: ago(5), status_at: ago(5), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true },
+    { id: "e1000000-0000-4000-8000-000000000002", status: "reading", reason: null, uploaded_at: ago(60), status_at: ago(40), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true },
+    { id: IDS.docDraft, status: "draft", reason: null, uploaded_at: ago(300), status_at: ago(240), kind: "blood_test", exam_date: "2026-11-10", values_read: 2, can_retry: false, can_delete: true },
+    { id: "e1000000-0000-4000-8000-000000000004", status: "refused", reason: "name_mismatch", uploaded_at: ago(600), status_at: ago(560), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true },
+    { id: "e1000000-0000-4000-8000-000000000005", status: "failed", reason: "model_timeout", uploaded_at: ago(900), status_at: ago(820), kind: null, exam_date: null, values_read: null, can_retry: true, can_delete: true },
+    { id: "e1000000-0000-4000-8000-000000000006", status: "failed", reason: "too_many_attempts", uploaded_at: ago(1200), status_at: ago(1100), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true },
+    { id: IDS.docBlood, status: "confirmed", reason: null, uploaded_at: ago(86400), status_at: ago(86000), kind: "blood_test", exam_date: "2026-11-04", values_read: 4, can_retry: false, can_delete: false },
+  ],
+};
+
+export const examDraft: ExamDraftResponse = { draft: (extractDraft as Extract<ExtractResponse, { outcome: "draft" }>).draft };
+
+export const examDeleted: ExamDeleteResponse = { deleted: true, doc_id: "e1000000-0000-4000-8000-000000000004" };
 
 export const confirmDoc: ConfirmDocResponse = {
   document: { ...documents[0], id: IDS.docDraft, exam_date: "2026-11-10", created_at: NOW, confirmed_at: NOW },

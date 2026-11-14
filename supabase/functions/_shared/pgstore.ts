@@ -4,8 +4,20 @@
 // and the handler has already checked the session and the role (docs.ts authenticate).
 // The schema name comes from the validated env (dev | demo), never from input. Values are parameters.
 import postgres from "npm:postgres@3.4.5";
-import { bucketFor, FindingRow, type HealthappEnv, ResultRow } from "./contract.ts";
-import { type DocMeta, DocRecordSchema, type DocState, type PlanOutcome, type Role, type Saved, type Store } from "./docs.ts";
+import { bucketFor, DocumentDraft, FindingRow, type HealthappEnv, ResultRow } from "./contract.ts";
+import {
+  type DocMeta,
+  DocRecordSchema,
+  type DocState,
+  type ExamRow,
+  MAX_READS,
+  type PlanOutcome,
+  QUEUED_STUCK_MINUTES,
+  READING_STUCK_MINUTES,
+  type Role,
+  type Saved,
+  type Store,
+} from "./docs.ts";
 import type { DraftIn } from "./extract.ts";
 
 type Sql = postgres.Sql;
@@ -35,6 +47,7 @@ const parseState = (d: Record<string, unknown>, results: unknown[], findings: un
     sha256_record: (d.sha256_record as string) ?? null,
     printed_name: (d.printed_name as string) ?? null,
     printed_id: (d.printed_id as string) ?? null,
+    header_confidence: DocumentDraft.shape.header_confidence.safeParse(d.extract_confidence).data ?? null,
   };
   return {
     document: DocRecordSchema.parse(d),
@@ -113,7 +126,7 @@ export const pgStore: Store = {
     const id = crypto.randomUUID();
     const path = `${patientId}/${id}`;
     await db().unsafe(
-      `insert into ${schema(env)}.documents (id, patient_id, status, storage_path, content_type) values ($1, $2, 'draft', $3, $4)`,
+      `insert into ${schema(env)}.documents (id, patient_id, status, storage_path, content_type) values ($1, $2, 'queued', $3, $4)`,
       [id, patientId, path, contentType],
     );
     return { id, storage_path: path };
@@ -136,13 +149,83 @@ export const pgStore: Store = {
     return rows[0]?.e ?? null;
   },
 
+  async claimForReading(env, patientId, docId) {
+    const S = schema(env);
+    // One statement is the lock: two kicks cannot both take the row, so nothing is read twice.
+    const up = await db().unsafe(
+      `update ${S}.documents set status = 'reading', status_reason = null, status_at = now(), read_attempts = read_attempts + 1
+        where id = $1::uuid and patient_id = $2::uuid and read_attempts < $3::int
+          and (status in ('queued', 'failed') or (status = 'draft' and kind is null)) returning id`,
+      [docId, patientId, MAX_READS],
+    );
+    return up.length === 0 ? null : await load(db(), S, "d.id = $1 and d.patient_id = $2", [docId, patientId]);
+  },
+
+  async markRefused(env, patientId, docId, reason) {
+    const S = schema(env);
+    return await db().begin(async (tx) => {
+      // The row keeps the code and the times. Everything the file or the reading put on it is cleared in this statement.
+      const up = await tx.unsafe(
+        `update ${S}.documents set status = 'refused', status_reason = $3, status_at = now(),
+                storage_path = null, content_type = null, sha256_file = null, sha256_record = null, kind = null, language = null,
+                exam_date = null, issuer = null, printed_name = null, printed_id = null, identity_status = null, extract_confidence = null
+          where id = $1::uuid and patient_id = $2::uuid and status = 'reading' returning id`,
+        [docId, patientId, reason],
+      );
+      if (up.length === 0) return false;
+      await tx.unsafe(`delete from ${S}.results where document_id = $1::uuid`, [docId]);
+      await tx.unsafe(`delete from ${S}.findings where document_id = $1::uuid`, [docId]);
+      return true;
+    });
+  },
+
+  async markFailed(env, patientId, docId, reason) {
+    await db().unsafe(
+      `update ${schema(env)}.documents
+          set status = 'failed', status_reason = case when read_attempts >= $4::int then 'too_many_attempts' else $3 end, status_at = now()
+        where id = $1::uuid and patient_id = $2::uuid and status = 'reading'`,
+      [docId, patientId, reason, MAX_READS],
+    );
+  },
+
+  async sweepStuck(env, patientId) {
+    const S = schema(env);
+    const r = await db().unsafe(
+      `update ${S}.documents d set status = 'failed', status_at = now(),
+              status_reason = case when d.read_attempts >= $4::int then 'too_many_attempts'
+                                   when d.status = 'queued' and not exists
+                                     (select 1 from storage.objects o where o.bucket_id = $2 and o.name = d.storage_path) then 'no_file'
+                                   else 'stuck' end
+        where d.patient_id = $1::uuid
+          and ((d.status = 'reading' and d.status_at < now() - make_interval(mins => $5::int))
+            or (d.status = 'queued' and d.status_at < now() - make_interval(mins => $3::int)))
+        returning d.id`,
+      [patientId, bucketFor(env), QUEUED_STUCK_MINUTES, MAX_READS, READING_STUCK_MINUTES],
+    );
+    return r.length;
+  },
+
+  async listOwn(env, patientId) {
+    const S = schema(env);
+    const rows = await db().unsafe(
+      `select d.id::text as id, d.status, d.status_reason, to_json(d.created_at) #>> '{}' as created_at,
+              to_json(d.status_at) #>> '{}' as status_at, d.kind, to_char(d.exam_date, 'YYYY-MM-DD') as exam_date,
+              d.read_attempts::int as read_attempts, (d.storage_path is not null) as has_file,
+              (select count(*)::int from ${S}.results r where r.document_id = d.id) as values_read
+         from ${S}.documents d where d.patient_id = $1::uuid order by d.created_at desc, d.id`,
+      [patientId],
+    );
+    return rows as unknown as ExamRow[];
+  },
+
   async saveExtraction(env, patientId, docId, draft: DraftIn, sha256File, identity): Promise<Saved | null> {
     const S = schema(env);
     return await db().begin(async (tx) => {
       const up = await tx.unsafe(
         `update ${S}.documents set kind = $3, language = $4, exam_date = $5, issuer = $6, printed_name = $7,
-                printed_id = $8, extract_confidence = $9::jsonb, sha256_file = $10, identity_status = $11
-          where id = $1 and patient_id = $2 and status = 'draft' returning id`,
+                printed_id = $8, extract_confidence = $9::jsonb, sha256_file = $10, identity_status = $11,
+                status = 'draft', status_reason = null, status_at = now()
+          where id = $1 and patient_id = $2 and status = 'reading' returning id`,
         [docId, patientId, draft.kind, draft.language, draft.exam_date, draft.issuer, draft.printed_name,
           draft.printed_id, jsonb(draft.header_confidence), sha256File, identity],
       );
@@ -173,11 +256,12 @@ export const pgStore: Store = {
     });
   },
 
-  async discardDraft(env, patientId, docId) {
-    await db().unsafe(`delete from ${schema(env)}.documents where id = $1 and patient_id = $2 and status = 'draft'`, [
-      docId,
-      patientId,
-    ]);
+  async deleteUnsaved(env, patientId, docId) {
+    const r = await db().unsafe(
+      `delete from ${schema(env)}.documents where id = $1::uuid and patient_id = $2::uuid and status <> 'confirmed' returning id`,
+      [docId, patientId],
+    );
+    return r.length > 0;
   },
 
   async confirm(env, patientId, docId, plan) {

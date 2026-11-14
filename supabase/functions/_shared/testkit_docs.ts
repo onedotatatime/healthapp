@@ -1,12 +1,16 @@
 // Test helpers only (never imported by a function): an in-memory Store, Blobs and Auth for the
 // document handlers. The fake enforces the same ownership filter as pgstore.ts, so "another patient's
 // document" is a test of the handler's use of the store, not of the fake.
-import type { HealthappEnv } from "./contract.ts";
+import type { FailReason, HealthappEnv, RefusalReason } from "./contract.ts";
 import {
   type Auth,
   type Blobs,
   type DocState,
+  type ExamRow,
+  MAX_READS,
   type PlanOutcome,
+  QUEUED_STUCK_MINUTES,
+  READING_STUCK_MINUTES,
   type Role,
   type Saved,
   type Store,
@@ -34,10 +38,16 @@ export function fakeStore() {
   const grants = new Map<string, { doctor: string; patient: string; end: string }>();
   /** file_analysis rows by document id: an upsert, like the table's primary key. */
   const analyses = new Map<string, AnalysisFields & { patient_id: string }>();
+  /** What the table has besides DocState: the reason code, when the status last changed, how many reads. */
+  const extra = new Map<string, { reason: string | null; at: number; attempts: number }>();
+  /** The test's clock in ms; the sweep reads it, never the wall clock. */
+  const clock = { now: Date.parse("2026-11-14T10:00:00.000Z") };
   let saves = 0;
   let seq = 0;
   const calls: string[] = [];
   const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+  /** The bucket's object names, for the sweep's "no_file" rule; fakeBlobs().files is wired in by the test. */
+  let blobFiles: () => Iterable<string> = () => [];
   const store: Store = {
     roleOf: (_e, uid) => Promise.resolve(ROLES[uid] ?? null),
     identityOf: (_e, uid) => Promise.resolve(PROFILES[uid] ?? null),
@@ -57,12 +67,13 @@ export function fakeStore() {
       docs.set(id, {
         document: {
           id, patient_id: patientId, kind: null as never, language: null, exam_date: null, issuer: null,
-          identity_status: null, provenance: "uploaded_by_patient", status: "draft",
-          created_at: "2026-11-14T10:00:00.000+00:00", confirmed_at: null,
+          identity_status: null, provenance: "uploaded_by_patient", status: "queued",
+          created_at: new Date(clock.now).toISOString().replace("Z", "+00:00"), confirmed_at: null,
         },
         meta: { storage_path: path, content_type: contentType, sha256_file: null, sha256_record: null, printed_name: null, printed_id: null },
         results: [], findings: [],
       });
+      extra.set(id, { reason: null, at: clock.now, attempts: 0 });
       calls.push("createDraft");
       return Promise.resolve({ id, storage_path: path });
     },
@@ -72,21 +83,95 @@ export function fakeStore() {
       const g = grants.get(gid);
       return Promise.resolve(g && g.doctor === doctor && g.patient === patient && Date.parse(g.end) > Date.now() ? g.end : null);
     },
+    claimForReading(_e, patientId, docId) {
+      calls.push("claimForReading");
+      const cur = docs.get(docId), x = extra.get(docId);
+      if (!cur || !x || cur.document.patient_id !== patientId || x.attempts >= MAX_READS) return Promise.resolve(null);
+      const st = cur.document.status;
+      if (!(st === "queued" || st === "failed" || (st === "draft" && cur.document.kind === null))) return Promise.resolve(null);
+      cur.document = { ...cur.document, status: "reading" };
+      Object.assign(x, { reason: null, at: clock.now, attempts: x.attempts + 1 });
+      return Promise.resolve(cur);
+    },
     saveExtraction(_e, patientId, docId, d: DraftIn, sha, identity): Promise<Saved | null> {
       calls.push("saveExtraction");
       const cur = docs.get(docId);
-      if (!cur || cur.document.patient_id !== patientId || cur.document.status !== "draft") return Promise.resolve(null);
+      if (!cur || cur.document.patient_id !== patientId || cur.document.status !== "reading") return Promise.resolve(null);
       let n = 0;
-      cur.document = { ...cur.document, kind: d.kind, language: d.language, exam_date: d.exam_date, issuer: d.issuer, identity_status: identity };
-      cur.meta = { ...cur.meta, sha256_file: sha, printed_name: d.printed_name, printed_id: d.printed_id };
+      cur.document = { ...cur.document, kind: d.kind, language: d.language, exam_date: d.exam_date, issuer: d.issuer, identity_status: identity, status: "draft" };
+      cur.meta = { ...cur.meta, sha256_file: sha, printed_name: d.printed_name, printed_id: d.printed_id, header_confidence: d.header_confidence };
+      Object.assign(extra.get(docId)!, { reason: null, at: clock.now });
       cur.results = d.results.map((r) => ({ ...r, id: uuid(1000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
       cur.findings = d.findings.map((f) => ({ ...f, id: uuid(2000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
       return Promise.resolve(cur);
     },
-    discardDraft(_e, p, id) {
-      calls.push("discardDraft");
-      if (docs.get(id)?.document.patient_id === p && docs.get(id)?.document.status === "draft") docs.delete(id);
+    markRefused(_e, patientId, docId, reason: RefusalReason) {
+      calls.push("markRefused");
+      const cur = docs.get(docId);
+      if (!cur || cur.document.patient_id !== patientId || cur.document.status !== "reading") return Promise.resolve(false);
+      // the same clearing as the SQL statement: nothing the file or the reading put on the row survives
+      cur.document = {
+        ...cur.document, status: "refused", kind: null as never, language: null, exam_date: null, issuer: null, identity_status: null,
+      };
+      cur.meta = {
+        storage_path: null, content_type: null, sha256_file: null, sha256_record: null, printed_name: null, printed_id: null,
+        header_confidence: null,
+      };
+      cur.results = [];
+      cur.findings = [];
+      Object.assign(extra.get(docId)!, { reason, at: clock.now });
+      return Promise.resolve(true);
+    },
+    markFailed(_e, patientId, docId, reason: FailReason) {
+      calls.push("markFailed");
+      const cur = docs.get(docId), x = extra.get(docId);
+      if (cur && x && cur.document.patient_id === patientId && cur.document.status === "reading") {
+        cur.document = { ...cur.document, status: "failed" };
+        Object.assign(x, { reason: x.attempts >= MAX_READS ? "too_many_attempts" : reason, at: clock.now });
+      }
       return Promise.resolve();
+    },
+    sweepStuck(_e, patientId) {
+      calls.push("sweepStuck");
+      let n = 0;
+      for (const [id, cur] of docs) {
+        const x = extra.get(id)!;
+        if (cur.document.patient_id !== patientId) continue;
+        const age = (clock.now - x.at) / 60_000;
+        const stuckReading = cur.document.status === "reading" && age > READING_STUCK_MINUTES;
+        const stuckQueued = cur.document.status === "queued" && age > QUEUED_STUCK_MINUTES;
+        if (!stuckReading && !stuckQueued) continue;
+        const objectExists = [...blobFiles()].includes(cur.meta.storage_path ?? "");
+        cur.document = { ...cur.document, status: "failed" };
+        Object.assign(x, {
+          at: clock.now,
+          reason: x.attempts >= MAX_READS ? "too_many_attempts" : stuckQueued && !objectExists ? "no_file" : "stuck",
+        });
+        n++;
+      }
+      return Promise.resolve(n);
+    },
+    listOwn(_e, patientId) {
+      calls.push("listOwn");
+      const rows: ExamRow[] = [...docs.values()].filter((d) => d.document.patient_id === patientId).map((d) => {
+        const x = extra.get(d.document.id)!;
+        return {
+          id: d.document.id, status: d.document.status, status_reason: x.reason, created_at: d.document.created_at,
+          status_at: new Date(x.at).toISOString().replace("Z", "+00:00"), kind: d.document.kind, exam_date: d.document.exam_date,
+          read_attempts: x.attempts, has_file: d.meta.storage_path !== null, values_read: d.results.length,
+        };
+      });
+      return Promise.resolve(rows.reverse());
+    },
+    deleteUnsaved(_e, p, id) {
+      calls.push("deleteUnsaved");
+      const cur = docs.get(id);
+      if (cur?.document.patient_id === p && cur.document.status !== "confirmed") {
+        docs.delete(id);
+        extra.delete(id);
+        return Promise.resolve(true);
+      }
+      return Promise.resolve(false);
     },
     async confirm(_e, patientId, docId, plan) {
       calls.push("confirm");
@@ -110,20 +195,26 @@ export function fakeStore() {
       return { state: cur };
     },
   };
-  return { store, docs, grants, calls, analyses, saves: () => saves };
+  return { store, docs, grants, calls, analyses, saves: () => saves, extra, clock, setBlobFiles: (f: () => Iterable<string>) => void (blobFiles = f) };
 }
 
 export function fakeBlobs() {
   const files = new Map<string, Uint8Array>();
   const removed: string[] = [];
+  let refuseRemove = false;
   const signed: { path: string; seconds: number }[] = [];
   const blobs: Blobs = {
     createSignedUpload: (b, p) => Promise.resolve({ token: "upload-token", signed_url: `https://x.supabase.co/storage/v1/object/upload/sign/${b}/${p}?token=upload-token` }),
     download: (_b, p) => Promise.resolve(files.get(p) ?? null),
-    remove(_b, p) { removed.push(p); files.delete(p); return Promise.resolve(); },
+    remove(_b, p) {
+      removed.push(p);
+      if (refuseRemove) return Promise.resolve(false);
+      files.delete(p);
+      return Promise.resolve(true);
+    },
     signedUrl(b, p, seconds) { signed.push({ path: p, seconds }); return Promise.resolve(`https://x.supabase.co/storage/v1/object/sign/${b}/${p}?token=t`); },
   };
-  return { blobs, files, removed, signed };
+  return { blobs, files, removed, signed, refuseRemove: (v: boolean) => void (refuseRemove = v) };
 }
 
 export function call(fn: string, body: unknown, token: string | null = "tp", env: string | null = "dev"): Request {
