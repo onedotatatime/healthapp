@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '../../api/call';
-import type { DocCreateResponse, DocumentDraft, ExtractResponse } from '../../api/contract';
+import type { DocCreateResponse, DocumentDraft } from '../../api/contract';
 import {
   buildConfirm,
   failureOf,
@@ -9,8 +9,15 @@ import {
   outOfRangeText,
   parseNumber,
   printedRange,
-  readExam,
+  FALLBACK_REASON,
+  POLL_MS,
+  reasonText,
   refusalView,
+  rowView,
+  scanFailureOf,
+  scanPhoto,
+  shouldPoll,
+  valuesReadText,
   validateForm,
   type ExamsApi,
 } from './logic';
@@ -38,7 +45,7 @@ function fakeApi(over: Partial<ExamsApi> = {}): ExamsApi {
   return {
     createDoc: vi.fn(async () => doc),
     upload: vi.fn(async () => undefined),
-    extract: vi.fn(async (): Promise<ExtractResponse> => ({ outcome: 'draft', draft })),
+    kick: vi.fn(async () => undefined),
     confirm: vi.fn(),
     listRecords: vi.fn(),
     getRecord: vi.fn(),
@@ -71,55 +78,96 @@ describe('refusals pick their sentence from the server reason', () => {
   });
 });
 
-describe('readExam', () => {
-  it('creates, uploads, extracts, and returns the draft', async () => {
+describe('scanPhoto (MIN-4557: nothing waits for the reading)', () => {
+  it('creates, uploads, kicks the reading, and says saved', async () => {
     const api = fakeApi();
-    const r = await readExam(api, { blob });
-    expect(r).toMatchObject({ phase: 'review' });
+    const r = await scanPhoto(api, { blob });
+    expect(r).toEqual({ phase: 'saved', docId: DOC });
     expect(api.createDoc).toHaveBeenCalledWith(blob.size);
     expect(api.upload).toHaveBeenCalledWith(doc, blob);
-    expect(api.extract).toHaveBeenCalledWith(DOC, expect.any(AbortSignal));
+    expect(api.kick).toHaveBeenCalledWith(DOC);
   });
-  it('turns a refusal into a view, and forgets the doc so the next photo starts clean', async () => {
-    const api = fakeApi({ extract: vi.fn(async () => ({ outcome: 'refused', reason: 'unreadable', message: 'x' }) as ExtractResponse) });
-    const ctx = { blob };
-    const r = await readExam(api, ctx);
-    expect(r).toMatchObject({ phase: 'refused', view: { kind: 'cannot-read' } });
-    expect(ctx).toMatchObject({ docId: undefined, uploaded: false });
+  it('does not wait for the kick: a kick that never answers still gives "saved"', async () => {
+    const api = fakeApi({ kick: vi.fn(() => new Promise<void>(() => {})) });
+    expect(await scanPhoto(api, { blob })).toMatchObject({ phase: 'saved' });
   });
-  it('after a network failure on extract, a retry does not upload the photo again', async () => {
+  it('five scans in a row: five rows created, five kicks, each with its own id', async () => {
     let n = 0;
-    const api = fakeApi({
-      extract: vi.fn(async (): Promise<ExtractResponse> => {
-        if (n++ === 0) throw new ApiError(0, 'down');
-        return { outcome: 'draft', draft };
-      }),
-    });
-    const ctx = { blob };
-    expect(await readExam(api, ctx)).toMatchObject({ phase: 'failed', failure: { kind: 'network' } });
-    expect(await readExam(api, ctx)).toMatchObject({ phase: 'review' });
-    expect(api.createDoc).toHaveBeenCalledTimes(1);
-    expect(api.upload).toHaveBeenCalledTimes(1);
-    expect(api.extract).toHaveBeenCalledTimes(2);
+    const api = fakeApi({ createDoc: vi.fn(async () => ({ ...doc, doc_id: U(10 + n++) })) });
+    for (let i = 0; i < 5; i++) expect(await scanPhoto(api, { blob })).toMatchObject({ phase: 'saved' });
+    expect(api.kick).toHaveBeenCalledTimes(5);
+    expect((api.kick as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])).toEqual([U(10), U(11), U(12), U(13), U(14)]);
   });
-  it('after an upload failure, a retry starts again from a new draft', async () => {
+  it('after an upload failure the photo is kept and a retry starts again from a new row, with no kick before it worked', async () => {
     const api = fakeApi({ upload: vi.fn().mockRejectedValueOnce(new ApiError(0, 'down')).mockResolvedValue(undefined) });
     const ctx = { blob };
-    expect(await readExam(api, ctx)).toMatchObject({ phase: 'failed' });
-    expect(await readExam(api, ctx)).toMatchObject({ phase: 'review' });
+    expect(await scanPhoto(api, ctx)).toMatchObject({ phase: 'failed', failure: { title: 'The photo was not saved.', body: 'Try again.' } });
+    expect(api.kick).not.toHaveBeenCalled();
+    expect(ctx.blob).toBe(blob);
+    expect(await scanPhoto(api, ctx)).toMatchObject({ phase: 'saved' });
     expect(api.createDoc).toHaveBeenCalledTimes(2);
+    expect(api.kick).toHaveBeenCalledTimes(1);
   });
-  it('stops waiting at the limit and says the photo is kept', async () => {
-    const api = fakeApi({
-      extract: (_id, signal) => new Promise((_, rej) => signal?.addEventListener('abort', () => rej(new DOMException('a', 'AbortError')))),
-    });
-    const r = await readExam(api, { blob }, 20);
-    expect(r).toMatchObject({ phase: 'failed', failure: { kind: 'timeout', body: expect.stringContaining('kept') } });
+  it('an ended session still says so; any other failure uses the one sentence', () => {
+    expect(scanFailureOf(new ApiError(401, 'x', 'unauthenticated')).kind).toBe('session');
+    expect(scanFailureOf(new ApiError(503, 'x')).title).toBe('The photo was not saved.');
+    expect(scanFailureOf(new Error('boom')).title).toBe('The photo was not saved.');
   });
   it('maps the typed server errors', () => {
     expect(failureOf(new ApiError(503, 'x', 'model_unavailable')).kind).toBe('server');
     expect(failureOf(new ApiError(401, 'x', 'unauthenticated')).kind).toBe('session');
     expect(failureOf(new Error('boom')).kind).toBe('server');
+  });
+});
+
+describe('the status table of "My exams" (MIN-4555 and its addendum)', () => {
+  const row = (status: Parameters<typeof rowView>[0]['status'], o: Partial<Parameters<typeof rowView>[0]> = {}) =>
+    rowView({ status, reason: null, can_retry: false, can_delete: true, unchecked: false, ...o });
+
+  it('waiting and reading: a chip, no action, no opening', () => {
+    expect(row('queued')).toMatchObject({ chip: 'Waiting', opens: null, retry: false, del: false, reason: null });
+    expect(row('reading')).toMatchObject({ chip: 'Reading', opens: null, retry: false, del: false });
+  });
+  it('draft: "Ready to check", opens the review', () => {
+    expect(row('draft')).toMatchObject({ chip: 'Ready to check', opens: 'review', notChecked: false });
+  });
+  it('confirmed: "Saved", opens the saved exam; "not checked" only while unchecked', () => {
+    expect(row('confirmed', { can_delete: false })).toMatchObject({ chip: 'Saved', opens: 'record', notChecked: false, del: false });
+    expect(row('confirmed', { unchecked: true, can_delete: false })).toMatchObject({ chip: 'Saved', opens: 'record', notChecked: true });
+    expect(row('confirmed', { unchecked: undefined, can_delete: false }).notChecked).toBe(false);
+  });
+  it('refused: the reason in words and Delete only (the file is gone), chip by reason code', () => {
+    const v = row('refused', { reason: 'name_mismatch' });
+    expect(v).toMatchObject({ chip: 'Not your exam', retry: false, del: true, opens: null });
+    expect(v.reason).toBe("This exam isn't yours. The name on it doesn't match your profile. We didn't save it.");
+    expect(row('refused', { reason: 'name_missing' }).chip).toBe('Not your exam');
+    expect(row('refused', { reason: 'unsupported_kind' }).chip).toBe('Not an exam');
+    expect(row('refused', { reason: 'unreadable' }).chip).toBe('Could not read');
+  });
+  it('failed: the reason, Try again only when the server says so, Delete', () => {
+    expect(row('failed', { reason: 'model_timeout', can_retry: true })).toMatchObject({ chip: 'Could not read', retry: true, del: true });
+    expect(row('failed', { reason: 'too_many_attempts', can_retry: false })).toMatchObject({ retry: false, del: true });
+  });
+  it('a reason code with no sentence says the fallback, and so does a missing reason', () => {
+    expect(reasonText('something_new')).toBe(FALLBACK_REASON);
+    expect(reasonText(null)).toBe(FALLBACK_REASON);
+    expect(FALLBACK_REASON).toBe('We could not read this file.');
+  });
+  it('no row says a cause, a condition, advice, a score, or a printed name', () => {
+    const codes = ['unreadable', 'unsupported_kind', 'incomplete', 'name_missing', 'name_mismatch', 'id_mismatch', 'model_timeout', 'model_http', 'model_invalid', 'config', 'too_many_attempts', 'stuck', 'no_file', 'delete_failed', 'unsupported_type', 'error', 'not_read', 'zzz'];
+    for (const c of codes) expect(reasonText(c)).not.toMatch(/\b(cause|diagnos|condition|advice|score|risk|healthy|abnormal)\w*/i);
+  });
+  it('polls while any row is waiting or reading, and only then', () => {
+    expect(shouldPoll([{ status: 'confirmed' }, { status: 'draft' }, { status: 'failed' }, { status: 'refused' }])).toBe(false);
+    expect(shouldPoll([{ status: 'confirmed' }, { status: 'queued' }])).toBe(true);
+    expect(shouldPoll([{ status: 'reading' }])).toBe(true);
+    expect(shouldPoll([])).toBe(false);
+    expect(POLL_MS).toBe(4000);
+  });
+  it('"N values read"', () => {
+    expect(valuesReadText(9)).toBe('9 values read');
+    expect(valuesReadText(1)).toBe('1 value read');
+    expect(valuesReadText(null)).toBeNull();
   });
 });
 

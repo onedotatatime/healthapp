@@ -10,6 +10,7 @@ import { Spinner } from '../../components/Primitives';
 import { isGrantGone, type AssistantApi } from './api';
 import type { DocPhotoResponse } from './contract';
 import { AboutFileView, type FileState } from './FileFacts';
+import { UNCHECKED_LINE, isUnchecked } from './unchecked';
 import { FLAG_WORD, KIND_LABEL, formatDate, formatTime, rangeText, valueText, type RecordData, type RecordIndex, type Subject } from './record';
 
 type Photo = { status: 'loading' } | { status: 'ok'; photo: DocPhotoResponse } | { status: 'error' };
@@ -93,7 +94,8 @@ function DocBody({ doc, focus, record, api, grantId, onGone }: { doc: NonNullabl
 
   const results = record.results.filter((r) => r.document_id === doc.id);
   const findings = record.findings.filter((f) => f.document_id === doc.id);
-  const marks: MarkKind[] = [doc.provenance === 'verified_by_source' ? 'verified' : 'uploaded', ...(doc.identity_status === 'name_only' ? (['name-match'] as MarkKind[]) : [])];
+  const unchecked = isUnchecked(doc);
+  const marks: MarkKind[] = [doc.provenance === 'verified_by_source' ? 'verified' : 'uploaded', ...(unchecked ? (['unchecked'] as MarkKind[]) : []), ...(doc.identity_status === 'name_only' ? (['name-match'] as MarkKind[]) : [])];
   const edited = results.some((r) => r.edited_by_patient) || findings.some((f) => f.edited_by_patient);
   return (
     <div className="as-sheet-body">
@@ -101,6 +103,7 @@ function DocBody({ doc, focus, record, api, grantId, onGone }: { doc: NonNullabl
         {marks.map((m) => <ProvenanceMark key={m} kind={m} surface="doctor" />)}
         {edited && <ProvenanceMark kind="edited" surface="doctor" />}
       </span>
+      {unchecked && <p className="as-meta" data-testid="unchecked-line">{UNCHECKED_LINE}</p>}
       {doc.issuer && <p className="as-meta">{doc.issuer}</p>}
       <div className="as-sheet-cols">
         <div>
@@ -137,7 +140,7 @@ function DocBody({ doc, focus, record, api, grantId, onGone }: { doc: NonNullabl
           )}
         </div>
       </div>
-      <AboutFileView state={file} mark={marks[0]} onRetry={() => setFileTry((n) => n + 1)} />
+      <AboutFileView state={file} mark={marks[0]} unchecked={unchecked} onRetry={() => setFileTry((n) => n + 1)} />
     </div>
   );
 }

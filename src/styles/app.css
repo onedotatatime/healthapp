@@ -37,7 +37,7 @@ p{margin:0 0 var(--space-3)}
 .mark.verified{background:var(--teal);color:#fff}
 .mark.uploaded{background:transparent;border-color:var(--line-strong);color:var(--ink)}
 .mark.edited{background:var(--surface-2);border-color:var(--line-strong);color:var(--ink)}
-.mark.name-match{background:var(--amber-bg);border-color:var(--amber-ink);color:var(--amber-ink)}
+.mark.name-match,.mark.unchecked{background:var(--amber-bg);border-color:var(--amber-ink);color:var(--amber-ink)}
 
 /* citation chip */
 .chip-wrap{position:relative;display:inline-block;vertical-align:baseline;margin:0 2px}

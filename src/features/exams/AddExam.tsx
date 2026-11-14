@@ -1,88 +1,76 @@
-import { Camera, Image as ImageIcon } from '@phosphor-icons/react';
+import { Camera, CheckCircle, Image as ImageIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { ErrorNote } from '../../components/Primitives';
+import { Link } from 'react-router';
+import { ErrorNote, Spinner } from '../../components/Primitives';
 import { useExams } from './context';
 import { preparePhoto } from './photo';
-import { RefusalNote } from './Marks';
-import { readExam, type Failure, type ReadCtx, type RefusalView } from './logic';
-import { ReviewPanel } from './ReviewPanel';
-import type { DocumentDraft } from '../../api/contract';
+import { scanPhoto, type Failure, type ScanCtx } from './logic';
 
-const SLOW_MS = 40_000;
+type Phase = { name: 'idle'; error?: string } | { name: 'saving' } | { name: 'failed'; failure: Failure };
 
-type Phase =
-  | { name: 'idle'; error?: string }
-  | { name: 'reading' }
-  | { name: 'review'; draft: DocumentDraft }
-  | { name: 'refused'; view: RefusalView }
-  | { name: 'failed'; failure: Failure };
-
-/** Screen 1: capture, reading, check beside the photo, could not read. Saving navigates to the record. */
+/**
+ * The scan screen (MIN-4557). Take or pick a photo, it uploads, the screen says "Saved. Scan the next one" and the camera is
+ * ready again. No analysis here: the reading runs on the server and its result is a row in "My exams".
+ */
 export function AddExam() {
-  const { api, base, home } = useExams();
-  const nav = useNavigate();
+  const { api, home } = useExams();
   const [phase, setPhase] = useState<Phase>({ name: 'idle' });
-  const [slow, setSlow] = useState(false);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const ctx = useRef<ReadCtx | null>(null);
+  const [count, setCount] = useState(0);
+  const ctx = useRef<ScanCtx | null>(null);
+  const [thumb, setThumb] = useState<string | null>(null);
 
-  useEffect(() => () => { if (photoUrl) URL.revokeObjectURL(photoUrl); }, [photoUrl]);
-
-  useEffect(() => {
-    if (phase.name !== 'reading') return;
-    setSlow(false);
-    const t = setTimeout(() => setSlow(true), SLOW_MS);
-    return () => clearTimeout(t);
-  }, [phase.name]);
+  useEffect(() => () => { if (thumb) URL.revokeObjectURL(thumb); }, [thumb]);
 
   async function run() {
     if (!ctx.current) return;
-    setPhase({ name: 'reading' });
-    const r = await readExam(api, ctx.current);
-    if (r.phase === 'review') setPhase({ name: 'review', draft: r.draft });
-    else if (r.phase === 'refused') setPhase({ name: 'refused', view: r.view });
-    else setPhase({ name: 'failed', failure: r.failure });
+    setPhase({ name: 'saving' });
+    const r = await scanPhoto(api, ctx.current);
+    if (r.phase === 'saved') {
+      ctx.current = null;
+      setThumb(null);
+      setCount((n) => n + 1);
+      setPhase({ name: 'idle' });
+    } else {
+      setPhase({ name: 'failed', failure: r.failure });
+    }
   }
 
   async function onFile(file: File | undefined) {
     if (!file) return;
-    setPhase({ name: 'reading' });
+    setPhase({ name: 'saving' });
     let blob: Blob;
     try {
       blob = await preparePhoto(file);
     } catch {
       return setPhase({ name: 'idle', error: "We couldn't open that photo. Take it again, or choose another one." });
     }
-    setPhotoUrl(URL.createObjectURL(blob));
+    setThumb(URL.createObjectURL(blob));
     ctx.current = { blob };
     await run();
   }
 
-  function reset() {
+  function discard() {
     ctx.current = null;
-    setPhotoUrl(null);
+    setThumb(null);
     setPhase({ name: 'idle' });
   }
 
-  if (phase.name === 'review' && photoUrl) {
-    return (
-      <ReviewPanel
-        draft={phase.draft}
-        photoUrl={photoUrl}
-        onRetake={reset}
-        onSaved={(id) => nav(`${base}/${id}`, { state: { saved: true } })}
-      />
-    );
-  }
-
+  const idle = phase.name === 'idle';
   return (
     <main className="page" data-testid="add-exam">
-      <h1>Add an exam</h1>
+      <h1>Scan an exam</h1>
 
-      {phase.name === 'idle' && (
+      {idle && count > 0 && (
+        <div className="saved scan-saved" role="status" data-testid="scan-saved">
+          <CheckCircle size={22} weight="bold" aria-hidden="true" />
+          <span><strong>Saved.</strong> Scan the next one.</span>
+          <span className="scan-count" data-testid="scan-count">{count} scanned</span>
+        </div>
+      )}
+
+      {idle && (
         <>
-          <p className="muted">Photograph the whole page, flat and in good light.</p>
+          <p className="muted">{count > 0 ? 'Reading happens in the background. Check the results in My exams.' : 'Photograph the whole page, flat and in good light. Reading happens in the background.'}</p>
           {phase.error && <ErrorNote tone="caution">{phase.error}</ErrorNote>}
           <div className="btn-stack" style={{ marginTop: 'var(--space-4)' }}>
             <label className="btn primary block pick">
@@ -97,16 +85,15 @@ export function AddExam() {
             </label>
           </div>
           <p style={{ marginTop: 'var(--space-6)' }}>
-            <Link to={home} className="btn block">Back to your record</Link>
+            <Link to={home} className="btn block" data-testid="see-my-exams">See my exams</Link>
           </p>
         </>
       )}
 
-      {phase.name === 'reading' && (
-        <div role="status" data-testid="reading">
-          <p className="reading-label">{slow ? 'Still reading. This one is taking longer.' : 'Reading your exam'}</p>
-          <div className="bar" aria-hidden="true"><i /></div>
-          {photoUrl && <img className="thumb" src={photoUrl} alt="Your photo of the exam" />}
+      {phase.name === 'saving' && (
+        <div role="status" data-testid="saving">
+          <p className="reading-label"><Spinner label="Saving the photo" /></p>
+          {thumb && <img className="thumb" src={thumb} alt="Your photo of the exam" />}
         </div>
       )}
 
@@ -116,21 +103,12 @@ export function AddExam() {
             <span><strong>{phase.failure.title}</strong> {phase.failure.body}</span>
           </ErrorNote>
           <div className="btn-stack" style={{ marginTop: 'var(--space-4)' }}>
-            {phase.failure.kind !== 'session' && ctx.current && <button type="button" className="btn primary block" onClick={() => void run()}>Try again</button>}
+            {phase.failure.kind !== 'session' && ctx.current && <button type="button" className="btn primary block" data-testid="scan-retry" onClick={() => void run()}>Try again</button>}
             {phase.failure.kind === 'session'
               ? <Link to="/login" className="btn primary block">Sign in</Link>
-              : <button type="button" className="btn block" onClick={reset}>Choose another photo</button>}
+              : <button type="button" className="btn block" onClick={discard}>Choose another photo</button>}
           </div>
-        </div>
-      )}
-
-      {phase.name === 'refused' && (
-        <div data-testid={`refused-${phase.view.kind}`}>
-          <RefusalNote view={phase.view} />
-          <div className="btn-stack" style={{ marginTop: 'var(--space-4)' }}>
-            <button type="button" className="btn primary block" data-testid="retake" onClick={reset}>Take another photo</button>
-            <Link to={home} className="btn block">Close</Link>
-          </div>
+          {thumb && <img className="thumb" src={thumb} alt="Your photo of the exam, kept for the retry" />}
         </div>
       )}
     </main>
