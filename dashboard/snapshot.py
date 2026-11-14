@@ -4,7 +4,7 @@
     snapshot.py [--out PATH] [--push] [--home DIR] [--hand PATH] [--directions PATH] [--rates PATH] [--root DIR] [--now ISO]
 
 Stdlib only (Python 3.9+). Five blocks, each with its own asOf and error:
-  linear  Linear GraphQL, READ-ONLY queries (a test fails if this file contains a write operation)
+  linear  Linear GraphQL, READ-ONLY queries (a test fails if this file contains a write operation); also the `forecast` block (MIN-4565)
   usage   ~/.claude/projects transcripts, read through the same scan()/build_run() code as conductor's bin/usage
   money   usage tokens by model x rates.json x eurPerUsd. An estimate at API list price, never a bill
   hand    ~/.healthapp-dashboard/hand-set.json (credits, demo steps, clean runs, milestone metadata)
@@ -14,8 +14,9 @@ a second hand-set file: summary text only, no patient data. A missing file omits
 A block that fails keeps its last good value, gets a newer `error`, keeps its old `asOf`; the others stay fresh.
 No key is ever printed, logged or put in the snapshot (see assert_clean).
 """
-import argparse, bisect, collections, importlib.machinery, importlib.util, json, os, re, shutil, subprocess, sys, urllib.request, urllib.error
+import argparse, bisect, collections, importlib.machinery, importlib.util, json, os, re, shutil, statistics, subprocess, sys, urllib.request, urllib.error
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 SCHEMA = 1
 INTERVAL_SEC = 180
@@ -228,15 +229,17 @@ LINEAR_QUERY = """
 query($pid:String!,$after:String){
   project(id:$pid){
     name
-    issues(first:25, after:$after){
+    issues(first:20, after:$after){
       nodes{
-        identifier title
+        identifier title description priority
+        parent{identifier parent{identifier}}
+        children(first:1){nodes{identifier}}
         state{name type}
         assignee{name}
         labels(first:10){nodes{name parent{name}}}
         projectMilestone{name}
         startedAt completedAt
-        inverseRelations(first:10){nodes{type issue{identifier state{type}}}}
+        inverseRelations(first:10){nodes{type issue{identifier state{type} assignee{name}}}}
       }
       pageInfo{hasNextPage endCursor}
     }
@@ -261,7 +264,7 @@ def linear_key(env=None, env_file=ENV_AGENTS):
 
 def fetch_linear(project_id, key, api=LINEAR_API, timeout=20):
     nodes, after = [], None
-    for _ in range(20):
+    for _ in range(40):
         body = json.dumps({'query': LINEAR_QUERY, 'variables': {'pid': project_id, 'after': after}}).encode()
         req = urllib.request.Request(api, data=body, headers={'Authorization': key, 'Content-Type': 'application/json'})
         try:
@@ -285,7 +288,7 @@ def fetch_linear(project_id, key, api=LINEAR_API, timeout=20):
         if not conn['pageInfo']['hasNextPage']:
             return nodes
         after = conn['pageInfo']['endCursor']
-    raise BlockError('Linear paging did not finish after 20 pages')
+    raise BlockError('Linear paging did not finish after 40 pages')
 
 
 def fmt_ago(minutes):
@@ -371,6 +374,228 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
         bars.sort(key=lambda b: b['from'])
         lanes.append({'agent': a['n'], 'bars': bars})
     return {'milestones': milestones, 'current': current, 'tasks': tasks, 'agents': agents, 'lanes': lanes}
+
+
+# ----------------------------------------------------------------------------- forecast (MIN-4565)
+# Runs on the Mac. The description is read only to parse the estimate; the block carries ids, titles and numbers.
+
+FORECAST_TZ = 'Europe/Athens'
+MUST_MILESTONES = ('M2', 'M3', 'M4', 'M5', 'M6', 'M7')
+DASHBOARD_ROOT = 'MIN-4445'                       # the dashboard is not needed for the demo: its whole subtree is out
+OPEN_STATES = ('Todo', 'In Progress', 'In Review')
+DEFAULT_MINUTES = 30                              # used when fewer than MIN_ESTIMATED issues carry an estimate
+MIN_ESTIMATED = 5
+EARLY_DONE = 3                                    # fewer done issues than this: the pace is not trusted, no "On track"
+ON_TRACK_MARGIN = timedelta(hours=1)              # On track = finish at least one hour before the freeze
+EST_RE = re.compile(r'est\.?\s*time\s*[:\uff1a]\s*\**\s*[~\u2248]?\s*(\d+(?:\.\d+)?)(?:\s*(?:-|\u2013|to)\s*\d+(?:\.\d+)?)?\s*min', re.I)
+DAYS = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
+
+
+def parse_estimate(description):
+    """Minutes from the `est. time: <n> min` line of the Estimate block; the first number of `~35`, `30-45`. None when absent."""
+    m = EST_RE.search(description or '')
+    if not m:
+        return None
+    v = float(m.group(1))
+    return int(v) if v == int(v) else v
+
+
+def athens(t):
+    return t.astimezone(ZoneInfo(FORECAST_TZ))
+
+
+def athens_iso(t):
+    return athens(t).isoformat(timespec='seconds') if t else None
+
+
+def athens_label(t):
+    if not t:
+        return None
+    a = athens(t)
+    return '%s %s' % (DAYS[a.weekday()], a.strftime('%H:%M'))
+
+
+def parent_map(nodes):
+    """identifier -> parent identifier, from the fetched nodes, with the query's grandparent as the fallback for a parent
+    that is not in the project."""
+    parent = {}
+    for n in nodes:
+        p = n.get('parent') or {}
+        if p.get('identifier'):
+            parent[n['identifier']] = p['identifier']
+            gp = (p.get('parent') or {}).get('identifier')
+            if gp:
+                parent.setdefault(p['identifier'], gp)
+    return parent
+
+
+def under_root(nodes, root):
+    """Identifiers of every issue whose parent chain reaches `root` (root included). The chain is followed through the
+    fetched nodes, with the query's grandparent as the fallback for a parent that is not in the project."""
+    parent = parent_map(nodes)
+    out = set()
+    for n in nodes:
+        cur, seen = n['identifier'], set()
+        while cur and cur not in seen:
+            if cur == root:
+                out.add(n['identifier'])
+                break
+            seen.add(cur)
+            cur = parent.get(cur)
+    return out
+
+
+def blockers_of(n):
+    out = []
+    for r in (n.get('inverseRelations') or {}).get('nodes', []):
+        i = r.get('issue') or {}
+        if r.get('type') == 'blocks' and (i.get('state') or {}).get('type') not in ('completed', 'canceled', 'duplicate'):
+            out.append({'id': i.get('identifier'), 'who': (i.get('assignee') or {}).get('name') or 'unassigned'})
+    return out
+
+
+def forecast_times(pre_left, post_left, pace, now, freeze):
+    """(finish_at, ready_at). Build work (M2 to M5) runs from now; M6 and M7 cannot start before the freeze (MIN-4564)."""
+    finish = now + timedelta(hours=pre_left / pace) if pre_left > 0 else now
+    ready = max(finish, freeze) + timedelta(hours=post_left / pace)
+    return finish, ready
+
+
+def clamped_times(pre_left, post_left, pace, now, freeze):
+    """forecast_times for the cut walk: a finish too far away to represent is clamped to 100 years out, never an error."""
+    far = now + timedelta(days=36500)
+    try:
+        finish, ready = forecast_times(pre_left, post_left, pace, now, freeze)
+    except OverflowError:
+        return far, far
+    return min(finish, far), min(ready, far)
+
+
+def cut_walk(items, order, pre_left, post_left, pace, now, freeze, submit):
+    """Drop issues in the cut order. Pre items (M2 to M5) first, while the build finish is after the freeze; then post items
+    (M6 and M7), while the full plan is ready after the submit time. `items` are open issues with minutes and a `phase`."""
+    rank = {i: k for k, i in enumerate(order)}
+    prio = lambda it: 5 if not it['priority'] else it['priority']          # Linear: 1 urgent .. 4 low, 0 none (cut first)
+
+    def ordered(phase):
+        its = [it for it in items if it['phase'] == phase]
+        listed = sorted((it for it in its if it['id'] in rank), key=lambda it: rank[it['id']])
+        rest = sorted((it for it in its if it['id'] not in rank), key=lambda it: (-prio(it), -it['minutes'], it['id']))
+        return listed + rest, bool(listed)
+
+    cuts = []
+    finish, ready = clamped_times(pre_left, post_left, pace, now, freeze)
+    pre, l1 = ordered('pre')
+    post, l2 = ordered('post')
+    for it in pre:
+        if finish <= freeze:
+            break
+        pre_left -= it['minutes']
+        finish, ready = clamped_times(pre_left, post_left, pace, now, freeze)
+        cuts.append(cut_row(it, finish, ready))
+    for it in post:
+        if ready <= submit:
+            break
+        post_left -= it['minutes']
+        finish, ready = clamped_times(pre_left, post_left, pace, now, freeze)
+        cuts.append(cut_row(it, finish, ready))
+    return cuts, bool(finish <= freeze and ready <= submit), bool(l1 or l2)
+
+
+def cut_row(it, finish, ready):
+    return {'id': it['id'], 'title': it['title'], 'minutes': it['minutes'], 'phase': it['phase'],
+            'finish_after': athens_iso(finish), 'finish_after_label': athens_label(finish),
+            'ready_after': athens_iso(ready), 'ready_after_label': athens_label(ready)}
+
+
+POST_MILESTONES = ('M6', 'M7')                    # need the freeze first: "three clean runs after the freeze", then the submission
+
+
+def build_forecast(nodes, cfg, now, since, freeze, submit):
+    fcfg = cfg.get('forecast') or {}
+    out_of_scope = under_root(nodes, fcfg.get('dashboardRoot', DASHBOARD_ROOT))
+    parent = parent_map(nodes)
+    own_ms = {n['identifier']: ((n.get('projectMilestone') or {}).get('name') or '').split(' ')[0] for n in nodes}
+
+    def ms_of(ident):
+        """The issue's milestone; none of its own: the nearest ancestor's, by the same walk as `under_root` (MIN-4564)."""
+        seen = set()
+        while ident and ident not in seen:
+            if own_ms.get(ident):
+                return own_ms[ident]
+            seen.add(ident)
+            ident = parent.get(ident)
+        return ''
+
+    cand = [n for n in nodes if ms_of(n['identifier']) in MUST_MILESTONES and n['identifier'] not in out_of_scope]
+    in_scope = lambda n: n['state']['name'] in OPEN_STATES or (
+        n['state']['type'] == 'completed' and n.get('completedAt') and parse(n['completedAt']) >= since)
+    # a parent counts 0 only when one of its sub-issues is itself in scope; otherwise it counts its own estimate
+    counted_by_kids = {parent[n['identifier']] for n in cand if in_scope(n) and n['identifier'] in parent}
+    scope = [n for n in cand if n['identifier'] not in counted_by_kids]
+    est = {n['identifier']: parse_estimate(n.get('description')) for n in scope}
+    done = [n for n in scope if n['state']['type'] == 'completed' and n.get('completedAt') and parse(n['completedAt']) >= since]
+    opened = [n for n in scope if n['state']['name'] in OPEN_STATES]
+    estimated = [est[n['identifier']] for n in done + opened if est[n['identifier']] is not None]
+    if len(estimated) >= MIN_ESTIMATED:
+        default, source = round(statistics.median(estimated), 1), 'median'
+        default = int(default) if default == int(default) else default
+    else:
+        default, source = DEFAULT_MINUTES, 'fallback'
+    mins = lambda n: est[n['identifier']] if est[n['identifier']] is not None else default
+    phase = lambda n: 'post' if ms_of(n['identifier']) in POST_MILESTONES else 'pre'
+    todo = [n for n in opened if n['state']['name'] in ('Todo', 'In Progress')]
+    review = [n for n in opened if n['state']['name'] == 'In Review']
+
+    done_min = sum(mins(n) for n in done)
+    pre_min = sum(mins(n) for n in todo if phase(n) == 'pre')
+    post_min = sum(mins(n) for n in todo if phase(n) == 'post')
+    rem_min = pre_min + post_min
+    hours = (now - since).total_seconds() / 3600
+    pace = done_min / hours if hours > 0 else 0.0
+    on_by = freeze - ON_TRACK_MARGIN
+    ready_on_by = submit - ON_TRACK_MARGIN
+
+    finish = ready = None
+    if rem_min <= 0:
+        finish, ready = forecast_times(0, 0, 1.0, now, freeze)
+    elif pace > 0:
+        try:
+            finish, ready = forecast_times(pre_min, post_min, pace, now, freeze)
+        except OverflowError:
+            finish = ready = None
+    early = len(done) < EARLY_DONE
+    if rem_min > 0 and finish is None:
+        verdict = 'off'                               # pace 0 with work left
+    else:
+        verdict = 'on' if finish <= on_by and ready <= ready_on_by else 'risk' if ready <= submit else 'off'
+        if early and verdict == 'on':
+            verdict = 'risk'
+
+    cut, reaches, listed = [], False, False
+    if verdict == 'off' and pace > 0:
+        items = [{'id': n['identifier'], 'title': n['title'], 'minutes': mins(n), 'priority': n.get('priority') or 0, 'phase': phase(n)}
+                 for n in todo if mins(n) > 0]
+        cut, reaches, listed = cut_walk(items, [str(i) for i in fcfg.get('cutOrder') or []], pre_min, post_min, pace, now, freeze, submit)
+
+    blocked = [{'id': n['identifier'], 'title': n['title'], 'waits_on': b}
+               for n in todo + review for b in [blockers_of(n)] if b]
+    r1 = lambda v: round(v, 1)
+    return {
+        'tz': FORECAST_TZ, 'at': athens_iso(now), 'build_start': athens_iso(since), 'freeze': athens_iso(freeze),
+        'submit': athens_iso(submit), 'on_by': athens_iso(on_by), 'ready_on_by': athens_iso(ready_on_by),
+        'elapsed_hours': r1(max(hours, 0.0)),
+        'done': {'issues': len(done), 'minutes': r1(done_min), 'no_estimate': [n['identifier'] for n in done if est[n['identifier']] is None]},
+        'pace_min_per_hour': r1(pace), 'early_pace': early,
+        'remaining': {'issues': len(todo), 'minutes': r1(rem_min), 'pre_minutes': r1(pre_min), 'post_minutes': r1(post_min),
+                      'in_review': len(review),
+                      'no_estimate': [n['identifier'] for n in todo if est[n['identifier']] is None],
+                      'default_minutes': default, 'default_source': source},
+        'blocked': blocked,
+        'finish_at': athens_iso(finish), 'finish_label': athens_label(finish),
+        'ready_at': athens_iso(ready), 'ready_label': athens_label(ready), 'verdict': verdict,
+        'cut': cut, 'cut_source': 'list' if listed else 'priority', 'cut_reaches_freeze': reaches,
+    }
 
 
 # ----------------------------------------------------------------------------- branches (MIN-4460)
@@ -715,7 +940,12 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         holder['nodes'] = nodes
         meta = (state.get('hand') or {}).get('data') or {}
         ls = ((state.get('usage') or {}).get('data') or {}).get('lastSeen', {})
-        return summarize_linear(nodes, cfg, meta.get('milestonesMeta', hand['milestones']), now, since, ls)
+        data = summarize_linear(nodes, cfg, meta.get('milestonesMeta', hand['milestones']), now, since, ls)
+        try:                                           # a forecast that fails must not blank the rest of the linear block
+            data['forecast'] = build_forecast(nodes, cfg, now, since, parse(hand['freeze']), parse(hand['submitBy']))
+        except Exception as ex:
+            data['_warning'] = 'forecast not computed: %s' % ex
+        return data
     run_block(state, 'linear', linear, now)
 
     def branches():
@@ -734,6 +964,8 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
             snap[k] = h[k]
     if lin:
         snap.update({k: lin[k] for k in ('milestones', 'current', 'tasks', 'agents', 'lanes')})
+        if lin.get('forecast'):
+            snap['forecast'] = lin['forecast']
     elif h:
         snap['milestones'] = h.get('milestonesMeta', [])
     if h.get('current'):
