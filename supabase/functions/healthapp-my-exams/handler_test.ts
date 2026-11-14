@@ -145,7 +145,7 @@ Deno.test("a doctor, a stranger and no token get no list", async () => {
   assertEquals(t.s.calls.includes("listOwn"), false);
 });
 
-Deno.test("the draft for the review: what extract-exam used to return, from the stored row, only for the caller's own draft", async () => {
+Deno.test("the exam for the review: what extract-exam used to return, from the stored row, only for the caller's own draft or saved exam", async () => {
   const t = setup();
   const d = await t.make("draft");
   const res = await t.h(call("x", { doc_id: d.id }));
@@ -159,8 +159,46 @@ Deno.test("the draft for the review: what extract-exam used to return, from the 
   assertEquals(JSON.stringify(t.logs).includes("ΠΑΠΑΔΟΠΟΥΛΟΥ"), false);
   // another patient, a saved exam, a queued one: not_found, never an empty draft
   assertEquals((await t.h(call("x", { doc_id: d.id }, "tp2"))).status, 404);
-  for (const st of ["queued", "reading", "refused", "failed", "confirmed"] as const) {
+  for (const st of ["queued", "reading", "refused", "failed"] as const) {
     const o = await t.make(st);
     assertEquals((await t.h(call("x", { doc_id: o.id }))).status, 404, st);
   }
+});
+
+// --- MIN-4555 addendum: the mark, and opening a saved exam ---------------------------------------------------------
+Deno.test("the list says which saved exams are unchecked; a draft or a queued row never carries the mark", async () => {
+  const t = setup();
+  const saved = await t.make("confirmed");
+  const draft = await t.make("draft");
+  await t.make("queued");
+  t.s.docs.get(saved.id)!.document.unchecked = true;
+  t.s.docs.get(draft.id)!.document.unchecked = true; // a stray column value on a draft must not show
+  const { out } = await t.list();
+  assertEquals(out!.exams.map((r) => [r.status, r.unchecked]), [["queued", false], ["draft", false], ["confirmed", true]]);
+});
+
+Deno.test("opening a saved exam answers the same shape as a draft, read-only, and clears the mark; opening it again changes nothing", async () => {
+  const t = setup();
+  const d = await t.make("confirmed");
+  t.s.docs.get(d.id)!.document.unchecked = true;
+  const first = ExamDraftResponse.parse(await (await t.h(call("x", { doc_id: d.id }))).json());
+  assertEquals([first.draft.document.status, first.draft.document.unchecked, first.draft.results.length], ["confirmed", false, 2]);
+  assertEquals(t.s.docs.get(d.id)!.document.unchecked, false);
+  assertEquals((await t.list()).out!.exams[0].unchecked, false);
+  assertEquals(t.s.calls.filter((c) => c === "markOpened").length, 1);
+  await t.h(call("x", { doc_id: d.id }));
+  assertEquals(t.s.calls.filter((c) => c === "markOpened").length, 1); // already open: no second write
+  // only the owner's open clears it
+  const other = await t.make("confirmed");
+  t.s.docs.get(other.id)!.document.unchecked = true;
+  assertEquals((await t.h(call("x", { doc_id: other.id }, "tp2"))).status, 404);
+  assertEquals(t.s.docs.get(other.id)!.document.unchecked, true);
+});
+
+Deno.test("opening a draft does not touch the mark and a doctor cannot open anything", async () => {
+  const t = setup();
+  const d = await t.make("draft");
+  await t.h(call("x", { doc_id: d.id }));
+  assertEquals(t.s.calls.includes("markOpened"), false);
+  assertEquals((await t.h(call("x", { doc_id: d.id }, "td"))).status, 403);
 });

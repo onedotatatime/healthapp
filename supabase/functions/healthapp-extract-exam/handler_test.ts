@@ -5,6 +5,8 @@ import type { ModelExtract } from "../_shared/extract.ts";
 import { ModelError } from "../_shared/model.ts";
 import { call, fakeAuth, fakeBlobs, fakeStore, PATIENT, PATIENT2 } from "../_shared/testkit_docs.ts";
 import { MAX_READS } from "../_shared/docs.ts";
+import { makeHandler as makeConfirm } from "../healthapp-confirm-doc/handler.ts";
+import { makeHandler as makeUnconfirm } from "../healthapp-unconfirm-doc/handler.ts";
 import { ANALYSIS_BUDGET_MS, makeHandler, READ_BUDGET_MS, TOTAL_BUDGET_MS } from "./handler.ts";
 
 const GOOD: ModelExtract = {
@@ -76,7 +78,7 @@ async function kick(t: ReturnType<typeof setup>, id: string, who = "tp") {
 }
 const ALL_NULL = ["storage_path", "content_type", "sha256_file", "sha256_record", "printed_name", "printed_id", "header_confidence"] as const;
 
-Deno.test("the kick answers 202 queued before any model call; the reading then runs to a draft with no further request", async () => {
+Deno.test("the kick answers 202 queued before any model call; the reading then runs to a saved exam with no further request", async () => {
   const t = setup();
   const d = await newDoc(t);
   const res = await t.raw(call("x", { doc_id: d.id })); // the raw handler: the background work is not awaited here
@@ -84,7 +86,7 @@ Deno.test("the kick answers 202 queued before any model call; the reading then r
   assertEquals(t.modelCalls(), 0); // the answer left before the reading started
   assertEquals([t.s.docs.get(d.id)?.document.status, t.s.extra.get(d.id)?.attempts], ["reading", 1]); // claimed, one attempt
   await t.settle();
-  assertEquals([t.s.docs.get(d.id)?.document.status, t.modelCalls()], ["draft", 1]);
+  assertEquals([t.s.docs.get(d.id)?.document.status, t.modelCalls()], ["confirmed", 1]);
 });
 
 Deno.test("a draft: header, results with the flag computed from the printed range, nothing server-side in the 202", async () => {
@@ -98,7 +100,7 @@ Deno.test("a draft: header, results with the flag computed from the printed rang
   assertEquals(doc?.results.map((r) => [r.value_num, r.flag]), [[18.4, "high"], [12.4, "normal"]]);
   assertEquals(doc?.meta.sha256_file?.length, 64);
   assertEquals(doc?.meta.header_confidence?.printed_id, 0.95); // stored, so the review can show it
-  assertEquals(t.logs.find((l) => l.status === "draft")?.results, 2);
+  assertEquals(t.logs.find((l) => l.status === "confirmed")?.results, 2);
   assertEquals(JSON.stringify(t.logs).includes("ΠΑΠΑΔΟΠΟΥΛΟΥ"), false); // a log never carries the document's words
 });
 
@@ -114,7 +116,7 @@ Deno.test("two kicks at once read once: the second claims nothing, and its answe
   const d = await newDoc(t);
   const [a, b] = await Promise.all([t.h(call("x", { doc_id: d.id })), t.h(call("x", { doc_id: d.id }))]);
   assertEquals([a.status, b.status], [202, 202]);
-  assertEquals([t.modelCalls(), t.s.extra.get(d.id)?.attempts, t.s.docs.get(d.id)?.document.status], [1, 1, "draft"]);
+  assertEquals([t.modelCalls(), t.s.extra.get(d.id)?.attempts, t.s.docs.get(d.id)?.document.status], [1, 1, "confirmed"]);
   assertEquals(t.logs.filter((l) => l.status === "not_claimed").length, 1);
 });
 
@@ -182,7 +184,7 @@ Deno.test("the model failing: a failed row with the code, the file kept; Try aga
   ok.s.extra.set(d.id, { ...t.s.extra.get(d.id)! });
   ok.b.files.set(d.storage_path, new Uint8Array([1, 2, 3, 4]));
   const again = await kick(ok, d.id);
-  assertEquals([again.doc?.document.status, again.x?.attempts], ["draft", 2]);
+  assertEquals([again.doc?.document.status, again.x?.attempts], ["confirmed", 2]);
 });
 
 Deno.test("read three times and still failing: too_many_attempts, and a fourth kick claims nothing and calls no model", async () => {
@@ -210,7 +212,7 @@ Deno.test("an old draft that was never read is taken and read (it is listed as f
   const d = await newDoc(t);
   t.s.docs.get(d.id)!.document.status = "draft"; // kind is still null: the row from before this change
   const { doc } = await kick(t, d.id);
-  assertEquals([doc?.document.status, t.modelCalls()], ["draft", 1]);
+  assertEquals([doc?.document.status, t.modelCalls()], ["confirmed", 1]);
   assertEquals(doc?.document.kind, "blood_test");
 });
 
@@ -275,15 +277,15 @@ Deno.test("doc 8, her name and another ID: refused id_mismatch, nothing saved", 
   assertEquals(JSON.stringify([doc, t.logs]).includes("AK987654"), false);
 });
 
-Deno.test("doc 7, name and no ID: a draft marked name_only", async () => {
+Deno.test("doc 7, name and no ID: saved with no tap, marked name_only", async () => {
   const { doc } = await run({ ...GOOD, printed_id: "", header_confidence: { ...GOOD.header_confidence, printed_id: 0 } });
-  assertEquals([doc?.document.status, doc?.document.identity_status, doc?.document.provenance], ["draft", "name_only", "uploaded_by_patient"]);
+  assertEquals([doc?.document.status, doc?.document.identity_status, doc?.document.provenance], ["confirmed", "name_only", "uploaded_by_patient"]);
 });
 
-Deno.test("docs 1 to 5, name and ID match (Greek lookalike ID letters too): a draft marked match", async () => {
+Deno.test("docs 1 to 5, name and ID match (Greek lookalike ID letters too): saved with no tap, marked match", async () => {
   for (const [name, id] of [["ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ", "AK123456"], ["PAPADOPOULOU MARIA", "ΑΚ123456"]]) {
     const { doc } = await run({ ...GOOD, printed_name: name, printed_id: id });
-    assertEquals([doc?.document.status, doc?.document.identity_status, doc?.document.provenance], ["draft", "match", "uploaded_by_patient"]);
+    assertEquals([doc?.document.status, doc?.document.identity_status, doc?.document.provenance], ["confirmed", "match", "uploaded_by_patient"]);
   }
 });
 
@@ -348,12 +350,12 @@ Deno.test("an unreadable file lists no items, even when the model lists some", a
   assertEquals([row.status, row.readable, row.items_count], ["done", false, 0]);
 });
 
-Deno.test("a failing second pass leaves the reading a draft and stores a failed row with a code", async () => {
+Deno.test("a failing second pass leaves the reading saved and stores a failed row with a code", async () => {
   for (const [kind, code] of [["timeout", "model_timeout"], ["http", "model_http"], ["invalid", "model_invalid"], ["config", "config"]] as const) {
     const t = setup(GOOD, new ModelError(kind, 500, 2));
     const d = await newDoc(t);
     const res = await t.h(call("x", { doc_id: d.id }));
-    assertEquals([res.status, ExtractResponse.parse(await res.json()).outcome, t.s.docs.get(d.id)?.document.status], [202, "queued", "draft"]);
+    assertEquals([res.status, ExtractResponse.parse(await res.json()).outcome, t.s.docs.get(d.id)?.document.status], [202, "queued", "confirmed"]);
     await t.settle();
     const row = t.s.analyses.get(d.id)!;
     assertEquals([row.status, row.error_code, row.doc_type, row.items_count, row.hash_verified], ["failed", code, null, 0, true]);
@@ -434,5 +436,78 @@ Deno.test("the analysis gets 45 s, or what is left of 120 s; under 15 s left its
   await kick(late, d3.id);
   assertEquals(late.analysisCalls(), 0);
   const row = late.s.analyses.get(d3.id)!;
-  assertEquals([row.status, row.error_code, late.s.docs.get(d3.id)?.document.status], ["failed", "budget", "draft"]); // the reading itself still succeeded
+  assertEquals([row.status, row.error_code, late.s.docs.get(d3.id)?.document.status], ["failed", "budget", "confirmed"]); // the reading itself still succeeded
+});
+
+// --- MIN-4555 addendum: a successful reading is saved with no tap -------------------------------------------------
+const row = (t: ReturnType<typeof setup>, id: string) => t.s.docs.get(id)!.document;
+
+Deno.test("a reading that passes identity is saved with no tap: confirmed, confirmed_at and the record hash set, unchecked", async () => {
+  const t = setup();
+  const d = await newDoc(t);
+  const { doc } = await kick(t, d.id);
+  assertEquals([doc?.document.status, doc?.document.unchecked, doc?.document.confirmed_at === null], ["confirmed", true, false]);
+  assertEquals(/^[0-9a-f]{64}$/.test(doc?.meta.sha256_record ?? ""), true);
+  assertEquals(t.s.calls.filter((c) => c === "confirm").length, 1); // through the one confirm, not a second path
+  assertEquals(t.logs.find((l) => l.status === "confirmed")?.results, 2);
+});
+
+Deno.test("each condition of the automatic save, missing alone, leaves the reading unsaved: failed, refused, or a draft", async () => {
+  // reading failed: no row to save
+  const failedT = setup(new ModelError("http", 500, 2));
+  const f = await newDoc(failedT);
+  await kick(failedT, f.id);
+  assertEquals([row(failedT, f.id).status, failedT.s.calls.includes("confirm")], ["failed", false]);
+  // identity refused: refused, and the confirm is never asked
+  const refusedT = setup({ ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", printed_id: "AB654321" });
+  const r = await newDoc(refusedT);
+  await kick(refusedT, r.id);
+  assertEquals([row(refusedT, r.id).status, refusedT.s.calls.includes("confirm")], ["refused", false]);
+  // the saved row has no kind: stays a draft for the patient
+  const noKind = setup();
+  const k = await newDoc(noKind);
+  const save1 = noKind.s.store.saveExtraction;
+  noKind.s.store.saveExtraction = async (...a) => {
+    const saved = await save1(...a);
+    if (saved) saved.document = { ...saved.document, kind: null as never };
+    return saved;
+  };
+  await kick(noKind, k.id);
+  assertEquals([row(noKind, k.id).status, row(noKind, k.id).unchecked, noKind.s.calls.includes("confirm")], ["draft", false, false]);
+  // no result and no finding was saved: stays a draft
+  const empty = setup();
+  const e = await newDoc(empty);
+  const save2 = empty.s.store.saveExtraction;
+  empty.s.store.saveExtraction = async (...a) => {
+    const saved = await save2(...a);
+    if (saved) { saved.results = []; saved.findings = []; }
+    return saved;
+  };
+  await kick(empty, e.id);
+  assertEquals([row(empty, e.id).status, empty.s.calls.includes("confirm")], ["draft", false]);
+});
+
+Deno.test("a confirm the shared code refuses leaves the reading a draft; the reading is not failed and the analysis still runs", async () => {
+  const t = setup();
+  const d = await newDoc(t);
+  const real = t.s.store.confirm;
+  t.s.store.confirm = (...a) => { a[3] = () => Promise.resolve({ kind: "error", status: 400, code: "bad_request", message: "x" }); return real(...a); };
+  const { doc, x } = await kick(t, d.id);
+  assertEquals([doc?.document.status, doc?.document.unchecked, x?.reason], ["draft", false, null]);
+  assertEquals(t.logs.find((l) => l.pass === "auto_confirm")?.why, "plan_refused");
+  assertEquals(t.analysisCalls(), 1);
+});
+
+Deno.test("automatic and manual confirm give the same record hash for the same data (unconfirm, then confirm by hand)", async () => {
+  const t = setup();
+  const d = await newDoc(t);
+  await kick(t, d.id);
+  const auto = t.s.docs.get(d.id)!.meta.sha256_record;
+  const un = makeUnconfirm({ auth: fakeAuth, store: t.s.store, log: () => {} });
+  assertEquals((await un(call("x", { doc_id: d.id }))).status, 200);
+  const confirm = makeConfirm({ auth: fakeAuth, store: t.s.store, log: () => {} });
+  const res = await confirm(call("x", { doc_id: d.id }));
+  assertEquals(res.status, 200);
+  assertEquals([auto === null, (await res.json()).sha256_record === auto], [false, true]);
+  assertEquals([row(t, d.id).status, row(t, d.id).unchecked], ["confirmed", false]); // the patient's own confirm is never marked
 });

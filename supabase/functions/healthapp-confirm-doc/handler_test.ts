@@ -104,3 +104,10 @@ Deno.test("a doctor, no token, no profile: refused", async () => {
   assertEquals((await h(call("x", { doc_id: id }, null))).status, 401);
   assertEquals((await h(call("x", { doc_id: id }, "to"))).status, 403);
 });
+
+Deno.test("the patient's own confirm is never marked unchecked, even on a row the column said was", async () => {
+  const { h, id, st } = await setup();
+  st().document.unchecked = true;
+  assertEquals((await h(call("x", { doc_id: id }))).status, 200);
+  assertEquals([st().document.status, st().document.unchecked], ["confirmed", false]);
+});

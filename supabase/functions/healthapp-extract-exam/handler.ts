@@ -2,20 +2,22 @@
 // The phone kicks it right after the upload and does not wait. The function takes the upload with one atomic
 // update (queued/failed -> reading), answers 202 at once, and the whole reading runs after the answer
 // (EdgeRuntime.waitUntil): the model reads the photo once with one retry, the server validates and decides whose
-// document it is, saves the draft, then runs the file analysis on what is left of the budget. A refusal deletes the
+// document it is, saves the draft, saves it as confirmed with no tap (unchecked until its owner opens it, MIN-4555 addendum:
+// the founder's choice), then runs the file analysis on what is left of the budget. A refusal deletes the
 // file and keeps the reason code only. Logs carry a status, a reason code and timings, never a word of the document.
 import { analyseFile } from "../_shared/analysis.ts";
 import { bytesToBase64 } from "../_shared/b64.ts";
 import {
   type AnalyseResponse,
   bucketFor,
+  ConfirmDocRequest,
   ExtractRequest,
   type ExtractResponse,
   type FailReason,
   type HealthappEnv,
   type RefusalReason,
 } from "../_shared/contract.ts";
-import { type Auth, authenticate, type Blobs, type DocState, readJson, type Store } from "../_shared/docs.ts";
+import { type Auth, authenticate, type Blobs, type DocState, planConfirm, readJson, type Store } from "../_shared/docs.ts";
 import { build, EXTRACT_SYSTEM, ModelExtract } from "../_shared/extract.ts";
 import { fail, headersFor, json } from "../_shared/http.ts";
 import { matchIdentity } from "../_shared/identity.ts";
@@ -38,6 +40,7 @@ export interface Deps {
     | "roleOf"
     | "getOwn"
     | "claimForReading"
+    | "confirm"
     | "identityOf"
     | "saveExtraction"
     | "markRefused"
@@ -164,16 +167,20 @@ async function readInBackground(
       deps.log({ fn: "extract-exam", status: "not_saved", ms: deps.now() - started }); // deleted or swept meanwhile
       return;
     }
+    // The founder's choice (2026-11-14, MIN-4555 addendum): a reading that got this far is saved with no tap, through
+    // the same confirm code as the patient's own confirm (so the same record hash), marked unchecked until its owner opens it.
+    // It is not a second path that writes `confirmed`. Anything the test below refuses stays a draft for the patient to confirm.
+    const kept = await autoConfirm(deps, { env, uid, saved });
     deps.log({
-      fn: "extract-exam", status: "draft", ...info, results: saved.results.length, findings: saved.findings.length,
-      ms: deps.now() - started,
+      fn: "extract-exam", status: kept ? "confirmed" : "draft", ...info, results: saved.results.length,
+      findings: saved.findings.length, ms: deps.now() - started,
     });
     // Direction 3: the second pass over the same stored file, in the same background run, on what is left of the
     // budget. Under MIN_ANALYSIS_MS left its row says failed / budget (a budget of 0 is the code's own signal).
     // A failure is a row with a code, never a reason to fail the reading.
     const room = left();
     await analyseFile(deps, {
-      env, patientId: uid, state: saved, bytes,
+      env, patientId: uid, state: kept ?? saved, bytes,
       budgetMs: room < MIN_ANALYSIS_MS ? 0 : Math.min(ANALYSIS_BUDGET_MS, room),
     }).catch((e) => deps.log({ fn: "extract-exam", pass: "analysis", status: "not_saved", err: (e as Error)?.name ?? "error" }));
   } catch (e) {
@@ -182,4 +189,28 @@ async function readInBackground(
       await deps.store.markFailed(env, uid, id, "error");
     } catch { /* the sweep marks it stuck */ }
   }
+}
+
+/** The test for saving a reading with no tap (CTO, MIN-4555 addendum §1). The reading succeeded and the identity check did
+ *  not refuse by the time this runs; the row must also say what kind of exam it is and carry at least one result or
+ *  finding. Then the shared confirm runs. It returns the confirmed row, or null and the row stays a draft (never a failure:
+ *  the reading is saved either way, and a draft is what the patient confirms by hand). */
+async function autoConfirm(
+  deps: Deps,
+  ctx: { env: HealthappEnv; uid: string; saved: DocState },
+): Promise<DocState | null> {
+  const { env, uid, saved } = ctx;
+  if (saved.document.kind === null || saved.results.length + saved.findings.length === 0) return null;
+  try {
+    const r = await deps.store.confirm(
+      env, uid, saved.document.id,
+      (s) => planConfirm(s, ConfirmDocRequest.parse({ doc_id: saved.document.id })),
+      { unchecked: true },
+    );
+    if (r && "state" in r) return r.state;
+    deps.log({ fn: "extract-exam", pass: "auto_confirm", status: "skipped", why: r ? "plan_refused" : "row_gone" });
+  } catch (e) {
+    deps.log({ fn: "extract-exam", pass: "auto_confirm", status: "skipped", why: "exception", err: (e as Error)?.name ?? "error" });
+  }
+  return null;
 }

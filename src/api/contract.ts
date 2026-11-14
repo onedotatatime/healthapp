@@ -92,10 +92,13 @@ export const DocumentRow = z.object({
   status: DocumentStatus,
   created_at: Timestamp,
   confirmed_at: Timestamp.nullable(),
+  /** MIN-4556 addendum: true from the automatic save of a scanned exam until its owner opens, confirms or unconfirms it.
+   *  The fact it states: read automatically, the patient has not opened it. Not per value. */
+  unchecked: z.boolean(),
 });
 export type DocumentRow = z.infer<typeof DocumentRow>;
 export const DOCUMENT_COLUMNS =
-  "id,patient_id,kind,language,exam_date,issuer,identity_status,provenance,status,created_at,confirmed_at";
+  "id,patient_id,kind,language,exam_date,issuer,identity_status,provenance,status,created_at,confirmed_at,unchecked";
 
 export const ResultRow = z.object({
   id: Uuid,
@@ -247,19 +250,31 @@ export const ExamListItem = z.object({
   can_retry: z.boolean(),
   /** Every row that is not saved. */
   can_delete: z.boolean(),
+  /** confirmed only: read and saved automatically, and its owner has not opened it yet. Always false for every other status. */
+  unchecked: z.boolean(),
 });
 export type ExamListItem = z.infer<typeof ExamListItem>;
 /** No body needed. With { doc_id } the answer is that upload's draft (ExamDraftResponse) instead of the list. */
 export const MyExamsRequest = z.object({ doc_id: Uuid.optional() });
 export const MyExamsResponse = z.object({ exams: z.array(ExamListItem), server_now: Timestamp });
 export type MyExamsResponse = z.infer<typeof MyExamsResponse>;
-/** The review beside the photo: what extract-exam used to return, read from the stored draft. 404 not_found unless the upload is the caller's and is a draft. */
+/** The exam beside the photo: what extract-exam used to return, read from the stored row. A draft opens the review (edit and Confirm);
+ *  a confirmed exam answers the same shape, read-only, and the call clears its `unchecked` mark. `draft.document.status` says which.
+ *  404 not_found unless the upload is the caller's and is a draft or confirmed. */
 export const ExamDraftResponse = z.object({ draft: DocumentDraft });
 export type ExamDraftResponse = z.infer<typeof ExamDraftResponse>;
 /** Deletes an upload that is not saved, file included. 404 not_found for a saved or someone else's. */
 export const ExamDeleteRequest = z.object({ doc_id: Uuid });
 export const ExamDeleteResponse = z.object({ deleted: z.literal(true), doc_id: Uuid });
 export type ExamDeleteResponse = z.infer<typeof ExamDeleteResponse>;
+
+// healthapp-unconfirm-doc (patient, owner only) -------------------------------------------------
+// confirmed -> draft: the exam leaves the doctor view, the file analysis and the matching at the next read (they all test
+// status = 'confirmed'). Values, file and file analysis stay; confirm again is the existing healthapp-confirm-doc. No model.
+// 404 not_found for someone else's upload or one that is not confirmed; 403 wrong_role for a doctor.
+export const UnconfirmDocRequest = z.object({ doc_id: Uuid });
+export const UnconfirmDocResponse = z.object({ document: DocumentRow });
+export type UnconfirmDocResponse = z.infer<typeof UnconfirmDocResponse>;
 
 // healthapp-confirm-doc (patient) ---------------------------------------------------------------
 // Edits to values, units and dates are accepted and marked edited_by_patient.

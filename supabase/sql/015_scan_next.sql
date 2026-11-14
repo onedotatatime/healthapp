@@ -1,4 +1,4 @@
--- Per env. Rendered by `scripts/hdb render <env> 014_scan_next.sql` (MIN-4556; CTO decision on MIN-4555 §2-4). Applied after 002.
+-- Per env. Rendered by `scripts/hdb render <env> 015_scan_next.sql` (MIN-4556; CTO decision on MIN-4555 §2-4). Applied after 002.
 -- Idempotent. DDL only: it reads and writes no row, so it is safe on `demo`.
 -- The reading moves off the phone's wait, so a document now has a life before it is a draft:
 --   queued -> reading -> draft | refused | failed,   draft -> confirmed (as before)
@@ -39,4 +39,4 @@ alter table __SCHEMA__.documents add constraint documents_refused_empty check (
     and printed_name is null and printed_id is null and identity_status is null and extract_confidence is null)
 );
 
-insert into __SCHEMA__._applied (file) values ('014_scan_next.sql') on conflict (file) do nothing;
+insert into __SCHEMA__._applied (file) values ('015_scan_next.sql') on conflict (file) do nothing;

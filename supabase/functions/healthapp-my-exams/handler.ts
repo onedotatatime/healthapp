@@ -1,14 +1,15 @@
 // healthapp-my-exams (MIN-4556; CTO decision on MIN-4555): the patient's own uploads, one row each, newest first,
-// and the stored draft of one of them for the review. No model, nothing written except the sweep of rows that
-// are stuck (reading over 3 minutes, queued over 10 minutes), which every list call runs first for the caller.
-// A row carries a status, a reason code and, once read, a kind, a date and a count: no value, no mark, no name.
+// and the stored draft or saved exam of one of them. No model. Nothing is written except the sweep of rows that are stuck
+// (reading over 3 minutes, queued over 10 minutes), which every list call runs first for the caller, and the `unchecked`
+// mark an owner clears by opening a saved exam. A row carries a status, a reason code, once read a kind, a date and a
+// count, and for a saved exam whether it is still unchecked: no value, no name.
 import { DocumentRow, type ExamDraftResponse, MyExamsRequest, type MyExamsResponse } from "../_shared/contract.ts";
 import { type Auth, authenticate, readJson, type Store, toListItem } from "../_shared/docs.ts";
 import { fail, headersFor, json } from "../_shared/http.ts";
 
 export interface Deps {
   auth: Auth;
-  store: Pick<Store, "roleOf" | "sweepStuck" | "listOwn" | "getOwn">;
+  store: Pick<Store, "roleOf" | "sweepStuck" | "listOwn" | "getOwn" | "markOpened">;
   log(line: Record<string, unknown>): void;
   now(): number;
 }
@@ -28,9 +29,13 @@ export function makeHandler(deps: Deps) {
     if (!parsed.success) return fail(req, 400, "bad_request", "doc_id must be a document id");
 
     if (parsed.data.doc_id) {
-      // The review beside the photo: what extract-exam used to answer, read from the stored draft.
+      // The exam beside the photo: what extract-exam used to answer, read from the stored row. A draft opens the review;
+      // a saved exam answers the same shape, read-only, and opening it is what clears its `unchecked` mark (MIN-4555 addendum).
       const st = await deps.store.getOwn(who.env, who.uid, parsed.data.doc_id);
-      if (!st || st.document.status !== "draft" || !st.document.kind) return fail(req, 404, "not_found", "No draft to review.");
+      const open = st && (st.document.status === "draft" || st.document.status === "confirmed") && st.document.kind;
+      if (!st || !open) return fail(req, 404, "not_found", "No exam to open.");
+      const cleared = st.document.status === "confirmed" && st.document.unchecked && await deps.store.markOpened(who.env, who.uid, st.document.id);
+      if (cleared) st.document = { ...st.document, unchecked: false };
       const out: ExamDraftResponse = {
         draft: {
           document: DocumentRow.parse(st.document),
@@ -41,7 +46,7 @@ export function makeHandler(deps: Deps) {
           findings: st.findings.map(({ patient_id: _p, ...f }) => f),
         },
       };
-      deps.log({ fn: "my-exams", status: "draft", results: st.results.length, findings: st.findings.length, ms: deps.now() - started });
+      deps.log({ fn: "my-exams", status: st.document.status, opened: cleared, results: st.results.length, findings: st.findings.length, ms: deps.now() - started });
       return json(req, 200, out);
     }
 

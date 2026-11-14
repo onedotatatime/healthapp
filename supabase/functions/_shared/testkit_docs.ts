@@ -68,7 +68,7 @@ export function fakeStore() {
         document: {
           id, patient_id: patientId, kind: null as never, language: null, exam_date: null, issuer: null,
           identity_status: null, provenance: "uploaded_by_patient", status: "queued",
-          created_at: new Date(clock.now).toISOString().replace("Z", "+00:00"), confirmed_at: null,
+          created_at: new Date(clock.now).toISOString().replace("Z", "+00:00"), confirmed_at: null, unchecked: false,
         },
         meta: { storage_path: path, content_type: contentType, sha256_file: null, sha256_record: null, printed_name: null, printed_id: null },
         results: [], findings: [],
@@ -158,10 +158,25 @@ export function fakeStore() {
         return {
           id: d.document.id, status: d.document.status, status_reason: x.reason, created_at: d.document.created_at,
           status_at: new Date(x.at).toISOString().replace("Z", "+00:00"), kind: d.document.kind, exam_date: d.document.exam_date,
-          read_attempts: x.attempts, has_file: d.meta.storage_path !== null, values_read: d.results.length,
+          read_attempts: x.attempts, has_file: d.meta.storage_path !== null, values_read: d.results.length, unchecked: d.document.unchecked,
         };
       });
       return Promise.resolve(rows.reverse());
+    },
+    unconfirm(_e, patientId, docId) {
+      calls.push("unconfirm");
+      const cur = docs.get(docId);
+      if (!cur || cur.document.patient_id !== patientId) return Promise.resolve(null);
+      if (cur.document.status !== "confirmed") return Promise.resolve("not_confirmed" as const);
+      cur.document = { ...cur.document, status: "draft", confirmed_at: null, unchecked: false };
+      return Promise.resolve(cur);
+    },
+    markOpened(_e, patientId, docId) {
+      calls.push("markOpened");
+      const cur = docs.get(docId);
+      if (!cur || cur.document.patient_id !== patientId || cur.document.status !== "confirmed" || !cur.document.unchecked) return Promise.resolve(false);
+      cur.document = { ...cur.document, unchecked: false };
+      return Promise.resolve(true);
     },
     deleteUnsaved(_e, p, id) {
       calls.push("deleteUnsaved");
@@ -173,7 +188,7 @@ export function fakeStore() {
       }
       return Promise.resolve(false);
     },
-    async confirm(_e, patientId, docId, plan) {
+    async confirm(_e, patientId, docId, plan, opts) {
       calls.push("confirm");
       const cur = docs.get(docId);
       if (!cur || cur.document.patient_id !== patientId) return null;
@@ -190,7 +205,7 @@ export function fakeStore() {
         Object.assign(row, { text_original: f.text_original, finding_date: f.finding_date });
         row.edited_by_patient = row.edited_by_patient || f.edited;
       }
-      cur.document = { ...cur.document, exam_date: o.plan.exam_date, status: "confirmed", confirmed_at: "2026-11-14T10:05:00.000+00:00" };
+      cur.document = { ...cur.document, exam_date: o.plan.exam_date, status: "confirmed", confirmed_at: "2026-11-14T10:05:00.000+00:00", unchecked: opts?.unchecked === true };
       cur.meta.sha256_record = o.plan.sha256_record;
       return { state: cur };
     },

@@ -71,6 +71,7 @@ export interface ExamRow {
   read_attempts: number;
   has_file: boolean;
   values_read: number;
+  unchecked: boolean;
 }
 
 /** A failed upload is read again by the patient at most this many times; then it is Delete only (CTO, MIN-4555 §3). */
@@ -97,6 +98,8 @@ export function toListItem(r: ExamRow): ExamListItem {
     values_read: read ? r.values_read : null,
     can_retry: status === "failed" && r.has_file && r.read_attempts < MAX_READS && reason !== "no_file" && reason !== "unsupported_type",
     can_delete: status !== "confirmed",
+    // The mark exists only on a saved exam; a draft, whatever its column says, is already waiting for the owner.
+    unchecked: status === "confirmed" && r.unchecked,
   };
 }
 
@@ -136,16 +139,24 @@ export interface Store {
   objectMeta(env: HealthappEnv, path: string): Promise<ObjectMeta | null>;
   /** Upserts the one analysis row of a document of this patient (MIN-4549). Twice leaves one row. */
   saveAnalysis(env: HealthappEnv, patientId: string, docId: string, f: AnalysisFields): Promise<void>;
+  /** confirmed -> draft for the owner's own exam: confirmed_at null, unchecked false. Values, file and file analysis stay.
+   *  Null when the upload is not the caller's or does not exist; `not_confirmed` when it is not a saved exam. */
+  unconfirm(env: HealthappEnv, patientId: string, docId: string): Promise<DocState | "not_confirmed" | null>;
+  /** The owner opened a saved exam: clears `unchecked` on it. False when it was not marked (or not theirs, or not confirmed). */
+  markOpened(env: HealthappEnv, patientId: string, docId: string): Promise<boolean>;
   /** The match keys of the patient's own profile (never sent to a client). */
   identityOf(env: HealthappEnv, uid: string): Promise<IdentityProfile | null>;
   /** Deletes an upload of the caller that is not saved (any status but confirmed). False when there is none. */
   deleteUnsaved(env: HealthappEnv, patientId: string, docId: string): Promise<boolean>;
-  /** Runs `plan` on the row inside one transaction (row locked), then writes what it returns. */
+  /** Runs `plan` on the row inside one transaction (row locked), then writes what it returns. The one place that writes
+   *  `confirmed`: the patient's confirm and the automatic save of a scanned exam both come through here, so they cannot
+   *  differ. `unchecked` is true only for the automatic one; any confirm by the patient leaves it false. */
   confirm(
     env: HealthappEnv,
     patientId: string,
     docId: string,
     plan: (s: DocState) => Promise<PlanOutcome>,
+    opts?: { unchecked?: boolean },
   ): Promise<{ state: DocState } | { error: Extract<PlanOutcome, { kind: "error" }> } | null>;
 }
 

@@ -1,7 +1,8 @@
 -- Counts only (MIN-4556, CTO on MIN-4555 §8). Renders with __SCHEMA__ and __BUCKET__ (`scripts/hdb scan <env>`).
 -- Selects counts and booleans and nothing else: no id, no name, no value, no path, no date. Safe to run on
 -- `healthapp_demo` (conductor rule 3a9ed68: an agent proves the real-record run without reading a row).
--- stuck = the lazy sweep's own limits: reading for more than 3 minutes, queued for more than 10.
+-- confirmed_unchecked = saved by the background reading and not yet opened by its owner (MIN-4555 addendum); draft = read but
+-- not counted (unconfirmed, or the automatic save was refused). stuck = the lazy sweep's own limits: reading for more than 3 minutes, queued for more than 10.
 -- refused_rows_with_file = a refused row that still has a path, or whose object still exists in the bucket.
 select
   count(*)::int                                                              as uploads,
@@ -11,6 +12,7 @@ select
   count(*) filter (where d.status = 'refused')::int                          as refused,
   count(*) filter (where d.status = 'failed')::int                           as failed,
   count(*) filter (where d.status = 'confirmed')::int                        as confirmed,
+  count(*) filter (where d.status = 'confirmed' and d.unchecked)::int        as confirmed_unchecked,
   count(*) filter (where d.status = 'refused' and d.status_reason = 'unreadable')::int        as refused_unreadable,
   count(*) filter (where d.status = 'refused' and d.status_reason = 'unsupported_kind')::int  as refused_unsupported_kind,
   count(*) filter (where d.status = 'refused' and d.status_reason = 'incomplete')::int        as refused_incomplete,

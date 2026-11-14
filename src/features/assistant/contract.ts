@@ -38,10 +38,12 @@ export const DocumentRow = z.object({
   status: DocumentStatus,
   created_at: Timestamp,
   confirmed_at: Timestamp.nullable(),
+  /** MIN-4556 addendum: true from the automatic save of a scanned exam until its owner opens, confirms or unconfirms it. */
+  unchecked: z.boolean(),
 });
 export type DocumentRow = z.infer<typeof DocumentRow>;
 export const DOCUMENT_COLUMNS =
-  'id,patient_id,kind,language,exam_date,issuer,identity_status,provenance,status,created_at,confirmed_at';
+  'id,patient_id,kind,language,exam_date,issuer,identity_status,provenance,status,created_at,confirmed_at,unchecked';
 
 export const ResultRow = z.object({
   id: Uuid,

@@ -23,6 +23,8 @@ const cases: [string, { safeParse(x: unknown): { success: boolean; error?: unkno
   ["extractQueued", C.ExtractResponse, F.extractQueued],
   ["myExams", C.MyExamsResponse, F.myExams],
   ["examDraft", C.ExamDraftResponse, F.examDraft],
+  ["examConfirmedOpen", C.ExamDraftResponse, F.examConfirmedOpen],
+  ["unconfirmed", C.UnconfirmDocResponse, F.unconfirmed],
   ["examDeleted", C.ExamDeleteResponse, F.examDeleted],
   ["confirmDoc", C.ConfirmDocResponse, F.confirmDoc],
   ["docPhoto", C.DocPhotoResponse, F.docPhoto],

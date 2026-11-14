@@ -210,7 +210,7 @@ export const pgStore: Store = {
     const rows = await db().unsafe(
       `select d.id::text as id, d.status, d.status_reason, to_json(d.created_at) #>> '{}' as created_at,
               to_json(d.status_at) #>> '{}' as status_at, d.kind, to_char(d.exam_date, 'YYYY-MM-DD') as exam_date,
-              d.read_attempts::int as read_attempts, (d.storage_path is not null) as has_file,
+              d.read_attempts::int as read_attempts, (d.storage_path is not null) as has_file, d.unchecked,
               (select count(*)::int from ${S}.results r where r.document_id = d.id) as values_read
          from ${S}.documents d where d.patient_id = $1::uuid order by d.created_at desc, d.id`,
       [patientId],
@@ -264,7 +264,29 @@ export const pgStore: Store = {
     return r.length > 0;
   },
 
-  async confirm(env, patientId, docId, plan) {
+  async unconfirm(env, patientId, docId) {
+    const S = schema(env);
+    return await db().begin(async (tx) => {
+      const cur = await load(tx, S, "d.id = $1 and d.patient_id = $2", [docId, patientId], true);
+      if (!cur) return null;
+      if (cur.document.status !== "confirmed") return "not_confirmed" as const;
+      await tx.unsafe(
+        `update ${S}.documents set status = 'draft', confirmed_at = null, unchecked = false where id = $1::uuid and patient_id = $2::uuid and status = 'confirmed'`,
+        [docId, patientId],
+      );
+      return await load(tx, S, "d.id = $1", [docId]);
+    });
+  },
+
+  async markOpened(env, patientId, docId) {
+    const r = await db().unsafe(
+      `update ${schema(env)}.documents set unchecked = false where id = $1::uuid and patient_id = $2::uuid and status = 'confirmed' and unchecked returning id`,
+      [docId, patientId],
+    );
+    return r.length > 0;
+  },
+
+  async confirm(env, patientId, docId, plan, opts) {
     const S = schema(env);
     return await db().begin(async (tx) => {
       const cur = await load(tx, S, "d.id = $1 and d.patient_id = $2", [docId, patientId], true);
@@ -288,8 +310,8 @@ export const pgStore: Store = {
         );
       }
       await tx.unsafe(
-        `update ${S}.documents set exam_date = $2, status = 'confirmed', confirmed_at = now(), sha256_record = $3 where id = $1`,
-        [docId, p.exam_date, p.sha256_record],
+        `update ${S}.documents set exam_date = $2, status = 'confirmed', confirmed_at = now(), sha256_record = $3, unchecked = $4::boolean where id = $1`,
+        [docId, p.exam_date, p.sha256_record, opts?.unchecked === true],
       );
       const state = await load(tx, S, "d.id = $1", [docId]);
       return state ? { state } : null;
