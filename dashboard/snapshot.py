@@ -9,6 +9,7 @@ Stdlib only (Python 3.9+). Five blocks, each with its own asOf and error:
   money   usage tokens by model x rates.json x eurPerUsd. An estimate at API list price, never a bill
   hand    ~/.healthapp-dashboard/hand-set.json (credits, demo steps, clean runs, milestone metadata)
   branches  the healthapp repo's branches: local git (read-only: no fetch, no lock, no write) and PRs through one `gh pr list` call (MIN-4460)
+  repo      numbers only about the same repo: branches, PRs, commits, lines of code (MIN-4568). Same read-only git and one more `gh pr list`; every field names its source in build_repo
 Besides the blocks, `directions` (the project goal's five directions and their status, MIN-4497) is read from ~/.healthapp-dashboard/directions.json,
 a second hand-set file: summary text only, no patient data. A missing file omits the field; a bad file omits it too and puts the reason in blocks.hand.error.
 A block that fails keeps its last good value, gets a newer `error`, keeps its old `asOf`; the others stay fresh.
@@ -28,7 +29,7 @@ SECRET_RE = re.compile('|'.join(['lin' + '_api_', 'eyJ' + '[A-Za-z0-9_-]{30,}', 
 HOME_DEFAULT = '~/.healthapp-dashboard'
 USAGE_BIN_DEFAULT = '~/AppDevelopment/conductor/bin/usage'
 ENV_AGENTS = '~/.claude/.env.agents'
-BLOCKS = ('linear', 'usage', 'money', 'hand', 'branches')
+BLOCKS = ('linear', 'usage', 'money', 'hand', 'branches', 'repo')
 
 
 DIRECTION_STATUSES = ('on_track', 'at_risk', 'off_track', 'not_started')
@@ -142,6 +143,14 @@ def project_line(series, start, end, deadline, step_min, key=1):
     return {'at': iso(deadline), 'v': round(series[-1] + slope * mins, 2 if key == 2 else 0)}
 
 
+def run_minutes(U, events):
+    """Active minutes of one run: the gaps between consecutive requests, each capped at the idle rule of bin/usage (PAUSE_S, 300 s), so
+    a long CI wait or an idle gap never counts as work. A run of one request has no span: 0."""
+    cap = getattr(U, 'PAUSE_S', 300)
+    ts = sorted(e['t'] for e in events)
+    return sum(min((b - a).total_seconds(), cap) for a, b in zip(ts, ts[1:])) / 60
+
+
 def build_usage(cfg, now, since, root, usage_bin, name_filter):
     U = load_usage_module(usage_bin)
     if not os.path.isdir(root):
@@ -149,6 +158,7 @@ def build_usage(cfg, now, since, root, usage_bin, name_filter):
     rows = collect_rows(U, root, since, None, name_filter)
     names = {a['agentType']: a['n'] for a in cfg['agents']}
     per_agent, last_seen = collections.Counter(), {}
+    mins, runs = collections.Counter(), collections.Counter()
     per_chat = collections.Counter()
     points = []
     for r in rows:
@@ -156,6 +166,8 @@ def build_usage(cfg, now, since, root, usage_bin, name_filter):
         per_chat[r['session']] += r['w']
         if who:
             per_agent[who] += r['w']
+            mins[who] += run_minutes(U, r['events'])
+            runs[who] += 1
             if who not in last_seen or r['last'] > last_seen[who]:
                 last_seen[who] = r['last']
         points.extend((e['t'], weigh(U, e)) for e in r['events'])
@@ -164,9 +176,16 @@ def build_usage(cfg, now, since, root, usage_bin, name_filter):
     total = sum(r['w'] for r in rows)
     deadline = parse(cfg['_deadline'])
     top = lambda c, n: [{'n': k, 'v': int(round(v))} for k, v in c.most_common(n)]
+    # Every configured agent has a row, zeros included (MIN-4583); n and v keep their meaning, mins and runs are added.
+    configured = {a['n'] for a in cfg['agents']}
+    for a in cfg['agents']:                    # config order, never set order: zero rows must not reshuffle between runs
+        per_agent.setdefault(a['n'], 0)
+    others = [k for k, _ in per_agent.most_common() if k not in configured][:5]      # built-in agents (Explore, general-purpose...), biggest first
+    leaderboard = [{'n': k, 'v': int(round(v)), 'mins': round(float(mins[k]), 1), 'runs': runs[k]}
+                   for k, v in per_agent.most_common() if k in configured or k in others]
     data = {
         'agentCaps': cfg['agentCaps'], 'chatCaps': cfg['chatCaps'],
-        'perAgent': top(per_agent, 12), 'perChat': top(per_chat, 8),
+        'perAgent': leaderboard, 'perChat': top(per_chat, 8),
         'series': [int(round(x)) for x in series], 'seriesFrom': iso(since), 'seriesStepMin': SERIES_STEP_MIN,
         'projection': project_line(series, since, now, deadline, SERIES_STEP_MIN),
         'window': {'since': iso(since), 'until': iso(now)},
@@ -345,9 +364,20 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
         d, tot = ms.get(m['id'], [0, 0])
         milestones.append(dict(m, done=d, total=tot))
     current = next((m['id'] for m in milestones if m['total'] == 0 or m['done'] < m['total']), None)
-    agents, lanes = [], []
+    agents, lanes, claimed, shared = [], [], {}, []
     for a in agents_cfg:
-        if a.get('roleLabel'):
+        # One Linear identity (an assignee name, or a Role label) belongs to ONE agent. Scrum, SEO and JobScout write as Back, Anna and
+        # Spast, under their Role labels, so Linear cannot tell them apart: they are configured with `linear: null` and show idle. If a
+        # config gives two agents the same identity anyway, the first keeps it and the later one gets nothing (and a warning), never a
+        # second copy of the same issues.
+        ident = ('label', a['roleLabel']) if a.get('roleLabel') else ('name', a['linear']) if a.get('linear') else None
+        dup = ident is not None and ident in claimed
+        if ident is not None and not dup:
+            claimed[ident] = a['n']
+        if dup:
+            shared.append('%s shares the Linear identity "%s" of %s, so it shows no issues' % (a['n'], ident[1], claimed[ident]))
+            mine = []
+        elif a.get('roleLabel'):
             # An agent that writes under the founder's Linear account (the CTO) is told apart by its Role label,
             # never by the assignee name, or every issue assigned to the founder would count as the agent's.
             mine = [n for n in live if role_label_name(n, role_labels) == a['roleLabel']]
@@ -373,7 +403,10 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
                          'state': 'done' if n['state']['type'] == 'completed' else 'active'})
         bars.sort(key=lambda b: b['from'])
         lanes.append({'agent': a['n'], 'bars': bars})
-    return {'milestones': milestones, 'current': current, 'tasks': tasks, 'agents': agents, 'lanes': lanes}
+    out = {'milestones': milestones, 'current': current, 'tasks': tasks, 'agents': agents, 'lanes': lanes}
+    if shared:
+        out['_warning'] = 'config.agents: ' + '; '.join(shared)
+    return out
 
 
 # ----------------------------------------------------------------------------- forecast (MIN-4565)
@@ -898,6 +931,176 @@ def read_directions(path):
         return None, 'directions.json: not valid JSON'
 
 
+# ----------------------------------------------------------------------------- repo numbers (MIN-4568)
+
+REPO_PR_LIMIT = 1000                   # one `gh pr list` call; reaching the limit is reported, never hidden
+REPO_LINES_TIMEOUT = 60                # seconds for the two git calls that walk history / the tree
+# Pathspecs left out of every line count (codeLines, linesAdded, linesRemoved, filesChanged): lockfiles, vendored and generated files, and
+# data and prose that are not code (json fixtures, markdown, csv, svg). Measured on the real repo (MIN-4568): with only the lockfile rules,
+# data/ (33k lines of json) and docs/ (20k) made "lines of code" 87k when the code is about 45k. `git grep -I` already skips binary files.
+LOC_EXCLUDE = ('**/node_modules/**', '**/vendor/**', '**/third_party/**', '**/package-lock.json', '**/pnpm-lock.yaml', '**/yarn.lock',
+               '**/*.lock', '**/*.lockb', '**/*.min.js', '**/*.min.css', '**/*.map',
+               '**/*.json', '**/*.jsonl', '**/*.ndjson', '**/*.md', '**/*.mdx', '**/*.csv', '**/*.svg')
+LOC_PATHSPEC = ['--', '.'] + [':(exclude,glob)' + p for p in LOC_EXCLUDE]
+REPO_FIELDS = ('branchesOpen', 'branchesMerged', 'prsOpen', 'prsMerged', 'prsTotal',
+               'commitsStaging', 'commitsStaging24h', 'commitsMain', 'commitsMain24h',
+               'linesAdded', 'linesRemoved', 'filesChanged', 'codeLines', 'codeFiles')
+
+
+def gh_failure(rc, err):
+    low = err.lower()
+    if 'gh auth login' in low or 'not logged' in low or 'authentication' in low or 'bad credentials' in low or 'http 401' in low:
+        return 'gh not authenticated'
+    return 'gh failed: %s' % (clean(err.strip()) or 'exit %d' % rc)
+
+
+def repo_pr_counts(runner, repo, gh_bin, refs, bases):
+    """Branch and PR numbers. Source: ONE `gh pr list --state all` (PR open/merged/total, merged branches) and the remote-tracking
+    refs (branches that exist on origin). Needs gh: without it `merged` is unknowable, so every field of the group is left out."""
+    try:
+        rc, out, err = runner([gh_bin, 'pr', 'list', '--state', 'all', '--limit', str(REPO_PR_LIMIT), '--json', 'number,state,headRefName,headRefOid'],
+                              repo, GH_TIMEOUT)
+    except FileNotFoundError:
+        raise BlockError('gh not installed')
+    if rc != 0:
+        raise BlockError(gh_failure(rc, err))
+    try:
+        prs = json.loads(out)
+        newest = {}                                    # newest PR per head branch decides whether that branch is still open
+        for p in prs:
+            if p['headRefName'] not in newest or p['number'] > newest[p['headRefName']]['number']:
+                newest[p['headRefName']] = p
+        states = [p['state'] for p in prs]
+    except (ValueError, TypeError, KeyError):
+        raise BlockError('gh failed: answer was not the expected JSON')
+    on_remote = {n for n, r in refs.items() if 'remote' in r and n not in bases}
+    open_pr_heads = {h for h, p in newest.items() if p['state'] == 'OPEN' and h not in bases}
+    finished = {h for h, p in newest.items() if p['state'] != 'OPEN'}
+    data = {'branchesOpen': len((on_remote | open_pr_heads) - finished),
+            'branchesMerged': len({p['headRefName'] for p in prs if p['state'] == 'MERGED' and p['headRefName'] not in bases}),
+            'prsOpen': states.count('OPEN'), 'prsMerged': states.count('MERGED'), 'prsTotal': len(prs)}
+    warns = []
+    if len(prs) >= REPO_PR_LIMIT:
+        warns.append('gh returned %d PRs, the most it is asked for: PR and merged-branch totals may be low' % len(prs))
+    stale = sum(1 for h in open_pr_heads if (refs.get(h, {}).get('remote') or {}).get('sha') != newest[h].get('headRefOid'))
+    if stale:
+        warns.append('local remote-tracking refs are behind gh for %d open PR%s; commit and line numbers may be old (this job never fetches)'
+                     % (stale, '' if stale == 1 else 's'))
+    return data, warns
+
+
+def repo_commits(runner, repo, ref, now):
+    """Commits reachable from `ref`: all of them (`git rev-list --count`) and those committed in the 24 h before `now` (`--since`)."""
+    total = int(git_out(runner, repo, 'rev-list', '--count', ref).strip())
+    day = int(git_out(runner, repo, 'rev-list', '--count', '--since=' + iso(now - timedelta(hours=24)), ref).strip())
+    return total, day
+
+
+def repo_lines(runner, repo, ref, since):
+    """(added, removed, files) from `git log --first-parent --numstat` on `ref` since the build start: every integrated commit
+    (a squash merge is one commit, a merge commit shows its diff against the first parent), summed, with the same LOC_EXCLUDE as
+    codeLines. `files` counts distinct paths touched. A binary file counts as a file with no lines."""
+    out = git_out(runner, repo, 'log', '--first-parent', '-M', '--numstat', '--format=', '--since=' + iso(since), ref, *LOC_PATHSPEC, timeout=REPO_LINES_TIMEOUT)
+    added = removed = 0
+    paths = set()
+    for line in out.splitlines():
+        f = line.split('\t', 2)
+        if len(f) != 3:
+            continue
+        added += int(f[0]) if f[0].isdigit() else 0
+        removed += int(f[1]) if f[1].isdigit() else 0
+        paths.add(f[2])
+    return added, removed, len(paths)
+
+
+def repo_code_size(runner, repo, ref):
+    """(lines, files) of tracked text files at `ref`, minus LOC_EXCLUDE: one `git grep -I -c ''` (every line matches, binary files are
+    skipped, `ref:path:count` per file). Paths are read and dropped, never published."""
+    argv = ['git', 'grep', '-I', '-c', '', ref] + LOC_PATHSPEC
+    rc, out, err = runner(argv, repo, REPO_LINES_TIMEOUT)
+    if rc == 1 and not err.strip():                    # grep's own "no match": an empty tree
+        return 0, 0
+    if rc != 0:
+        raise BlockError('git grep failed: %s' % (clean(err.strip()) or 'exit %d' % rc))
+    lines = files = 0
+    for row in out.splitlines():
+        count = row.rsplit(':', 1)[-1]
+        if count.isdigit():
+            lines += int(count)
+            files += 1
+    return lines, files
+
+
+def build_repo(rcfg, now, since, runner=default_runner, gh_bin=None):
+    """The repo block: numbers only, no branch name, path or title (safe in the public stub bundle, CTO 7d254d3d). Read-only like the
+    branches block (no fetch, no lock). Groups fail on their own: a group that cannot be read leaves its fields OUT and adds its reason to
+    `_warning` (run_block turns it into blocks.repo.error). Only when nothing at all could be read does the block fail (last good kept)."""
+    repo = os.path.expanduser(rcfg.get('repoPath') or REPO_DEFAULT)
+    if not os.path.isdir(repo):
+        raise BlockError('repo folder not found')
+    git_out(runner, repo, 'rev-parse', '--git-dir')
+    data, warns = {}, []
+
+    def group(label, fn):
+        try:
+            got = fn()
+        except BlockError as ex:
+            warns.append('%s: %s' % (label, ex))
+        except Exception as ex:                        # git missing, a stub raising: data, not a crash
+            warns.append('%s: %s' % (label, clean(ex)))
+        else:
+            data.update(got)
+    try:
+        refs = read_refs(runner, repo)
+    except Exception as ex:
+        refs = None
+        warns.append('refs: %s' % clean(ex))
+    ref_of = {}
+    for b in BRANCH_BASES:
+        r = (refs or {}).get(b, {})
+        ref_of[b] = (r.get('remote') or r.get('local') or {}).get('ref')
+
+    def need(base):
+        if refs is None:
+            raise BlockError('refs unreadable')
+        if not ref_of[base]:
+            raise BlockError('no %s branch found' % base)
+        return ref_of[base]
+
+    # branches and PRs: source is gh (PR states) plus the origin/* refs (which branches still exist)
+    def prs():
+        if refs is None:
+            raise BlockError('refs unreadable')
+        got, w = repo_pr_counts(runner, repo, gh_bin or find_gh(), refs, BRANCH_BASES)
+        warns.extend(w)
+        return got
+    group('prs', prs)
+    # commits: git rev-list --count on origin/<base> (else the local branch), total and the last 24 h
+    for base in BRANCH_BASES:
+        def commits(base=base):
+            total, day = repo_commits(runner, repo, need(base), now)
+            return {'commits' + base.capitalize(): total, 'commits' + base.capitalize() + '24h': day}
+        group('commits ' + base, commits)
+
+    # lines added / removed / files changed since the build start: git log --first-parent --numstat on the integration branch (staging)
+    def lines():
+        a, r, f = repo_lines(runner, repo, need(PRIMARY_BASE), since)
+        return {'linesAdded': a, 'linesRemoved': r, 'filesChanged': f}
+    group('lines', lines)
+
+    # total lines in the repo: git grep -I -c '' on staging, minus LOC_EXCLUDE
+    def code():
+        n, f = repo_code_size(runner, repo, need(PRIMARY_BASE))
+        return {'codeLines': n, 'codeFiles': f}
+    group('code', code)
+    if not data:
+        raise BlockError('nothing readable: ' + '; '.join(warns))
+    ordered = {k: data[k] for k in REPO_FIELDS if k in data}
+    if warns:
+        ordered['_warning'] = '; '.join(warns)
+    return ordered
+
+
 # ----------------------------------------------------------------------------- assemble
 
 def run_block(state, name, fn, now):
@@ -944,7 +1147,7 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         try:                                           # a forecast that fails must not blank the rest of the linear block
             data['forecast'] = build_forecast(nodes, cfg, now, since, parse(hand['freeze']), parse(hand['submitBy']))
         except Exception as ex:
-            data['_warning'] = 'forecast not computed: %s' % ex
+            data['_warning'] = '; '.join(w for w in (data.get('_warning'), 'forecast not computed: %s' % ex) if w)
         return data
     run_block(state, 'linear', linear, now)
 
@@ -953,8 +1156,13 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         return build_branches(cfg.get('branches') or {}, now, tz, holder.get('nodes'), cfg['agents'], cfg['roleLabels'], runner, gh_bin)
     run_block(state, 'branches', branches, now)
 
+    def repo_numbers():
+        rcfg = dict(cfg.get('branches') or {}, **(cfg.get('repo') or {}))      # the same repoPath unless config.repo names another
+        return build_repo(rcfg, now, since, runner, gh_bin)
+    run_block(state, 'repo', repo_numbers, now)
+
     g = lambda b: (state.get(b) or {}).get('data') or {}
-    h, lin, us, mo, br = g('hand'), g('linear'), g('usage'), g('money'), g('branches')
+    h, lin, us, mo, br, rp = g('hand'), g('linear'), g('usage'), g('money'), g('branches'), g('repo')
     snap = {
         'schema': SCHEMA, 'intervalSec': INTERVAL_SEC, 'generatedAt': iso(now),
         'blocks': {b: {'asOf': (state.get(b) or {}).get('asOf'), 'error': (state.get(b) or {}).get('error')} for b in BLOCKS},
@@ -980,6 +1188,8 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         snap['directions'] = dirs
     if br:
         snap['branches'] = br
+    if rp:
+        snap['repo'] = rp
     return snap
 
 
@@ -1055,6 +1265,8 @@ def main(argv=None):
     br, berr = snap.get('branches') or {}, snap['blocks']['branches']['error']
     print('%s branches: prSource=%s, staleRefs=%s, gh=%s, error=%s' % (
         iso(now), br.get('prSource', 'none'), br.get('staleRefs'), find_gh(), berr['message'] if berr else 'none'))
+    rp, rerr = snap.get('repo') or {}, snap['blocks']['repo']['error']
+    print('%s repo: fields=%d/%d, error=%s' % (iso(now), len(rp), len(REPO_FIELDS), rerr['message'] if rerr else 'none'))
     return 0
 
 
