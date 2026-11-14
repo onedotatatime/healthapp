@@ -4,7 +4,7 @@
 #   dashboard/install.sh [--viewer-url BASE] [--rotate] [--no-secrets] [--uninstall]
 #
 # What it does:
-#   1. ~/.healthapp-dashboard/ (mode 700): copies snapshot.py and rates.json, keeps hand-set.json if present.
+#   1. ~/.healthapp-dashboard/ (mode 700): copies snapshot.py, rates.json and open.sh, keeps hand-set.json if present.
 #   2. push.key and view.key (mode 600, `openssl rand -hex 32`), created once; --rotate makes new ones.
 #   3. push.json (mode 600): the ingest URL and the PUBLIC anon key the Supabase gateway wants as a bearer.
 #   4. Sets the function secrets HEALTHAPP_DASHBOARD_PUSH_KEY, HEALTHAPP_DASHBOARD_VIEW_KEY and
@@ -48,7 +48,8 @@ ORIGIN="$(python3 -c 'import sys,urllib.parse as u; p=u.urlparse(sys.argv[1]); p
 
 mkdir -p "$HOME_DIR"
 chmod 700 "$HOME_DIR"
-cp "$SRC/snapshot.py" "$SRC/rates.json" "$HOME_DIR/"
+cp "$SRC/snapshot.py" "$SRC/rates.json" "$SRC/open.sh" "$HOME_DIR/"
+chmod 700 "$HOME_DIR/open.sh"
 [ -f "$HOME_DIR/hand-set.json" ] || cp "$SRC/hand-set.sample.json" "$HOME_DIR/hand-set.json"
 
 for k in push view; do
@@ -125,4 +126,4 @@ a = json.load(open(home + "/push.json"))["anon"]
 sys.stdout.write("%s#k=%s&a=%s" % (base, k, a))
 ' "$HOME_DIR" "$VIEWER_URL" | pbcopy
 
-echo "installed: job $LABEL every 180 s, keys in $HOME_DIR (mode 600), viewer URL on the clipboard"
+echo "installed: job $LABEL every 180 s, keys in $HOME_DIR (mode 600), viewer URL on the clipboard; to open the page run $HOME_DIR/open.sh"
