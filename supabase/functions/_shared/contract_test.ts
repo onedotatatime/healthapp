@@ -31,6 +31,10 @@ const cases: [string, { safeParse(x: unknown): { success: boolean; error?: unkno
   ["errorTokenExpired", C.ErrorBody, F.errorTokenExpired],
   ["errorBadPasscode", C.ErrorBody, F.errorBadPasscode],
   ["errorRateLimited", C.ErrorBody, F.errorRateLimited],
+  ["possibleMatchesMaria", C.PossibleMatchesResponse, F.possibleMatchesMaria],
+  ["possibleMatchesEmpty", C.PossibleMatchesResponse, F.possibleMatchesEmpty],
+  ["matchesOptInOn", C.MatchesOptIn, F.matchesOptInOn],
+  ["matchesOptInOff", C.MatchesOptIn, F.matchesOptInOff],
 ];
 
 Deno.test("every fixture parses against its schema", () => {
@@ -79,4 +83,21 @@ Deno.test("the contract refuses what the settlements forbid", () => {
 Deno.test("the function table names every P0 function with the healthapp- prefix", () => {
   for (const name of Object.keys(C.FUNCTIONS)) assert(name.startsWith("healthapp-"), name);
   assertEquals(Object.keys(C.FUNCTIONS).length, 12);
+});
+
+Deno.test("possible matches: one empty answer, nothing below country, nothing below k", () => {
+  assertEquals(F.possibleMatchesEmpty, C.MATCHES_EMPTY);
+  assertEquals(F.possibleMatchesMaria.match_count, F.possibleMatchesMaria.groups.reduce((s, g) => s + g.n, 0));
+  const g = F.possibleMatchesMaria.groups[0];
+  // a group below k, a person field, or a finer location is refused
+  assertEquals(C.MatchGroup.safeParse({ ...g, n: C.MATCH_K - 1 }).success, false);
+  assertEquals(C.MatchGroup.safeParse({ ...g, id: "syn-0001" }).success, false);
+  assertEquals(C.MatchGroup.safeParse({ ...g, countries: ["GR-Athens"] }).success, false);
+  assertEquals(C.MatchGroup.safeParse({ ...g, label: "real" }).success, false);
+  assertEquals(C.MatchGroup.safeParse({ ...g, pattern: g.pattern.slice(0, C.MATCH_MIN_SHARED - 1) }).success, false);
+  assertEquals(Object.keys(C.RPCS).sort(), [
+    "healthapp_get_matches_opt_in",
+    "healthapp_possible_matches",
+    "healthapp_set_matches_opt_in",
+  ]);
 });

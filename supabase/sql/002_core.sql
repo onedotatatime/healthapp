@@ -157,9 +157,12 @@ alter table __SCHEMA__.rate_events      enable row level security;
 
 -- Privileges: deny by default (001), then exactly what a policy covers. --------------------
 revoke all on all tables in schema __SCHEMA__ from public, anon, authenticated;
-grant select on __SCHEMA__.profiles, __SCHEMA__.grants, __SCHEMA__.documents, __SCHEMA__.results,
+grant select on __SCHEMA__.grants, __SCHEMA__.documents, __SCHEMA__.results,
                 __SCHEMA__.findings, __SCHEMA__.diary_entries, __SCHEMA__.assistant_turns
   to authenticated;
+-- profiles: columns, not the table (MIN-4492 fix 1). The match keys never reach a client role.
+grant select (id, role, full_name, full_name_latin, specialty, org_type, created_at)
+  on __SCHEMA__.profiles to authenticated;
 -- The diary insert names its columns: recorded_at and time_edited cannot be sent by a client.
 grant insert (patient_id, occurred_at, text, severity) on __SCHEMA__.diary_entries to authenticated;
 grant all on all tables in schema __SCHEMA__ to service_role;
