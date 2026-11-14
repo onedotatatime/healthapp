@@ -2,7 +2,7 @@ import { assertEquals } from "jsr:@std/assert@1";
 import { ExtractResponse } from "../_shared/contract.ts";
 import type { ModelExtract } from "../_shared/extract.ts";
 import { ModelError } from "../_shared/model.ts";
-import { call, fakeAuth, fakeBlobs, fakeStore, PATIENT } from "../_shared/testkit_docs.ts";
+import { call, fakeAuth, fakeBlobs, fakeStore, PATIENT, PATIENT2 } from "../_shared/testkit_docs.ts";
 import { makeHandler } from "./handler.ts";
 
 const GOOD: ModelExtract = {
@@ -113,4 +113,62 @@ Deno.test("an already confirmed document cannot be read again", async () => {
   t.s.docs.get(d.id)!.document.status = "confirmed";
   assertEquals((await t.h(call("x", { doc_id: d.id }))).status, 400);
   assertEquals(t.modelCalls(), 0);
+});
+
+// B1 + B2 (MIN-4478): whose document is it, decided on the server from the model's output ---------
+async function run(model: ModelExtract, who = "tp", body: Record<string, unknown> = {}) {
+  const t = setup(model);
+  const d = await newDoc(t, who === "tp2" ? PATIENT2 : PATIENT);
+  const res = await t.h(call("x", { doc_id: d.id, ...body }, who));
+  return { t, d, out: ExtractResponse.parse(await res.json()) };
+}
+
+Deno.test("doc 6, another person: name_mismatch with the two values, nothing saved, the upload is deleted", async () => {
+  const { t, d, out } = await run({ ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", printed_id: "AB654321" });
+  if (out.outcome !== "refused") throw new Error("expected a refusal");
+  assertEquals(out.reason, "name_mismatch");
+  assertEquals(out.mismatch, { printed: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", profile: "Μαρία Παπαδοπούλου" });
+  assertEquals(out.message.includes("ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ") && out.message.includes("Μαρία Παπαδοπούλου"), true);
+  assertEquals(t.s.docs.has(d.id), false);
+  assertEquals(t.s.calls.includes("saveExtraction"), false);
+  assertEquals(t.b.removed, [d.storage_path]);
+  assertEquals(t.logs.at(-1)?.reason, "name_mismatch");
+  assertEquals(JSON.stringify(t.logs).includes("ΠΑΠΑΔΟΠΟΥΛΟΣ"), false); // the log carries a code, not the words
+});
+
+Deno.test("doc 8, her name and another ID: id_mismatch with the two IDs, nothing saved", async () => {
+  const { t, d, out } = await run({ ...GOOD, printed_name: "PAPADOPOULOU MARIA", printed_id: "AK987654" });
+  if (out.outcome !== "refused") throw new Error("expected a refusal");
+  assertEquals([out.reason, out.mismatch], ["id_mismatch", { printed: "AK987654", profile: "AK123456" }]);
+  assertEquals(t.s.docs.has(d.id), false);
+  assertEquals(t.s.calls.includes("saveExtraction"), false);
+});
+
+Deno.test("doc 7, name and no ID: a draft marked name_only", async () => {
+  const { out } = await run({ ...GOOD, printed_id: "", header_confidence: { ...GOOD.header_confidence, printed_id: 0 } });
+  if (out.outcome !== "draft") throw new Error("expected a draft");
+  assertEquals([out.draft.document.identity_status, out.draft.document.provenance], ["name_only", "uploaded_by_patient"]);
+});
+
+Deno.test("docs 1 to 5, name and ID match (Greek lookalike ID letters too): a draft marked match", async () => {
+  for (const [name, id] of [["ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ", "AK123456"], ["PAPADOPOULOU MARIA", "ΑΚ123456"]]) {
+    const { out } = await run({ ...GOOD, printed_name: name, printed_id: id });
+    if (out.outcome !== "draft") throw new Error("expected a draft");
+    assertEquals([out.draft.document.identity_status, out.draft.document.provenance], ["match", "uploaded_by_patient"]);
+  }
+});
+
+Deno.test("the match is against the caller's own profile: Maria's page from Eleni is a name_mismatch", async () => {
+  const { out } = await run(GOOD, "tp2");
+  assertEquals(out.outcome === "refused" && out.reason, "name_mismatch");
+});
+
+Deno.test("no request field can set provenance, the match result or the name to compare", async () => {
+  // The request carries doc_id and nothing else is read: these keys change neither the verdict nor the mark.
+  const forged = { provenance: "verified_by_source", identity_status: "match", printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ", printed_id: "AK123456" };
+  const bad = await run({ ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", printed_id: "AB654321" }, "tp", forged);
+  assertEquals(bad.out.outcome === "refused" && bad.out.reason, "name_mismatch");
+  const nameOnly = await run({ ...GOOD, printed_id: "" }, "tp", forged);
+  if (nameOnly.out.outcome !== "draft") throw new Error("expected a draft");
+  assertEquals([nameOnly.out.draft.document.identity_status, nameOnly.out.draft.document.provenance], ["name_only", "uploaded_by_patient"]);
 });
