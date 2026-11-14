@@ -126,8 +126,8 @@ H.flags = function(){
       plain:'The '+c.n.replace(' (main)','').toLowerCase()+' chat is '+(st==='hard'?'over its limit':'near its limit')+' ('+H.k(v)+' of '+H.k(tk.chatCaps.soft)+').', act:'Start a new chat after this task.'}); });
   if(!tk.noCapFlags) tk.perAgent.forEach(a => { const v=S['ta.'+a.n], st=H.meterState(v,tk.agentCaps.soft,tk.agentCaps.hard);
     if(st!=='ok') out.push({id:'agent-'+a.n, level:st==='hard'?'bad':'warn', text:a.n+' agent at '+H.k(v)+' of '+H.k(tk.agentCaps.soft)+' soft cap', plain:a.n+' is near its token limit ('+H.k(v)+' of '+H.k(tk.agentCaps.soft)+').', act:'Hand the next task to a fresh run.'}); });
-  DATA.money.credits.forEach(c => { const f=H.credLeft(c)/c.granted;
-    if(f<0.3) out.push({id:'cr-'+c.n, level:f<0.2?'bad':'warn', text:c.n+' credits at '+Math.round(f*100)+'% left', plain:c.n+' credits are running low ('+H.credLeft(c)+' of '+c.granted+' left).', act:'Ask the CTO to top up or switch provider.'}); });
+  DATA.money.credits.forEach(c => { const f=S['cr.'+c.n]/c.granted;
+    if(f>0.7) out.push({id:'cr-'+c.n, level:f>0.8?'bad':'warn', text:c.n+' credits at '+Math.round(f*100)+'% used', plain:c.n+' credits are running low ('+S['cr.'+c.n]+' of '+c.granted+' used).', act:'Ask the CTO to top up or switch provider.'}); });
   DATA.flags.filter(f=>f.until && now < parseAthens(f.until)).forEach(f => out.push({id:'static-'+f.text.slice(0,8), level:f.level, text:f.text, plain:f.plain||f.text, act:f.act||''}));
   H.ms.forEach(m => { if(m.e<now && S['m.'+m.id]<m.total) out.push({id:'late-'+m.id, level:'bad', text:m.id+' window ended with '+(m.total-S['m.'+m.id])+' of '+m.total+' open', plain:'Milestone '+m.id.slice(1)+' ended with '+(m.total-S['m.'+m.id])+' issues still open.', act:'Cut scope or move the gate.'}); });
   return out;
@@ -152,7 +152,7 @@ function paintMeter(el, first){
   const key = el.dataset.mv, mode = el.dataset.mode||'used', max = +el.dataset.max, soft = +el.dataset.soft, hard = +el.dataset.hard;
   const row = el.closest('.mrow'), val = S[key];
   let frac, st, txt;
-  if(mode==='left'){ const left = max - val; frac = left/max; st = frac<0.2?'hard':frac<0.3?'soft':'ok'; txt = Math.round(left)+' / '+max+' left'; }
+  if(mode==='left'){ frac = Math.min(1, val/max); st = frac>0.8?'hard':frac>0.7?'soft':'ok'; txt = Math.round(val)+' of '+max+' used'; }
   else if(mode==='total'){ frac = Math.min(1, val/(+el.dataset.scale||1)); st = 'ok'; txt = H.k(val); }   // live feed: totals since build start, no per-run caps
   else { frac = Math.min(1, val/(+el.dataset.scale||max)); st = H.meterState(val, soft, hard); txt = H.k(val)+' / '+H.k(hard); }
   const old = el.dataset.s;
@@ -161,7 +161,7 @@ function paintMeter(el, first){
   const ms = row.querySelector('.mstat');
   if(ms){ ms.className = 'mstat ' + st; ms.hidden = st==='ok';
     const pl = H.plainStat;
-    ms.textContent = st==='hard' ? (mode==='left'?(pl?'■ Almost out':'■ Under 20% left'):(pl?'■ Over its limit':'■ Over cap')) : st==='soft' ? (mode==='left'?(pl?'▲ Running low':'▲ Under 30% left'):(pl?'▲ Near its limit':'▲ Near cap, soft cap '+H.k(soft))) : ''; }
+    ms.textContent = st==='hard' ? (mode==='left'?(pl?'■ Almost out':'■ Over 80% used'):(pl?'■ Over its limit':'■ Over cap')) : st==='soft' ? (mode==='left'?(pl?'▲ Running low':'▲ Over 70% used'):(pl?'▲ Near its limit':'▲ Near cap, soft cap '+H.k(soft))) : ''; }
   if(!first && old!==st) H.flash(row);
 }
 H.set = function(key, val){
@@ -183,7 +183,7 @@ H.rag = (s,word) => { const r = RAG[s]||RAG.idle; return '<span class="chip '+(r
 H.ragGlyph = s => (RAG[s]||RAG.idle)[1];
 H.meter = function(o){ // o: key,label,max,soft,hard,mode,scale,big
   const scale = o.scale || (o.hard*1.1);
-  const ticks = o.mode==='total' ? '' : o.mode==='left' ? [0.2,0.3].map(p=>'<i class="tick" style="left:'+(p*100)+'%" title="'+(p*100)+'% left"></i>').join('')
+  const ticks = o.mode==='total' ? '' : o.mode==='left' ? [0.7,0.8].map(p=>'<i class="tick" style="left:'+(p*100)+'%" title="'+(p*100)+'% used"></i>').join('')
     : [o.soft,o.hard].map((v,i)=>'<i class="tick" style="left:'+(v/scale*100).toFixed(1)+'%" title="'+(i?'hard':'soft')+' cap '+H.k(v)+'"></i>').join('');
   return '<div class="mrow'+(o.big?' bigm':'')+'" data-flash><span class="mname" title="'+esc(o.label)+'">'+esc(o.label)+'</span><span class="mval num"></span>'
     + '<div class="mt"><div class="meter" role="meter" data-mv="'+esc(o.key)+'" data-mode="'+(o.mode||'used')+'" data-max="'+o.max+'" data-soft="'+(o.soft||0)+'" data-hard="'+(o.hard||0)+'" data-scale="'+scale+'"><i class="fill"></i></div>'+ticks+'</div><span class="mstat" hidden></span></div>';

@@ -36,7 +36,7 @@ function renderBriefing(){
   + '</section><p class="muted" style="margin-top:8px;font-size:13px">'+H.src('none','SAMPLE · Linear')+'</p>'
   + '<h2 class="chap" id="c5"><span class="no">5</span>What does it cost?</h2><section class="grid2">'
   + '<div class="card rv" data-flash><div class="card-h"><h3>Estimated cost</h3>'+H.src('none')+'<span class="upd"></span></div><div class="stat"><span data-v="eur" data-f="eur"></span></div><div class="spark" id="spark"></div></div>'
-  + '<div class="card rv"><div class="card-h"><h3>Credits left</h3>'+H.src('none')+'<span class="upd"></span></div><div class="stat" style="font-size:28px;line-height:34px" id="tight"></div><div class="muted" id="tightw"></div>'
+  + '<div class="card rv"><div class="card-h"><h3>Credits consumed</h3>'+H.src('none')+'<span class="upd"></span></div><div class="stat" style="font-size:28px;line-height:34px" id="tight"></div><div class="muted" id="tightw"></div>'
   + '<button class="linkbtn" id="credBtn" aria-expanded="false" aria-controls="cred">All credits</button><div class="acc" id="cred"><div class="in">'+H.creditMeters()+'</div></div></div></section>'
   + '<section class="stack" style="margin-top:var(--gap)"><div class="card rv"><div class="card-h"><h3>Tokens by agent</h3>'+H.src('none')+'<span class="upd"></span></div><div id="agM">'+H.agentMeters(5)+'</div><button class="linkbtn" id="agBtn" aria-expanded="false">Show all 10</button></div>'
   + '<div class="card rv"><div class="card-h"><h3>Tokens by chat</h3>'+H.src('none')+'<span class="upd"></span></div>'+H.chatMeters()+'</div></section>'
@@ -71,8 +71,8 @@ function paintStepper(){
   $('#overall').textContent = H.donePct()+'%'; $('#overallN').textContent = S['t.done']+' of '+DATA.tasks.total+' issues'; $('#overallM .fill').style.setProperty('--f',(S['t.done']/DATA.tasks.total).toFixed(3));
 }
 function paintTight(){
-  const c = DATA.money.credits.slice().sort((a,b)=>H.credLeft(a)/a.granted - H.credLeft(b)/b.granted)[0];
-  $('#tight').textContent = c.n.replace(/ \(.*\)/,'')+' '+H.credLeft(c)+' of '+c.granted+' left'; $('#tightw').textContent = 'The tightest of the 4 credit pots (amounts to be confirmed at kickoff).';
+  const c = DATA.money.credits.slice().sort((a,b)=>S['cr.'+b.n]/b.granted - S['cr.'+a.n]/a.granted)[0];
+  $('#tight').textContent = c.n.replace(/ \(.*\)/,'')+' '+S['cr.'+c.n]+' of '+c.granted+' used'; $('#tightw').textContent = 'The most used of the 4 credit pots (amounts to be confirmed at kickoff).';
 }
 function paintSpark(){
   const s = H.eurSeries, mx = Math.max(...s), n = s.length, h = 32;
