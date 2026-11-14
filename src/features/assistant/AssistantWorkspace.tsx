@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EmptyState, ErrorNote, Spinner } from '../../components/Primitives';
 import { useActiveGrant } from '../handshake/context';
+import { PossibleMatchesPanel } from '../matches/PossibleMatchesPanel';
 import { askErrorMessage, isGrantGone } from './api';
 import { AskPanel } from './Ask';
 import { useAssistantApi } from './context';
@@ -81,6 +82,7 @@ export default function AssistantWorkspace() {
     <div className="as-grid" data-testid="assistant-workspace">
       <section className="as-col as-left" aria-label="Overview">
         <OverviewPanel overview={model.overview} openCite={open?.cite ?? null} onOpenCite={openCite} onOpenSubject={(s) => openSubject(s)} />
+        <PossibleMatchesPanel patientId={active.grant.patient.id} />
       </section>
       <section className="as-col as-right" aria-label="Assistant">
         <AskPanel api={api} grantId={active.grant.grant_id} ctx={ctx} onGone={gone} />
