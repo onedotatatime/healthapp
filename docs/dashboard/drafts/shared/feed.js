@@ -7,22 +7,27 @@ const cfg = window.FEED_CONFIG || {};
 const KEY_LS = 'hd-feed-key', GW_LS = 'hd-feed-gw';
 const ls = { get:k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } }, set:(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} } };
 
-/* Read the viewer key (#k=) and the public gateway key (#a=) from the address bar once, keep them in localStorage, then remove both from the URL. */
-(function takeKeys(){
+/* Read the viewer key (#k=) and the public gateway key (#a=) from the address bar, keep them in localStorage, then remove
+   both from the URL. Runs at load and again on hashchange (a link pasted into a tab already on this page does not reload it).
+   Returns true when it stored a key. */
+function takeKeys(){
+  let took = false;
   try{
     const h = location.hash.replace(/^#/, '');
-    if(!h) return;
+    if(!h) return false;
     const keep = [];
     h.split('&').forEach(part => {
       const i = part.indexOf('='), n = i<0 ? part : part.slice(0,i), v = i<0 ? '' : part.slice(i+1);
-      if(n==='k' && v) ls.set(KEY_LS, decodeURIComponent(v));
-      else if(n==='a' && v) ls.set(GW_LS, decodeURIComponent(v));
+      if(n==='k' && v){ ls.set(KEY_LS, decodeURIComponent(v)); took = true; }
+      else if(n==='a' && v){ ls.set(GW_LS, decodeURIComponent(v)); took = true; }
       else if(part) keep.push(part);
     });
     if(keep.length !== h.split('&').filter(Boolean).length)
       history.replaceState(null, '', location.pathname + location.search + (keep.length ? '#'+keep.join('&') : ''));
   }catch(e){}
-})();
+  return took;
+}
+takeKeys();
 
 function feedUrl(){
   const base = new URL(cfg.url || 'snapshot.json', location.href);
@@ -41,7 +46,7 @@ async function fetchSnapshot(){
   const ctl = new AbortController(), to = setTimeout(()=>ctl.abort(), cfg.timeoutMs||15000);
   try{
     const r = await fetch(url.href, { headers, cache:'no-store', signal:ctl.signal });
-    if(!r.ok) throw new Error(r.status===401||r.status===403 ? 'Key missing or wrong, open the link from the installer again (HTTP '+r.status+')'
+    if(!r.ok) throw new Error(r.status===401||r.status===403 ? (key ? 'Key wrong or replaced' : 'No key in this browser yet')+', on the Mac run ~/.healthapp-dashboard/open.sh (HTTP '+r.status+')'
       : r.status===404 ? 'No snapshot has been pushed yet (HTTP 404)'
       : r.status===503 ? 'The feed is not configured on the server (HTTP 503)'
       : r.status===502 ? 'The feed could not read its storage (HTTP 502)' : 'The feed answered HTTP '+r.status);
@@ -68,6 +73,7 @@ function start(o){
   }
   const loop = () => { clearTimeout(timer); timer = setTimeout(async()=>{ await tick(false); loop(); }, gap()); };
   document.addEventListener('visibilitychange', () => { if(!document.hidden && Date.now()-last >= gap()/2) tick(true); });
+  window.addEventListener('hashchange', () => { if(takeKeys()) tick(true); });
   tick(true).then(loop);
   return { refresh:()=>tick(true) };
 }

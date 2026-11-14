@@ -36,7 +36,7 @@ Writes `~/.healthapp-dashboard/` (mode 700): `snapshot.py`, `rates.json`, `hand-
 function secrets one by one with `--project-ref`, writes the launchd job `ai.minhos.healthapp-dashboard`, and puts
 `BASE#k=<view key>&a=<anon key>` on the clipboard only. It prints no key. `--viewer-url BASE` (or
 `HEALTHAPP_DASHBOARD_VIEWER_URL`) is the page address; Release passes the Pages URL when it exists, and the secret
-`HEALTHAPP_DASHBOARD_ALLOWED_ORIGINS` is set to it plus `http://127.0.0.1:8765`. **Rotate** = `install.sh --rotate` (new keys, new secrets, new clipboard URL).
+`HEALTHAPP_DASHBOARD_ALLOWED_ORIGINS` is set to it plus `http://127.0.0.1:8765`. **Open the page** = `~/.healthapp-dashboard/open.sh`: checks the feed with this Mac's keys (HTTP 200), then opens Direction B in a new Chrome tab with the keys in the fragment; prints no key (`--check` checks only). Use it instead of the clipboard link, which any screenshot overwrites. **Rotate** = `install.sh --rotate` (new keys, new secrets, new clipboard URL).
 Stop = `install.sh --uninstall`. If the Mac sleeps the job does not run; the page shows "Mac silent" from `receivedAt`.
 Closed lid while it must keep running: `sudo pmset -a disablesleep 1`, and `0` afterwards.
 
