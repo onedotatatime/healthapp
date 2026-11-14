@@ -46,7 +46,7 @@
     "agentCaps": {"soft": 300000, "hard": 400000},
     "chatCaps": {"soft": 350000, "hard": 400000},
     "chat": {"maxRunning": 3, "maxChars": 4000, "perTurnUsd": 2, "dailyUsd": 40, "idleHours": 12, "maxTurns": 12, "fullAtTokens": 400000,
-             "answerMinutes": 15, "yesMinutes": 30, "perActUsd": 10, "act": false},
+             "answerMinutes": 15, "yesMinutes": 30, "perActUsd": 10, "actMinutes": 90, "actBase": "origin/staging", "ruleCommit": "91b4636", "act": false},
     "agents": [
       {"n": "Back", "role": "Product", "agentType": "product-minhos", "linear": "Back Logakis"},
       {"n": "Anna", "role": "Marketing", "agentType": "marketing-minhos", "linear": "Anna Lytica"},

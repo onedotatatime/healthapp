@@ -309,6 +309,9 @@ class Refusals(ActCase):
         sid, pid = self.proposal(env)
         c = env.conductor
         env.git(c, "init", "-q", "-b", "main")
+        env.git(c, "add", "docs/a.md")
+        env.git(c, "commit", "-q", "-m", "before the rule")
+        early = env.git(c, "rev-parse", "HEAD").strip()
         env.git(c, "add", "-A")
         env.git(c, "commit", "-q", "-m", "rule")
         good = env.git(c, "rev-parse", "HEAD").strip()
@@ -329,7 +332,7 @@ class Refusals(ActCase):
         env.git(c, "commit", "-q", "-m", "a commit that has the rule file but is not in main")
         elsewhere = env.git(c, "rev-parse", "HEAD").strip()
         env.git(c, "checkout", "-q", "main")
-        for name, commit, want in (("has the file, not an ancestor of HEAD", elsewhere, False), ("no such commit", "1234567", False), ("not a hex string", "main; ls", False), ("present and an ancestor", good, True),
+        for name, commit, want in (("an ancestor of HEAD but the file is not in it yet", early, False), ("has the file, not an ancestor of HEAD", elsewhere, False), ("no such commit", "1234567", False), ("not a hex string", "main; ls", False), ("present and an ancestor", good, True),
                                    ("commit without the file", norule, False)):
             with self.subTest(name):
                 env.chat.s["ruleCommit"] = commit

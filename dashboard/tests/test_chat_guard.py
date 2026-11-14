@@ -387,12 +387,12 @@ class ActGuard(unittest.TestCase):
         for event in ({"tool_name": "Bash", "tool_input": {"command": "git status"}, "cwd": self.wt},
                       {"tool_name": "Bash", "tool_input": {"command": "env | grep TOKEN-SECRET"}, "cwd": self.wt},
                       {"tool_name": "Write", "tool_input": {"file_path": self.wt + "/src/new.ts", "content": "TOPSECRET"}, "cwd": self.wt}):
-            out, old = io.StringIO(), sys.stdout
-            sys.stdout = out
+            out, old, old_err = io.StringIO(), sys.stdout, sys.stderr
+            sys.stdout, sys.stderr = out, io.StringIO()
             try:
                 code = G.main(argv, io.StringIO(json.dumps(event)))
             finally:
-                sys.stdout = old
+                sys.stdout, sys.stderr = old, old_err
             results.append(code)
         self.assertEqual(results, [0, 2, 0])
         with open(os.path.join(home, "chat-audit.log")) as f:

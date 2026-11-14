@@ -171,7 +171,7 @@ def last_ts(sess):
     return sess.get("lastTs") or parse_iso(sess.get("lastAt"))
 
 
-# Key shapes for replies (CTO 2cc7efc9 rule 3). These take the WHOLE token, not just a prefix: `S.SECRET_RE` matches `lin_api_` and `sb_secret_` alone,
+# Key shapes for replies (CTO 2cc7efc9 rule 3). These take the WHOLE token, not just a prefix: `S.SECRET_RE` matches the Linear and Supabase key prefixes alone,
 # so on its own it would leave the secret's tail in the text. `S.SECRET_RE` still runs after this one, and the HTTP layer refuses anything it finds.
 REPLY_SECRET_RE = re.compile("|".join([
     "sk" + r"-ant-[A-Za-z0-9_-]{6,}",                                                    # an Anthropic key
