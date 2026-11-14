@@ -134,10 +134,36 @@ H.flags = function(){
   DATA.money.credits.forEach(c => { const f=S['cr.'+c.n]/c.granted;
     if(f>0.7) out.push({id:'cr-'+c.n, level:f>0.8?'bad':'warn', text:c.n+' credits at '+Math.round(f*100)+'% used', plain:c.n+' credits are running low ('+S['cr.'+c.n]+' of '+c.granted+' used).', act:'Ask the CTO to top up or switch provider.'}); });
   DATA.flags.filter(f=>f.until && now < parseAthens(f.until)).forEach(f => out.push({id:'static-'+f.text.slice(0,8), level:f.level, text:f.text, plain:f.plain||f.text, act:f.act||''}));
-  H.ms.forEach(m => { if(m.e<now && S['m.'+m.id]<m.total) out.push({id:'late-'+m.id, level:'bad', text:m.id+' window ended with '+(m.total-S['m.'+m.id])+' of '+m.total+' open', plain:'Milestone '+m.id.slice(1)+' ended with '+(m.total-S['m.'+m.id])+' issues still open.', act:'Cut scope or move the gate.'}); });
+  H.ms.forEach(m => { if(m.e<now && S['m.'+m.id]<m.total) out.push({id:'late-'+m.id, kind:'late', level:'warn', text:m.id+' window ended with '+(m.total-S['m.'+m.id])+' of '+m.total+' open', plain:'Milestone '+m.id.slice(1)+' ended with '+(m.total-S['m.'+m.id])+' issues still open.', act:'Check the cut list, or move the gate.'}); });
   return out;
 };
-H.verdict = () => { const f = H.flags(); return f.some(x=>x.level==='bad') ? 'off' : f.length ? 'risk' : 'on'; };
+/* Forecast (MIN-4565 block, MIN-4566): the verdict comes from when the must-haves are projected to finish.
+   The feed already caps it at At risk with fewer than 3 done. Flags are layered on top: a red flag (credits, caps) makes it
+   Off track, any other flag makes it At risk, except a late milestone window, which is amber information and does not move
+   the forecast verdict. Without a forecast block (old feed, sample data) the old flag-only rule applies. */
+const FC_V = { on:0, risk:1, off:2 }, FC_K = ['on','risk','off'];
+H.forecast = () => { const f = DATA.forecast; return f && typeof f==='object' && FC_V[f.verdict]!==undefined ? f : null; };
+H.verdict = () => {
+  const f = H.flags(), fc = H.forecast();
+  const flagV = f.some(x=>x.level==='bad') ? 'off' : f.some(x=>!fc || x.kind!=='late') ? 'risk' : 'on';
+  return fc ? FC_K[Math.max(FC_V[fc.verdict], FC_V[flagV])] : flagV;
+};
+const fcHM = iso => typeof iso==='string' && iso.length>=16 ? iso.slice(11,16) : '';   // the feed writes Athens time already
+H.fcLine = () => {
+  const f = H.forecast(); if(!f) return '';
+  const lim = ' - freeze '+fcHM(f.freeze)+', submit '+fcHM(f.submit);
+  if(!f.finish_label) return 'No must-have is done yet, so no finish time can be projected'+lim+'.';
+  return (f.early_pace ? 'Early pace (fewer than 3 done). ' : 'At the current pace, ')+'must-haves finish '+f.finish_label+lim+'.';
+};
+H.fcBlocked = () => { const f = H.forecast(); return f && Array.isArray(f.blocked) ? f.blocked : []; };
+H.fcCut = () => { const f = H.forecast(); return f && f.verdict==='off' && Array.isArray(f.cut) ? f.cut : []; };
+/* the reasons the full-screen alert lists: every red flag, plus the forecast when it says Off track */
+H.alertReasons = () => {
+  const out = H.flags().filter(x=>x.level==='bad'), f = H.forecast();
+  if(f && H.verdict()==='off' && f.verdict==='off') out.unshift({ id:'forecast-off', level:'bad', text:H.fcLine(), plain:H.fcLine(),
+    act: H.fcCut().length ? 'Cut, in this order: '+H.fcCut().map(c=>c.id+' ('+c.finish_after_label+')').join(', ')+'.' : 'Cut scope or move the gate.' });
+  return out;
+};
 H.verdictMeta = { on:{cls:'ok',g:'●',w:'On track'}, risk:{cls:'warn',g:'▲',w:'At risk'}, off:{cls:'bad',g:'■',w:'Off track'} };
 H.sentence = (v,n) => ({on:'We are on track.', risk:'We can still make it, but '+n+(n===1?' thing needs':' things need')+' attention.', off:'We are off track. '+n+(n===1?' thing needs':' things need')+' action now.'}[v]);
 
