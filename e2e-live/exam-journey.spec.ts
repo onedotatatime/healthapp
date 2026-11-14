@@ -38,7 +38,9 @@ test('patient signs in, adds a synthetic exam from the gallery, confirms, and se
   await expect(page.getByTestId('records')).toBeVisible();
   lap('1_sign_in_ms');
   await page.screenshot({ path: path.join(OUT, '1-patient-home.png') });
-  const before = await page.getByTestId('record-row').count();
+  // the list loads after the container shows: take the count only once it has stopped changing
+  let before = -1;
+  await expect.poll(async () => { const n = await page.getByTestId('record-row').count(); const stable = n === before; before = n; return stable; }, { intervals: [1500], timeout: 20_000 }).toBe(true);
 
   // 2. add one synthetic exam from the gallery input; the read runs on the server
   await page.getByTestId('add-exam-link').click();
