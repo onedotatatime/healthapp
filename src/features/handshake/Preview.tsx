@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { AssistantContext } from '../assistant/context';
+import { createMockAssistant } from '../assistant/mock';
 import { HandshakeContext } from './context';
 import { DoctorConnect } from './DoctorConnect';
 import { createMockWorld } from './mock';
@@ -23,6 +25,7 @@ export function HandshakePreview() {
   world.skewMs = skew * 1000;
   world.realtime = realtime;
 
+  const assistant = useMemo(() => createMockAssistant(), [run]);
   const patient = useMemo(() => ({ api, home: '/preview/handshake', preview: true }), [api]);
   const doctor = patient;
 
@@ -77,7 +80,9 @@ export function HandshakePreview() {
           <h2>Doctor: Dr. Eleni Raptis</h2>
           <div className="hs-pane-box" data-testid="pane-doctor">
             <HandshakeContext.Provider value={doctor}>
-              <DoctorConnect />
+              <AssistantContext.Provider value={assistant}>
+                <DoctorConnect />
+              </AssistantContext.Provider>
             </HandshakeContext.Provider>
           </div>
         </section>
