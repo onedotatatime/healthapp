@@ -28,7 +28,7 @@ const base = { document_id: DOC, analyte_key: null, value_text: null, ref_low: n
 const draft: DocumentDraft = {
   document: {
     id: DOC, patient_id: U(9), kind: 'blood_test', language: 'el', exam_date: '2026-11-10', issuer: 'Demo Lab Athens',
-    identity_status: 'match', provenance: 'uploaded_by_patient', status: 'draft', created_at: '2026-11-15T09:30:00.000+00:00', confirmed_at: null,
+    identity_status: 'match', provenance: 'uploaded_by_patient', status: 'draft', created_at: '2026-11-15T09:30:00.000+00:00', confirmed_at: null, unchecked: false,
   },
   printed_name: 'ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ',
   printed_id: 'AK 123456',

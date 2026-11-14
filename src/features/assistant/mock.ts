@@ -21,7 +21,7 @@ export const ID = {
 };
 
 const doc = (id: string, kind: DocumentRow['kind'], exam_date: string, issuer: string, provenance: DocumentRow['provenance'], identity: DocumentRow['identity_status'] = 'match'): DocumentRow => ({
-  id, patient_id: MOCK_PATIENT_ID, kind, language: 'en', exam_date, issuer, identity_status: identity, provenance, status: 'confirmed', created_at: `${exam_date}T09:00:00+02:00`, confirmed_at: `${exam_date}T09:05:00+02:00`,
+  id, patient_id: MOCK_PATIENT_ID, kind, language: 'en', exam_date, issuer, identity_status: identity, provenance, status: 'confirmed', created_at: `${exam_date}T09:00:00+02:00`, confirmed_at: `${exam_date}T09:05:00+02:00`, unchecked: false,
 });
 const res = (id: string, document_id: string, analyte: string, value: number, unit: string, lo: number | null, hi: number | null, flag: ResultRow['flag']): ResultRow => ({
   id, document_id, patient_id: MOCK_PATIENT_ID, analyte, analyte_key: analyte.toLowerCase(), value_num: value, value_text: null, unit, ref_low: lo, ref_high: hi, ref_text: null, flag, confidence: 0.97, edited_by_patient: false,

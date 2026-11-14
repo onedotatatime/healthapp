@@ -11,7 +11,7 @@ const text = (m: string) => m.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").r
 const U = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const base: ExamListItem = {
   id: U(1), status: 'queued', reason: null, uploaded_at: '2026-11-14T09:30:00.000+00:00', status_at: '2026-11-14T09:30:00.000+00:00',
-  kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true,
+  kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false,
 };
 const render = (o: Partial<ExamListItem>, extra: Record<string, unknown> = {}) =>
   renderToStaticMarkup(h(MemoryRouter, null, h('ul', null, h(ExamRow, { item: { ...base, ...o }, base: '/patient/exams', onDelete: () => {}, onRetry: () => {}, ...extra }))));
@@ -65,7 +65,7 @@ describe('ExamRow renders the six statuses (MIN-4557)', () => {
     expect(render({ status: 'failed', reason: 'too_many_attempts' })).not.toContain('data-testid="row-retry"');
   });
   it('an unknown reason shows the fallback sentence', () => {
-    expect(text(render({ status: 'failed', reason: 'brand_new_code' }))).toContain('We could not read this file.');
+    expect(text(render({ status: 'failed', reason: 'brand_new_code' as never }))).toContain('We could not read this file.');
   });
   it('a failed call leaves its message on the row, and the buttons say what is happening', () => {
     expect(text(render({ status: 'failed', reason: 'stuck', can_retry: true }, { error: 'It was not deleted. Try again.' }))).toContain('It was not deleted. Try again.');
