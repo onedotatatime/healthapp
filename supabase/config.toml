@@ -1,0 +1,15 @@
+# healthapp lives inside the conductor Supabase project (MIN-4449, decision 1).
+# This file holds [functions.*] entries only. It is NEVER pushed:
+# no `supabase link`, no `supabase config push`, no `db push|pull|reset`.
+# Deploy one function by name:
+#   supabase functions deploy healthapp-hello --project-ref fnbnhvgrnkrbsrwhgcgc --no-verify-jwt
+# Never `--prune` (it would delete conductor's own functions).
+
+[functions.healthapp-hello]
+verify_jwt = false
+
+[functions.healthapp-dashboard-ingest]
+verify_jwt = true
+
+[functions.healthapp-dashboard-feed]
+verify_jwt = true

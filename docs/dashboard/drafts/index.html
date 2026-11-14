@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-motion="full">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard drafts · Health app</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/base.css">
+<style>
+  .wrap{max-width:1100px;margin:0 auto;padding:32px 20px 64px}
+  h1{font:600 28px/34px var(--sans);letter-spacing:-.01em;margin-bottom:6px}
+  .lead{color:var(--ink-2);max-width:68ch;margin-bottom:24px}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+  .opt{display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:var(--r-2);border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;box-shadow:var(--shadow);transition:transform var(--dur-1) var(--ease-out),background-color var(--dur-1) var(--ease-out)}
+  .opt:active{transform:scale(.98)}
+  @media (hover:hover) and (pointer:fine){.opt:hover{background:var(--surface-2)}}
+  .opt .k{font:600 12px/16px var(--mono);color:var(--brand-text);letter-spacing:.06em}
+  .opt h2{font:600 22px/28px var(--sans)}
+  .opt p{font-size:14px;line-height:21px;color:var(--ink-2)}
+  .opt dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;line-height:18px;margin:0;margin-top:auto;padding-top:8px;border-top:1px solid var(--line)}
+  .opt dt{color:var(--ink-2)} .opt dd{margin:0}
+  .go{font-weight:600;color:var(--brand-text)}
+  .note{margin-top:28px;font-size:13px;line-height:20px;color:var(--ink-2);max-width:78ch}
+  .tip{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;font:500 13px/20px var(--mono)}
+  .tip code{background:var(--surface-2)}
+  @media (max-width:899px){.grid{grid-template-columns:minmax(0,1fr)} .wrap{padding:20px 14px 56px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Real-time project dashboard: three drafts</h1>
+  <p class="lead">Same sample data, same 7 views (overview, 7 business-exercise pages, 2 decks, demo product), three ways to organise them. Open each, click through, then pick one. Every number is sample data except the countdown, which reads the real clock.</p>
+  <div class="grid">
+    <a class="opt" href="direction-A/index.html"><span class="k">A</span><h2>Mission Control</h2><p>Dark, dense, everything on one screen. Giant countdown, a ladder of 7 milestones, live meters. Other views slide in as drawers (keys 1 to 4).</p>
+      <dl><dt>Best on</dt><dd>wall display, second monitor</dd><dt>Mood</dt><dd>instrument panel</dd></dl><span class="go">Open A ›</span></a>
+    <a class="opt" href="direction-B/index.html"><span class="k">B</span><h2>The Journey Map</h2><p>Light, editorial. The 30 hours as one time axis with a moving NOW line and a scrubber; agents, tokens and money hang on the same axis.</p>
+      <dl><dt>Best on</dt><dd>laptop, a minute of study</dd><dt>Mood</dt><dd>report with a map in it</dd></dl><span class="go">Open B ›</span></a>
+    <a class="opt" href="direction-C/index.html"><span class="k">C</span><h2>The Briefing</h2><p>Phone-first. A verdict first, then one plain question per section. Bottom tab bar, chapter covers, a "Ready to demo?" checklist.</p>
+      <dl><dt>Best on</dt><dd>phone, a 10-second glance</dd><dt>Mood</dt><dd>plain-spoken, tinted cards</dd></dl><span class="go">Open C ›</span></a>
+  </div>
+  <div class="tip"><span>Try:</span><code>?now=2026-11-15T14:00</code><code>?now=2026-11-15T17:55</code><code>A: ?wall=1</code></div>
+  <p class="note">Drafts only: no backend, no keys, no real Linear calls. The deck thumbnails show slide titles from the content files; the full HTML decks are not copied into this folder. Spec: <span class="mono">docs/dashboard/guidelines.md</span> and <span class="mono">direction-A/B/C.md</span> (MIN-4446). Build: MIN-4447.</p>
+</main>
+<script>
+  // theme follows the system; no other logic on this page
+  (function(){ var m = matchMedia('(prefers-color-scheme: dark)'); function a(){ document.documentElement.dataset.theme = m.matches ? 'dark' : 'light'; } a(); if(m.addEventListener) m.addEventListener('change', a); })();
+</script>
+</body>
+</html>

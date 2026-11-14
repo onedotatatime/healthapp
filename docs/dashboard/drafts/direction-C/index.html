@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-motion="full">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Briefing · Health app</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="c.css">
+</head>
+<body>
+<a class="sr" href="#main">Skip to content</a>
+<div class="rbarwrap" id="rbar" aria-hidden="true"><i></i></div>
+<div class="mini" id="mini" aria-hidden="true"><span id="miniv" class="chip"></span><span class="cd" id="minicd"></span><span class="ms" id="minims"></span></div>
+<header class="top">
+  <span class="brandname">Health app</span>
+  <span class="src none" title="Every number except the clock is sample data">Sample data</span>
+  <div class="sp">
+    <button class="btn ibtn" data-act="theme" aria-label="Toggle light and dark" title="Light / dark" aria-pressed="false">◐</button>
+    <button class="btn ibtn" data-act="motion" aria-label="Reduce motion" title="Reduce motion" aria-pressed="false">≋</button>
+    <button class="btn ibtn" data-act="pause" aria-label="Pause live updates" title="Pause live updates" aria-pressed="false">⏸</button>
+  </div>
+</header>
+<div class="layout">
+  <nav class="chapnav" id="chapnav" aria-label="Chapters"></nav>
+  <main class="content" id="main" tabindex="-1">
+    <section class="view" id="v-briefing" data-view="briefing"></section>
+    <section class="view" id="v-exercises" data-view="exercises" hidden></section>
+    <section class="view" id="v-ex" data-view="ex" hidden></section>
+    <section class="view" id="v-decks" data-view="decks" hidden></section>
+    <section class="view" id="v-demo" data-view="demo" hidden></section>
+  </main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Pages">
+  <a href="#/briefing" data-t="briefing">Briefing</a>
+  <a href="#/exercises" data-t="exercises">Pages</a>
+  <a href="#/decks" data-t="decks">Decks</a>
+  <a href="#/demo" data-t="demo">Demo</a>
+  <i class="ind"></i>
+</nav>
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Deck viewer"></div>
+<script src="../sample-data.js"></script>
+<script src="../shared/content.js"></script>
+<script src="../shared/common.js"></script>
+<script src="c.js"></script>
+</body>
+</html>
