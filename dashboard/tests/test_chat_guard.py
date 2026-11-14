@@ -216,6 +216,192 @@ class Guard(unittest.TestCase):
         self.assertNotIn("os.environ", src)
 
 
+class ActGuard(unittest.TestCase):
+    """Act mode (MIN-4497 run 2). Every row of the CTO's never-list is here, and every allowed command is one the agent needs."""
+    BRANCH = "feat/chat-cron-ab12cd34"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = os.path.realpath(tempfile.mkdtemp(prefix="actguard-"))
+        j = lambda *p: os.path.join(cls.tmp, *p)
+        cls.app, cls.cond, cls.wt, cls.mem, cls.other_mem = (j("healthapp"), j("conductor"), j("healthapp", ".claude", "worktrees", "chat-ab12cd34"),
+                                                              j("healthapp", ".claude", "agent-memory", "backend-minhos"),
+                                                              j("healthapp", ".claude", "agent-memory", "design-minhos"))
+        for d in (cls.wt + "/src", cls.mem, cls.other_mem, cls.cond + "/scripts/measure", j("outside"), j("healthapp", "src")):
+            os.makedirs(d)
+        for rel in ("healthapp/src/x.ts", "outside/s.txt", "conductor/scripts/measure/extract-runs.py"):
+            with open(j(*rel.split("/")), "w") as f:
+                f.write("x")
+        with open(os.path.join(cls.wt, "src", "a.ts"), "w") as f:
+            f.write("x")
+        os.symlink(j("outside"), os.path.join(cls.wt, "link-out"))
+        cls.roots = [os.path.realpath(cls.app), os.path.realpath(cls.cond)]
+        cls.ctx = {"kind": "change", "worktree": cls.wt, "memory": cls.mem, "branch": cls.BRANCH, "role": "BACKEND", "conductor": os.path.realpath(cls.cond)}
+
+    @classmethod
+    def tearDownClass(cls):
+        os.system("rm -rf %s" % cls.tmp)
+
+    def ok(self, tool, tin=None, ctx=None):
+        return G.decide({"tool_name": tool, "tool_input": tin or {}, "cwd": self.wt}, "act", self.roots, self.ctx if ctx is None else ctx)[0]
+
+    def bash(self, cmd, ctx=None):
+        return self.ok("Bash", {"command": cmd}, ctx)
+
+    def test_allowed_commands(self):
+        extract = "python3 %s --actuals" % os.path.join(self.cond, "scripts", "measure", "extract-runs.py")
+        for cmd in ["git status", "git diff", "git diff --stat", "git log --oneline -5", "git show HEAD", "git add .", "git add -A", "git add src/a.ts",
+                    "git add -- src/a.ts", 'git commit -m "fix(dashboard): a thing (MIN-4497)"', 'git commit -am "msg"', "git commit --amend --no-edit",
+                    "git commit --message=msg", "git restore src/a.ts", "git restore --staged src/a.ts", "git rm src/a.ts", "git mv src/a.ts src/b.ts",
+                    "git fetch", "git fetch origin", "git fetch origin staging", "git push origin " + self.BRANCH, "git push -u origin " + self.BRANCH,
+                    "git push --set-upstream origin " + self.BRANCH, "git push origin HEAD", "npm ci", "npm ci --ignore-scripts", "npm test", "npm test -- --run",
+                    "npm run build", "npm run test:unit -- --run", "python3 -m unittest discover -s dashboard/tests", "python3 -m pytest -q",
+                    "~/.claude/bin/linear-as BACKEND 'query { viewer { id } }'", extract, "git status # a comment", "git  status", 'git "status"']:
+            with self.subTest(cmd=cmd):
+                self.assertTrue(self.bash(cmd))
+
+    def test_denied_environment_reads_and_expansion(self):
+        for cmd in ["env", "env | grep KEY", "printenv", "printenv HOME", "set", "export FOO=1", "declare -p", "echo $HOME", "echo ${HOME}", "git status $HOME",
+                    'git commit -m "$(cat x)"', "git commit -m `id`", "git commit -m '$x'", "cat <(echo x)", "diff <(a) <(b)", "tee >(cat)", "FOO=1 git status",
+                    "typeset -x", "unset FOO", "compgen -v"]:
+            with self.subTest(cmd=cmd):
+                self.assertFalse(self.bash(cmd))
+
+    def test_denied_compound_commands(self):
+        for cmd in ["git status; rm -rf /", "git status && ls", "git status || ls", "git status | cat", "git status > out", "git status >> out", "git status < in",
+                    "git status &", "git status\nls", "git status\r\nls", "(git status)", "git status ;", "git status 2>&1", "git status <<< x", "{ git status; }",
+                    "git status ';'", 'git status ";"', "cd .. && git status", "git status\\\nls"]:
+            with self.subTest(cmd=cmd):
+                self.assertFalse(self.bash(cmd))
+
+    def test_denied_directory_and_network_tools(self):
+        for cmd in ["cd ..", "cd /", "git -C /x status", "git -C . status", "git -c core.hooksPath=/x status", "git --git-dir=/x status", "curl https://example.com",
+                    "wget https://example.com", "ssh host", "scp a b", "nc host 1", "gh pr merge 1", "gh pr create", "gh api x", "open x", "sudo ls", "bash -c x", "sh x",
+                    "node x.js", "python3 -c 'print(1)'", "python3 x.py", "python3 -m http.server", "sed -i x f", "cat file", "ls", "echo hi", "xargs ls", "find .",
+                    "kill 1", "launchctl list", "osascript -e x", "chmod +x f", "supabase db push", "wrangler deploy", "psql x", "docker ps", "pip install x"]:
+            with self.subTest(cmd=cmd):
+                self.assertFalse(self.bash(cmd))
+
+    def test_denied_pushes(self):
+        for cmd in ["git push", "git push origin main", "git push origin staging", "git push origin master", "git push origin HEAD:main", "git push origin HEAD:" + self.BRANCH,
+                    "git push --force origin " + self.BRANCH, "git push -f origin " + self.BRANCH, "git push origin +" + self.BRANCH, "git push --force-with-lease origin " + self.BRANCH,
+                    "git push --delete origin " + self.BRANCH, "git push origin --delete " + self.BRANCH, "git push origin " + self.BRANCH + " main", "git push origin --all",
+                    "git push origin --tags", "git push upstream " + self.BRANCH, "git push origin feat/chat-pix-00000000", "git push --mirror", "git push origin :" + self.BRANCH,
+                    "git push --no-verify origin " + self.BRANCH, "git push -o x origin " + self.BRANCH, "git push origin " + self.BRANCH + " --force"]:
+            with self.subTest(cmd=cmd):
+                self.assertFalse(self.bash(cmd))
+        self.assertFalse(self.bash("git push origin " + self.BRANCH, ctx=dict(self.ctx, branch="")))          # no stored branch: no push at all
+
+    def test_denied_git_and_shell_commands_on_the_never_list(self):
+        for cmd in ["git commit --no-verify -m x", "git commit -n -m x", "git commit", 'git commit -m ""', "git commit -F msg.txt", "git commit --template=x -m y",
+                    "git commit -m x --author=x", "git branch", "git branch -D x", "git branch -d x", "git worktree remove x", "git worktree add x", "git reset --hard", "git reset",
+                    "git clean -fd", "git checkout main", "git switch main", "git merge x", "git rebase x", "git stash", "git config x y", "git remote add x y", "git tag x",
+                    "git pull", "git clone x", "git cherry-pick x", "git gc", "git filter-branch", "git submodule update", "git rm -r src", "git rm -f src/a.ts",
+                    "git add -f src/a.ts", "git add --force src/a.ts", "git add -p", "git add -i", "git add -e", "git add --patch", "git restore --source=main src/a.ts",
+                    "git diff --output=/tmp/x", "git diff --no-index a b", "git fetch --all", "git fetch -p", "git fetch origin staging:staging", "git fetch upstream",
+                    "git fetch origin +staging", "git fetch --prune", "git fetch origin --force", "git",
+                    "rm x", "rm -r x", "rm -rf /", "rmdir x", "mv a b", "cp a b", "git mv a ../b"]:
+            with self.subTest(cmd=cmd):
+                self.assertFalse(self.bash(cmd))
+
+    def test_denied_secret_and_outside_paths_in_commands(self):
+        for cmd in ["git add .env", "git add .env.local", "git add src/.env", "git add chat.key", "git add server.pem", "git add ../x", "git add /etc/passwd",
+                    "git add link-out/s.txt", "git restore .env", "git rm .env", "git mv a ../b", "git show HEAD:.env", "git diff -- .env.local", "git log -p -- chat.key",
+                    "git show HEAD:playground/x", "git add playground/x", "git diff ~/.healthapp-dashboard/chat.key", "npm test -- .env", "npm run test -- --file chat.key",
+                    "python3 -m pytest .env", "git status healthapp-dashboard"]:
+            with self.subTest(cmd=cmd):
+                self.assertFalse(self.bash(cmd))
+
+    def test_denied_package_and_deploy_commands(self):
+        for cmd in ["npm install lodash", "npm install", "npm i x", "npm add x", "npm update", "npm exec x", "npx x", "npm publish", "npm run deploy", "npm run migrate",
+                    "npm run db:reset", "npm run release", "npm run build -- --deploy", "npm run", "npm run -- x", "npm run ../x", "npm run 'a b'", "npm ci lodash", "npm test -- --migrate",
+                    "npm", "npm exec -- supabase", "npm run supabase:push", "npm run push", "npm run publish", "npm run prod", "npm run ship"]:
+            with self.subTest(cmd=cmd):
+                self.assertFalse(self.bash(cmd))
+
+    def test_linear_as_only_for_the_agents_own_role_and_extract_runs_only_from_conductor(self):
+        for cmd in ["~/.claude/bin/linear-as PRODUCT '{}'", "~/.claude/bin/linear-as backend '{}'", "~/.claude/bin/linear-as BACKEND", "~/.claude/bin/linear-as",
+                    "/tmp/linear-as BACKEND x", "python3 /tmp/extract-runs.py --actuals", "python3 %s" % os.path.join(self.cond, "scripts", "measure", "extract-runs.py"),
+                    "python3 %s --actuals --x" % os.path.join(self.cond, "scripts", "measure", "extract-runs.py"), "python3 %s --all" % os.path.join(self.cond, "scripts", "measure", "extract-runs.py")]:
+            with self.subTest(cmd=cmd):
+                self.assertFalse(self.bash(cmd))
+        self.assertFalse(self.bash("~/.claude/bin/linear-as BACKEND x", ctx=dict(self.ctx, role="")))
+
+    def test_writes_only_in_the_worktree_and_the_agents_memory(self):
+        for tool in ("Edit", "Write", "MultiEdit"):
+            for path, want in [(self.wt + "/src/a.ts", True), (self.wt + "/src/new/deep/file.ts", True), (self.mem + "/note.md", True), ("src/a.ts", True),
+                               (self.app + "/src/x.ts", False), (self.other_mem + "/m.md", False), (self.cond + "/docs/x.md", False), ("/etc/hosts", False),
+                               (self.wt + "/link-out/s.txt", False), (self.wt + "/../chat-other/x", False), (self.wt + "/.env", False), (self.wt + "/.env.local", False),
+                               (self.wt + "/.git", False), (self.wt + "/key.pem", False), (self.wt + "/chat.key", False), (self.wt + "/playground/x", False),
+                               (self.tmp + "/outside/s.txt", False), ("~/.zshrc", False), (self.wt + "/..", False)]:
+                with self.subTest(tool=tool, path=path):
+                    self.assertEqual(self.ok(tool, {"file_path": path}), want)
+        self.assertFalse(self.ok("Edit", {}))
+        self.assertFalse(self.ok("NotebookEdit", {"notebook_path": self.wt + "/n.ipynb"}))
+
+    def test_reads_work_as_in_answer_mode(self):
+        self.assertTrue(self.ok("Read", {"file_path": self.wt + "/src/a.ts"}))
+        self.assertTrue(self.ok("Read", {"file_path": self.app + "/src/x.ts"}))
+        self.assertTrue(self.ok("Grep", {"pattern": "x", "glob": "*.ts"}))
+        for tool, tin in [("Read", {"file_path": self.wt + "/.env"}), ("Read", {"file_path": "/etc/passwd"}), ("Grep", {"pattern": "x", "glob": ".env*"}),
+                          ("Glob", {"pattern": "**/.env*"}), ("Read", {"file_path": os.path.expanduser("~/.healthapp-dashboard/chat.key")})]:
+            with self.subTest(tool=tool, tin=tin):
+                self.assertFalse(self.ok(tool, tin))
+
+    def test_tools_that_are_never_available(self):
+        for tool, tin in [("Agent", {"subagent_type": "x"}), ("WebFetch", {"url": "https://x"}), ("WebSearch", {"query": "x"}), ("Skill", {"skill": "x"}), ("", {}),
+                          ("mcp__supabase__execute_sql", {}), ("mcp__85bd0e5f-4ef3-43e1-841c-955be7abf640__execute_sql", {}), ("mcp__cloudflare-docs__search", {}),
+                          ("mcp__cloudflare-bindings__save_comment", {}), ("mcp__linear__delete_comment", {}), ("mcp__linear__merge_diff", {}),
+                          ("mcp__linear__submit_diff_review", {}), ("mcp__linear__share_issue", {}), ("mcp__linear__retire_issue_label", {}), ("mcp__linear__save_document", {}),
+                          ("mcp__linear__save_project", {}), ("mcp__linear__create_attachment", {}), ("mcp__linear__save_status_update", {}), ("mcp__x", {})]:
+            with self.subTest(tool=tool):
+                self.assertFalse(self.ok(tool, tin))
+        for tool in ("mcp__linear__get_issue", "mcp__linear__list_comments", "mcp__linear__save_comment", "mcp__linear__save_issue",
+                     "mcp__81f65ad4-7984-4cc5-abd0-8cf587011002__save_comment", "ToolSearch", "TodoWrite"):
+            with self.subTest(tool=tool):
+                self.assertTrue(self.ok(tool, {}))
+
+    def test_a_handoff_has_linear_and_reads_only(self):
+        ho = {"kind": "handoff", "worktree": "", "memory": "", "branch": "", "role": "BACKEND", "conductor": os.path.realpath(self.cond)}
+        for tool, tin in [("Bash", {"command": "git status"}), ("Edit", {"file_path": self.wt + "/src/a.ts"}), ("Write", {"file_path": self.mem + "/n.md"})]:
+            with self.subTest(tool=tool):
+                self.assertFalse(self.ok(tool, tin, ctx=ho))
+        for tool, tin in [("Read", {"file_path": self.app + "/src/x.ts"}), ("mcp__linear__save_comment", {}), ("mcp__linear__save_issue", {}), ("mcp__linear__get_issue", {})]:
+            with self.subTest(tool=tool):
+                self.assertTrue(self.ok(tool, tin, ctx=ho))
+
+    def test_act_without_settings_fails_closed(self):
+        for ctx in (None, {}, {"kind": ""}, {"kind": "nope"}, "x"):
+            with self.subTest(ctx=ctx):
+                self.assertFalse(G.decide({"tool_name": "Read", "tool_input": {"file_path": self.wt + "/src/a.ts"}, "cwd": self.wt}, "act", self.roots, ctx)[0])
+        self.assertFalse(self.ok("Edit", {"file_path": self.wt + "/src/a.ts"}, ctx=dict(self.ctx, worktree="")))
+        self.assertFalse(G.decide({"tool_name": "Bash", "tool_input": {"command": "git status"}, "cwd": self.wt}, "answer", self.roots, self.ctx)[0])   # answer mode: no shell
+        self.assertFalse(G.decide({"tool_name": "Edit", "tool_input": {"file_path": self.wt + "/src/a.ts"}, "cwd": self.wt}, "answer", self.roots, self.ctx)[0])
+
+    def test_main_in_act_mode_exit_codes_and_the_audit_line(self):
+        home = os.path.join(self.tmp, "home")
+        os.makedirs(home, exist_ok=True)
+        argv = ["--mode", "act", "--kind", "change", "--roots", os.pathsep.join(self.roots), "--home", home, "--sid", "abcdef123456", "--role", "BACKEND",
+                "--worktree", self.wt, "--memory", self.mem, "--branch", self.BRANCH, "--conductor", self.cond]
+        results = []
+        for event in ({"tool_name": "Bash", "tool_input": {"command": "git status"}, "cwd": self.wt},
+                      {"tool_name": "Bash", "tool_input": {"command": "env | grep TOKEN-SECRET"}, "cwd": self.wt},
+                      {"tool_name": "Write", "tool_input": {"file_path": self.wt + "/src/new.ts", "content": "TOPSECRET"}, "cwd": self.wt}):
+            out, old = io.StringIO(), sys.stdout
+            sys.stdout = out
+            try:
+                code = G.main(argv, io.StringIO(json.dumps(event)))
+            finally:
+                sys.stdout = old
+            results.append(code)
+        self.assertEqual(results, [0, 2, 0])
+        with open(os.path.join(home, "chat-audit.log")) as f:
+            text = f.read()
+        self.assertEqual([ln.split()[2:5] for ln in text.strip().splitlines()], [["Bash", "allow", "git"], ["Bash", "deny", "env"], ["Write", "allow", ".claude/worktrees/chat-ab12cd34/src/new.ts"]])
+        self.assertNotIn("TOPSECRET", text)
+        self.assertNotIn("TOKEN-SECRET", text)
+
+
 def find_rg():
     """A real ripgrep: `rg` on PATH, else the one built into the claude binary (it answers as rg when ARGV0=rg). None skips the canary test."""
     import shutil
