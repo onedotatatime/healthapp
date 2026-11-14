@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """snapshot.py — builds one dashboard snapshot (contract v1, MIN-4456) and writes it to a file and/or pushes it.
 
-    snapshot.py [--out PATH] [--push] [--home DIR] [--hand PATH] [--rates PATH] [--root DIR] [--now ISO]
+    snapshot.py [--out PATH] [--push] [--home DIR] [--hand PATH] [--directions PATH] [--rates PATH] [--root DIR] [--now ISO]
 
 Stdlib only (Python 3.9+). Five blocks, each with its own asOf and error:
   linear  Linear GraphQL, READ-ONLY queries (a test fails if this file contains a write operation)
@@ -9,6 +9,8 @@ Stdlib only (Python 3.9+). Five blocks, each with its own asOf and error:
   money   usage tokens by model x rates.json x eurPerUsd. An estimate at API list price, never a bill
   hand    ~/.healthapp-dashboard/hand-set.json (credits, demo steps, clean runs, milestone metadata)
   branches  the healthapp repo's branches: local git (read-only: no fetch, no lock, no write) and PRs through one `gh pr list` call (MIN-4460)
+Besides the blocks, `directions` (the project goal's five directions and their status, MIN-4497) is read from ~/.healthapp-dashboard/directions.json,
+a second hand-set file: summary text only, no patient data. A missing file omits the field; a bad file omits it too and puts the reason in blocks.hand.error.
 A block that fails keeps its last good value, gets a newer `error`, keeps its old `asOf`; the others stay fresh.
 No key is ever printed, logged or put in the snapshot (see assert_clean).
 """
@@ -26,6 +28,10 @@ HOME_DEFAULT = '~/.healthapp-dashboard'
 USAGE_BIN_DEFAULT = '~/AppDevelopment/conductor/bin/usage'
 ENV_AGENTS = '~/.claude/.env.agents'
 BLOCKS = ('linear', 'usage', 'money', 'hand', 'branches')
+
+
+DIRECTION_STATUSES = ('on_track', 'at_risk', 'off_track', 'not_started')
+DIRECTIONS_FILE = 'directions.json'
 
 
 class BlockError(Exception):
@@ -597,7 +603,7 @@ def build_branches(bcfg, now, tz, nodes, agents_cfg, role_labels, runner=default
 
 # ----------------------------------------------------------------------------- hand
 
-def build_hand(hand):
+def build_hand(hand, warning=None):
     need = ('deadline', 'buildStart', 'freeze', 'submitBy', 'milestones', 'credits', 'demo')
     miss = [k for k in need if k not in hand]
     if miss:
@@ -607,9 +613,64 @@ def build_hand(hand):
     steps = hand['demo'].get('steps', [])
     if len(steps) != 8 or any(s.get('s') not in ('pass', 'warn', 'fail', 'idle') for s in steps):
         raise BlockError('hand-set.json: demo.steps must be 8 entries with s = pass|warn|fail|idle')
-    return dict([(k, hand[k]) for k in ('deadline', 'buildStart', 'freeze', 'submitBy')] +
+    data = dict([(k, hand[k]) for k in ('deadline', 'buildStart', 'freeze', 'submitBy')] +
                 [('milestonesMeta', hand['milestones']), ('credits', hand['credits']), ('demo', hand['demo']),
                  ('current', hand.get('current'))])
+    if warning:                                       # a bad directions.json: the hand data is fresh, and the reason is on the block
+        data['_warning'] = warning
+    return data
+
+
+# ----------------------------------------------------------------------------- directions
+
+def check_directions(doc):
+    """The directions of a parsed file, or raises BlockError with the reason. {"directions": [{n, title, status, note, updatedAt}, ...]}, 1 to 5
+    entries, n an integer 1..5 and unique, status one of DIRECTION_STATUSES, updatedAt an ISO time with an offset. Sorted by n. Text only."""
+    items = doc.get('directions') if isinstance(doc, dict) else None
+    if not isinstance(items, list) or not 1 <= len(items) <= 5:
+        raise BlockError('directions.json: "directions" must be a list of 1 to 5 entries')
+    out, seen = [], set()
+    for i, d in enumerate(items):
+        where = 'directions.json entry %d' % (i + 1)
+        if not isinstance(d, dict) or set(d) != {'n', 'title', 'status', 'note', 'updatedAt'}:
+            raise BlockError('%s: needs exactly n, title, status, note, updatedAt' % where)
+        n = d['n']
+        if isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= 5 or n in seen:
+            raise BlockError('%s: n must be a different whole number from 1 to 5' % where)
+        seen.add(n)
+        if not isinstance(d['title'], str) or not d['title'].strip() or len(d['title']) > 120:
+            raise BlockError('%s: title must be 1 to 120 characters' % where)
+        if d['status'] not in DIRECTION_STATUSES:
+            raise BlockError('%s: status must be %s' % (where, ' | '.join(DIRECTION_STATUSES)))
+        if not isinstance(d['note'], str) or len(d['note']) > 300:
+            raise BlockError('%s: note must be text of at most 300 characters' % where)
+        try:
+            if not isinstance(d['updatedAt'], str) or datetime.fromisoformat(d['updatedAt'].replace('Z', '+00:00')).tzinfo is None:
+                raise ValueError('needs text with an offset')           # no offset would be read as UTC, and the page shows "updated N min ago"
+        except Exception:
+            raise BlockError('%s: updatedAt must be an ISO time with an offset, such as 2026-11-14T22:00:00+02:00' % where)
+        if SECRET_RE.search(d['title'] + ' ' + d['note']):
+            raise BlockError('%s: the text looks like it holds a key' % where)
+        out.append({'n': n, 'title': d['title'].strip(), 'status': d['status'], 'note': d['note'], 'updatedAt': d['updatedAt']})
+    return sorted(out, key=lambda x: x['n'])
+
+
+def read_directions(path):
+    """(directions | None, warning | None). A missing file is (None, None): the field is omitted and the page says "not reported yet". A file that
+    cannot be read or fails the check is (None, reason): omitted too, and the reason goes to blocks.hand.error so a typo is never silent."""
+    try:
+        with open(path) as f:
+            raw = f.read()
+    except FileNotFoundError:
+        return None, None
+    except OSError:
+        return None, 'directions.json: the file cannot be read'
+    try:
+        return check_directions(json.loads(raw)), None
+    except BlockError as ex:
+        return None, str(ex)
+    except ValueError:
+        return None, 'directions.json: not valid JSON'
 
 
 # ----------------------------------------------------------------------------- assemble
@@ -627,13 +688,15 @@ def run_block(state, name, fn, now):
                        'error': {'message': clean(ex), 'at': iso(now)}}
 
 
-def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runner=default_runner, gh_bin=None):
+def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runner=default_runner, gh_bin=None, directions=None):
+    """`directions` is read_directions()'s (list | None, warning | None); omitted means the file does not exist."""
+    dirs, dirs_warning = directions or (None, None)
     cfg = dict(hand['config'])
     cfg['_deadline'] = hand['deadline']
     since = parse(hand['buildStart'])
     holder = {}
 
-    run_block(state, 'hand', lambda: build_hand(hand), now)
+    run_block(state, 'hand', lambda: build_hand(hand, dirs_warning), now)
 
     def usage():
         data, rows, U = build_usage(cfg, now, since, root, usage_bin, cfg.get('projectFilter'))
@@ -681,6 +744,8 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         snap['money'] = dict(mo, credits=h.get('credits', []))
     if h:
         snap['demo'] = h['demo']
+    if dirs:
+        snap['directions'] = dirs
     if br:
         snap['branches'] = br
     return snap
@@ -718,6 +783,7 @@ def main(argv=None):
     here = os.path.dirname(os.path.abspath(__file__))
     ap.add_argument('--home', default=HOME_DEFAULT)
     ap.add_argument('--hand')
+    ap.add_argument('--directions', help='the five directions of the project goal (default <home>/directions.json); a missing file omits the field')
     ap.add_argument('--rates', default=os.path.join(here, 'rates.json'))
     ap.add_argument('--root', default='~/.claude/projects')
     ap.add_argument('--usage-bin', default=USAGE_BIN_DEFAULT)
@@ -733,7 +799,8 @@ def main(argv=None):
     hand = json.load(open(hand_path))
     rates = json.load(open(a.rates))
     state = json.load(open(state_path)) if os.path.isfile(state_path) else {}
-    snap = build(now, hand, rates, state, os.path.expanduser(a.root), a.usage_bin, linear_key)
+    directions = read_directions(os.path.expanduser(a.directions or os.path.join(home, DIRECTIONS_FILE)))
+    snap = build(now, hand, rates, state, os.path.expanduser(a.root), a.usage_bin, linear_key, directions=directions)
     text = json.dumps(snap, separators=(',', ':'), sort_keys=False)
     assert_clean(text)
     tmp = state_path + '.tmp'

@@ -529,6 +529,43 @@
       "8": "Not run yet."
     }
   },
+  "directions": [
+    {
+      "n": 1,
+      "title": "Scan \u2192 AI reads",
+      "status": "on_track",
+      "note": "Example: a photo of a blood test becomes a record in the dev project.",
+      "updatedAt": "2026-11-14T15:30:00+02:00"
+    },
+    {
+      "n": 2,
+      "title": "Store extracted data",
+      "status": "at_risk",
+      "note": "Example: waiting for the data API to be exposed.",
+      "updatedAt": "2026-11-14T15:30:00+02:00"
+    },
+    {
+      "n": 3,
+      "title": "Store + analyse original files (staging and main)",
+      "status": "not_started",
+      "note": "",
+      "updatedAt": "2026-11-14T15:30:00+02:00"
+    },
+    {
+      "n": 4,
+      "title": "Real analysis + projection",
+      "status": "off_track",
+      "note": "Example: no analysis step yet.",
+      "updatedAt": "2026-11-14T15:30:00+02:00"
+    },
+    {
+      "n": 5,
+      "title": "Real matching",
+      "status": "not_started",
+      "note": "",
+      "updatedAt": "2026-11-14T15:30:00+02:00"
+    }
+  ],
   "branches": {
     "repo": "onedotatatime/healthapp",
     "bases": [

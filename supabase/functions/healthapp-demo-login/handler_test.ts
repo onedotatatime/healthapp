@@ -66,15 +66,15 @@ Deno.test("wrong passcode: 401 bad_passcode and no sign-in attempted", async () 
   assertEquals(signIns.length, 0);
 });
 
-Deno.test("the sixth try in a minute is refused, even with the right passcode", async () => {
+Deno.test("the 21st try in a minute is refused, even with the right passcode", async () => {
   const { deps } = fakeDeps();
   const h = makeHandler(deps);
   const codes: number[] = [];
-  for (let i = 0; i < MAX_TRIES; i++) codes.push((await h(req({ persona: "patient", passcode: "nope" }))).status);
-  const sixth = await h(req({ persona: "patient", passcode: PASS }));
-  assertEquals(codes, [401, 401, 401, 401, 401]);
-  assertEquals(sixth.status, 429);
-  assertEquals((await sixth.json()).error.code, "rate_limited");
+  for (let i = 0; i < 20; i++) codes.push((await h(req({ persona: "patient", passcode: "nope" }))).status);
+  const refused = await h(req({ persona: "patient", passcode: PASS }));
+  assertEquals(codes, Array(20).fill(401));
+  assertEquals(refused.status, 429);
+  assertEquals((await refused.json()).error.code, "rate_limited");
   // another address is not limited
   assertEquals((await h(req({ persona: "patient", passcode: PASS }, { "x-forwarded-for": "198.51.100.9" }))).status, 200);
 });
@@ -131,8 +131,8 @@ Deno.test("a global ceiling: callers who each send a new x-forwarded-for are sti
 Deno.test("tries refused by the per-address limit do not eat the global ceiling", async () => {
   const { deps } = fakeDeps();
   const h = makeHandler(deps);
-  for (let i = 0; i < 60; i++) await h(req({ persona: "patient", passcode: "nope" })); // one address, 55 refused
-  // 5 counted, so a fresh address still has the rest of the ceiling
+  for (let i = 0; i < 60; i++) await h(req({ persona: "patient", passcode: "nope" })); // one address, 40 refused
+  // 20 counted, so a fresh address still has the rest of the ceiling
   assertEquals((await h(req({ persona: "patient", passcode: PASS }, { "x-forwarded-for": "198.51.100.77" }))).status, 200);
 });
 
@@ -225,7 +225,7 @@ Deno.test("demo founder: a session without the demo marker is refused, a failed 
   assertEquals((await makeHandler(none)(demoReq("founder", DEMO_PASS))).status, 500);
 });
 
-Deno.test("demo founder: the same limits apply: 6th try per address and the global ceiling (MIN-4541)", async () => {
+Deno.test("demo founder: the same limits apply: 21st try per address and the global ceiling (MIN-4541)", async () => {
   const { deps } = fakeDeps();
   const h = makeHandler(deps);
   for (let i = 0; i < MAX_TRIES; i++) await h(demoReq("founder", "nope"));

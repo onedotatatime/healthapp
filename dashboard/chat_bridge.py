@@ -121,7 +121,8 @@ LINEAR_ACT_WRITE = ["save_comment", "save_issue"]
 ACT_READ_TOOLS = ["Read", "Grep", "Glob", "ToolSearch", "TodoWrite"] + ["mcp__linear__" + n for n in sorted(G.LINEAR_READ) + LINEAR_ACT_WRITE]
 ACT_NEVER = (["Agent", "WebFetch", "WebSearch", "Skill", "NotebookEdit", "mcp__supabase", "mcp__cloudflare-docs", "mcp__cloudflare-bindings",
               "mcp__cloudflare-observability"] + ["mcp__linear__" + n for n in LINEAR_WRITE if n not in LINEAR_ACT_WRITE])
-ACT_BASH_NEVER = ["Bash(%s:*)" % w for w in ("curl", "wget", "rm", "rmdir", "gh", "cd", "env", "printenv", "sudo", "ssh", "scp", "nc", "kill", "open")]
+ACT_BASH_NEVER = ["Bash(%s:*)" % w for w in ("curl", "wget", "rm", "rmdir", "gh", "cd", "env", "printenv", "sudo", "ssh", "scp", "nc", "kill", "open",
+                                                  "npm", "npx", "node", "pytest", "python3 -m", G.LINEAR_AS)]
 GIT_ALLOWED = ("status", "diff", "log", "show", "add", "commit", "restore", "rm", "mv", "fetch")
 
 
@@ -130,15 +131,25 @@ def rule_path(path):
     return "//" + os.path.realpath(path).lstrip("/") + "/**"
 
 
+def rule_path_in(folder, tail):
+    """`//abs/folder/<tail>`: a permission-rule path below an absolute folder."""
+    return "//" + os.path.realpath(folder).lstrip("/") + "/" + tail
+
+
 def act_tools(kind, worktree, memory, branch, role, extract_script):
     """(--allowedTools, --disallowedTools) of an act turn. Layer one of two: chat_guard.py (the hook) checks the same lists call by call."""
     allowed, never = list(ACT_READ_TOOLS), list(ACT_NEVER)
     if kind == "change":
         allowed += ["Edit(%s)" % rule_path(worktree), "Write(%s)" % rule_path(worktree), "Edit(%s)" % rule_path(memory), "Write(%s)" % rule_path(memory)]
         allowed += ["Bash(git %s:*)" % g for g in GIT_ALLOWED]
-        allowed += ["Bash(git push origin %s)" % branch, "Bash(git push -u origin %s)" % branch, "Bash(npm ci)", "Bash(npm test:*)", "Bash(npm run:*)",
-                    "Bash(python3 -m pytest:*)", "Bash(python3 -m unittest:*)", "Bash(%s %s:*)" % (G.LINEAR_AS, role), "Bash(python3 %s --actuals)" % extract_script]
+        # CTO M1 and the `linear-as` ruling (MIN-4497, comment 420bf529): no npm, no pytest, no unittest (the agent could run code it just wrote) and no
+        # linear-as (it reaches any Linear mutation). Linear writes go through save_comment and save_issue only.
+        allowed += ["Bash(git push origin %s)" % branch, "Bash(git push -u origin %s)" % branch, "Bash(python3 %s --actuals)" % extract_script]
         never += ACT_BASH_NEVER
+        # CTO M2: these are never edited inside the worktree (the hook checks the same rows, case-insensitively)
+        for tool in ("Edit", "Write", "MultiEdit"):
+            never += ["%s(%s)" % (tool, rule_path_in(worktree, d + "/**")) for d in G.WRITE_NEVER_DIRS]
+            never += ["%s(%s)" % (tool, rule_path_in(worktree, f)) for f in G.WRITE_NEVER_FILES]
     else:
         never += ["Edit", "Write", "MultiEdit", "Bash"]
     return allowed, never
@@ -527,6 +538,7 @@ class Chat:
         out = {"role": m["role"], "text": scrub(m.get("text", "")), "at": m["at"], "costUsd": m.get("costUsd")}
         if m.get("proposal"):
             p = dict(m["proposal"])
+            p.pop("actSession", None)                  # an internal id, not for the page
             if p["status"] == "open" and self.now() > parse_iso(p["expiresAt"]):
                 p["status"] = "expired"
             p["summary"] = scrub(p["summary"])
@@ -739,7 +751,10 @@ class Chat:
                 "Do exactly that and nothing more. " + where + " When you have finished, end your reply with exactly one block and nothing after it: "
                 "<<<RESULT {json} RESULT>>> where json is one object with exactly these fields: outcome (\"done\" or \"failed\"), issue (an existing "
                 "\"MIN-1234\" or null), summary (at most 500 characters, plain words: what you did, or why you could not). Never put the branch, the "
-                "commits or the file count in it: the bridge reads those from git. Never paste keys, .env content or the founder's exam content anywhere.")
+                "commits or the file count in it: the bridge reads those from git. Never paste keys, .env content or the founder's exam content anywhere. "
+                "Write to Linear only with save_comment and save_issue, and start every comment with your own prefix (%s ·). Skills cannot be loaded "
+                "in a dashboard chat; your Skills line says so. You cannot run tests or install packages here: they run in the pull request's CI, so say so in "
+                "the result. To search json, yaml, toml, txt, sh or sql files use Grep's type, not a glob." % turn.agent)
         return "%s\n\n## The rules (conductor/docs/agents/dashboard-chat.md)\n%s\n\n## The approved proposal\n%s" % (head, rule.strip(), json.dumps(prop))
 
     def build_act_argv(self, sess, a, claude_bin, turn):
@@ -754,7 +769,9 @@ class Chat:
             gargs += ["--worktree", turn.worktree, "--memory", memory, "--branch", turn.branch]
         settings = {"hooks": {"PreToolUse": [{"matcher": ".*", "hooks": [{"type": "command", "command": shlex.join(gargs)}]}]}}
         allowed, never = act_tools(prop["kind"], turn.worktree, memory, turn.branch, role, os.path.join(conductor, "scripts", "measure", "extract-runs.py"))
-        argv = [claude_bin, "-p", "--agent", agent_file, "--resume" if sess["resumable"] else "--session-id", sess["claudeSession"],
+        # CTO M3: an act turn never resumes the chat's answer session. Claude keeps sessions per project folder and the act turn runs in a NEW
+        # worktree, so a resume is unproven there; the prompt carries the rule file and the approved proposal, which is the whole brief.
+        argv = [claude_bin, "-p", "--agent", agent_file, "--session-id", prop.get("actSession") or str(uuid.uuid4()),
                 "--output-format", "stream-json", "--verbose", "--model", str(prop["model"])]
         if prop.get("fallback"):
             argv += ["--fallback-model", str(prop["fallback"])]
@@ -951,9 +968,7 @@ class Chat:
                 self.ledger.append((self.now(), cost))
             at = iso(self.now())
             sess["messages"].append({"role": "result", "text": "", "at": at, "costUsd": round(cost, 4) if cost else None, "result": res})
-            if result is not None and not result.get("is_error"):
-                sess["resumable"] = True
-            sess["turns"] += 1
+            sess["turns"] += 1                    # `resumable` is not touched: the act turn ran in its own session
             sess["costUsd"] += cost
             if tokens is not None:
                 sess["contextTokens"] = tokens
@@ -1031,6 +1046,7 @@ class Chat:
                 branch = "%s/chat-%s-%s" % (prop["branchType"], slug, prop["id"][:8])
                 wt = os.path.join(os.path.realpath(os.path.expanduser(self.s["cwd"])), ".claude", "worktrees", "chat-" + prop["id"][:8])
             prop["status"], prop["acceptedAt"], prop["branch"] = "accepted", iso(now), branch
+            prop["actSession"] = str(uuid.uuid4())             # the act turn's own Claude session (CTO M3); never the chat's answer session
             turn = Turn(sid, agent, kind="act", prop=dict(prop), branch=branch, worktree=wt)
             sess["lastAt"], sess["lastTs"], sess["pending"] = iso(now), now, True
             self._save(sess)
@@ -1117,10 +1133,12 @@ class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, port, handler, chat, key):
+    def __init__(self, port, handler, chat, key, page_dir=None, extra_dirs=None):
         super().__init__((BIND, port), handler)       # the only bind: 127.0.0.1
         self.chat, self.key = chat, key
         self.port = self.server_address[1]
+        self.page_dir = page_dir                      # real paths: the page folder at `/`, one more folder per name at `/<name>/`
+        self.extra_dirs = dict(extra_dirs or {})
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -1149,6 +1167,54 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def _is_chat(self):
         p = urllib.parse.urlsplit(self.path).path
         return p == "/chat" or p.startswith("/chat/")
+
+    # --- static files (CTO S1, MIN-4497): Host is checked on every request like /chat, a path is resolved with realpath and must stay inside its own
+    # folder, a dot file or folder is never served, and there is no directory listing (a folder answers with its index.html or 404).
+    def _static_target(self):
+        """The real file to serve, a real folder (SimpleHTTPRequestHandler then redirects to the trailing slash), or None for a 404."""
+        srv = self.server
+        raw = urllib.parse.urlsplit(self.path).path
+        rel = urllib.parse.unquote(raw)
+        if "\x00" in rel or "\\" in rel:
+            return None
+        segs = [x for x in rel.split("/") if x not in ("", ".")]
+        if any(x.startswith(".") for x in segs):                  # dot files and folders, and `..`
+            return None
+        root = srv.page_dir
+        if segs and segs[0] in srv.extra_dirs:
+            root, segs = srv.extra_dirs[segs[0]], segs[1:]
+        if not root:
+            return None
+        cand = os.path.realpath(os.path.join(root, *segs))
+        if not G._inside_dir(cand, root):                          # a symlink that leaves the folder
+            return None
+        relparts = os.path.relpath(cand, root).split(os.sep)
+        if relparts != ["."] and any(x.startswith(".") for x in relparts):      # a symlink that lands on a dot file inside the folder
+            return None
+        if os.path.isdir(cand):
+            if not raw.endswith("/"):
+                return cand
+            index = os.path.realpath(os.path.join(cand, "index.html"))
+            return index if os.path.isfile(index) and G._inside_dir(index, root) else None
+        return cand if os.path.isfile(cand) else None
+
+    def send_head(self):
+        if len(self.headers.get_all("Host") or []) != 1 or self.headers.get("Host") != "%s:%d" % (BIND, self.server.port):
+            self._refuse(403)
+            return None
+        target = self._static_target()
+        if target is None:
+            self._json(404, {})
+            return None
+        self._target = target
+        return super().send_head()
+
+    def translate_path(self, path):
+        return self._target
+
+    def list_directory(self, path):
+        self._json(404, {})
+        return None
 
     def _refuse(self, status=403):
         self._json(status, {})
@@ -1237,34 +1303,60 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self._json(404, {})
 
 
-def make_server(home, page_dir, port, settings=None, agents=None, key="unset", row_checker=None):
-    """A ready server. `key="unset"` reads <home>/chat.key; None means /chat answers 503 to everything."""
+EXTRA_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,40}$")
+
+
+def make_server(home, page_dir, port, settings=None, agents=None, key="unset", row_checker=None, extra_dirs=None):
+    """A ready server. `key="unset"` reads <home>/chat.key; None means /chat answers 503 to everything. `extra_dirs` is {name: folder}, each served at
+    `/<name>/` with the same rules as the page folder (CTO S1); none may overlap the dashboard home folder, where the keys live."""
     home = os.path.abspath(os.path.expanduser(home))
     page_dir = os.path.realpath(os.path.expanduser(page_dir))
     h = os.path.realpath(home)
-    if page_dir == h or page_dir.startswith(h + os.sep) or h.startswith(page_dir + os.sep):
+
+    def overlaps(d):
+        return d == h or d.startswith(h + os.sep) or h.startswith(d + os.sep)
+    if overlaps(page_dir):
         raise SystemExit("refusing to start: the page folder and the dashboard home folder overlap (the keys would be served)")
+    extras = {}
+    for name, folder in dict(extra_dirs or {}).items():
+        real = os.path.realpath(os.path.expanduser(folder))
+        if not EXTRA_NAME_RE.match(name) or name == "chat":
+            raise SystemExit("refusing to start: %r is not a usable folder name for --extra-dir" % name)
+        if overlaps(real):
+            raise SystemExit("refusing to start: the --extra-dir folder %s and the dashboard home folder overlap (the keys would be served)" % name)
+        if not os.path.isdir(real):
+            raise SystemExit("refusing to start: the --extra-dir folder %s does not exist" % name)
+        extras[name] = real
     if settings is None:
         settings, agents = load_config(home)
     if key == "unset":
         key = read_key(home)
     chat = Chat(home, settings, agents or [], row_checker=row_checker)
-    return Server(port, functools.partial(Handler, directory=page_dir), chat, key)
+    return Server(port, functools.partial(Handler, directory=page_dir), chat, key, page_dir=page_dir, extra_dirs=extras)
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="Dashboard chat bridge (binds 127.0.0.1 only).")
     ap.add_argument("--home", default=os.path.expanduser("~/.healthapp-dashboard"))
     ap.add_argument("--page-dir", required=True, help="the dashboard page folder to serve (docs/dashboard/drafts)")
+    ap.add_argument("--extra-dir", action="append", default=[], metavar="NAME=DIR",
+                    help="one more folder to serve at /NAME/ (for example how-it-works=~/.healthapp-dashboard-www/how-it-works); repeatable")
     ap.add_argument("--port", type=int, default=8765)
     args = ap.parse_args(argv)
-    srv = make_server(args.home, args.page_dir, args.port)
+    extras = {}
+    for spec in args.extra_dir:
+        name, sep, folder = spec.partition("=")
+        if not sep or not folder:
+            raise SystemExit("--extra-dir needs NAME=DIR")
+        extras[name] = folder
+    srv = make_server(args.home, args.page_dir, args.port, extra_dirs=extras)
 
     def stop(*_):
         threading.Thread(target=srv.shutdown, daemon=True).start()
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
-    print("chat bridge on %s:%d, page folder %s, chat %s, act %s" % (BIND, srv.port, os.path.realpath(args.page_dir),
+    print("chat bridge on %s:%d, page folder %s%s, chat %s, act %s" % (BIND, srv.port, os.path.realpath(args.page_dir),
+          "".join(", /%s/ -> %s" % (n, d) for n, d in sorted(srv.extra_dirs.items())),
           "on" if srv.key else "OFF (no chat.key of 32+ characters)", "on" if srv.chat.act_enabled() else "off"), flush=True)
     try:
         srv.serve_forever()
