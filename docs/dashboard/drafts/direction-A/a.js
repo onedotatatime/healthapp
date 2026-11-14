@@ -34,7 +34,10 @@ function renderMain(){
   +   '<div class="wintrack"><div class="winbar" id="bar"><i class="fill"></i></div><i class="wintick" style="left:'+fr(H.T.freeze)+'%;top:0"></i><i class="wintick" style="left:'+fr(H.T.submit)+'%;top:0"></i></div>'
   +   '<div class="winlabels below"><span style="left:0">Sat 12:00 build start</span><span class="lf" style="left:'+fr(H.T.freeze)+'%;transform:translateX(-100%)">13:00 freeze</span><span style="right:0">18:00 deadline</span></div></div></div>'
   + '<div class="card now-panel" data-enter><div id="nowp"></div><div class="flags" id="flags" aria-live="polite"></div></div>'
-  + '</section><div class="dyn" id="dyn"></div>';
+  + '</section>'
+  + '<section class="card dirs" id="dirs" data-enter aria-labelledby="dirsH"><div class="card-h"><span class="chip brand goal">Project goal</span><h2 id="dirsH">Five directions, in parallel</h2><span class="muted dcount mono" id="dirsN"></span></div>'
+  +   '<ol class="dlist" id="dlist"></ol></section>'
+  + '<div class="dyn" id="dyn"></div>';
   renderDyn(true);
 }
 
@@ -116,6 +119,20 @@ function placeCursor(){
   const mid = xAt(H.parse('2026-11-15T00:00')), a1 = $('#ax1');
   if(mid!==null && mid>90 && mid<w-90){ a1.textContent = 'Sun 00:00'; a1.style.left = mid+'px'; a1.style.transform = 'translateX(-50%)'; a1.hidden = false; } else a1.hidden = true;
 }
+/* the five directions of the project goal: always five rows; what the feed does not report reads "not reported yet" (dashed, calm).
+   The text of a note comes from the feed, so it only ever goes through esc(). Repainted once a second by the clock, written only when the markup changes. */
+let lastDirs = '';
+function paintDirections(){
+  const el = $('#dlist'); if(!el) return;
+  const v = Directions.view(DATA.directions, Date.now(), Live.loaded ? 'ok' : Live.feedErr ? 'error' : 'loading');
+  const html = v.rows.map(r => '<li class="d '+(r.reported ? 'rep d-'+r.cls : 'unrep')+'" data-n="'+r.n+'"><span class="dn mono" aria-hidden="true">'+r.n+'</span>'
+    + '<span class="dt"><span class="sr">Direction '+r.n+': </span>'+esc(r.title)+'</span>'
+    + (r.reported ? '<span class="chip '+r.cls+' dpill"><span class="g" aria-hidden="true">'+r.g+'</span>'+esc(r.word)+'</span>' : '<span class="dpill"></span>')
+    + '<span class="dnote'+(r.reported ? '' : ' muted')+'"'+(r.reported && r.note ? ' title="'+esc(r.note)+'"' : '')+'>'+esc(r.note)+'</span>'
+    + (r.updated ? '<span class="dupd mono muted">'+esc(r.updated)+'</span>' : '')+'</li>').join('');
+  const n = $('#dirsN'); if(n && n.textContent !== v.count) n.textContent = v.count;
+  if(html === lastDirs) return; lastDirs = html; el.innerHTML = html;
+}
 function paintNow(){
   const el = $('#nowp'); if(!el) return; const m = H.curMs();
   if(!m){ el.innerHTML = '<div class="micro">Now</div><p class="muted">No milestones from the feed yet.</p>'; return; }
@@ -174,7 +191,7 @@ function logDiff(){
 }
 /* a snapshot (or a feed failure) arrived: repaint everything that reads it, keep the open drawer's scroll */
 H.on('live', () => {
-  logDiff(); renderDyn(false); paintLadder(); paintNow(); paintFlags(); paintVerdict(); Live.paint();
+  logDiff(); renderDyn(false); paintDirections(); paintLadder(); paintNow(); paintFlags(); paintVerdict(); Live.paint();
   if(drawer.classList.contains('open') && ['branches','demo','risk'].includes(route.v)) renderDrawer(true);
 });
 
@@ -366,7 +383,7 @@ let wallTimer = 0;
 function startWall(){
   clearInterval(wallTimer); $$('.hl').forEach(x=>x.classList.remove('hl'));
   if(!document.body.classList.contains('wall')) return;
-  const items = ['#hero','.ladder-card','.p-tasks','.p-tokens','.p-money','.p-who'].map(s=>$(s)).filter(Boolean); let i = 0;
+  const items = ['#hero','#dirs','.ladder-card','.p-tasks','.p-tokens','.p-money','.p-who'].map(s=>$(s)).filter(Boolean); let i = 0;
   items[0].classList.add('hl'); if(H.reduced()) return;
   wallTimer = setInterval(()=>{ items[i].classList.remove('hl'); i = (i+1)%items.length; items[i].classList.add('hl'); }, 20000);
 }
@@ -379,9 +396,9 @@ H.hero({ el:$('#cd'), root:$('#hero'), bar:$('.winbar'), words:$('#words'), onTi
   $('#clock').textContent = H.clockStr(now) + (H.overridden?' (?now)':'');
   const cm = H.curMs(now), id = cm ? cm.id : '';
   if(now.getSeconds()===0 || H._cur!==id){ H._cur = id; paintLadder(); paintNow(); }
-  paintFlags(); paintVerdict();
+  paintFlags(); paintVerdict(); paintDirections();
   const m = now.getMinutes(); if(m!==lastMin){ lastMin = m; if(drawer.classList.contains('open') && route.v==='branches') renderDrawer(true); } } });
-paintLadder(); paintNow(); paintFlags(); paintVerdict(); paintSpark(); paintLog(); Live.paint();
+paintDirections(); paintLadder(); paintNow(); paintFlags(); paintVerdict(); paintSpark(); paintLog(); Live.paint();
 window.addEventListener('resize', placeCursor);
 main.addEventListener('click', e => {
   if(e.target.closest('#roleMore')){ rolesAll = !rolesAll; renderDyn(true); }

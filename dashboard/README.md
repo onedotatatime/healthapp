@@ -216,3 +216,12 @@ header and a proposal with no Yes. Typing while a proposal is open declines it (
 `python3 dashboard/tests/chat_mock_server.py --act` serves every state from `dashboard/fixtures/chat.example.json`, including the act states the bridge does not
 build yet (Yes, acting, result, Stop). Open `http://127.0.0.1:<port>/direction-A/index.html?feed=../dev/fresh.json#c=<the throw-away key>` once.
 Tests: `dashboard/tests/test_chat_ui.py` (the model run in node, guards on the page source, the fixture, the mock).
+
+## The five directions panel (project goal, via coordinator, founder 2026-11-14)
+Direction A, under the clock: a "Project goal" card with five rows, "1 Scan → AI reads", "2 Store extracted data", "3 Store + analyse original files (staging and main)",
+"4 Real analysis + projection", "5 Real matching". **Feed field** `directions` (hand-set, optional): an array of `{n, title, status, note, updatedAt}`, `n` 1 to 5,
+`status` one of `on_track`, `at_risk`, `off_track`, `not_started` (spaces, hyphens and capitals are read too), `note` one sentence (cut at 200 characters), `updatedAt` an
+ISO time. The page owns the five titles and ignores `title`. A direction the feed does not send, sends with an unknown status, or a feed with no field, an empty array or
+junk, shows "not reported yet" (dashed row); nothing throws. Before the first snapshot the rows say "Loading the feed…", after a failed first read "The feed could not be
+read yet." Files: `shared/directions.js` (pure), the paint in `direction-A/a.js`, `shared/live.js` (reads the field), `a.css`. Dev feeds: `dev/directions.json` (field, four
+pills, direction 5 missing) and `dev/fresh.json` (no field). Tests: `dashboard/tests/test_directions.py`.
