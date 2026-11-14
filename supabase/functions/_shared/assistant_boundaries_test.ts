@@ -24,7 +24,9 @@ Deno.test("the handler checks the session and the doctor role before it reads or
 
 Deno.test("the record is read only through the live-grant predicate, with the grant and the doctor as parameters", () => {
   const pg = code("_shared/assistant_pg.ts");
-  assertEquals(pg.includes("status = 'active' and revoked_at is null and expires_at > now()"), true);
+  const [grantPart, recordPart] = pg.split("async record(");
+  const live = "status = 'active' and revoked_at is null and expires_at > now()";
+  assertEquals([grantPart.includes(live), recordPart.includes(live)], [true, true]); // in grantState and, inside the same transaction, in record
   assertEquals(pg.includes("d.status = 'confirmed'"), true);
   assertEquals(pg.includes('env === "demo" ? "healthapp_demo" : "healthapp_dev"'), true);
   assertEquals(/\$\{(?!S\}|schema|ROW_CAP|DIARY_TZ)[a-zA-Z.]+\}/.test(pg.replace(/`[^`]*\$\{S\}[^`]*`/g, "")), false);
