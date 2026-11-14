@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { EmptyState, Spinner } from '../../components/Primitives';
 import { ProvenanceMark } from '../../components/ProvenanceMark';
 import { useExams } from './context';
-import { KIND_LABEL, formatDate, type RecordSummary } from './logic';
+import { KIND_LABEL, docMarks, formatDate, type RecordSummary } from './logic';
 
 /** The patient home list: records by exam date, newest first (the server orders them). */
 export function RecordsList() {
@@ -33,7 +33,7 @@ export function RecordsList() {
                   <span className="rdate">{formatDate(d.exam_date)}</span>
                   {d.issuer && <span className="muted">{d.issuer}</span>}
                   <span className="rmeta">
-                    <ProvenanceMark kind={d.provenance === 'verified_by_source' ? 'verified' : 'uploaded'} />
+                    {docMarks(d).map((k) => <ProvenanceMark key={k} kind={k} />)}
                     {outOfRange > 0 && <span className="oor-count" data-testid="oor-count">{outOfRange} outside the printed range</span>}
                   </span>
                 </Link>
