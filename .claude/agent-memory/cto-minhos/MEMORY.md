@@ -1,2 +1,3 @@
 - [Healthapp real-data regime](project_healthapp_real_data_regime.md) — founder's real exams inside the shared conductor Supabase project: two schemas, wipe by drop schema (never delete the project), backups not wipeable, ten-point gate (MIN-4426, MIN-4449)
+- [Matches RPC review](project_matches_rpc_review.md) — MIN-4505 PR #25 pass; merge after #24 (opt-in flag leak on staging); 007 into demo; Maria gets no live upload
 - [Dashboard live feed](project_dashboard_feed.md) — MIN-4456/4458: conductor bucket healthapp-dev, E1/E2 yes, Lane C; post-build sound, Access login before the key link
