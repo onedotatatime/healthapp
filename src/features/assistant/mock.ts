@@ -33,7 +33,7 @@ const entry = (id: string, at: string, text: string, severity: number): DiaryRow
 
 export const MOCK_RECORD: RecordData = {
   documents: [
-    doc(ID.docOct, 'blood_test', '2026-10-30', 'Synthetic Diagnostic Lab, Athens', 'uploaded_by_patient'),
+    Object.assign(doc(ID.docOct, 'blood_test', '2026-10-30', 'Synthetic Diagnostic Lab, Athens', 'uploaded_by_patient'), { unchecked: true }), // the not-checked mark (MIN-4557)
     doc(ID.docMar, 'blood_test', '2026-03-12', 'Synthetic Diagnostic Lab, Athens', 'verified_by_source'),
     doc(ID.docMri, 'imaging_report', '2026-06-02', 'Synthetic Imaging Centre', 'uploaded_by_patient', 'name_only'),
     doc(ID.docLetter, 'doctor_letter', '2026-01-20', 'Orthopaedics, Synthetic General Hospital', 'verified_by_source'),
