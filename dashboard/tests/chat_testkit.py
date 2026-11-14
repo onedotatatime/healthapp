@@ -2,6 +2,7 @@
 import http.client
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import threading
@@ -32,6 +33,12 @@ if beh.get("child"):
 out = sys.stdout
 def emit(o):
     out.write(json.dumps(o) + "\\n"); out.flush()
+for rel, txt in (beh.get("write") or {}).items():
+    path = os.path.join(os.getcwd(), rel)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    open(path, "w").write(txt)
+for cmd in beh.get("run") or []:
+    subprocess.run(cmd, cwd=os.getcwd(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 emit({"type": "system", "subtype": "init"})
 for e in beh.get("events", []):
     emit({"type": "assistant", "message": {"content": [{"type": "tool_use", "name": e["name"], "input": e.get("input", {})}]}})
@@ -71,6 +78,8 @@ def fake_rows(agent_file, task):
     return "sonnet", "high"
 
 
+RULE_TEXT = "# Dashboard chat (test copy)\nRULE-FILE-MARKER-7731: do exactly the approved proposal.\n"
+
 AGENTS = [{"n": n, "role": r, "agentType": f} for n, r, f in [
     ("Pix", "Design", "design-minhos"), ("Cron", "Backend", "backend-minhos"), ("Ren", "Frontend", "frontend-minhos"),
     ("Back", "Product", "product-minhos"), ("CTO", "CTO", "cto-minhos")]]
@@ -79,16 +88,18 @@ AGENTS = [{"n": n, "role": r, "agentType": f} for n, r, f in [
 class Env:
     """A temp dashboard home, a fake healthapp and conductor, a stub claude, and a bridge listening on 127.0.0.1 port 0."""
 
-    def __init__(self, **cfg):
+    def __init__(self, repo=False, **cfg):
         self.tmp = tempfile.mkdtemp(prefix="chatkit-")
         self.tmp = os.path.realpath(self.tmp)
         j = lambda *p: os.path.join(self.tmp, *p)
-        for d in ("home", "pages", "healthapp/src", "conductor/docs", "stub"):
+        for d in ("home", "pages", "healthapp/src", "conductor/docs/agents", "stub"):
             os.makedirs(j(d))
         for rel, body in (("pages/index.html", "<h1>page</h1>"), ("healthapp/src/x.ts", "x"), ("healthapp/.env", "SECRET=1"),
-                          ("conductor/docs/a.md", "a")):
+                          ("conductor/docs/a.md", "a"), ("conductor/docs/agents/dashboard-chat.md", RULE_TEXT)):
             with open(j(*rel.split("/")), "w") as f:
                 f.write(body)
+        if repo:
+            self.init_repo(j("healthapp"), j("origin.git"))
         self.stub = j("stub", "claude")
         with open(self.stub, "w") as f:
             f.write(STUB % {"python": sys.executable, "dir": j("stub")})
@@ -96,13 +107,37 @@ class Env:
         self.dir = j("stub")
         self.home, self.pages, self.cwd, self.conductor = j("home"), j("pages"), j("healthapp"), j("conductor")
         self.settings = dict(B.DEFAULTS)
-        self.settings.update({"cwd": self.cwd, "conductorDir": self.conductor, "claudeBin": self.stub})
+        self.settings.update({"cwd": self.cwd, "conductorDir": self.conductor, "claudeBin": self.stub, "ruleCommit": "",
+                              "ruleFile": os.path.join(self.conductor, "docs", "agents", "dashboard-chat.md")})
         self.settings.update(cfg)
         self.set_behavior()
         self.server = B.make_server(self.home, self.pages, 0, self.settings, [dict(a) for a in AGENTS], key=KEY, row_checker=fake_rows)
         self.chat, self.port = self.server.chat, self.server.port
         self.thread = threading.Thread(target=lambda: self.server.serve_forever(poll_interval=0.02), daemon=True)
         self.thread.start()
+
+    @staticmethod
+    def git(cwd, *args):
+        env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@t", GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@t", GIT_CONFIG_GLOBAL="/dev/null",
+                   GIT_CONFIG_SYSTEM="/dev/null", GIT_TERMINAL_PROMPT="0")
+        r = subprocess.run(["git"] + list(args), cwd=cwd, env=env, capture_output=True, text=True)
+        assert r.returncode == 0, (args, r.stderr)
+        return r.stdout
+
+    def init_repo(self, path, origin):
+        """healthapp as a real repository with a local bare `origin` that has main and staging; `.env` stays untracked and ignored."""
+        g = lambda *a: self.git(path, *a)
+        subprocess.run(["git", "init", "-q", "--bare", "-b", "main", origin], check=True, capture_output=True)
+        with open(os.path.join(path, ".gitignore"), "w") as f:
+            f.write(".env\n.claude/worktrees/\n")
+        g("init", "-q", "-b", "main")
+        g("add", ".gitignore", "src/x.ts")
+        g("commit", "-q", "-m", "base")
+        g("remote", "add", "origin", origin)
+        g("push", "-q", "origin", "main")
+        g("branch", "staging")
+        g("push", "-q", "origin", "staging")
+        g("fetch", "-q", "origin")
 
     def set_behavior(self, **beh):
         with open(os.path.join(self.dir, "behavior.json"), "w") as f:

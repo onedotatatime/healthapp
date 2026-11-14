@@ -400,7 +400,9 @@ class SessionsAndReplies(ChatCase):
         got = body["sessions"][1]
         self.assertEqual((got["title"], got["state"], got["turns"], got["costUsd"], got["full"], got["worktree"], got["branch"]),
                          ("first question with lines", "waiting", 1, 0.18, False, False, None))
-        self.assertEqual(sorted(got), sorted(["id", "agent", "title", "startedAt", "lastAt", "state", "turns", "costUsd", "full", "worktree", "branch"]))
+        self.assertEqual(sorted(got), sorted(["id", "agent", "title", "startedAt", "lastAt", "state", "turns", "costUsd", "full", "worktree", "branch",
+                                              "turnStartedAt"]))
+        self.assertIsNone(got["turnStartedAt"])
         self.assertEqual(env.get("/chat/sessions?agent=Cron")[1]["sessions"], [])
         self.assertEqual(env.get("/chat/sessions?agent=Nobody")[0], 404)
         msgs = env.get("/chat/sessions/%s" % s1)[1]["messages"]
@@ -582,7 +584,7 @@ class ProposalFlow(ChatCase):
         env = self.make()
         cases = [("bad_row", good_proposal(taskType="nope")), ("bad_row", good_proposal(taskType="ultracode row")),
                  ("forbidden", good_proposal(summary="Merge the PR to main")), ("forbidden", good_proposal(summary="Deploy it")),
-                 ("forbidden", good_proposal(estUsd=10.5)), ("forbidden", good_proposal(summary="Run a migration"))]
+                 ("budget_reached", good_proposal(estUsd=10.5)), ("forbidden", good_proposal(summary="Run a migration"))]
         for code, prop in cases:
             with self.subTest(code=code, summary=prop["summary"], usd=prop["estUsd"]):
                 _, msgs = self.run_turn(env, "ok\n" + block(prop))
@@ -607,7 +609,7 @@ class ProposalFlow(ChatCase):
 
 
 class ActOff(ChatCase):
-    """Run 1: a Yes never acts. `act` false returns act_off; so does `act` true, because the act turn is not built yet."""
+    """`act` false (the default) or a missing conductor rule: a Yes returns act_off and runs nothing."""
 
     def prepare(self, **cfg):
         env = self.make(**cfg)
@@ -629,12 +631,15 @@ class ActOff(ChatCase):
         self.assertEqual(env.chat.turns, {})
         self.assertEqual(env.get("/chat/sessions/%s" % sid)[1]["session"]["worktree"], False)
 
-    def test_yes_with_act_true_is_still_act_off_in_run_1(self):
+    def test_yes_with_act_true_but_the_rule_file_missing_is_act_off(self):
         env, sid, pid = self.prepare(act=True)
-        self.assertFalse(env.get("/chat/health")[1]["act"])
+        self.assertTrue(env.get("/chat/health")[1]["act"])
+        os.remove(env.chat.s["ruleFile"])
         before = len(env.records())
-        self.assertEqual(env.post("/chat/sessions/%s/proposals/%s/yes" % (sid, pid), {})[1]["refused"], "act_off")
+        st, body, _ = env.post("/chat/sessions/%s/proposals/%s/yes" % (sid, pid), {})
+        self.assertEqual((st, body["refused"]), (409, "act_off"))
         self.assertEqual(len(env.records()), before)
+        self.assertEqual(env.chat.turns, {})
 
     def test_unknown_proposal_and_no(self):
         env, sid, pid = self.prepare()
@@ -642,9 +647,11 @@ class ActOff(ChatCase):
         self.assertEqual(env.post("/chat/sessions/%s/proposals/%s/no" % (sid, pid), {})[0], 200)
         self.assertEqual(env.get("/chat/sessions/%s" % sid)[1]["messages"][-1]["proposal"]["status"], "declined")
 
-    def test_act_flag_defaults_false(self):
+    def test_act_flag_defaults_false_though_the_act_turn_is_built(self):
         self.assertIs(B.DEFAULTS["act"], False)
-        self.assertIs(B.ACT_BUILT, False)
+        self.assertIs(B.ACT_BUILT, True)
+        self.assertEqual((B.DEFAULTS["perActUsd"], B.DEFAULTS["dailyUsd"], B.DEFAULTS["actMinutes"], B.DEFAULTS["yesMinutes"], B.DEFAULTS["actBase"]),
+                         (10, 40, 90, 30, "origin/staging"))
 
 
 class Events(ChatCase):
@@ -872,8 +879,8 @@ class RealRoutingTable(unittest.TestCase):
 
     def test_rows(self):
         check = B.make_row_checker("~/AppDevelopment/conductor")
-        model, effort = check("backend-minhos", "API and edge functions")
-        self.assertEqual((model, effort), ("sonnet", "high"))
+        model, effort, fallback = check("backend-minhos", "API and edge functions")
+        self.assertEqual((model, effort, fallback), ("sonnet", "high", "opus"))             # the row's chain is S -> O: the rest becomes --fallback-model
         with self.assertRaises(B.RowError):
             check("backend-minhos", "Not a row of the table")
         with self.assertRaises(B.RowError):
