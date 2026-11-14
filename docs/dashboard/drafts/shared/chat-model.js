@@ -24,6 +24,8 @@ const toneOf = code => NEUTRAL.indexOf(code) >= 0 ? 'neutral' : BAD.indexOf(code
 const money = n => { n = +n; if(!isFinite(n)) return ''; if(n > 0 && n < 0.01) return '<$0.01'; return '$' + n.toFixed(2); };
 const pad2 = n => String(n).padStart(2, '0');
 const elapsed = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return pad2(Math.floor(s / 60)) + ':' + pad2(s % 60); };
+/* the acting clock counts from `turnStartedAt` (when the running turn began), never from `lastAt` (which moves with every message); no turn, no clock */
+const since = (nowMs, iso) => { const t = Date.parse(iso); return isFinite(t) && isFinite(nowMs) ? elapsed(nowMs - t) : ''; };
 const kindLabel = k => k==='handoff' ? 'Linear only' : 'Change on a new branch';
 const issueOk = s => /^[A-Za-z][A-Za-z0-9]{1,9}-\d{1,6}$/.test(s || '');
 
@@ -42,9 +44,9 @@ function rowOf(a, sessions, peek, nowMs){
     return Object.assign(base, { tone:'warn', word:'Needs your yes', detail:p.summary || s.title || '', rank:0, sid:s.id, kind:'needs_yes' });
   }
   if((s = pick(sessions, 'acting'))){
-    const p = pk[s.id] || {}, t0 = Date.parse(s.lastAt);
+    const p = pk[s.id] || {};
     return Object.assign(base, { tone:'brand', ring:true, word:'Acting' + (p.issue ? ' on ' + p.issue : ''),
-      detail:isFinite(t0) && nowMs ? elapsed(nowMs - t0) : '', rank:1, sid:s.id, kind:'acting' });
+      detail:since(nowMs, s.turnStartedAt), rank:1, sid:s.id, kind:'acting' });
   }
   if((s = pick(sessions, 'working')))
     return Object.assign(base, { tone:'brand', word:'Answering you', detail:s.title || '', rank:2, sid:s.id, kind:'working' });
@@ -87,7 +89,7 @@ function resultView(r){
   return v;
 }
 
-const M = { PAGE, text, toneOf, fill, money, elapsed, pad2, kindLabel, issueOk, rowOf, summary, proposalView, resultView };
+const M = { PAGE, text, toneOf, fill, money, elapsed, since, pad2, kindLabel, issueOk, rowOf, summary, proposalView, resultView };
 root.ChatModel = M;
 if(typeof module !== 'undefined' && module.exports) module.exports = M;
 })(typeof window !== 'undefined' ? window : globalThis);

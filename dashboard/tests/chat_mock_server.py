@@ -47,9 +47,12 @@ class Mock:
                     p = m.get("proposal")
                     if p:
                         p["expiresAt"] = iso(t0 + p.pop("expiresInMin", 20) * 60)
+                        p.setdefault("fallback", None)                                                              # the bridge sends the next model of the row's chain (or null); the page does not read it
+                        p["acceptedAt"] = iso(t0 - p.pop("acceptedAgoSec")) if "acceptedAgoSec" in p else None      # the real bridge sets it at the Yes
                     msgs.append(m)
                 self.sessions[sp["id"]] = {"id": sp["id"], "agent": agent, "title": sp["title"], "startedAt": msgs[0]["at"], "lastAt": iso(t0 - sp.get("agoSec", 0)), "state": sp["state"],
-                                           "turns": sp["turns"], "costUsd": sp["costUsd"], "full": bool(sp.get("full")), "worktree": bool(sp.get("branch")), "branch": sp.get("branch"), "messages": msgs}
+                                           "turns": sp["turns"], "costUsd": sp["costUsd"], "full": bool(sp.get("full")), "worktree": bool(sp.get("branch")), "branch": sp.get("branch"),
+                                           "turnStartedAt": iso(t0 - sp["turnAgoSec"]) if "turnAgoSec" in sp else None, "messages": msgs}
                 self.events[sp["id"]] = [dict(e, n=i + 1, at=iso(t0 - 60 + i * 20)) for i, e in enumerate(sp.get("events", []))]
                 self.n[sp["id"]] = len(self.events[sp["id"]])
 
@@ -69,7 +72,7 @@ class Mock:
             if sid is None:
                 sid = uuid.uuid4().hex[:12]
                 self.sessions[sid] = {"id": sid, "agent": agent, "title": text[:60], "startedAt": iso(time.time()), "lastAt": iso(time.time()), "state": "waiting", "turns": 0, "costUsd": 0.0,
-                                      "full": False, "worktree": False, "branch": None, "messages": []}
+                                      "full": False, "worktree": False, "branch": None, "turnStartedAt": None, "messages": []}
                 self.events[sid], self.n[sid] = [], 0
             s = self.sessions.get(sid)
             if not s:
@@ -80,7 +83,7 @@ class Mock:
                 if m.get("proposal") and m["proposal"]["status"] == "open":
                     m["proposal"]["status"] = "declined"
             s["messages"].append({"role": "you", "text": text, "at": iso(time.time()), "costUsd": None})
-            s.update(state="working", lastAt=iso(time.time()))
+            s.update(state="working", lastAt=iso(time.time()), turnStartedAt=iso(time.time()))
             self.events[sid] = []
         threading.Thread(target=self._answer, args=(sid, text), daemon=True).start()
         return 202, {"session": self.view(s)}
@@ -99,12 +102,12 @@ class Mock:
             m = {"role": "agent", "text": "This is a stub answer from the mock bridge.", "at": iso(time.time()), "costUsd": 0.12}
             if "do it" in text.lower():
                 m["proposal"] = {"id": uuid.uuid4().hex[:8], "kind": "change", "summary": "Do the thing you asked for, in a new branch.", "issue": None, "taskType": "Bug", "model": "sonnet", "effort": "medium", "lane": "A",
-                                 "branch": None, "estMin": 10, "estUsd": 1.0, "spentTodayUsd": 3.2, "expiresAt": iso(time.time() + 1800), "status": "open"}
+                                 "branch": None, "estMin": 10, "estUsd": 1.0, "spentTodayUsd": 3.2, "expiresAt": iso(time.time() + 1800), "acceptedAt": None, "fallback": None, "status": "open"}
                 s["state"] = "needs_yes" if self.flags["act"] else "waiting"
             else:
                 s["state"] = "waiting"
             s["messages"].append(m)
-            s.update(turns=s["turns"] + 1, costUsd=round(s["costUsd"] + 0.12, 2), lastAt=iso(time.time()))
+            s.update(turns=s["turns"] + 1, costUsd=round(s["costUsd"] + 0.12, 2), lastAt=iso(time.time()), turnStartedAt=None)
 
     def answer(self, sid, pid, yes):
         with self.lock:
@@ -119,8 +122,8 @@ class Mock:
                     return self.refuse("act_off", s["agent"])
                 if p["status"] != "open" or iso(time.time()) > p["expiresAt"]:
                     return self.refuse("yes_expired")
-                p.update(status="accepted", branch="chore/chat-%s-%s" % (s["agent"].lower(), pid[:4]))
-                s.update(state="acting", lastAt=iso(time.time()), branch=p["branch"], worktree=True)
+                p.update(status="accepted", acceptedAt=iso(time.time()), branch="chore/chat-%s-%s" % (s["agent"].lower(), pid[:4]))
+                s.update(state="acting", lastAt=iso(time.time()), turnStartedAt=iso(time.time()), branch=p["branch"], worktree=True)
                 self.events[sid] = []
                 threading.Thread(target=self._act, args=(sid,), daemon=True).start()
                 return 202, {"session": self.view(s)}
@@ -144,7 +147,7 @@ class Mock:
             s["messages"].append({"role": "result", "text": "", "at": iso(time.time()), "costUsd": 0.9,
                                   "result": {"outcome": outcome, "issue": None, "branch": s["branch"], "commits": 2 if outcome == "done" else 0, "filesChanged": 3 if outcome == "done" else 0,
                                              "summary": summary, "costUsd": 0.9, "minutes": 0.2}})
-            s.update(state="waiting", lastAt=iso(time.time()), turns=s["turns"] + 1)
+            s.update(state="waiting", lastAt=iso(time.time()), turnStartedAt=None, turns=s["turns"] + 1)
 
     def stop(self, sid):
         s = self.sessions.get(sid)
@@ -155,7 +158,7 @@ class Mock:
                 self.finish(sid, "stopped", "Stopped by you.")
             else:
                 with self.lock:
-                    s.update(state="waiting")
+                    s.update(state="waiting", turnStartedAt=None)
                     s["messages"].append({"role": "error", "text": "%s did not answer. Nothing was lost. Try again." % s["agent"], "at": iso(time.time()), "costUsd": None})
         return 200, {"session": self.view(s)}
 

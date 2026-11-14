@@ -27,14 +27,17 @@ RUNNER = r"""
 const vm = require('vm'), fs = require('fs'); const w = {};
 vm.runInNewContext(fs.readFileSync(process.argv[1], 'utf8'), { window: w }); const M = w.ChatModel;
 const now = Date.parse('2026-11-14T20:00:00Z');
-const S = (id, state, o) => Object.assign({ id, state, title: 'T ' + id, lastAt: '2026-11-14T19:55:48Z' }, o || {});
+// lastAt moves with every message; turnStartedAt is when the running turn began. They differ on purpose: only turnStartedAt may feed the clock.
+const S = (id, state, o) => Object.assign({ id, state, title: 'T ' + id, lastAt: '2026-11-14T19:59:30Z', turnStartedAt: null }, o || {});
 const A = (state, issue) => ({ n: 'Pix', role: 'Design', state, issue: issue || '-', title: issue ? 'Some title' : '' });
 const out = {};
 out.page = Object.assign({}, M.PAGE); out.text = { working: M.text('working', { Agent: 'Pix' }), acting: M.text('acting', { Agent: 'Pix', issue: 'MIN-4498' }), act_off: M.text('act_off', { Agent: 'Pix' }) };
 out.tone = {}; ['busy_session','agent_busy','cap_reached','chat_full','finished','chat_off','budget_reached','forbidden','bad_row','yes_expired','declined','too_long','rate_limited','whatever'].forEach(c => out.tone[c] = M.toneOf(c));
 out.row = {
   needsYes: M.rowOf(A('active','MIN-1'), [S('a','waiting'), S('b','needs_yes')], { b: { summary: 'Do X' } }, now),
-  acting: M.rowOf(A('active','MIN-1'), [S('a','acting')], { a: { issue: 'MIN-4498' } }, now),
+  acting: M.rowOf(A('active','MIN-1'), [S('a','acting', { turnStartedAt: '2026-11-14T19:55:48Z' })], { a: { issue: 'MIN-4498' } }, now),
+  actingNoTurn: M.rowOf(A('active','MIN-1'), [S('a','acting')], { a: { issue: 'MIN-4498' } }, now),
+  actingOldBridge: M.rowOf(A('active','MIN-1'), [{ id: 'a', state: 'acting', lastAt: '2026-11-14T19:55:48Z' }], {}, now),
   working: M.rowOf(A('idle'), [S('a','working')], {}, now),
   active: M.rowOf(A('active','MIN-9'), [], {}, now),
   idleNone: M.rowOf(A('idle'), [], {}, now),
@@ -51,7 +54,7 @@ out.prop = { openOn: M.proposalView(P(), true, now), openOff: M.proposalView(P()
   declined: M.proposalView(P({ status: 'declined' }), true, now), refused: M.proposalView(P({ status: 'refused', refused: 'bad_row' }), true, now), accepted: M.proposalView(P({ status: 'accepted' }), true, now) };
 out.result = { done: M.resultView({ outcome: 'done', branch: 'fix/x', summary: 's', minutes: 7 }), failed: M.resultView({ outcome: 'failed', summary: 'no write' }),
   stopped: M.resultView({ outcome: 'stopped' }), timeout: M.resultView({ outcome: 'timeout', minutes: 90 }), unknown: M.resultView({ outcome: 'weird' }), doneNoBranch: M.resultView({ outcome: 'done' }) };
-out.fmt = { m0: M.money(0), m1: M.money(0.004), m2: M.money(3.2), m3: M.money(1.495), e0: M.elapsed(0), e1: M.elapsed(252000), e2: M.elapsed(-5), issue: [M.issueOk('MIN-4498'), M.issueOk('min4498'), M.issueOk('<b>'), M.issueOk(null)] };
+out.fmt = { m0: M.money(0), m1: M.money(0.004), m2: M.money(3.2), m3: M.money(1.495), e0: M.elapsed(0), e1: M.elapsed(252000), e2: M.elapsed(-5), s1: M.since(now, '2026-11-14T19:55:48Z'), s2: M.since(now, null), s3: M.since(now, 'not a date'), s4: M.since(NaN, '2026-11-14T19:55:48Z'), issue: [M.issueOk('MIN-4498'), M.issueOk('min4498'), M.issueOk('<b>'), M.issueOk(null)] };
 console.log(JSON.stringify(out));
 """
 
@@ -101,6 +104,10 @@ class Model(unittest.TestCase):
         self.assertEqual((r["idleNone"]["word"], r["idleNone"]["detail"]), ("Idle", "no chat yet"))
         self.assertEqual((r["idleUnknown"]["word"], r["idleUnknown"]["detail"]), ("Idle", ""))      # sessions not read yet: do not claim "no chat yet"
         self.assertEqual(r["both"]["word"], "Needs your yes")
+        # F1 (CTO, MIN-4499): the acting clock comes from turnStartedAt (19:55:48 -> 04:12), not from lastAt (19:59:30 would read 00:30)
+        self.assertEqual(r["acting"]["detail"], "04:12")
+        self.assertEqual(r["actingNoTurn"]["detail"], "")           # no turn start: no clock, never "NaN:NaN" and never lastAt
+        self.assertEqual(r["actingOldBridge"]["detail"], "")        # a bridge that does not send the field yet shows no clock instead of a wrong one
         self.assertEqual([x["rank"] for x in (r["needsYes"], r["acting"], r["working"], r["active"])], [0, 1, 2, 3])
 
     def test_only_needs_your_yes_is_amber_and_a_waiting_chat_is_a_quiet_chip(self):
@@ -134,6 +141,7 @@ class Model(unittest.TestCase):
         f = self.o["fmt"]
         self.assertEqual((f["m0"], f["m1"], f["m2"], f["m3"]), ("$0.00", "<$0.01", "$3.20", "$1.50"))
         self.assertEqual((f["e0"], f["e1"], f["e2"]), ("00:00", "04:12", "00:00"))
+        self.assertEqual((f["s1"], f["s2"], f["s3"], f["s4"]), ("04:12", "", "", ""))
         self.assertEqual(f["issue"], [True, False, False, False])
 
 
@@ -161,6 +169,14 @@ class PageSource(unittest.TestCase):
     def test_the_act_flags_are_not_in_the_page(self):
         for bad in ("bypassPermissions", "dangerously", "x-chat-key:' +"):
             self.assertNotIn(bad, self.src)
+
+    def test_the_acting_clock_and_the_yes_time_use_the_fields_that_mean_them(self):
+        """F1 (CTO, MIN-4499): the mm:ss counts from session.turnStartedAt and "Yes at" shows proposal.acceptedAt. lastAt moves with every message."""
+        self.assertNotRegex(self.src, r"M\.elapsed\(Date\.now\(\) - Date\.parse\(")
+        self.assertEqual(len(re.findall(r"M\.since\(Date\.now\(\), [a-z.]*turnStartedAt\)", self.src)), 3)
+        self.assertIn("p.acceptedAt", self.src)
+        self.assertNotRegex(self.src, r"Yes at[^;]{0,80}lastAt")
+        self.assertNotRegex(open(MODEL).read(), r"Date\.parse\(s\.lastAt\)")
 
 
 class Fixture(unittest.TestCase):
@@ -215,7 +231,7 @@ class MockBridge(unittest.TestCase):
     def test_session_and_message_shapes_match_the_bridge(self):
         st, body = self.call("GET", "/chat/sessions?agent=Back")
         s = body["sessions"][0]
-        self.assertEqual(set(s), {"id", "agent", "title", "startedAt", "lastAt", "state", "turns", "costUsd", "full", "worktree", "branch"})
+        self.assertEqual(set(s), {"id", "agent", "title", "startedAt", "lastAt", "state", "turns", "costUsd", "full", "worktree", "branch", "turnStartedAt"})
         st, body = self.call("GET", "/chat/sessions/" + s["id"])
         p = [m["proposal"] for m in body["messages"] if m.get("proposal")][0]
         for k in ("id", "kind", "summary", "issue", "taskType", "model", "effort", "lane", "branch", "estMin", "estUsd", "spentTodayUsd", "expiresAt", "status"):
@@ -241,6 +257,16 @@ class MockBridge(unittest.TestCase):
             self.assertLessEqual(set(mock_prop) - {"reason"}, set(real_prop))
         finally:
             env.close()
+
+    def test_the_mock_sends_turn_start_and_accepted_time_like_the_bridge(self):
+        st, body = self.call("GET", "/chat/sessions?agent=Pix")
+        acting = [x for x in body["sessions"] if x["state"] == "acting"][0]
+        self.assertTrue(acting["turnStartedAt"])
+        st, thread = self.call("GET", "/chat/sessions/" + acting["id"])
+        acc = [m["proposal"] for m in thread["messages"] if m.get("proposal") and m["proposal"]["status"] == "accepted"][0]
+        self.assertTrue(acc["acceptedAt"])
+        st, body = self.call("GET", "/chat/sessions?agent=Back")
+        self.assertIsNone(body["sessions"][0]["turnStartedAt"])      # no turn running, no start
 
     def test_yes_with_act_off_is_act_off_and_runs_nothing(self):
         m = self.srv.mock

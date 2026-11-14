@@ -255,7 +255,7 @@ function evHtml(c){
 }
 function stripHtml(c, s){
   return '<div class="ch-strip tone-' + s.tone + '"><span class="g" aria-hidden="true">' + (s.k === 'acting' ? '\u25CF' : GLYPH[s.tone]) + '</span><div class="ch-sm"><span role="status">' + esc(s.text) + '</span>'
-    + (s.el ? ' <span class="mono" id="chEl">' + esc(c.session ? M.elapsed(Date.now() - Date.parse(c.session.lastAt)) : '') + '</span>' : '')
+    + (s.el ? ' <span class="mono" id="chEl">' + esc(c.session ? M.since(Date.now(), c.session.turnStartedAt) : '') + '</span>' : '')
     + (s.branch ? '<div class="mono ch-br">' + esc(s.branch) + ' <a class="linkbtn" href="#/branches">See it in Branches \u203A</a></div>' : '')
     + (s.events ? '<p class="ch-ev mono" id="chEv" aria-label="What ' + esc(c.agent) + ' is doing, latest step" title="Latest step"></p>' : '') + '</div>'
     + (s.stop ? '<button type="button" class="btn sm" id="chStop"' + (s.stopSid ? ' data-stopsid="' + esc(s.stopSid) + '"' : '') + (c.stopping ? ' disabled aria-disabled="true">Stopping…' : '>■ Stop') + '</button>' : '')
@@ -278,7 +278,7 @@ function proposalHtml(c, p){
     line = '<div class="ch-pl t-' + v.line[0] + '"><span aria-hidden="true">' + (code === 'declined' || code === 'yes_expired' ? '○' : GLYPH[v.line[0]]) + '</span> ' + esc(txt) + '</div>';
   }
   const mins = Math.max(0, Math.round((Date.parse(p.expiresAt) - Date.now()) / 60000));
-  const yesAt = v.status === 'accepted' ? '<div class="ch-pl t-ok"><span aria-hidden="true">●</span> ' + (c.session && c.session.state === 'acting' && c.session.lastAt ? 'Yes at ' + esc(hm(c.session.lastAt)) : 'Yes given') + '</div>' : '';
+  const yesAt = v.status === 'accepted' ? '<div class="ch-pl t-ok"><span aria-hidden="true">●</span> ' + (p.acceptedAt && hm(p.acceptedAt) ? 'Yes at ' + esc(hm(p.acceptedAt)) : 'Yes given') + '</div>' : '';
   const btns = v.buttons ? '<div class="ch-btns"><button type="button" class="btn primary" data-yes="' + esc(p.id) + '"' + (c.busyYes[p.id] ? ' disabled aria-disabled="true"' : '') + '>Yes, do it</button><button type="button" class="btn" data-no="' + esc(p.id) + '"' + (c.busyYes[p.id] ? ' disabled aria-disabled="true"' : '') + '>No</button></div>'
     + '<p class="ch-note muted">One yes covers this one action. Typing a reply declines it. Expires in ' + mins + ' min.</p>' : '';
   return '<div class="ch-card prop st-' + v.status + (v.ghost ? ' ghost' : '') + '"><div class="micro">' + (v.status === 'open' ? 'Wants to act' : 'Request') + '</div><p class="sum">' + esc(p.summary) + '</p>'
@@ -394,8 +394,8 @@ async function stop(sid){
 
 /* second tick: the acting clock in the strip and on the card, and an open proposal's minutes */
 H.onSecond(() => {
-  const c = cur; if(c && c.session && c.session.state === 'acting'){ const el = $('#chEl'); if(el) el.textContent = M.elapsed(Date.now() - Date.parse(c.session.lastAt)); }
-  $$('[data-chel]').forEach(el => { const s = Object.values(S.sessions).flat().find(x => x.id === el.dataset.chel); if(s) el.textContent = M.elapsed(Date.now() - Date.parse(s.lastAt)); });
+  const c = cur; if(c && c.session && c.session.state === 'acting'){ const el = $('#chEl'); if(el) el.textContent = M.since(Date.now(), c.session.turnStartedAt); }
+  $$('[data-chel]').forEach(el => { const s = Object.values(S.sessions).flat().find(x => x.id === el.dataset.chel); if(s) el.textContent = M.since(Date.now(), s.turnStartedAt); });
 });
 
 /* ---------- boot ---------- */
