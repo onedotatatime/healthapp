@@ -94,20 +94,20 @@ Manrope 400/500/600/700, fallback system-ui. Headings 600, tracking -0.04em, lin
 ## 9. Logo
 Name chosen by the founder, 2026-11-14: Pathien (pathien.health). Trademark clearance pending.
 
-**The idea.** One line becomes a "p": a thread rises from the bottom, loops, and ends in a single point. A patient's history as one calm path, the dot being where you are now (or the exam a doctor is shown). No medical cross, heart, pill or stethoscope.
+**The idea.** One line becomes a "p": it loops into the bowl, runs down the stem and out along the baseline in a foot, and ends in a single dot with a gap, the next step on the path. A patient's history as one calm path, the dot being where you are heading (or the exam a doctor is shown). Redrawn in round 2 (2026-11-14) after the logo check found the old white-p-plus-dot-on-teal too common (`logo-check-pathien.md`). No medical cross, heart, pill or stethoscope.
 
 **Files** (`docs/brand/logo/`, hand-drawn SVG; the wordmark is Manrope 600 converted to paths, -2% tracking, so no font is needed):
 | File | Use |
 |---|---|
 | `pathien-lockup.svg` | Default logo, ink #12201F on transparent, on light backgrounds |
 | `pathien-lockup-white.svg` | Same, white, on teal-night, teal-600 or photos with an overlay |
-| `pathien-symbol.svg` | Symbol alone in teal-600 (avatars, small spots, social profile with a light background) |
+| `pathien-symbol.svg` | Symbol alone: teal-600 line, coral dot (avatars, small spots, social profile with a light background) |
 | `pathien-wordmark.svg` | Wordmark alone, ink; only where the symbol already sits next to it |
-| `pathien-app-icon.svg` | 1024 rounded square, teal-600 with an air-coloured "p" and a mint dot. Round the corners only through the store's mask for iOS (use a square export there) |
+| `pathien-app-icon.svg` | 1024 rounded square, air #F7FAFA ground with a hairline edge, teal-600 line, coral dot. Round the corners only through the store's mask for iOS (use a square export there) |
 | `favicon.svg` | 32 viewBox, readable at 16px |
 | `lockup@2x.png`, `app-icon-512.png` | Previews only (the lockup PNG has a white background); use the SVGs |
 
-**Colour versions.** Ink on light (default), white on dark. Symbol alone: teal-600 on light; air #F7FAFA with a mint #7FE3CF dot on teal-600 (icon and favicon). Nothing else.
+**Colour versions.** Ink on light (default), white on dark. Symbol alone, icon and favicon: teal-600 line with a coral #F4846B dot on air #F7FAFA (or on light). The lockups stay one colour. The icon ground is air, not teal: every close match is a white mark on a teal or green square. Nothing else.
 
 **Clear space.** On all sides at least the height of the wordmark's x-height (the "a"), which is about 55% of the "p" height. Keep other text, edges and images out of that zone.
 
@@ -115,7 +115,7 @@ Name chosen by the founder, 2026-11-14: Pathien (pathien.health). Trademark clea
 
 **Don'ts.**
 - Do not stretch, squash, rotate or outline it.
-- Do not recolour outside the tokens (no coral, no gradients, no second colour in one logo).
+- Do not recolour outside the tokens (coral only for the dot of the symbol, icon and favicon; no gradients; the lockups stay one colour). Do not put the icon back on a teal or green square.
 - No shadows, glows, bevels, blur or other effects.
 - Do not retype the wordmark in a font, change its weight or tracking, or capitalise it ("Pathien" in running text, "pathien" only in the logo).
 - Do not put it on a busy photo without the teal-night overlay, or on a background under 4.5:1 contrast.
