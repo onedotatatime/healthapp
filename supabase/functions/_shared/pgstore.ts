@@ -9,6 +9,7 @@ import {
   type DocMeta,
   DocRecordSchema,
   type DocState,
+  type ConfirmPlan,
   type ExamRow,
   MAX_READS,
   type PlanOutcome,
@@ -70,6 +71,29 @@ async function load(tx: Q, S: string, where: string, params: unknown[], lock = f
     [d.id],
   );
   return parseState(d, rs.map((x: { j: unknown }) => x.j), fs.map((x: { j: unknown }) => x.j));
+}
+
+/** The one writer of `confirmed`: the patient's confirm and the automatic save of a scanned exam both end here, so they
+ *  cannot differ (same edits applied, same record hash, same confirmed_at). `unchecked` is true only for the automatic one. */
+async function writeConfirm(tx: Q, S: string, docId: string, p: ConfirmPlan, unchecked: boolean): Promise<void> {
+  for (const r of p.results) {
+    await tx.unsafe(
+      `update ${S}.results set value_num = $2, value_text = $3, unit = $4, flag = $5,
+              edited_by_patient = edited_by_patient or $6 where id = $1 and document_id = $7`,
+      [r.id, r.value_num, r.value_text, r.unit, r.flag, r.edited, docId],
+    );
+  }
+  for (const f of p.findings) {
+    await tx.unsafe(
+      `update ${S}.findings set text_original = $2, finding_date = $3,
+              edited_by_patient = edited_by_patient or $4 where id = $1 and document_id = $5`,
+      [f.id, f.text_original, f.finding_date, f.edited, docId],
+    );
+  }
+  await tx.unsafe(
+    `update ${S}.documents set exam_date = $2, status = 'confirmed', confirmed_at = now(), sha256_record = $3, unchecked = $4::boolean where id = $1`,
+    [docId, p.exam_date, p.sha256_record, unchecked],
+  );
 }
 
 export const pgStore: Store = {
@@ -218,7 +242,7 @@ export const pgStore: Store = {
     return rows as unknown as ExamRow[];
   },
 
-  async saveExtraction(env, patientId, docId, draft: DraftIn, sha256File, identity): Promise<Saved | null> {
+  async saveExtraction(env, patientId, docId, draft: DraftIn, sha256File, identity, auto): Promise<Saved | null> {
     const S = schema(env);
     return await db().begin(async (tx) => {
       const up = await tx.unsafe(
@@ -252,7 +276,17 @@ export const pgStore: Store = {
           [docId, patientId, jsonb(draft.findings)],
         );
       }
-      return await load(tx, S, "d.id = $1", [docId]);
+      let st = await load(tx, S, "d.id = $1", [docId]);
+      // The automatic save (MIN-4555 addendum) is in this same transaction: the row goes from `reading` straight to
+      // `confirmed`, so a client that polls never sees a `draft` it must then watch turn into a saved exam.
+      if (st && auto) {
+        const o = await auto.plan(st);
+        if (o.kind === "plan") {
+          await writeConfirm(tx, S, docId, o.plan, true);
+          st = await load(tx, S, "d.id = $1", [docId]);
+        }
+      }
+      return st;
     });
   },
 
@@ -294,25 +328,7 @@ export const pgStore: Store = {
       const outcome: PlanOutcome = await plan(cur);
       if (outcome.kind === "error") return { error: outcome };
       if (outcome.kind === "already") return { state: cur };
-      const p = outcome.plan;
-      for (const r of p.results) {
-        await tx.unsafe(
-          `update ${S}.results set value_num = $2, value_text = $3, unit = $4, flag = $5,
-                  edited_by_patient = edited_by_patient or $6 where id = $1 and document_id = $7`,
-          [r.id, r.value_num, r.value_text, r.unit, r.flag, r.edited, docId],
-        );
-      }
-      for (const f of p.findings) {
-        await tx.unsafe(
-          `update ${S}.findings set text_original = $2, finding_date = $3,
-                  edited_by_patient = edited_by_patient or $4 where id = $1 and document_id = $5`,
-          [f.id, f.text_original, f.finding_date, f.edited, docId],
-        );
-      }
-      await tx.unsafe(
-        `update ${S}.documents set exam_date = $2, status = 'confirmed', confirmed_at = now(), sha256_record = $3, unchecked = $4::boolean where id = $1`,
-        [docId, p.exam_date, p.sha256_record, opts?.unchecked === true],
-      );
+      await writeConfirm(tx, S, docId, outcome.plan, opts?.unchecked === true);
       const state = await load(tx, S, "d.id = $1", [docId]);
       return state ? { state } : null;
     });

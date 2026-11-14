@@ -5,6 +5,7 @@ import type { FailReason, HealthappEnv, RefusalReason } from "./contract.ts";
 import {
   type Auth,
   type Blobs,
+  type ConfirmPlan,
   type DocState,
   type ExamRow,
   MAX_READS,
@@ -32,6 +33,22 @@ const PROFILES: Record<string, IdentityProfile> = {
 };
 
 export const fakeAuth: Auth = { verify: (t) => Promise.resolve(TOKENS[t] ?? null) };
+
+/** The fake's one confirm writer, like pgstore's writeConfirm: the patient's confirm and the automatic save both use it. */
+function applyPlan(cur: DocState, plan: ConfirmPlan, unchecked: boolean) {
+  for (const r of plan.results) {
+    const row = cur.results.find((x) => x.id === r.id)!;
+    Object.assign(row, { value_num: r.value_num, value_text: r.value_text, unit: r.unit, flag: r.flag });
+    row.edited_by_patient = row.edited_by_patient || r.edited;
+  }
+  for (const f of plan.findings) {
+    const row = cur.findings.find((x) => x.id === f.id)!;
+    Object.assign(row, { text_original: f.text_original, finding_date: f.finding_date });
+    row.edited_by_patient = row.edited_by_patient || f.edited;
+  }
+  cur.document = { ...cur.document, exam_date: plan.exam_date, status: "confirmed", confirmed_at: "2026-11-14T10:05:00.000+00:00", unchecked };
+  cur.meta.sha256_record = plan.sha256_record;
+}
 
 export function fakeStore() {
   const docs = new Map<string, DocState>();
@@ -93,17 +110,22 @@ export function fakeStore() {
       Object.assign(x, { reason: null, at: clock.now, attempts: x.attempts + 1 });
       return Promise.resolve(cur);
     },
-    saveExtraction(_e, patientId, docId, d: DraftIn, sha, identity): Promise<Saved | null> {
+    async saveExtraction(_e, patientId, docId, d: DraftIn, sha, identity, auto): Promise<Saved | null> {
       calls.push("saveExtraction");
       const cur = docs.get(docId);
-      if (!cur || cur.document.patient_id !== patientId || cur.document.status !== "reading") return Promise.resolve(null);
+      if (!cur || cur.document.patient_id !== patientId || cur.document.status !== "reading") return null;
       let n = 0;
       cur.document = { ...cur.document, kind: d.kind, language: d.language, exam_date: d.exam_date, issuer: d.issuer, identity_status: identity, status: "draft" };
       cur.meta = { ...cur.meta, sha256_file: sha, printed_name: d.printed_name, printed_id: d.printed_id, header_confidence: d.header_confidence };
       Object.assign(extra.get(docId)!, { reason: null, at: clock.now });
       cur.results = d.results.map((r) => ({ ...r, id: uuid(1000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
       cur.findings = d.findings.map((f) => ({ ...f, id: uuid(2000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
-      return Promise.resolve(cur);
+      // the same transaction as the store's: the plan runs on the saved row; a plan it yields confirms it there and then
+      if (auto) {
+        const o: PlanOutcome = await auto.plan(cur);
+        if (o.kind === "plan") applyPlan(cur, o.plan, true);
+      }
+      return cur;
     },
     markRefused(_e, patientId, docId, reason: RefusalReason) {
       calls.push("markRefused");
@@ -195,18 +217,7 @@ export function fakeStore() {
       const o: PlanOutcome = await plan(cur);
       if (o.kind === "error") return { error: o };
       if (o.kind === "already") return { state: cur };
-      for (const r of o.plan.results) {
-        const row = cur.results.find((x) => x.id === r.id)!;
-        Object.assign(row, { value_num: r.value_num, value_text: r.value_text, unit: r.unit, flag: r.flag });
-        row.edited_by_patient = row.edited_by_patient || r.edited;
-      }
-      for (const f of o.plan.findings) {
-        const row = cur.findings.find((x) => x.id === f.id)!;
-        Object.assign(row, { text_original: f.text_original, finding_date: f.finding_date });
-        row.edited_by_patient = row.edited_by_patient || f.edited;
-      }
-      cur.document = { ...cur.document, exam_date: o.plan.exam_date, status: "confirmed", confirmed_at: "2026-11-14T10:05:00.000+00:00", unchecked: opts?.unchecked === true };
-      cur.meta.sha256_record = o.plan.sha256_record;
+      applyPlan(cur, o.plan, opts?.unchecked === true);
       return { state: cur };
     },
   };

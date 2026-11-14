@@ -74,6 +74,13 @@ export interface ExamRow {
   unchecked: boolean;
 }
 
+/** The test for saving a reading with no tap (CTO, MIN-4555 addendum §1), on what the reading produced. The reading
+ *  succeeded and the identity check did not refuse by the time this runs; the reading must also say what kind of exam it is
+ *  and carry at least one result or finding. Not met: the reading is saved as a draft for the patient to confirm. */
+export function autoConfirmable(d: { kind: string | null; results: readonly unknown[]; findings: readonly unknown[] }): boolean {
+  return d.kind !== null && d.results.length + d.findings.length > 0;
+}
+
 /** A failed upload is read again by the patient at most this many times; then it is Delete only (CTO, MIN-4555 §3). */
 export const MAX_READS = 3;
 /** The lazy sweep's limits: a row reading this long, or waiting this long, is dead (CTO, MIN-4555 §3). */
@@ -124,6 +131,10 @@ export interface Store {
     draft: DraftIn,
     sha256File: string,
     identity: "match" | "name_only",
+    /** The automatic save (MIN-4555 addendum). When given, `plan` runs on the saved row inside the same transaction and, if
+     *  it yields a plan, the row is confirmed there and then (unchecked true): it goes from reading to confirmed with no
+     *  visible draft in between. When the plan is refused the row stays a draft. */
+    auto?: { plan: (s: DocState) => Promise<PlanOutcome> },
   ): Promise<Saved | null>;
   /** reading -> refused, keeping the reason code and the times only: path, type, hashes and every extracted field
    *  are set to null in the same statement. False when the row was not reading. The caller deleted the file first. */

@@ -115,15 +115,19 @@ Deno.test("one path writes `confirmed`: the store's confirm. The automatic save,
   assertEquals((pg.match(/status = 'confirmed',/g) ?? []).length, 1); // and one statement in it
   const handler = code("healthapp-extract-exam/handler.ts");
   assertEquals(/status = 'confirmed'|"confirmed"\s*\)|status: "confirmed"/.test(handler.replace(/status: kept \? "confirmed" : "draft"/, "")), false);
-  assertEquals(handler.includes("deps.store.confirm("), true);
-  assertEquals(handler.includes("planConfirm("), true); // the plan is the patient's own, not a copy
+  assertEquals(handler.includes("autoConfirmable(built.draft)"), true);
+  assertEquals(handler.includes("planConfirm(s, ConfirmDocRequest.parse("), true); // the plan is the patient's own, not a copy
+  assertEquals(handler.includes("store.confirm("), false); // the store confirms inside the save, not a second call after a visible draft
 });
 
 Deno.test("the store's statements carry the mark: confirm sets it from the caller, unconfirm and open clear it, only on the owner's confirmed row", () => {
   const pg = code("_shared/pgstore.ts");
   const part = (from: string, to?: string) => pg.slice(pg.indexOf(from), to ? pg.indexOf(to, pg.indexOf(from) + 1) : undefined);
-  assertEquals(part("async confirm(").includes("unchecked = $4::boolean"), true);
-  assertEquals(part("async confirm(").includes("opts?.unchecked === true"), true);
+  assertEquals(pg.includes("unchecked = $4::boolean"), true); // in writeConfirm, the one writer
+  assertEquals(part("async confirm(").includes("writeConfirm(tx, S, docId, outcome.plan, opts?.unchecked === true)"), true);
+  const save = part("async saveExtraction(", "async deleteUnsaved(");
+  assertEquals(save.includes("writeConfirm(tx, S, docId, o.plan, true)"), true); // automatic: marked
+  assertEquals(save.indexOf("writeConfirm(") > save.indexOf("insert into ${S}.findings"), true); // after the rows are in, same transaction
   const un = part("async unconfirm(", "async markOpened(");
   assertEquals(un.includes("set status = 'draft', confirmed_at = null, unchecked = false where id = $1::uuid and patient_id = $2::uuid and status = 'confirmed'"), true);
   assertEquals(un.includes("[docId, patientId], true)"), true); // the row is locked in the transaction

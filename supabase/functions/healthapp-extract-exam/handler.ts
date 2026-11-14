@@ -17,7 +17,7 @@ import {
   type HealthappEnv,
   type RefusalReason,
 } from "../_shared/contract.ts";
-import { type Auth, authenticate, type Blobs, type DocState, planConfirm, readJson, type Store } from "../_shared/docs.ts";
+import { type Auth, authenticate, autoConfirmable, type Blobs, type DocState, planConfirm, readJson, type Store } from "../_shared/docs.ts";
 import { build, EXTRACT_SYSTEM, ModelExtract } from "../_shared/extract.ts";
 import { fail, headersFor, json } from "../_shared/http.ts";
 import { matchIdentity } from "../_shared/identity.ts";
@@ -40,7 +40,6 @@ export interface Deps {
     | "roleOf"
     | "getOwn"
     | "claimForReading"
-    | "confirm"
     | "identityOf"
     | "saveExtraction"
     | "markRefused"
@@ -162,15 +161,21 @@ async function readInBackground(
     const who_ = matchIdentity(profile, built.draft.printed_name, built.draft.printed_id);
     if (!who_.ok) return await refused(who_.reason, info);
 
-    const saved = await deps.store.saveExtraction(env, uid, id, built.draft, sha, who_.status);
+    // The founder's choice (2026-11-14, MIN-4555 addendum): a reading that got this far is saved with no tap. The store
+    // confirms it in the same transaction that saves it, with the patient's own confirm plan (so the same record hash)
+    // and the row marked unchecked until its owner opens it. It is the store's one confirm writer, not a second path.
+    // A reading that fails the test, or a plan the shared code refuses, is saved as a draft for the patient to confirm.
+    const auto = autoConfirmable(built.draft);
+    const saved = await deps.store.saveExtraction(
+      env, uid, id, built.draft, sha, who_.status,
+      auto ? { plan: (s) => planConfirm(s, ConfirmDocRequest.parse({ doc_id: id })) } : undefined,
+    );
     if (!saved) {
       deps.log({ fn: "extract-exam", status: "not_saved", ms: deps.now() - started }); // deleted or swept meanwhile
       return;
     }
-    // The founder's choice (2026-11-14, MIN-4555 addendum): a reading that got this far is saved with no tap, through
-    // the same confirm code as the patient's own confirm (so the same record hash), marked unchecked until its owner opens it.
-    // It is not a second path that writes `confirmed`. Anything the test below refuses stays a draft for the patient to confirm.
-    const kept = await autoConfirm(deps, { env, uid, saved });
+    const kept = saved.document.status === "confirmed";
+    if (!kept) deps.log({ fn: "extract-exam", pass: "auto_confirm", status: "skipped", why: auto ? "plan_refused" : "conditions" });
     deps.log({
       fn: "extract-exam", status: kept ? "confirmed" : "draft", ...info, results: saved.results.length,
       findings: saved.findings.length, ms: deps.now() - started,
@@ -180,7 +185,7 @@ async function readInBackground(
     // A failure is a row with a code, never a reason to fail the reading.
     const room = left();
     await analyseFile(deps, {
-      env, patientId: uid, state: kept ?? saved, bytes,
+      env, patientId: uid, state: saved, bytes,
       budgetMs: room < MIN_ANALYSIS_MS ? 0 : Math.min(ANALYSIS_BUDGET_MS, room),
     }).catch((e) => deps.log({ fn: "extract-exam", pass: "analysis", status: "not_saved", err: (e as Error)?.name ?? "error" }));
   } catch (e) {
@@ -189,28 +194,4 @@ async function readInBackground(
       await deps.store.markFailed(env, uid, id, "error");
     } catch { /* the sweep marks it stuck */ }
   }
-}
-
-/** The test for saving a reading with no tap (CTO, MIN-4555 addendum §1). The reading succeeded and the identity check did
- *  not refuse by the time this runs; the row must also say what kind of exam it is and carry at least one result or
- *  finding. Then the shared confirm runs. It returns the confirmed row, or null and the row stays a draft (never a failure:
- *  the reading is saved either way, and a draft is what the patient confirms by hand). */
-async function autoConfirm(
-  deps: Deps,
-  ctx: { env: HealthappEnv; uid: string; saved: DocState },
-): Promise<DocState | null> {
-  const { env, uid, saved } = ctx;
-  if (saved.document.kind === null || saved.results.length + saved.findings.length === 0) return null;
-  try {
-    const r = await deps.store.confirm(
-      env, uid, saved.document.id,
-      (s) => planConfirm(s, ConfirmDocRequest.parse({ doc_id: saved.document.id })),
-      { unchecked: true },
-    );
-    if (r && "state" in r) return r.state;
-    deps.log({ fn: "extract-exam", pass: "auto_confirm", status: "skipped", why: r ? "plan_refused" : "row_gone" });
-  } catch (e) {
-    deps.log({ fn: "extract-exam", pass: "auto_confirm", status: "skipped", why: "exception", err: (e as Error)?.name ?? "error" });
-  }
-  return null;
 }

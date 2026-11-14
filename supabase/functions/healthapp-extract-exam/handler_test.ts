@@ -4,7 +4,7 @@ import { ModelAnalysis } from "../_shared/analysis.ts";
 import type { ModelExtract } from "../_shared/extract.ts";
 import { ModelError } from "../_shared/model.ts";
 import { call, fakeAuth, fakeBlobs, fakeStore, PATIENT, PATIENT2 } from "../_shared/testkit_docs.ts";
-import { MAX_READS } from "../_shared/docs.ts";
+import { autoConfirmable, MAX_READS } from "../_shared/docs.ts";
 import { makeHandler as makeConfirm } from "../healthapp-confirm-doc/handler.ts";
 import { makeHandler as makeUnconfirm } from "../healthapp-unconfirm-doc/handler.ts";
 import { ANALYSIS_BUDGET_MS, makeHandler, READ_BUDGET_MS, TOTAL_BUDGET_MS } from "./handler.ts";
@@ -442,60 +442,57 @@ Deno.test("the analysis gets 45 s, or what is left of 120 s; under 15 s left its
 // --- MIN-4555 addendum: a successful reading is saved with no tap -------------------------------------------------
 const row = (t: ReturnType<typeof setup>, id: string) => t.s.docs.get(id)!.document;
 
-Deno.test("a reading that passes identity is saved with no tap: confirmed, confirmed_at and the record hash set, unchecked", async () => {
+Deno.test("a reading that passes identity is saved with no tap: confirmed, confirmed_at and the record hash set, unchecked; one save call, no draft step", async () => {
   const t = setup();
   const d = await newDoc(t);
   const { doc } = await kick(t, d.id);
   assertEquals([doc?.document.status, doc?.document.unchecked, doc?.document.confirmed_at === null], ["confirmed", true, false]);
   assertEquals(/^[0-9a-f]{64}$/.test(doc?.meta.sha256_record ?? ""), true);
-  assertEquals(t.s.calls.filter((c) => c === "confirm").length, 1); // through the one confirm, not a second path
+  // the confirm happens inside the save (one transaction in the real store), never as a second call after a visible draft
+  assertEquals(t.s.calls.filter((c) => c === "saveExtraction").length, 1);
+  assertEquals(t.s.calls.includes("confirm"), false);
   assertEquals(t.logs.find((l) => l.status === "confirmed")?.results, 2);
 });
 
-Deno.test("each condition of the automatic save, missing alone, leaves the reading unsaved: failed, refused, or a draft", async () => {
+Deno.test("the four conditions of the automatic save, each missing alone: a reading with no kind, no result and no finding is not saved automatically", () => {
+  const ok = { kind: "blood_test", results: [{}], findings: [] as unknown[] };
+  assertEquals(autoConfirmable(ok), true);
+  assertEquals(autoConfirmable({ ...ok, results: [], findings: [{}] }), true); // a finding alone is enough
+  assertEquals(autoConfirmable({ ...ok, kind: null }), false);
+  assertEquals(autoConfirmable({ ...ok, results: [], findings: [] }), false);
+});
+
+Deno.test("a reading that failed or was refused is never saved automatically; the store is not asked to confirm anything", async () => {
   // reading failed: no row to save
   const failedT = setup(new ModelError("http", 500, 2));
   const f = await newDoc(failedT);
   await kick(failedT, f.id);
-  assertEquals([row(failedT, f.id).status, failedT.s.calls.includes("confirm")], ["failed", false]);
-  // identity refused: refused, and the confirm is never asked
+  assertEquals([row(failedT, f.id).status, failedT.s.calls.includes("saveExtraction")], ["failed", false]);
+  // identity refused: refused, nothing saved
   const refusedT = setup({ ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", printed_id: "AB654321" });
   const r = await newDoc(refusedT);
   await kick(refusedT, r.id);
-  assertEquals([row(refusedT, r.id).status, refusedT.s.calls.includes("confirm")], ["refused", false]);
-  // the saved row has no kind: stays a draft for the patient
-  const noKind = setup();
-  const k = await newDoc(noKind);
-  const save1 = noKind.s.store.saveExtraction;
-  noKind.s.store.saveExtraction = async (...a) => {
-    const saved = await save1(...a);
-    if (saved) saved.document = { ...saved.document, kind: null as never };
-    return saved;
-  };
-  await kick(noKind, k.id);
-  assertEquals([row(noKind, k.id).status, row(noKind, k.id).unchecked, noKind.s.calls.includes("confirm")], ["draft", false, false]);
-  // no result and no finding was saved: stays a draft
-  const empty = setup();
-  const e = await newDoc(empty);
-  const save2 = empty.s.store.saveExtraction;
-  empty.s.store.saveExtraction = async (...a) => {
-    const saved = await save2(...a);
-    if (saved) { saved.results = []; saved.findings = []; }
-    return saved;
-  };
-  await kick(empty, e.id);
-  assertEquals([row(empty, e.id).status, empty.s.calls.includes("confirm")], ["draft", false]);
+  assertEquals([row(refusedT, r.id).status, refusedT.s.calls.includes("saveExtraction")], ["refused", false]);
 });
 
-Deno.test("a confirm the shared code refuses leaves the reading a draft; the reading is not failed and the analysis still runs", async () => {
+Deno.test("the store is handed the patient's own confirm plan only when the test holds, and a plan the shared code refuses leaves a draft", async () => {
+  // test not met: the model's rows are all unusable is refused earlier (incomplete), so the handler passes no plan for a kind-less draft
   const t = setup();
   const d = await newDoc(t);
-  const real = t.s.store.confirm;
-  t.s.store.confirm = (...a) => { a[3] = () => Promise.resolve({ kind: "error", status: 400, code: "bad_request", message: "x" }); return real(...a); };
-  const { doc, x } = await kick(t, d.id);
+  let handed: unknown = "unset";
+  const orig = t.s.store.saveExtraction;
+  t.s.store.saveExtraction = (...a) => { handed = a[6]; return orig(...a); };
+  await kick(t, d.id);
+  assertEquals(typeof (handed as { plan?: unknown })?.plan, "function");
+  // a refused plan: the reading is kept as a draft, not failed, and the analysis still runs
+  const t2 = setup();
+  const d2 = await newDoc(t2);
+  const orig2 = t2.s.store.saveExtraction;
+  t2.s.store.saveExtraction = (...a) => orig2(a[0], a[1], a[2], a[3], a[4], a[5], { plan: () => Promise.resolve({ kind: "error", status: 400, code: "bad_request", message: "x" }) });
+  const { doc, x } = await kick(t2, d2.id);
   assertEquals([doc?.document.status, doc?.document.unchecked, x?.reason], ["draft", false, null]);
-  assertEquals(t.logs.find((l) => l.pass === "auto_confirm")?.why, "plan_refused");
-  assertEquals(t.analysisCalls(), 1);
+  assertEquals(t2.logs.find((l) => l.pass === "auto_confirm")?.why, "plan_refused");
+  assertEquals(t2.analysisCalls(), 1);
 });
 
 Deno.test("automatic and manual confirm give the same record hash for the same data (unconfirm, then confirm by hand)", async () => {
