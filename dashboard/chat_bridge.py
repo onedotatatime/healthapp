@@ -650,9 +650,9 @@ class Chat:
             sess["pending"] = False
             if cost and not cost_booked:
                 self.ledger.append((self.now(), cost))
-            self.turns.pop(sid, None)
             self._save(sess)
             self._log("turn kind=answer agent=%s sid=%s result=%s seconds=%d cost=%.4f" % (agent, sid[:8], outcome, seconds, cost))
+            self.turns.pop(sid, None)            # last: "no turn running" is only true once the transcript and the log line are written
 
     def _make_proposal(self, raw, row):
         """Validate the agent's proposal before the founder sees it (run 1 only shows it; a Yes is `act_off`). `row` is the row check's
