@@ -4,9 +4,9 @@ import { expect, test, type Page } from '@playwright/test';
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
 const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const jwt = (sub: string) => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub, role: 'authenticated', aud: 'authenticated', exp: 4102444800 })}.sig`;
-const PROFILES: Record<string, { id: string; role: 'patient' | 'doctor'; display_name: string }> = {
-  'p-1': { id: 'p-1', role: 'patient', display_name: 'Maria (synthetic)' },
-  'd-1': { id: 'd-1', role: 'doctor', display_name: 'Doctor (synthetic)' },
+const PROFILES: Record<string, { id: string; role: 'patient' | 'doctor'; full_name: string }> = {
+  'p-1': { id: 'p-1', role: 'patient', full_name: 'Maria (synthetic)' },
+  'd-1': { id: 'd-1', role: 'doctor', full_name: 'Doctor (synthetic)' },
 };
 
 async function mockBackend(page: Page) {
@@ -18,9 +18,9 @@ async function mockBackend(page: Page) {
     if (url.pathname === '/functions/v1/healthapp-hello') return json(200, { ok: true });
     if (url.pathname === '/functions/v1/healthapp-demo-login') {
       const { persona, passcode } = req.postDataJSON() as { persona: 'patient' | 'doctor'; passcode: string };
-      if (passcode !== 'letmein') return json(403, { error: 'bad passcode' });
+      if (passcode !== 'letmein') return json(401, { error: { code: 'bad_passcode', message: 'bad passcode' } });
       const sub = persona === 'patient' ? 'p-1' : 'd-1';
-      return json(200, { session: { access_token: jwt(sub), refresh_token: `r-${sub}` }, role: persona });
+      return json(200, { access_token: jwt(sub), refresh_token: `r-${sub}`, expires_at: 4102444800, user_id: sub, persona, role: persona });
     }
     const sub = JSON.parse(Buffer.from((req.headers()['authorization'] ?? '').split('.')[1] ?? 'e30', 'base64url').toString()).sub as string | undefined;
     if (url.pathname === '/auth/v1/user') return json(200, { id: sub, aud: 'authenticated', role: 'authenticated', email: `${sub}@healthapp.invalid`, app_metadata: {}, user_metadata: {}, created_at: '2026-11-14T00:00:00Z' });
