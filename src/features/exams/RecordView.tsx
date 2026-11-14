@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router';
 import { ErrorNote, Spinner } from '../../components/Primitives';
 import { ProvenanceMark } from '../../components/ProvenanceMark';
 import { useExams } from './context';
@@ -8,15 +8,19 @@ import { FIXED_LINE, docMarks, KIND_LABEL, formatDate, isOutOfRange, printedRang
 
 /** A saved record: its values, the out-of-range marks, the findings in the document's own words, and the original photo. */
 export function RecordView() {
-  const { api, home } = useExams();
+  const { api, base, home } = useExams();
+  const nav = useNavigate();
   const { id = '' } = useParams();
   const saved = (useLocation().state as { saved?: boolean } | null)?.saved === true;
   const [rec, setRec] = useState<RecordFull | null>(null);
   const [failed, setFailed] = useState(false);
   const [photo, setPhoto] = useState<string | 'error' | null>(null);
+  const [unconfirming, setUnconfirming] = useState(false);
+  const [unconfirmError, setUnconfirmError] = useState(false);
 
   useEffect(() => {
     let live = true;
+    void api.openExam(id); // opening clears the "not checked" mark, on the server
     api.getRecord(id).then((r) => live && setRec(r), () => live && setFailed(true));
     api.photoUrl(id).then((u) => live && setPhoto(u), () => live && setPhoto('error'));
     return () => { live = false; };
@@ -25,9 +29,22 @@ export function RecordView() {
   if (failed) return <main className="page"><ErrorNote tone="caution">We could not open this record.</ErrorNote><p style={{ marginTop: 'var(--space-4)' }}><Link to={home} className="btn block">Back to your record</Link></p></main>;
   if (!rec) return <main className="page"><Spinner label="Loading" /></main>;
   const d = rec.document;
+  if (d.status === 'draft') return <Navigate to={`${base}/${id}/review`} replace />;
+
+  async function unconfirm() {
+    setUnconfirming(true);
+    setUnconfirmError(false);
+    try {
+      await api.unconfirm(id);
+      nav(`${base}/${id}/review`);
+    } catch {
+      setUnconfirming(false);
+      setUnconfirmError(true);
+    }
+  }
 
   return (
-    <main className="page" data-testid="record-view">
+    <main className="page wide" data-testid="record-view">
       {saved && <div className="saved" role="status" data-testid="saved">Saved to your record.</div>}
       <p><Link to={home} className="back">Back to your record</Link></p>
       <h1>{KIND_LABEL[d.kind]}</h1>
@@ -36,7 +53,15 @@ export function RecordView() {
         {docMarks(d).map((k) => <ProvenanceMark key={k} kind={k} />)}
       </div>
 
-      {rec.results.length > 0 && <h2 style={{ marginTop: 'var(--space-6)' }}>Results</h2>}
+      <div className="review">
+      <figure className="photo">
+        {photo === null && <Spinner label="Loading the photo" />}
+        {photo === 'error' && <p className="muted">The photo could not be loaded.</p>}
+        {photo && photo !== 'error' && <img src={photo} alt="The original photo of the exam" data-testid="original-photo" />}
+      </figure>
+      <div className="fields">
+      <p className="muted small" data-testid="readonly-note">Saved to your record. To change a value, unconfirm it, fix it, and save it again.</p>
+      {rec.results.length > 0 && <h2>Results</h2>}
       <ul className="rows">
         {rec.results.map((r) => {
           const range = printedRange(r);
@@ -67,10 +92,13 @@ export function RecordView() {
 
       <p className="fixed-line" data-testid="fixed-line">{FIXED_LINE}</p>
 
-      <h2 style={{ marginTop: 'var(--space-6)' }}>Original photo</h2>
-      {photo === null && <Spinner label="Loading the photo" />}
-      {photo === 'error' && <p className="muted">The photo could not be loaded.</p>}
-      {photo && photo !== 'error' && <img className="orig" src={photo} alt="The original photo of the exam" data-testid="original-photo" />}
+      {unconfirmError && <ErrorNote tone="caution">It was not unconfirmed. Try again.</ErrorNote>}
+      <div className="btn-stack" style={{ marginTop: 'var(--space-4)' }}>
+        <button type="button" className="btn block" disabled={unconfirming} onClick={() => void unconfirm()} data-testid="unconfirm">{unconfirming ? 'Unconfirming' : 'Unconfirm'}</button>
+      </div>
+      <p className="muted small">Unconfirmed, this exam leaves your doctor's view until you save it again.</p>
+      </div>
+      </div>
     </main>
   );
 }

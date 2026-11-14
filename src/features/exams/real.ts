@@ -8,13 +8,13 @@ import {
   DocCreateResponse,
   DocPhotoResponse,
   DocumentRow,
-  ExtractResponse,
   FINDING_COLUMNS,
   FindingRow,
   RESULT_COLUMNS,
   ResultRow,
 } from '../../api/contract';
 import type { ExamsApi } from './logic';
+import { AnyBody, ExamDeleteResponse, ExamDraftResponse, ExtractAccepted, FN, MyExamsResponse, UnconfirmResponse } from './scanApi';
 
 function need() {
   if (!supabase || !callFunction) throw new ApiError(0, 'Not configured.');
@@ -46,9 +46,38 @@ export const realApi: ExamsApi = {
     const { error } = await sb.storage.from(doc.bucket).uploadToSignedUrl(doc.path, doc.token, blob, { contentType: 'image/jpeg' });
     if (error) throw new ApiError(0, 'The upload did not finish.');
   },
-  async extract(docId, signal) {
+  async kick(docId) {
+    try {
+      const { callFunction: call } = need();
+      // keepalive: once the request has left the phone, closing the tab changes nothing. The answer is ignored.
+      await call(FN.kick, { doc_id: docId }, ExtractAccepted, { accessToken: await token(), keepalive: true });
+    } catch {
+      /* the row stays waiting; the list offers Try again once the server's sweep marks it */
+    }
+  },
+  async listExams() {
     const { callFunction: call } = need();
-    return call('extract-exam', { doc_id: docId }, ExtractResponse, { accessToken: await token(), signal });
+    return (await call(FN.list, {}, MyExamsResponse, { accessToken: await token() })).exams;
+  },
+  async getDraft(docId) {
+    const { callFunction: call } = need();
+    return (await call(FN.list, { doc_id: docId }, ExamDraftResponse, { accessToken: await token() })).draft;
+  },
+  async openExam(docId) {
+    try {
+      const { callFunction: call } = need();
+      await call(FN.list, { doc_id: docId }, AnyBody, { accessToken: await token() });
+    } catch {
+      /* the mark stays until the next open */
+    }
+  },
+  async deleteExam(docId) {
+    const { callFunction: call } = need();
+    await call(FN.del, { doc_id: docId }, ExamDeleteResponse, { accessToken: await token() });
+  },
+  async unconfirm(docId) {
+    const { callFunction: call } = need();
+    await call(FN.unconfirm, { doc_id: docId }, UnconfirmResponse, { accessToken: await token() });
   },
   async confirm(req) {
     const { callFunction: call } = need();

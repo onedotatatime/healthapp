@@ -7,10 +7,10 @@ import {
   type DocCreateResponse,
   type DocumentDraft,
   type DocumentRow,
-  type ExtractResponse,
   type RefusalReason,
   type ResultRow,
 } from '../../api/contract';
+import type { ExamListItem } from './scanApi';
 
 /** One call surface for the screens. `real.ts` talks to Cron's functions, `mock.ts` to in-memory fixtures. */
 export interface RecordSummary {
@@ -26,7 +26,17 @@ export type ConfirmInput = z.input<typeof ConfirmDocRequest>;
 export interface ExamsApi {
   createDoc(sizeBytes: number): Promise<DocCreateResponse>;
   upload(doc: DocCreateResponse, blob: Blob): Promise<void>;
-  extract(docId: string, signal?: AbortSignal): Promise<ExtractResponse>;
+  /** The kick (MIN-4556): starts the reading in the background. keepalive, never waited on, never throws; its answer is ignored. */
+  kick(docId: string): Promise<void>;
+  /** "My exams": every upload of the caller, newest first. */
+  listExams(): Promise<ExamListItem[]>;
+  /** The stored draft, for the review. */
+  getDraft(docId: string): Promise<DocumentDraft>;
+  /** Opening a saved exam: the server clears its "not checked" mark. Never throws. */
+  openExam(docId: string): Promise<void>;
+  deleteExam(docId: string): Promise<void>;
+  /** confirmed -> draft, owner only. */
+  unconfirm(docId: string): Promise<void>;
   confirm(req: ConfirmInput): Promise<{ document: DocumentRow }>;
   listRecords(): Promise<RecordSummary[]>;
   getRecord(id: string): Promise<RecordFull>;
@@ -138,22 +148,24 @@ export function failureOf(e: unknown): Failure {
 }
 
 // ---------------------------------------------------------------------------------------------
-// The read: create the draft, upload, extract. Remembers what already worked so a retry never asks
-// for a second photo because the Wi-Fi blinked (PRD 12.2).
+// The scan (MIN-4557): create the row, upload, kick. Nothing waits for the reading: the result is the row's status
+// in "My exams". Remembers what already worked so a retry never asks for a second photo because the Wi-Fi blinked.
 // ---------------------------------------------------------------------------------------------
-export interface ReadCtx {
+export interface ScanCtx {
   blob: Blob;
   docId?: string;
   uploaded?: boolean;
 }
-export type ReadResult =
-  | { phase: 'review'; draft: DocumentDraft }
-  | { phase: 'refused'; view: RefusalView }
-  | { phase: 'failed'; failure: Failure };
+export type ScanResult = { phase: 'saved'; docId: string } | { phase: 'failed'; failure: Failure };
 
-export const EXTRACT_LIMIT_MS = 60_000;
+/** The scan screen's one failure sentence (the photo is kept for the retry); an ended session still says so. */
+export function scanFailureOf(e: unknown): Failure {
+  const f = failureOf(e);
+  if (f.kind === 'session') return f;
+  return { kind: 'photo', title: 'The photo was not saved.', body: 'Try again.' };
+}
 
-export async function readExam(api: ExamsApi, ctx: ReadCtx, limitMs = EXTRACT_LIMIT_MS): Promise<ReadResult> {
+export async function scanPhoto(api: ExamsApi, ctx: ScanCtx): Promise<ScanResult> {
   try {
     if (!ctx.docId || !ctx.uploaded) {
       ctx.docId = undefined;
@@ -162,30 +174,80 @@ export async function readExam(api: ExamsApi, ctx: ReadCtx, limitMs = EXTRACT_LI
       ctx.docId = doc.doc_id;
       ctx.uploaded = true;
     }
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), limitMs);
-    let res: ExtractResponse;
-    try {
-      res = await api.extract(ctx.docId, ac.signal);
-    } finally {
-      clearTimeout(timer);
-    }
-    if (res.outcome === 'refused') {
-      // Nothing is saved and the server deleted the upload: the next photo starts from a clean slate.
-      ctx.docId = undefined;
-      ctx.uploaded = false;
-      return { phase: 'refused', view: refusalView(res.reason) };
-    }
-    if (res.outcome === 'queued') {
-      // MIN-4556: the reading now runs in the background (202 at once). The scan screen of MIN-4557 replaces this wait;
-      // until it lands, a deployed extract-exam must not reach this screen.
-      return { phase: 'failed', failure: failureOf(new ApiError(202, 'The reading runs in the background.')) };
-    }
-    return { phase: 'review', draft: res.draft };
+    // Fire and forget: the reading runs on the server; the screen is already free for the next photo.
+    void api.kick(ctx.docId);
+    return { phase: 'saved', docId: ctx.docId };
   } catch (e) {
-    return { phase: 'failed', failure: failureOf(e) };
+    return { phase: 'failed', failure: scanFailureOf(e) };
   }
 }
+
+// ---------------------------------------------------------------------------------------------
+// "My exams": one row per upload. The status table (MIN-4555 and its addendum). Wording is Product's placeholder.
+// No cause, no condition, no advice, no score in any row (N1).
+// ---------------------------------------------------------------------------------------------
+export const POLL_MS = 4000;
+
+/** Ask again while any row is waiting or reading; stop when none is. */
+export const shouldPoll = (items: Pick<ExamListItem, 'status'>[]): boolean => items.some((i) => i.status === 'queued' || i.status === 'reading');
+
+export type ChipTone = 'neutral' | 'ready' | 'saved' | 'caution';
+export interface RowView {
+  chip: string;
+  tone: ChipTone;
+  /** What the row does when pressed: open the review, open the saved exam, or nothing. */
+  opens: 'review' | 'record' | null;
+  /** The plain sentence for a refused or failed row. */
+  reason: string | null;
+  /** The "not checked" mark: a confirmed exam read automatically that the owner has not opened. */
+  notChecked: boolean;
+  retry: boolean;
+  del: boolean;
+}
+
+const IDENTITY_REASONS = new Set(['name_missing', 'name_mismatch', 'id_mismatch']);
+const REFUSAL_REASONS = new Set(['unreadable', 'unsupported_kind', 'incomplete', ...IDENTITY_REASONS]);
+export const FALLBACK_REASON = 'We could not read this file.';
+
+/** One plain sentence per reason code. Refusals reuse the review screen's wording (MIN-4478); no printed name, ever. */
+export function reasonText(reason: string | null): string {
+  if (reason && REFUSAL_REASONS.has(reason)) {
+    const v = refusalView(reason as RefusalReason);
+    return `${v.title} ${v.body}`;
+  }
+  switch (reason) {
+    case 'model_timeout': return 'The reader took too long. Your photo is kept. Try again.';
+    case 'model_http': return 'The reader is busy right now. Your photo is kept. Try again in a moment.';
+    case 'model_invalid': return 'We could not read this photo. Your photo is kept. Try again.';
+    case 'config': return 'Reading is not available right now. Your photo is kept.';
+    case 'too_many_attempts': return 'We tried three times and could not read it. Delete it and scan it again.';
+    case 'stuck': return 'This took too long. Your photo is kept. Try again.';
+    case 'no_file': return 'The photo did not arrive. Scan it again.';
+    case 'delete_failed': return 'We could not remove this photo. Delete it and scan it again.';
+    case 'unsupported_type': return 'That file is not a photo. Delete it and scan the paper again.';
+    default: return FALLBACK_REASON;
+  }
+}
+
+/** The status table: which chip, what the row opens, which actions it offers. */
+export function rowView(i: Pick<ExamListItem, 'status' | 'reason' | 'can_retry' | 'can_delete' | 'unchecked'>): RowView {
+  const base = { opens: null, reason: null, notChecked: false, retry: false, del: false } as const;
+  switch (i.status) {
+    case 'queued': return { ...base, chip: 'Waiting', tone: 'neutral' };
+    case 'reading': return { ...base, chip: 'Reading', tone: 'neutral' };
+    case 'draft': return { ...base, chip: 'Ready to check', tone: 'ready', opens: 'review' };
+    case 'confirmed': return { ...base, chip: 'Saved', tone: 'saved', opens: 'record', notChecked: i.unchecked === true };
+    case 'refused': {
+      const identity = !!i.reason && IDENTITY_REASONS.has(i.reason);
+      const chip = identity ? 'Not your exam' : i.reason === 'unsupported_kind' ? 'Not an exam' : 'Could not read';
+      // The file is gone after a refusal: Delete only, no Try again.
+      return { ...base, chip, tone: 'caution', reason: reasonText(i.reason), del: i.can_delete };
+    }
+    case 'failed': return { ...base, chip: 'Could not read', tone: 'caution', reason: reasonText(i.reason), retry: i.can_retry, del: i.can_delete };
+  }
+}
+
+export const valuesReadText = (n: number | null) => (n == null ? null : `${n} ${n === 1 ? 'value' : 'values'} read`);
 
 // ---------------------------------------------------------------------------------------------
 // The review form (A2): what the patient may change, and the diff that goes to confirm-doc.
