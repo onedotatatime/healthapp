@@ -6,7 +6,7 @@
 #   dashboard/pages-bundle.sh <out-dir>
 #   npx wrangler pages deploy <out-dir> --project-name healthapp-dashboard --branch main
 #
-# Fails if the folder would contain a dev fixture, a resource loaded from another host,
+# Fails if the folder would contain a dev fixture or any *.json, a resource loaded from another host,
 # or a key-shaped value.
 set -euo pipefail
 
@@ -34,6 +34,10 @@ HTML
 fail=0
 if find "$OUT" \( -name 'dev-snapshot.json' -o -path '*/dev/*' -o -name 'snapshot.example.json' \) | grep -q .; then
   echo "dev fixture in the upload set" >&2; fail=1
+fi
+# The page loads no JSON; any *.json here is a fixture, renamed or not (CTO change 2, MIN-4458).
+if find "$OUT" -type f -iname '*.json' | grep . >&2; then
+  echo "json file in the upload set" >&2; fail=1
 fi
 # Anything the browser would load from another host (links to Linear are fine, loads are not).
 LOADS='(src|href)=["'"'"']https?://[^"'"'"']*\.(js|css|woff2?|ttf)|<link[^>]+href=["'"'"']https?://|url\(["'"'"']?https?://|@import|preconnect'
