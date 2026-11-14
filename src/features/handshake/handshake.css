@@ -1,0 +1,51 @@
+/* Handshake screens (MIN-4485). Tokens are Pix's Drop 0; the night scene is the QR screen only. */
+.hs-night{min-height:100dvh;background:var(--night);color:var(--night-ink);padding:var(--space-6) var(--space-4) var(--space-8);display:flex;flex-direction:column;align-items:center;text-align:center}
+.hs-title{font:var(--text-h2);margin:var(--space-3) 0 var(--space-4);color:var(--night-ink)}
+.hs-night :focus-visible{outline:2px solid var(--night-ink);outline-offset:2px}
+.hs-stage{position:relative;width:100%;max-width:390px;overflow:hidden}
+.hs-helix{position:absolute;left:50%;top:0;transform:translateX(-50%);max-width:none}
+.hs-card{position:absolute;left:50%;transform:translateX(-50%);background:#fff;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}
+.hs-card svg{display:block}
+.hs-card-expired{margin:0;padding:var(--space-4);color:var(--qr-ink);font:var(--text-h2)}
+.hs-valid{font:var(--text-patient-body);margin:var(--space-4) 0 var(--space-1);color:var(--night-ink)}
+.hs-code{font:var(--text-code);letter-spacing:.08em;margin:0 0 var(--space-4);color:var(--night-ink)}
+.hs-actions{display:flex;flex-direction:column;align-items:center;gap:var(--space-3)}
+.hs-btn{min-width:160px;color:var(--night-ink);border-color:var(--night-ink)}
+.hs-link{background:none;border:0;color:var(--night-ink-2);font:var(--text-label);text-decoration:underline;cursor:pointer;min-height:44px;padding:0 var(--space-3);display:inline-flex;align-items:center}
+.hs-hint{font:var(--text-doctor-body);color:var(--night-ink-2);max-width:320px;margin:var(--space-3) 0 0}
+.hs-wait,.hs-error{margin:var(--space-6) 0;color:var(--night-ink-2)}
+.hs-wait .spinner{color:var(--night-ink-2)}
+.hs-error{max-width:360px;text-align:left}
+.hs-ended h1{margin-top:var(--space-6)}
+
+/* doctor */
+.hs-scan{position:relative;aspect-ratio:4/3;max-width:560px;background:var(--night);border-radius:var(--radius-md);overflow:hidden;margin:0 0 var(--space-6);display:flex;align-items:center;justify-content:center}
+.hs-scan video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hs-hidden{display:none}
+.hs-frame{position:absolute;inset:18%;border:3px solid var(--helix-patient);border-radius:var(--radius-md);pointer-events:none}
+.hs-scan-note{position:relative;margin:0;padding:var(--space-4);color:var(--night-ink);font:var(--text-doctor-body);text-align:center}
+.hs-scan-foreign{position:absolute;left:var(--space-3);right:var(--space-3);bottom:var(--space-3);margin:0;padding:var(--space-2) var(--space-3);background:var(--amber-bg);color:var(--amber-ink);border-radius:var(--radius-md);font:var(--text-doctor-body)}
+.hs-typed{display:flex;gap:var(--space-3);align-items:flex-end;flex-wrap:wrap;margin-bottom:var(--space-2)}
+.hs-typed .field{flex:1 1 220px;margin:0}
+.hs-typed .field input{font:var(--text-code);font-size:20px;letter-spacing:.08em;min-height:var(--tap-doctor)}
+.hs-typed .btn{min-height:var(--tap-doctor)}
+.hs-doctor-actions{max-width:360px}
+
+/* entry bar on the two home screens */
+.hs-entry{position:sticky;bottom:0;padding:var(--space-3) var(--space-4) var(--space-4);background:var(--paper);border-top:1px solid var(--line);max-width:480px;margin:0 auto}
+
+/* preview page */
+.hs-preview{padding:var(--space-4);font:var(--text-doctor-body)}
+.hs-preview h1{font:var(--text-h1)}
+.hs-controls{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center;margin:var(--space-3) 0 var(--space-4);padding:var(--space-3);border:1px solid var(--line-strong);border-radius:var(--radius-md);background:var(--surface)}
+.hs-controls label{display:flex;gap:var(--space-2);align-items:center}
+.hs-controls select,.hs-controls button{min-height:36px;font:var(--text-doctor-body);padding:0 var(--space-2)}
+.hs-panes{display:flex;flex-wrap:wrap;gap:var(--space-4);align-items:flex-start}
+.hs-pane{width:390px;max-width:100%}
+.hs-pane>h2{font:var(--text-label);margin:0 0 var(--space-2);color:var(--ink-2)}
+.hs-pane-box{height:780px;overflow:auto;border:1px solid var(--line-strong);border-radius:var(--radius-md);background:var(--paper)}
+.hs-pane-box .hs-night{min-height:100%}
+.hs-pane-box .hs-entry{display:none}
+.hs-pane-box.doctor-side{width:100%}
+
+a.btn{text-decoration:none}

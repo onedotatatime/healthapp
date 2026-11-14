@@ -7,6 +7,10 @@ import { Health } from './Health';
 import { DoctorHome, PatientHome } from './pages/Homes';
 import { Kit } from './pages/Kit';
 import { Login } from './pages/Login';
+import { DoctorConnect } from './features/handshake/DoctorConnect';
+import { HandshakePreview } from './features/handshake/Preview';
+import { PatientShare } from './features/handshake/PatientShare';
+import { ClaimLink, EntryBar } from './features/handshake/routes';
 
 function Root() {
   const { state } = useAuth();
@@ -23,6 +27,12 @@ export function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/patient/*" element={<RequireRole role="patient"><PatientHome /></RequireRole>} />
           <Route path="/doctor/*" element={<RequireRole role="doctor"><DoctorHome /></RequireRole>} />
+          <Route path="/patient" element={<RequireRole role="patient"><PatientHome /><EntryBar to="/patient/share" label="Share with a doctor" /></RequireRole>} />
+          <Route path="/patient/share" element={<RequireRole role="patient"><PatientShare /></RequireRole>} />
+          <Route path="/doctor" element={<RequireRole role="doctor"><DoctorHome /><EntryBar to="/doctor/connect" label="Connect to a patient" /></RequireRole>} />
+          <Route path="/doctor/connect" element={<RequireRole role="doctor"><DoctorConnect /></RequireRole>} />
+          <Route path="/s" element={<ClaimLink />} />
+          <Route path="/preview/handshake" element={<HandshakePreview />} />
           <Route path="/health" element={<Health />} />
           <Route path="/kit" element={<Kit />} />
           <Route path="*" element={<Navigate to="/" replace />} />

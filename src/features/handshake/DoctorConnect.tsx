@@ -1,0 +1,155 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router';
+import { AccessTimer } from '../../components/AccessTimer';
+import { EmptyState, ErrorNote, Spinner } from '../../components/Primitives';
+import { claimErrorMessage } from './api';
+import { localDeadlineIso, mmss, secondsLeft } from './clock';
+import { parseShortCode, typedCode } from './codes';
+import type { HandshakeClaimRequest } from './contract';
+import { ActiveGrantContext, useHandshake } from './context';
+import { grantSeconds, doctorEnded, whoLine } from './messages';
+import { Scanner } from './Scanner';
+import { useGrantSession } from './useGrantSession';
+import './handshake.css';
+
+/** A scanned link (`/s#hs1.<token>`) lands here through sessionStorage: the token never goes in a URL path or query. */
+export const PENDING_TOKEN_KEY = 'healthapp-pending-token';
+
+/** Doctor: scan or type a code, wait for the patient, open the workspace, close it when access ends. */
+export function DoctorConnect() {
+  const { api, home, preview } = useHandshake();
+  const feed = useGrantSession(api, { pollWhenNone: false });
+  const { session } = feed;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const claiming = useRef(false);
+
+  const claim = useCallback(
+    async (input: HandshakeClaimRequest) => {
+      if (claiming.current) return;
+      claiming.current = true;
+      setBusy(true);
+      setError(null);
+      try {
+        feed.accept(await api.claim(input));
+      } catch (e) {
+        setError(claimErrorMessage(e));
+      } finally {
+        claiming.current = false;
+        setBusy(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [api, feed.accept],
+  );
+
+  // A link opened from the patient's phone (or a pasted one): the token waits in sessionStorage until this screen is open.
+  useEffect(() => {
+    const t = sessionStorage.getItem(PENDING_TOKEN_KEY);
+    if (t) {
+      sessionStorage.removeItem(PENDING_TOKEN_KEY);
+      void claim({ token: t } as HandshakeClaimRequest);
+    }
+  }, [claim]);
+
+  // Preview only: "simulate a scan" from the review controls.
+  useEffect(() => {
+    if (!preview) return;
+    const on = (e: Event) => void claim({ token: (e as CustomEvent<string>).detail } as HandshakeClaimRequest);
+    window.addEventListener('hs-preview-scan', on);
+    return () => window.removeEventListener('hs-preview-scan', on);
+  }, [preview, claim]);
+
+  if (session.phase === 'none') {
+    return <Connect busy={busy} error={error} onToken={(token) => void claim({ token } as HandshakeClaimRequest)} onCode={(short_code) => void claim({ short_code } as HandshakeClaimRequest)} home={home} preview={preview} />;
+  }
+  if (session.phase === 'pending') {
+    const g = session.grant;
+    const lapse = g.expires_at ? secondsLeft(g.expires_at, feed.offsetMs, feed.nowMs) : null;
+    return (
+      <main className="page doctor" data-testid="doctor-waiting">
+        <h1>Waiting for {g.patient.full_name}</h1>
+        <p>
+          <Spinner label="They are being asked to approve" />
+        </p>
+        {lapse !== null && <p className="muted">The request ends in {mmss(lapse)}.</p>}
+      </main>
+    );
+  }
+  if (session.phase === 'active') {
+    return <DoctorWorkspace feed={feed} />;
+  }
+  const { title, body } = doctorEnded(session.reason, session.grant);
+  return (
+    <div data-testid="doctor-ended" data-reason={session.reason}>
+      {/* The timer bar says "Access ended"; the workspace is gone from the DOM, not blurred (Pix, section 4). */}
+      {session.reason !== 'refused' && session.grant.approved_at && <AccessTimer surface="doctor" expiresAt={new Date(0).toISOString()} totalSeconds={900} />}
+      <main className="page doctor">
+        <h1>{title}</h1>
+        <p>{body}</p>
+        <div className="btn-stack hs-doctor-actions">
+          <button type="button" className="btn primary" onClick={feed.reset} data-testid="doctor-again">
+            Connect to another patient
+          </button>
+          <Link className="btn" to={home}>
+            Back
+          </Link>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function Connect({ busy, error, onToken, onCode, home, preview }: { busy: boolean; error: string | null; onToken(t: string): void; onCode(c: string): void; home: string; preview: boolean }) {
+  const [typed, setTyped] = useState('');
+  const [typedError, setTypedError] = useState<string | null>(null);
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const c = parseShortCode(typed);
+    if (!c) return setTypedError('The code has 8 letters and numbers, for example K7MQ 4RXD.');
+    setTypedError(null);
+    onCode(c);
+  };
+  return (
+    <main className="page doctor hs-connect" data-testid="doctor-connect">
+      <h1>Connect to a patient</h1>
+      <p className="muted">Scan the code on the patient's phone, or type it.</p>
+      <Scanner active={!busy} onToken={onToken} disabledNote={preview && new URLSearchParams(location.search).get('camera') !== '1' ? 'The camera is off in the preview. Use "Simulate scan" or type the code. (?camera=1 turns it on.)' : undefined} />
+      <form onSubmit={submit} className="hs-typed">
+        <label className="field">
+          <span>Or type the code</span>
+          <input value={typed} onChange={(e) => setTyped(typedCode(e.target.value))} inputMode="text" autoCapitalize="characters" autoComplete="off" spellCheck={false} placeholder="K7MQ 4RXD" aria-describedby="typed-help" data-testid="scan-typed-input" className="mono" />
+        </label>
+        <button type="submit" className="btn primary" disabled={busy || typed.replace(' ', '').length < 8} data-testid="scan-submit">
+          {busy ? 'Checking' : 'Connect'}
+        </button>
+      </form>
+      <p id="typed-help" className="muted" style={{ fontSize: 13 }}>The code works once and lasts two minutes.</p>
+      {(error || typedError) && <ErrorNote>{error ?? typedError}</ErrorNote>}
+      <p>
+        <Link to={home}>Back</Link>
+      </p>
+    </main>
+  );
+}
+
+/**
+ * The workspace shell, open while the grant runs. The overview and the ask box (MIN-4488) go inside it as `children`;
+ * until then it is the empty shell the story asks for. Whatever it shows is removed when access ends (the whole
+ * component unmounts), and a read that comes back empty after data calls `useActiveGrant().onEmptyRead()`.
+ */
+export function DoctorWorkspace({ feed, children }: { feed: ReturnType<typeof useGrantSession>; children?: React.ReactNode }) {
+  if (feed.session.phase !== 'active' || !feed.session.grant.expires_at) return null;
+  const g = feed.session.grant;
+  return (
+    <ActiveGrantContext.Provider value={{ grant: g, onEmptyRead: feed.onEmptyRead }}>
+      <div data-testid="doctor-workspace">
+        <AccessTimer surface="doctor" expiresAt={localDeadlineIso(g.expires_at!, feed.offsetMs)} totalSeconds={grantSeconds(g)} />
+        <main className="page doctor">
+          <h1>{whoLine(g.patient)}</h1>
+          {children ?? <EmptyState>The record opens here. The overview and the ask box arrive with the next story.</EmptyState>}
+        </main>
+      </div>
+    </ActiveGrantContext.Provider>
+  );
+}
