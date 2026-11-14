@@ -43,7 +43,7 @@ const N: Record<string, string[]> = {
     "How do we earn? Not from diagnoses: we never make one. Hospitals pay for the complete history in front of their doctors. An international-patient department pays per case; a clinic chain pays per doctor seat. On our assumptions, year three is between about half a million and five million euros. Compare that with slide 8: better records could save four to seventy-five million a year on tests, in Greece alone. Our customers pay a small share of what the system saves. Every price here is an assumption, and the pilots exist to test it."
   ],
   "12": [
-    "We start where records are thickest and the buyer already wants them. This weekend, here, we look for a clinical champion. Next, an innovation gateway like Sheba's ARC to validate with clinicians. Then the first paying use: hospitals that treat patients from abroad, starting in the UAE. And the rare-disease community, where possible matches matter most. These are targets; we have not contacted anyone yet."
+    "We start where records are thickest and the buyer already wants them. This weekend, here, we look for a clinical champion. Next, an innovation gateway like Mayo Clinic Platform to validate with clinicians. Then the first paying use: hospitals that treat patients from abroad, starting in the UAE. And the rare-disease community, where possible matches matter most. These are targets; we have not contacted anyone yet."
   ],
   "13": [
     "We know where the line is. Suggesting possible causes makes software a medical device in Europe, so we sequence. First the record: it stores, finds and shares, under GDPR and HIPAA. Then the opt-in network, with the EHDS as the legal route for research. Then the doctor's assistant, certified under the MDR, with the AI Act's high-risk rules. Today's demo uses only synthetic data. That is our plan, and it is the reason a hospital can say yes to step one now."
@@ -303,18 +303,17 @@ export const slides: Slide[] = [
     headline: 'Start where the history is thickest and the buyer already asks for it.',
     steps: [
       { title: 'This weekend · Athens LifeTech Park', text: "First clinicians' feedback, one orthopaedics and rheumatology pair as a clinical champion." },
-      { title: 'Clinical validation · innovation gateways', text: 'Sheba ARC, then Mayo Clinic Platform. Run on synthetic or de-identified data first.' },
+      { title: 'Clinical validation · innovation gateways', text: 'Mayo Clinic Platform. Run on synthetic or de-identified data first.' },
       { title: 'First revenue · medical-tourism hubs', text: 'UAE first (Cleveland Clinic Abu Dhabi), then Bangkok and Istanbul (Bumrungrad, Acıbadem).' },
       { title: 'The network · rare-disease groups', text: 'EURORDIS and a national member, where possible matches prove themselves.' },
     ],
     // pins sit at their rough geographic position; chips sit in one row, west to east
     places: [
       { name: 'Rochester', x: 110, y: 60, cx: 110, cy: 205 },
-      { name: 'Brussels', x: 520, y: 62, cx: 280, cy: 205 },
-      { name: 'Athens', x: 640, y: 98, cx: 430, cy: 205 },
-      { name: 'Istanbul', x: 690, y: 80, cx: 580, cy: 205 },
-      { name: 'Tel Aviv', x: 735, y: 112, cx: 730, cy: 205 },
-      { name: 'Abu Dhabi', x: 880, y: 128, cx: 880, cy: 205 },
+      { name: 'Brussels', x: 520, y: 62, cx: 294, cy: 205 },
+      { name: 'Athens', x: 640, y: 98, cx: 478, cy: 205 },
+      { name: 'Istanbul', x: 690, y: 80, cx: 662, cy: 205 },
+      { name: 'Abu Dhabi', x: 880, y: 128, cx: 846, cy: 205 },
       { name: 'Bangkok', x: 1050, y: 150, cx: 1030, cy: 205 },
     ],
     order: { label: 'Market order after the pilots', text: 'UAE and the Gulf → UK → India → US (rare disease and international-patient offices) → core EU as EHDS lands.' },
