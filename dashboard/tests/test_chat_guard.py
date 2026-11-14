@@ -116,14 +116,19 @@ class Guard(unittest.TestCase):
         """CTO finding (2cc7efc9 rule 4): a Grep `glob` overrides ripgrep's ignore rules, so only `*.ext` or `**/*.ext` from the list passes."""
         denied = [".env*", "*.local", "*", "**/*", ".e*", "*.key", "{.env.local,a.md}", "*.pem", "**/.env*", "*.md *.env", "*.md,*.env",
                   "*.mdx", "*.Md", "*.md\n", "src/*.md", "/etc/*.md", "~/x/*.md", "../*.md", "**/**/*.md", "*.m?", "*.{md,env}", "", "!*.md",
-                  "*.ts/.env", ".*", "**/.*", "*.env.local", "*.jsonl"]
+                  "*.ts/.env", ".*", "**/.*", "*.env.local", "*.jsonl",
+                  # CTO M4: these six leave the list (conductor has ignored .claude/launch.json, .local-stack/supabase/config.toml and seed.sql)
+                  "*.json", "**/*.json", "*.yaml", "**/*.yaml", "*.yml", "*.toml", "**/*.toml", "*.txt", "*.sh", "**/*.sh", "*.sql", "**/*.sql"]
         for gl in denied:
             with self.subTest(glob=gl):
                 self.assertFalse(self.decide("Grep", {"pattern": "x", "glob": gl}))
-        for gl in ("*.md", "**/*.py", "*.ts", "**/*.tsx", "*.js", "*.mjs", "*.css", "*.html", "*.sh", "*.sql", "*.yml", "**/*.yaml", "*.toml",
-                   "*.txt", "*.json"):
+        for gl in ("*.md", "**/*.py", "*.ts", "**/*.tsx", "*.js", "*.mjs", "*.css", "*.html"):
             with self.subTest(glob=gl):
                 self.assertTrue(self.decide("Grep", {"pattern": "x", "glob": gl}))
+        self.assertEqual(G.GREP_GLOB_EXTS, ("md", "py", "ts", "tsx", "js", "mjs", "css", "html"))      # the CTO's list, exactly
+        for ty in ("json", "yaml", "toml", "txt", "sh", "sql", "md", "py"):                         # the way to search those files: Grep's `type`
+            with self.subTest(type=ty):
+                self.assertTrue(self.decide("Grep", {"pattern": "x", "type": ty}))
         self.assertFalse(self.decide("Grep", {"pattern": "x", "glob": 5}))
         self.assertFalse(self.decide("Grep", {"pattern": "x", "glob": ["*.md"]}))
         self.assertTrue(self.decide("Grep", {"pattern": "x", "glob": None}))             # no glob: ripgrep keeps its own ignore rules
@@ -254,9 +259,7 @@ class ActGuard(unittest.TestCase):
                     "git add -- src/a.ts", 'git commit -m "fix(dashboard): a thing (MIN-4497)"', 'git commit -am "msg"', "git commit --amend --no-edit",
                     "git commit --message=msg", "git restore src/a.ts", "git restore --staged src/a.ts", "git rm src/a.ts", "git mv src/a.ts src/b.ts",
                     "git fetch", "git fetch origin", "git fetch origin staging", "git push origin " + self.BRANCH, "git push -u origin " + self.BRANCH,
-                    "git push --set-upstream origin " + self.BRANCH, "git push origin HEAD", "npm ci", "npm ci --ignore-scripts", "npm test", "npm test -- --run",
-                    "npm run build", "npm run test:unit -- --run", "python3 -m unittest discover -s dashboard/tests", "python3 -m pytest -q",
-                    "~/.claude/bin/linear-as BACKEND 'query { viewer { id } }'", extract, "git status # a comment", "git  status", 'git "status"']:
+                    "git push --set-upstream origin " + self.BRANCH, "git push origin HEAD", extract, "git status # a comment", "git  status", 'git "status"']:
             with self.subTest(cmd=cmd):
                 self.assertTrue(self.bash(cmd))
 
@@ -312,6 +315,50 @@ class ActGuard(unittest.TestCase):
             with self.subTest(cmd=cmd):
                 self.assertFalse(self.bash(cmd))
 
+    def test_m1_nothing_runs_code_the_agent_just_wrote(self):
+        """CTO M1 (MIN-4497, 420bf529). Measured before the fix: a Write of <worktree>/package.json or conftest.py was allowed, and so were `npm ci`,
+        `npm test`, `npm run lint`, `python3 -m pytest` and `python3 -m unittest`, so an edited script, a postinstall or a conftest ran anything
+        past every Bash rule. The writes stay allowed (they are the job); the runners are gone."""
+        for path in ("package.json", "conftest.py", "tests/test_x.py", "scripts/build.sh", "vite.config.ts"):
+            self.assertTrue(self.ok("Write", {"file_path": os.path.join(self.wt, path)}), path)       # the control: the premise is still true
+        for cmd in ["npm ci", "npm ci --ignore-scripts", "npm ci --ignore-scripts --no-audit --no-fund", "npm test", "npm test -- --run", "npm run lint", "npm run build",
+                    "npm run test:unit -- --run", "npm run", "npm t", "npm i", "npm install", "npm exec x", "npx vitest", "npx --no-install vitest",
+                    "python3 -m pytest", "python3 -m pytest -q", "python3 -m unittest", "python3 -m unittest discover -s dashboard/tests", "python3 -m pytest -p no:cacheprovider",
+                    "pytest", "pytest -q", "node scripts/x.js", "vitest", "python3 conftest.py", "python3 -m compileall .", "bash scripts/build.sh", "sh scripts/build.sh",
+                    "./scripts/build.sh", "make test", "yarn test", "pnpm test", "deno test"]:
+            with self.subTest(cmd=cmd):
+                self.assertFalse(self.bash(cmd))
+
+    def test_linear_as_is_not_in_the_act_set_at_all(self):
+        """CTO ruling (420bf529 item 3). Measured before the fix: with inline values and no `$`, linear-as allowed ANY mutation, deletes included."""
+        for cmd in ["~/.claude/bin/linear-as BACKEND 'query { viewer { id } }'", "~/.claude/bin/linear-as BACKEND 'mutation { issueDelete(id: \"x\") { success } }'",
+                    os.path.expanduser("~/.claude/bin/linear-as") + " BACKEND 'mutation { commentCreate(input: {}) { success } }'", "linear-as BACKEND x",
+                    "~/.claude/bin/linear-as BACKEND '{}'"]:
+            with self.subTest(cmd=cmd):
+                self.assertFalse(self.bash(cmd))
+        # the two write tools that stay are the owner's-connector ones; the others on the Linear write list stay denied
+        self.assertTrue(self.ok("mcp__linear__save_comment", {}))
+        self.assertTrue(self.ok("mcp__linear__save_issue", {}))
+        for tool in ("mcp__linear__delete_comment", "mcp__linear__save_document", "mcp__linear__merge_diff", "mcp__linear__create_attachment"):
+            self.assertFalse(self.ok(tool, {}), tool)
+
+    def test_m2_the_worktrees_workflows_agent_settings_mcp_config_and_hooks_are_never_written(self):
+        """CTO M2 (420bf529). Measured before the fix: a Write of <worktree>/.github/workflows/x.yml, .claude/agents/x-minhos.md and .mcp.json was allowed.
+        A workflow edit runs in CI on the PR before anyone reads it, and a .claude/agents file breaks the one-source rule."""
+        denied = [".github/workflows/ci.yml", ".github/CODEOWNERS", ".claude/agents/backend-minhos.md", ".claude/settings.json", ".claude/skills/x/SKILL.md",
+                  ".mcp.json", ".husky/pre-commit", ".githooks/pre-commit", "docs/.claude/x.md", "packages/a/.mcp.json", "packages/a/.github/workflows/x.yml",
+                  ".GitHub/workflows/ci.yml", ".CLAUDE/agents/x.md", ".Mcp.JSON", ".github", ".claude"]
+        for tool in ("Edit", "Write", "MultiEdit"):
+            for rel in denied:
+                with self.subTest(tool=tool, path=rel):
+                    self.assertFalse(self.ok(tool, {"file_path": os.path.join(self.wt, rel)}))
+        # the controls: neighbours stay writable, and the agent's memory folder (which sits under a `.claude` folder of the main checkout) still is
+        for rel in ("docs/x.md", "src/new.ts", "github/x.md", "claude/x.md", "mcp.json", "a.mcp.json.md", ".githubx/y.md", "src/.github-notes.md"):
+            with self.subTest(allowed=rel):
+                self.assertTrue(self.ok("Write", {"file_path": os.path.join(self.wt, rel)}))
+        self.assertTrue(self.ok("Write", {"file_path": os.path.join(self.mem, "note.md")}))
+        self.assertTrue(self.ok("Edit", {"file_path": os.path.join(self.mem, "note.md")}))
+
     def test_denied_package_and_deploy_commands(self):
         for cmd in ["npm install lodash", "npm install", "npm i x", "npm add x", "npm update", "npm exec x", "npx x", "npm publish", "npm run deploy", "npm run migrate",
                     "npm run db:reset", "npm run release", "npm run build -- --deploy", "npm run", "npm run -- x", "npm run ../x", "npm run 'a b'", "npm ci lodash", "npm test -- --migrate",
@@ -319,13 +366,12 @@ class ActGuard(unittest.TestCase):
             with self.subTest(cmd=cmd):
                 self.assertFalse(self.bash(cmd))
 
-    def test_linear_as_only_for_the_agents_own_role_and_extract_runs_only_from_conductor(self):
-        for cmd in ["~/.claude/bin/linear-as PRODUCT '{}'", "~/.claude/bin/linear-as backend '{}'", "~/.claude/bin/linear-as BACKEND", "~/.claude/bin/linear-as",
-                    "/tmp/linear-as BACKEND x", "python3 /tmp/extract-runs.py --actuals", "python3 %s" % os.path.join(self.cond, "scripts", "measure", "extract-runs.py"),
+    def test_extract_runs_only_from_conductor(self):
+        for cmd in ["python3 /tmp/extract-runs.py --actuals", "python3 %s" % os.path.join(self.cond, "scripts", "measure", "extract-runs.py"),
                     "python3 %s --actuals --x" % os.path.join(self.cond, "scripts", "measure", "extract-runs.py"), "python3 %s --all" % os.path.join(self.cond, "scripts", "measure", "extract-runs.py")]:
             with self.subTest(cmd=cmd):
                 self.assertFalse(self.bash(cmd))
-        self.assertFalse(self.bash("~/.claude/bin/linear-as BACKEND x", ctx=dict(self.ctx, role="")))
+        self.assertTrue(self.bash("python3 %s --actuals" % os.path.join(self.cond, "scripts", "measure", "extract-runs.py")))
 
     def test_writes_only_in_the_worktree_and_the_agents_memory(self):
         for tool in ("Edit", "Write", "MultiEdit"):
@@ -430,16 +476,19 @@ class GrepCanary(unittest.TestCase):
         os.makedirs(os.path.join(self.tmp, "conductor", "." + "git"))       # an empty repo marker is enough for ripgrep's ignore rules
         os.makedirs(os.path.join(self.tmp, "healthapp"))
         self.root = os.path.join(self.tmp, "conductor")
-        for name, text in (("." + "gitignore", ".env*\n"), (".env.local", "CANARY-VALUE\n"), (".env", "CANARY-VALUE\n"), ("notes.md", "hello\n"),
-                           ("tool.py", "print(1)\n")):
+        for name, text in (("." + "gitignore", ".env*\nlaunch.json\nconfig.toml\nseed.sql\nsecrets.*\n"), (".env.local", "CANARY-VALUE\n"), (".env", "CANARY-VALUE\n"),
+                           ("notes.md", "hello\n"), ("tool.py", "print(1)\n"),
+                           # the CTO's ignored files in conductor (420bf529 item 1): ignored, and holding the canary
+                           ("launch.json", "CANARY-VALUE\n"), ("config.toml", "CANARY-VALUE\n"), ("seed.sql", "CANARY-VALUE\n"), ("secrets.yaml", "CANARY-VALUE\n"),
+                           ("secrets.txt", "CANARY-VALUE\n"), ("secrets.sh", "CANARY-VALUE\n")):
             with open(os.path.join(self.root, name), "w") as f:
                 f.write(text)
         self.roots = [os.path.join(self.tmp, "healthapp"), self.root]
         self.rg, self.env = find_rg()
 
-    def rg_files(self, glob):
+    def rg_files(self, glob, type_=None):
         import subprocess
-        argv = [self.rg, "-l"] + (["-g", glob] if glob else []) + ["CANARY-VALUE", self.root]
+        argv = [self.rg, "-l"] + (["-g", glob] if glob else []) + (["--type", type_] if type_ else []) + ["CANARY-VALUE", self.root]
         r = subprocess.run(argv, capture_output=True, text=True, timeout=20, env=dict(os.environ, **self.env))
         return sorted(os.path.basename(p) for p in r.stdout.split())
 
@@ -447,18 +496,29 @@ class GrepCanary(unittest.TestCase):
         self.assertEqual(self.rg_files(None), [])                              # no glob: the ignored files are skipped
         self.assertIn(".env.local", self.rg_files(".env*"))                    # the leak the finding describes
         self.assertIn(".env.local", self.rg_files("*"))
+        # M4: and so does every extension the list used to carry, which is why they left it
+        for gl, name in (("*.json", "launch.json"), ("*.toml", "config.toml"), ("*.sql", "seed.sql"), ("*.yaml", "secrets.yaml"), ("*.txt", "secrets.txt"),
+                         ("*.sh", "secrets.sh")):
+            self.assertIn(name, self.rg_files(gl), gl)
+
+    def test_grep_type_keeps_the_ignore_rules(self):
+        """CTO M4: for json, yaml, toml, txt, sh and sql the agent uses Grep's `type` (rg --type), which does not override the ignore rules."""
+        for ty in ("json", "toml", "sql", "yaml", "txt", "sh"):
+            with self.subTest(type=ty):
+                self.assertEqual(self.rg_files(None, ty), [])
+                allowed, _ = G.decide({"tool_name": "Grep", "tool_input": {"pattern": "CANARY-VALUE", "path": self.root, "type": ty}, "cwd": self.root}, "answer", self.roots)
+                self.assertTrue(allowed)
 
     def test_no_glob_the_guard_allows_finds_the_canary(self):
-        for gl in (None, "*.md", "**/*.py", "*.ts", "*.tsx", "*.js", "*.mjs", "*.css", "*.html", "*.sh", "*.sql", "*.yml", "*.yaml", "*.toml",
-                   "*.txt", "*.json"):
+        for gl in (None, "*.md", "**/*.py", "*.ts", "*.tsx", "*.js", "*.mjs", "*.css", "*.html"):
             with self.subTest(glob=gl):
                 allowed, _ = G.decide({"tool_name": "Grep", "tool_input": dict({"pattern": "CANARY-VALUE", "path": self.root}, **({"glob": gl} if gl else {})),
                                        "cwd": self.root}, "answer", self.roots)
                 self.assertTrue(allowed)
-                self.assertEqual([f for f in self.rg_files(gl) if f.startswith(".env")], [])
+                self.assertEqual([f for f in self.rg_files(gl) if f.startswith(".env") or f.startswith(("launch", "config", "seed", "secrets"))], [])
 
     def test_the_calls_that_would_find_it_are_refused(self):
-        for gl in (".env*", "*", "*.local", ".e*", "**/*", "{.env.local,a.md}"):
+        for gl in (".env*", "*", "*.local", ".e*", "**/*", "{.env.local,a.md}", "*.json", "*.toml", "*.sql", "*.yaml", "*.yml", "*.txt", "*.sh", "**/*.json"):
             with self.subTest(glob=gl):
                 self.assertFalse(G.decide({"tool_name": "Grep", "tool_input": {"pattern": "CANARY-VALUE", "path": self.root, "glob": gl}, "cwd": self.root},
                                           "answer", self.roots)[0])

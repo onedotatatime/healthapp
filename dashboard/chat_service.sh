@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installs, stops and re-keys the dashboard chat bridge on this Mac (MIN-4497). Prints no key, ever.
 #
-#   dashboard/chat_service.sh install [--page-dir DIR] [--port 8765]   copy the files, make chat.key, load the launchd job
+#   dashboard/chat_service.sh install [--page-dir DIR] [--extra-dir NAME=DIR] [--port 8765]   copy the files, make chat.key, load the launchd job
 #   dashboard/chat_service.sh uninstall                                 unload the job (keys and chats stay)
 #   dashboard/chat_service.sh off | on                                  kill switch: chat.off makes the bridge refuse every new turn
 #   dashboard/chat_service.sh rotate-key                                new chat.key (mode 600), restart the bridge, end every running turn
@@ -9,6 +9,8 @@
 #
 # The bridge binds 127.0.0.1 only and replaces the ad-hoc `python3 -m http.server 8765`. `install` refuses to start while something
 # else listens on the port: stop the old server yourself first (it never kills a process it did not start).
+# `--extra-dir how-it-works=<folder>` serves one more folder at /how-it-works/ with the same rules as the page folder (repeatable). Neither folder may
+# be inside ~/.healthapp-dashboard (the keys): the bridge refuses to start if one is.
 # Start it from this script (launchd) or from a Terminal. Never from inside a Claude session.
 set -euo pipefail
 umask 077
@@ -19,12 +21,21 @@ PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 SRC="$(cd "$(dirname "$0")" && pwd)"
 PORT=8765
 PAGE_DIR="$SRC/../docs/dashboard/drafts"
+EXTRA_LIST=""          # one NAME=DIR per line (no arrays: /bin/bash 3.2 on the Mac fails on an empty one under set -u)
 CMD="${1:-}"
 [ $# -gt 0 ] && shift
 
 while [ $# -gt 0 ]; do
   case "$1" in
     --page-dir) PAGE_DIR="${2:?--page-dir needs a folder}"; shift 2 ;;
+    --extra-dir)
+      SPEC="${2:?--extra-dir needs NAME=DIR}"; shift 2
+      case "$SPEC" in *=?*) ;; *) echo "--extra-dir needs NAME=DIR" >&2; exit 2 ;; esac
+      NAME="${SPEC%%=*}"; DIR="${SPEC#*=}"
+      case "$NAME" in *[!a-z0-9-]*|-*|"") echo "--extra-dir: the name is lower-case letters, digits and dashes" >&2; exit 2 ;; esac
+      [ -d "$DIR" ] || { echo "--extra-dir: no folder $DIR" >&2; exit 2; }
+      EXTRA_LIST="$EXTRA_LIST$NAME=$(cd "$DIR" && pwd -P)
+" ;;
     --port) PORT="${2:?--port needs a number}"; shift 2 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
@@ -36,6 +47,14 @@ loaded() { launchctl print "gui/$(id -u)/$LABEL" >/dev/null 2>&1; }
 case "$CMD" in
   install)
     PAGE_DIR="$(cd "$PAGE_DIR" && pwd)"
+    EXTRA_XML=""
+    while IFS= read -r SPEC; do
+      [ -n "$SPEC" ] || continue
+      EXTRA_XML="$EXTRA_XML    <string>--extra-dir</string><string>$SPEC</string>
+"
+    done <<EOF_EXTRA
+$EXTRA_LIST
+EOF_EXTRA
     if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1 && ! loaded; then
       echo "port $PORT is in use by another process. Stop the old page server first, then run install again." >&2; exit 3
     fi
@@ -57,7 +76,7 @@ case "$CMD" in
     <string>$HOME_DIR/chat_bridge.py</string>
     <string>--home</string><string>$HOME_DIR</string>
     <string>--page-dir</string><string>$PAGE_DIR</string>
-    <string>--port</string><string>$PORT</string>
+${EXTRA_XML}    <string>--port</string><string>$PORT</string>
   </array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
@@ -71,7 +90,7 @@ EOF
     chmod 644 "$PLIST"
     launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true
     launchctl bootstrap "gui/$(id -u)" "$PLIST"
-    echo "installed: chat bridge on 127.0.0.1:$PORT serving $PAGE_DIR (job $LABEL). Key in $HOME_DIR/chat.key (mode 600), not printed."
+    echo "installed: chat bridge on 127.0.0.1:$PORT serving $PAGE_DIR$(printf '%s' "$EXTRA_LIST" | while IFS== read -r N D; do [ -n "$N" ] && printf ', /%s/ -> %s' "$N" "$D"; done) (job $LABEL). Key in $HOME_DIR/chat.key (mode 600), not printed."
     ;;
   uninstall)
     launchctl bootout "gui/$(id -u)/$LABEL" 2>/dev/null || true

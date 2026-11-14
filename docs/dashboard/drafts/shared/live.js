@@ -35,6 +35,7 @@ L.apply = function(snap){
     const f = t => { const [d,hm] = t.split(' '); return parseAth('2026-11-' + (d==='Sat'?'14':'15') + 'T' + hm); };
     H.ms.length = 0; DATA.milestones.forEach(m => H.ms.push(Object.assign({}, m, { s:f(m.start), e:f(m.end), hours:(f(m.end)-f(m.start))/36e5 })));
   }
+  DATA.forecast = (snap.forecast && typeof snap.forecast==='object') ? snap.forecast : null;   // absent until the feed's first good Linear read
   if(snap.current) DATA.current = snap.current;
   if(snap.tasks) DATA.tasks = Object.assign({ byRole:{} }, snap.tasks);
   DATA.directions = Array.isArray(snap.directions) ? snap.directions : [];      // missing, null or not an array: five "not reported yet" rows, never a throw
