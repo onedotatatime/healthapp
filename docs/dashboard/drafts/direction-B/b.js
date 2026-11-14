@@ -41,8 +41,8 @@ function mapHTML(){
   back += '</div>';
   let lbl = ''; for(let h=0;h<TOTAL;h++){ const hh=(12+h)%24; lbl += '<span class="hl at'+(h===12?' mid':'')+(h%3?' n3':'')+(h===0?' first':'')+'" style="--h:'+h+'">'+(h===0?'Sat 12:00':h===12?'Sun 00:00':pad2(hh)+':00')+'</span>'; }
   const axis = '<div class="mr axis"><div class="rl"><span class="micro">Time</span><small>Europe/Athens</small></div><div class="lane">'+lbl+'</div></div>';
-  const mil = '<div class="mr" data-blk="linear" style="--rh:56px"><div class="rl"><b>Milestones</b>'+blkTag('linear')+'</div><div class="lane"><span class="blkmsg"></span>'
-    + H.ms.map((m,i)=>'<div class="ms" data-m="'+m.id+'" style="--h:'+hrs(m.s)+';--w:'+m.hours+';--k:'+i+'" title="'+esc(m.id+' · '+m.name+' · '+H.fmtWin(m)+' · gate: '+m.gate)+'"><span class="msf"></span><span class="msl"></span><span class="mss">'+esc(m.name)+'</span></div>').join('')
+  const mil = '<div class="mr msband" data-blk="linear"><div class="rl"><b>Milestones</b><small>M1 to M7, gates ◇</small>'+blkTag('linear')+'</div><div class="lane"><span class="blkmsg"></span>'
+    + H.ms.map((m,i)=>'<div class="ms" data-m="'+m.id+'" style="--h:'+hrs(m.s)+';--w:'+m.hours+';--k:'+i+'" title="'+esc(m.id+' · '+m.name+' · '+H.fmtWin(m)+' · gate: '+m.gate)+'"><span class="msbg" aria-hidden="true"><span class="msf"></span></span><div class="msin"><div class="msh"><b class="msid">'+esc(m.id)+'</b><span class="msc"></span></div><div class="msn">'+esc(m.name)+'</div><div class="msw">'+esc(H.fmtWin(m))+' · '+(Math.round(m.hours*10)/10)+' h</div><div class="msg"><b>Gate</b> '+esc(m.gate)+'</div></div></div>').join('')
     + H.ms.map(m=>'<span class="gate at" data-g="'+m.id+'" style="--h:'+hrs(m.e)+'" aria-hidden="true">◇</span>').join('')+'</div></div>';
   const lanes = '<div class="mr" data-blk="linear" style="--rh:30px"><div class="rl"><b>Agents</b>'+(lanesAll.length ? '<small>'+esc(shown.length+' busy, '+hidden.length+' idle')+'</small>' : '')+blkTag('linear')+'</div><div class="lane"><span class="blkmsg"></span></div></div>'
     + shown.map((l,i)=>laneHTML(l,i,false)).join('') + hidden.map(l=>laneHTML(l,0,true)).join('')
@@ -124,7 +124,7 @@ function paintDyn(){
   nl.style.setProperty('--nh', Math.min(TOTAL,Math.max(0,hn)).toFixed(4));
   $('#nowflag').textContent = 'NOW '+H.hhmm(now);
   H.ms.forEach(m => { const el = $('.ms[data-m="'+m.id+'"]'), d = S['m.'+m.id]||0; if(!el) return;
-    el.querySelector('.msl').textContent = m.id+' · '+(m.total? d+'/'+m.total : 'no issues'); el.style.setProperty('--f2',1); el.querySelector('.msf').style.setProperty('--f',(m.total? d/m.total : 0).toFixed(3)); el.classList.toggle('cur', m===cur);
+    el.querySelector('.msc').textContent = m.total? d+' of '+m.total+' done' : 'no issues'; el.querySelector('.msf').style.setProperty('--f',(m.total? d/m.total : 0).toFixed(3)); el.classList.toggle('cur', m===cur); el.classList.toggle('fin', m.total>0 && d>=m.total);
     const g = $('.gate[data-g="'+m.id+'"]'), met = m.total>0 && d>=m.total, miss = !met && m.e<now; g.textContent = met||miss ? '◆' : '◇'; g.className = 'gate at'+(met?' met':miss?' miss':''); });
   $$('.bar.active').forEach(b => { const l = lanesAll.find(x=>x.agent===b.dataset.agent), bar = l.bars[+b.dataset.i]; b.style.setProperty('--w',barW(bar).toFixed(3)); });
   paintCum('rowTok', H.tokSeries, Live.projection('tokens'), H.k, S.tokSum);
@@ -148,6 +148,7 @@ H.on('live', () => {
   if(!$('#nowline')) return;
   renderMap(); renderCards(); paintDyn();
   if(!$('#v-demo').hidden) renderDemo();
+  renderBranches();
   Live.paint();
 });
 
@@ -197,6 +198,59 @@ function wireMap(){
   tr.addEventListener('keydown', e => { if((e.key==='Enter'||e.key===' ') && e.target.classList.contains('bar')){ e.preventDefault(); openPop(e.target,e); } });
   document.addEventListener('click', e => { if(!pop.hidden && !pop.contains(e.target)) pop.hidden = true; });
   document.addEventListener('keydown', e => { if(e.key==='Escape') pop.hidden = true; });
+}
+
+/* ---------- branches (MIN-4461): open, merged and closed branches of the repo, from the feed's `branches` block (MIN-4460) ---------- */
+const LINEAR = 'https://linear.app/minhos/issue/';
+const safeUrl = u => /^https:\/\/[^\s"'<>]+$/.test(u||'') ? u : '';
+const rel = iso => { if(!iso) return ''; const ms = Date.now() - new Date(iso); if(isNaN(ms)) return ''; const m = Math.floor(ms/6e4);
+  return m<1 ? 'just now' : m<60 ? m+' min ago' : m<1440 ? Math.floor(m/60)+' h ago' : Math.floor(m/1440)+' d ago'; };
+const ab = (v, base) => v ? '<span class="ab" title="'+esc(v.ahead+' commit'+(v.ahead===1?'':'s')+' ahead of, '+v.behind+' behind '+base)+'"><b class="up">↑'+v.ahead+'</b> <span class="dn'+(v.behind>0?' behind':'')+'">↓'+v.behind+'</span></span>' : '<span class="muted" title="Not comparable with '+esc(base)+' (branch deleted)">gone</span>';
+const cnt = n => n==null ? '<b class="unk">unknown</b>' : '<b>'+n+'</b>';
+function branchRow(b, kind){
+  const pr = b.pr, prState = pr ? String(pr.state||'').toLowerCase() : '', dim = b.state==='open' && b.vsMain && b.vsMain.ahead===0 && !b.onRemote;
+  const prHtml = pr ? (safeUrl(pr.url) ? '<a class="prl" href="'+esc(pr.url)+'" target="_blank" rel="noopener">PR #'+esc(pr.number)+'<span class="sr"> (opens GitHub)</span></a>' : '<span class="prl">PR #'+esc(pr.number)+'</span>')
+      + ' <span class="chip '+(prState==='merged'?'ok':prState==='open'?'brand':'')+' pst">'+esc(prState||'unknown')+'</span>'+(pr.base ? ' <span class="muted pbase">to '+esc(pr.base)+'</span>' : '') : '<span class="muted">no pull request</span>';
+  const when = kind==='closed' && pr && (pr.mergedAt||pr.closedAt) ? (pr.mergedAt ? 'merged ' : 'closed ')+rel(pr.mergedAt||pr.closedAt) : b.lastCommitAt ? 'commit '+rel(b.lastCommitAt) : 'no commit time';
+  const who = b.agent || b.lastCommitAuthor || '';
+  const issue = b.issue && /^[A-Za-z]+-\d+$/.test(b.issue) ? '<a href="'+LINEAR+esc(b.issue)+'" target="_blank" rel="noopener">'+esc(b.issue)+'<span class="sr"> (opens Linear)</span></a>' : '<span class="muted">no issue</span>';
+  return '<li class="brr'+(dim?' dim':'')+'"><div class="c n"><span class="bl">Branch</span><span class="bn mono" title="'+esc(b.name)+'">'+esc(b.name)+'</span>'
+    + '<span class="flags">'+(b.hasWorktree ? '<span class="chip wt" title="A local worktree exists for this branch">worktree</span>' : '')+(b.state==='open' && !b.onRemote ? '<span class="chip loc" title="Not pushed to GitHub">local only</span>' : '')+(dim ? '<span class="chip" title="No commits of its own and not on GitHub">no commits yet</span>' : '')+'</span></div>'
+    + '<div class="c p"><span class="bl">Pull request</span><span>'+prHtml+'</span></div>'
+    + '<div class="c a"><span class="bl">vs staging</span>'+ab(b.vsStaging,'staging')+'</div>'
+    + '<div class="c a"><span class="bl">vs main</span>'+ab(b.vsMain,'main')+'</div>'
+    + '<div class="c f"><span class="bl">Files, lines</span><span class="mono num"><b>'+(b.files==null?'?':b.files)+'</b> f <span class="plus">+'+(b.added||0)+'</span> <span class="minus">−'+(b.removed||0)+'</span></span></div>'
+    + '<div class="c w"><span class="bl">Last activity</span><span>'+esc(when)+(who ? ' <span class="muted">· '+esc(who)+'</span>' : '')+'</span></div>'
+    + '<div class="c i"><span class="bl">Issue</span><span>'+issue+'</span></div></li>';
+}
+const BR_HEAD = '<div class="brh" aria-hidden="true"><span class="n">Branch</span><span class="p">Pull request</span><span class="a">vs staging</span><span class="a">vs main</span><span class="f">Files, lines</span><span class="w">Last activity</span><span class="i">Issue</span></div>';
+function branchesHTML(){
+  const B = DATA.branches;
+  if(!B) return '<section class="card brcard" data-blk="branches"><div class="card-h"><h2>Branches</h2>'+blkTag('branches')+'<span class="upd"></span></div><div class="blkmsg"></div></section>';
+  const t = B.totals || {}, items = B.items || [], open = items.filter(x=>x.state==='open'), closed = items.filter(x=>x.state!=='open'), noPr = B.prSource==='none';
+  const err = Live.rec.branches && Live.rec.branches.error;
+  const tiles = '<div class="brtot" role="group" aria-label="Branch totals">'
+    + '<div class="bt"><span class="k">Open on GitHub</span>'+cnt(t.openOnRemote)+'<span class="s">pushed branches, not yet merged</span></div>'
+    + '<div class="bt"><span class="k">Open incl. local</span>'+cnt(t.open)+'<span class="s">'+(t.open!=null && t.openOnRemote!=null ? (t.open-t.openOnRemote)+' only on this Mac' : 'with local-only branches')+'</span></div>'
+    + '<div class="bt"><span class="k">Merged today</span>'+cnt(t.mergedToday)+'<span class="s">'+(t.merged==null ? 'pull request state unknown' : t.merged+' merged in all')+'</span></div>'
+    + '<div class="bt"><span class="k">Closed</span>'+cnt(t.closed)+'<span class="s">closed without merging</span></div></div>';
+  const emptyClosed = noPr ? 'Pull request state is unknown without GitHub access, so merged and closed branches are not listed.' : 'No merged or closed branches yet.';
+  return '<section class="card brcard" data-blk="branches"><div class="card-h"><h2>'+esc(B.repo || 'Branches')+'</h2>'+blkTag('branches')+'<span class="upd"></span></div><div class="blkmsg"></div>'
+    + (err ? '<p class="brwarn" role="note"><b>Partial reading.</b> '+esc(err.message)+'. Pull request state may be missing; branch names, commits and file counts are from local git.</p>' : '')
+    + tiles
+    + '<h3 class="sub brsub">Open <span class="num">'+open.length+'</span></h3>'+(open.length ? BR_HEAD+'<ul class="brl">'+open.map(b=>branchRow(b,'open')).join('')+'</ul>' : '<p class="muted bre">No open branches.</p>')
+    + '<h3 class="sub brsub">Merged and closed <span class="num">'+closed.length+'</span></h3>'+(closed.length ? BR_HEAD+'<ul class="brl">'+closed.map(b=>branchRow(b,'closed')).join('')+'</ul>' : '<p class="muted bre">'+emptyClosed+'</p>')
+    + (B.truncated ? '<p class="note muted">The list is cut to the newest branches. The totals above count every branch.</p>' : '')
+    + '<p class="note muted">Read from git and GitHub on the Mac. Faded rows have no commits of their own and are not on GitHub. Compared with <span class="mono">'+esc((B.bases||['main','staging']).join('</span> and <span class="mono">'))+'</span>.</p></section>';
+}
+let brSig = '';
+function renderBranches(force){
+  const v = $('#v-branches'); if(!v) return;
+  const sig = JSON.stringify([DATA.branches, Math.floor(Date.now()/6e4), Live.rec.branches]);
+  if(!force && sig===brSig) return; brSig = sig;
+  const keepY = window.scrollY;
+  v.innerHTML = '<div class="pagehead"><h1>Branches</h1><p class="muted">Which branches are open, what was merged, and how big each one is. Newest first.</p></div>'+branchesHTML();
+  Live.paint(v); if(keepY) window.scrollTo(0, keepY);
 }
 
 /* ---------- exercises ---------- */
@@ -266,13 +320,14 @@ function moveInd(nomove){ const t = $('#tabs'), cur = $('.tab[aria-current="page
 let lastView = null;
 function route(){
   const p = location.hash.replace(/^#\/?/,'').split('/'), v = p[0]||'timeline';
-  const view = v==='exercises' && p[1] ? 'ex' : v, tab = v==='exercises'?'exercises':v==='timeline'||v==='decks'||v==='demo'?v:'timeline';
+  const view = v==='exercises' && p[1] ? 'ex' : v, tab = v==='exercises'?'exercises':v==='timeline'||v==='branches'||v==='decks'||v==='demo'?v:'timeline';
   $$('.tab').forEach(a => { if(a.dataset.t===tab) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); });
   const changed = lastView !== view;
   if(view==='ex'){ const i = Math.max(0, EX.findIndex(e=>e.n===p[1])); renderEx(i); }
   else if(view==='exercises') renderExercises();
   else if(view==='decks'){ if(!rendered.decks){ renderDecks(); rendered.decks = 1; } }
   else if(view==='demo') renderDemo();
+  else if(view==='branches') renderBranches(true);
   $$('.view').forEach(s => { const on = s.dataset.view===view; s.hidden = !on; if(on && changed && !H.reduced()){ s.classList.remove('fade'); void s.offsetWidth; s.classList.add('fade'); } });
   if(v==='decks' && p[1]){ renderViewer(p[1]==='full'?'full':'short', +p[2]||1); } else closeViewer();
   if(changed && view!=='ex') window.scrollTo(0,0);
@@ -291,7 +346,7 @@ window.addEventListener('hashchange', route);
 /* ---------- boot ---------- */
 H.tickUpd = () => Live.paint();     // the 1 s loop in common.js: block ages, "Mac silent", header status
 renderTimeline(); wireMap();
-H.hero({ el:$('#cd'), root:$('#band'), onTick:(now)=>{ $('#clock').textContent = H.clockStr(now)+(H.overridden?' (?now)':''); const m = now.getMinutes(); if(m!==lastMin){ lastMin = m; paintDyn(); } } });
+H.hero({ el:$('#cd'), root:$('#band'), onTick:(now)=>{ $('#clock').textContent = H.clockStr(now)+(H.overridden?' (?now)':''); const m = now.getMinutes(); if(m!==lastMin){ lastMin = m; paintDyn(); if(!$('#v-branches').hidden) renderBranches(); } } });
 paintDyn(); setZoom('next6', true); Live.paint();
 const feed = Feed.start({ paused:() => H.sim.paused, onSnapshot:s => Live.apply(s), onError:e => Live.fail(e) });
 document.addEventListener('click', e => { if(e.target.closest('[data-act="pause"]') && !H.sim.paused) feed.refresh(); Live.paint(); });
