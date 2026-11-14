@@ -1,5 +1,6 @@
 import { useAuth } from '../auth/AuthProvider';
 import { EmptyState } from '../components/Primitives';
+import { RecordsList } from '../features/exams/RecordsList';
 
 function SignOut() {
   const { signOut } = useAuth();
@@ -17,7 +18,7 @@ export function PatientHome() {
     <main className="page" data-testid="patient-home">
       <h1>Your record</h1>
       <p className="muted" data-testid="signed-in-as">Signed in as {displayName ?? 'the patient'}.</p>
-      <EmptyState>No exams yet. They will appear here once they are added.</EmptyState>
+      <RecordsList />
       <p style={{ marginTop: 'var(--space-6)' }}>
         <SignOut />
       </p>

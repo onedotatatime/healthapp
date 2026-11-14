@@ -1,0 +1,54 @@
+/* Exam flow (MIN-4476). Tokens only; no shadows, no gradients. */
+.page.wide{max-width:960px}
+.small{font-size:14px;line-height:20px}
+.btn.pick{position:relative;cursor:pointer}
+.btn.pick:focus-within{outline:var(--focus);outline-offset:2px}
+.btn.primary.pick{color:#fff}
+.reading-label{font:var(--text-h2);margin:0 0 var(--space-3)}
+.bar{height:6px;background:var(--line);border-radius:var(--radius-pill);overflow:hidden;position:relative}
+.bar i{position:absolute;top:0;bottom:0;left:-35%;width:35%;background:var(--teal);border-radius:var(--radius-pill);animation:bar-slide 1.4s ease-in-out infinite}
+@keyframes bar-slide{to{left:100%}}
+.thumb{display:block;max-width:100%;max-height:200px;margin-top:var(--space-6);border:1px solid var(--line-strong);border-radius:var(--radius-md)}
+
+/* review: photo above the fields on a phone, beside them from 760 px */
+.review{display:grid;gap:var(--space-6)}
+.photo{margin:0}
+.photo img{display:block;width:100%;max-height:30vh;object-fit:contain;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:var(--radius-md)}
+.photo figcaption{margin-top:var(--space-2);font-size:14px}
+@media (min-width:760px){
+  .review{grid-template-columns:minmax(0,5fr) minmax(0,6fr);align-items:start}
+  .photo{position:sticky;top:var(--space-4)}
+  .photo img{max-height:80vh}
+}
+.locked{margin:0 0 var(--space-2);padding:var(--space-3);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-md);display:grid;gap:var(--space-2)}
+.locked>div{display:grid;gap:2px}
+.locked dt{font:var(--text-label);color:var(--ink-2)}
+.locked dd{margin:0;display:flex;align-items:center;gap:6px;font:var(--text-patient-value);min-width:0;overflow-wrap:anywhere}
+.fields h2{margin-top:var(--space-6)}
+.field textarea{width:100%;padding:var(--space-3);font:var(--text-patient-body);color:var(--ink);background:var(--surface);border:1.5px solid var(--line-strong);border-radius:var(--radius-md)}
+.field input[aria-invalid='true']{border-color:var(--amber-ink);border-width:2px}
+.err{display:block;margin-top:var(--space-1);font:var(--text-label);font-style:normal;color:var(--amber-ink)}
+.rows{list-style:none;margin:0 0 var(--space-4);padding:0;display:grid;gap:var(--space-3)}
+.rrow{padding:var(--space-3);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md)}
+.rname{font:600 18px/26px var(--font-sans);overflow-wrap:anywhere}
+.rinputs{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:var(--space-3);margin-top:var(--space-2)}
+.rinputs .field{margin:0}
+.rinputs input{font:var(--text-patient-value)}
+.rvalue{font:var(--text-patient-value)}
+.rmeta{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-3);margin-top:var(--space-2);font:var(--text-doctor-body)}
+.oor{display:inline-flex;align-items:center;gap:6px;padding:2px 10px 2px 8px;border-radius:var(--radius-pill);border:1px solid var(--amber-ink);background:var(--amber-bg);color:var(--amber-ink);font:var(--text-label)}
+.oor svg{flex:none}
+.check-this{display:inline-block;margin-left:var(--space-2);padding:1px 8px;border-radius:var(--radius-pill);border:1px solid var(--amber-ink);background:var(--amber-bg);color:var(--amber-ink);font:var(--text-label);white-space:nowrap}
+
+/* list and record */
+.records{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-3)}
+.record-link{display:grid;gap:var(--space-1);padding:var(--space-4);min-height:var(--tap-patient);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius-md);color:var(--ink);text-decoration:none}
+.record-link:hover{border-color:var(--ink)}
+.rtitle{font:var(--text-h2)}
+.rdate{font:var(--text-patient-value)}
+.oor-count{display:inline-flex;align-items:center;padding:2px 10px;border-radius:var(--radius-pill);border:1px solid var(--amber-ink);background:var(--amber-bg);color:var(--amber-ink);font:var(--text-label)}
+.mark-row{display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.saved{margin-bottom:var(--space-4);padding:var(--space-3);border:1px solid var(--teal-text);border-radius:var(--radius-md);background:var(--teal-tint);color:var(--teal-text);font:var(--text-label)}
+.back{color:var(--teal-text);font:var(--text-label)}
+.fixed-line{margin-top:var(--space-6);padding:var(--space-3);border-left:4px solid var(--teal);background:var(--surface-2);font:var(--text-patient-body)}
+.orig{display:block;width:100%;max-height:70vh;object-fit:contain;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:var(--radius-md)}

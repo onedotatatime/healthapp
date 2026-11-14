@@ -8,9 +8,22 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     message: string,
+    /** Cron's typed error code (`model_unavailable`, `grant_expired`, ...) when the body carries one. */
+    public code?: string,
   ) {
     super(message);
   }
+}
+
+/** Reads both error bodies: `{ error: "text" }` (foundation stub) and `{ error: { code, message } }` (Cron's contract). */
+function errorOf(json: unknown, status: number): { message: string; code?: string } {
+  const e = json && typeof json === 'object' && 'error' in json ? (json as { error: unknown }).error : undefined;
+  if (typeof e === 'string') return { message: e };
+  if (e && typeof e === 'object') {
+    const { code, message } = e as { code?: unknown; message?: unknown };
+    return { message: typeof message === 'string' ? message : `HTTP ${status}`, code: typeof code === 'string' ? code : undefined };
+  }
+  return { message: `HTTP ${status}` };
 }
 
 /**
@@ -49,8 +62,8 @@ export function makeCall(env: OkEnv, fetchImpl: typeof fetch = (...a) => fetch(.
       /* not JSON */
     }
     if (!res.ok) {
-      const msg = json && typeof json === 'object' && 'error' in json ? String((json as { error: unknown }).error) : `HTTP ${res.status}`;
-      throw new ApiError(res.status, msg);
+      const { message, code } = errorOf(json, res.status);
+      throw new ApiError(res.status, message, code);
     }
     const parsed = schema.safeParse(json);
     if (!parsed.success) throw new ApiError(res.status, `Unexpected response from ${name}.`);
