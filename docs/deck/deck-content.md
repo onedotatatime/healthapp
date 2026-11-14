@@ -3,11 +3,11 @@
 | | |
 |---|---|
 | **Owner** | Anna Lytica (Marketing), MIN-4429. Deck story: CEO (MIN-4425). Design: Pix (MIN-4428), next. |
-| **Version** | **v3.7, 15 Nov 2026** (MIN-4503: slide 12, Tel Aviv and Sheba ARC removed; founder, verbatim: "remove tel aviv for now at 12 slide"). v3.6, 15 Nov 2026 (MIN-4503: slide 6b step 4 and its speaker note: the support person calls the hospital to verify the situation, not the patient; founder, verbatim: "not to verify with patient but to verify the situation with the hospital"). v3.5, 15 Nov 2026 (MIN-4503: slide 6b, the concept label and all pricing removed, and a four-step "How it's used" flow added; founder, verbatim: "6b -> concept ,not build -> remove / Pricing -> No / But add how to use / Patient abroad or at a hospital with no serious condition -> Doctor scans the code on the machine -> opens the doctor page -> one of our support team calls to verify the condition and give the doctor access"; rule 8 (concept labels) is waived for 6b by the founder; S21 and S22 unused). v3.4, 14 Nov 2026 (MIN-4462: every insurer mention removed from slides 6, 6b, 10, 11, 13 and both scripts; founder: "remove the never insurers -> not sure about this", then "Drop every insurer mention"; the internal data rule is unchanged). v3.3, 14 Nov 2026 (MIN-4503: slide 6b, the "Concept render" tag removed and the encryption point added; founder: "remove the concept render -> and mention that this device has our own encrypted software for the data so they are not in the cloud"; the eyebrow "Concept · not built" stays). v3.2, 14 Nov 2026 (MIN-4503: new slide 6b, Pathien Vault, a concept device for patients who want maximum privacy; founder: "what if someone that want's his privacy can buy our device that can hold his data. Anna and pix work on this and add one slide with a very super elegant image with our device that looks very premioum"; no other slide renumbered). v3.1, 14 Nov 2026 (MIN-4503: team and ask from the CEO plan v2, `docs/business/team-and-funding-plan.md` §7; slide 14 replaced, slide 15 new; founder: "put it in the deck when ready"). v3, 14 Nov 2026 (MIN-4503: name Pathien; new slide 11, revenue years 1 to 3, on the founder's ask "the numbers of how many money we can earn" and "Yes, update to v3"; Appendix A's SOM retired for the bottom-up line; demo slides say what is real and what is synthetic). v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
+| **Version** | **v3.8, 15 Nov 2026** (MIN-4503: new slide 7b, Clinical trials, after slide 7; labelled "Not built yet · our next step"; founder, verbatim: "Deck 7 -> Create a deck 7b to connect to the Clinical_Trials_Challenge"; the founder's summary is `docs/business/clinical-trials-fit.md`; no other slide renumbered). v3.7, 15 Nov 2026 (MIN-4503: slide 12, Tel Aviv and Sheba ARC removed; founder, verbatim: "remove tel aviv for now at 12 slide"). v3.6, 15 Nov 2026 (MIN-4503: slide 6b step 4 and its speaker note: the support person calls the hospital to verify the situation, not the patient; founder, verbatim: "not to verify with patient but to verify the situation with the hospital"). v3.5, 15 Nov 2026 (MIN-4503: slide 6b, the concept label and all pricing removed, and a four-step "How it's used" flow added; founder, verbatim: "6b -> concept ,not build -> remove / Pricing -> No / But add how to use / Patient abroad or at a hospital with no serious condition -> Doctor scans the code on the machine -> opens the doctor page -> one of our support team calls to verify the condition and give the doctor access"; rule 8 (concept labels) is waived for 6b by the founder; S21 and S22 unused). v3.4, 14 Nov 2026 (MIN-4462: every insurer mention removed from slides 6, 6b, 10, 11, 13 and both scripts; founder: "remove the never insurers -> not sure about this", then "Drop every insurer mention"; the internal data rule is unchanged). v3.3, 14 Nov 2026 (MIN-4503: slide 6b, the "Concept render" tag removed and the encryption point added; founder: "remove the concept render -> and mention that this device has our own encrypted software for the data so they are not in the cloud"; the eyebrow "Concept · not built" stays). v3.2, 14 Nov 2026 (MIN-4503: new slide 6b, Pathien Vault, a concept device for patients who want maximum privacy; founder: "what if someone that want's his privacy can buy our device that can hold his data. Anna and pix work on this and add one slide with a very super elegant image with our device that looks very premioum"; no other slide renumbered). v3.1, 14 Nov 2026 (MIN-4503: team and ask from the CEO plan v2, `docs/business/team-and-funding-plan.md` §7; slide 14 replaced, slide 15 new; founder: "put it in the deck when ready"). v3, 14 Nov 2026 (MIN-4503: name Pathien; new slide 11, revenue years 1 to 3, on the founder's ask "the numbers of how many money we can earn" and "Yes, update to v3"; Appendix A's SOM retired for the bottom-up line; demo slides say what is real and what is synthetic). v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
 | **Event** | Gen AI Summit Hackathon, Athens LifeTech Park, Biotech & AI track |
 | **Market** | Global. Founder: "Dont focus on the greek market. we need to focus on global market" |
 | **Sources** | Only `docs/research/` (Sales). Each number carries a source ID from the table at the end (S1 to S22; S21 and S22, added in v3.2 by Marketing as price anchors for slide 6b, are unused since v3.5, when the founder removed the price) and its status from the research: **verified**, **secondary**, or **assumption**. Nothing from the research's "Do not put on a slide" list is used. |
-| **Skills** | c-level-skills:board-deck-builder, marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, competitor-alternatives (v1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v2); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer (v3); marketing-strategy-pmm, copywriting, copy-editing, brand-review (v3.1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v3.2); marketing-strategy-pmm, copywriting, copy-editing, brand-review, content-humanizer (v3.4); marketing-strategy-pmm, copywriting, copy-editing, ux-copy, content-humanizer, brand-review (v3.5) |
+| **Skills** | c-level-skills:board-deck-builder, marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, competitor-alternatives (v1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v2); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer (v3); marketing-strategy-pmm, copywriting, copy-editing, brand-review (v3.1); marketing-strategy-pmm, copywriting, copy-editing, content-humanizer, brand-review (v3.2); marketing-strategy-pmm, copywriting, copy-editing, brand-review, content-humanizer (v3.4); marketing-strategy-pmm, copywriting, copy-editing, ux-copy, content-humanizer, brand-review (v3.5); marketing-strategy-pmm, copywriting, copy-editing, ux-copy, content-humanizer, brand-review, competitor-alternatives, competitive-brief, synthesize-research (v3.8) |
 
 **Rules this deck keeps (check them again after any edit):**
 
@@ -24,7 +24,7 @@
 
 **Brand note for Pix (v3):** The product is **Pathien**. Logo: the "p" is the symbol; its foot becomes a path that runs under the whole word and ends in one coral dot, where the dotless "i"'s dot would be. The path leads to the patient. Use `docs/brand/logo/pathien-lockup.svg` on light slides and `pathien-lockup-white.svg` on teal-night; never retype the wordmark (it is outlined Plus Jakarta Sans; slide type is Manrope). Colours and tokens: `docs/brand/brand-guidelines.md` and `docs/brand/tokens.css`. Coral is fill only. No red anywhere, including the revenue slide. No ™ or ® until the trademark check clears.
 
-**Arc (16 slides + 1 backup):** story → problem → why now → product → live demo → privacy → **the Vault, for maximum privacy (slide 6b, new in v3.2)** → possible matches → impact → competition → who pays → **what we can earn (new in v3)** → go-to-market → **regulatory path (the closing content slide, founder: "We need to add it at a pitching deck as something at the end")** → **team today and what I ask** → **why: four people and a research partner (new in v3.1)**. Backup: Appendix A, market sizing.
+**Arc (17 slides + 1 backup):** story → problem → why now → product → live demo → privacy → **the Vault, for maximum privacy (slide 6b, new in v3.2)** → possible matches → **clinical trials, not built yet (slide 7b, new in v3.8)** → impact → competition → who pays → **what we can earn (new in v3)** → go-to-market → **regulatory path (the closing content slide, founder: "We need to add it at a pitching deck as something at the end")** → **team today and what I ask** → **why: four people and a research partner (new in v3.1)**. Backup: Appendix A, market sizing.
 
 ---
 
@@ -227,6 +227,36 @@ v3.5 (founder, 15 Nov 2026, verbatim): *"6b -> concept ,not build -> remove / Pr
 Footer, small: Demo: possible matches come from a seeded synthetic set; doctor-to-doctor contact is a mock-up.
 
 **Sources:** S3 (verified). Founder brief, flag 4. Demo status: S20.
+
+---
+
+## Slide 7b: Clinical trials (new in v3.8)
+
+v3.8 (founder, 15 Nov 2026, verbatim): *"Deck 7 -> Create a deck 7b to connect to the Clinical_Trials_Challenge. Read the doc [...]. Create a summary for me to explain if we can fit to find patients eligible to a clinical trial when we have their concent to process their data"*. The founder's summary: `docs/business/clinical-trials-fit.md`.
+
+**Label (eyebrow):** Not built yet · our next step
+
+**Headline:** The right trial finds the patient, only when the patient says yes.
+
+**Body (33 words):** Many trial criteria check lab values against ranges and dates. That is what we already extract. With a separate yes, we pre-screen a patient's record against public trial registries, and the investigator decides.
+
+**The four steps:**
+1. **Consent.** The patient opts in to trial matching, separately from care.
+2. **Match.** Their record is checked against a trial's published criteria.
+3. **Confirm.** The doctor or trial site reviews: "possibly eligible", never a diagnosis.
+4. **Choose.** The patient decides whether to be contacted.
+
+Footer: Consent only. A pre-screen, never a diagnosis. Never a data sale. Not in the demo.
+
+**Visual note for Pix:** No image generation. A clean four-step flow in the brand, left to right, the same quiet style as 6b's steps: small teal numerals, one line each, hairline connectors, no icons heavier than a line. Step 4 ends on the patient (the coral dot, as in the logo's path). The eyebrow in the same place and weight as other labels, never hidden. No registry logos, no pharma imagery, no red.
+
+**Speaker notes (~20 s, about 60 words):** "One step further. Athens LifeTech Park's clinical trials challenge names recruitment as the most common cause of delay. Many eligibility criteria are lab values against ranges and dates, and that is what we extract. With a separate consent, we pre-screen against public registries. The site confirms, the patient chooses. It is not built yet. It is our next step."
+
+**For questions (not on the slide):** "What is real?" The extraction into a fixed schema, the opt-in and the time-limited access, on synthetic data. Trial matching is not built: criteria-to-rules, the matching engine and real-data validation are missing, and many criteria (diagnosis codes, medications, staging) are not in our documents, so they come back "unknown". "Who pays?" Sponsors and CROs, never the patient; no price yet. "Is it a medical device?" It must not give clinical conclusions and an investigator decides; whether that keeps it outside the MDR is for a regulatory adviser (PRD Q18).
+
+**Rules kept:** 1 (no diagnosis: "possibly eligible", the investigator decides), 2 (no data sold; consent only, withdrawable), 3 (nothing on a chain), 4 (no insurers), 8 (demo honesty: the eyebrow and "Not in the demo" in the footer).
+
+**Sources:** Founder's words above. Challenge text, Topic 2 (founder's Google Doc, 15 Nov). `PRD.md` §10.4 (the extraction schema) and §10.B.5 (consented matching). `buyers.md` §1.10 (sponsors and CROs). No number on the slide.
 
 ---
 
@@ -532,7 +562,7 @@ The v2 name proposals (Anamna, Strand, Histra) are retired; their reasoning stay
 
 ---
 
-## Open questions from Marketing (in PRD section 17 as Q23 to Q27; Q28 there covers the recap post; Q31 and Q32 new in v3; Q33 and Q34 new in v3.2; Q35 and Q36 new in v3.5)
+## Open questions from Marketing (in PRD section 17 as Q23 to Q27; Q28 there covers the recap post; Q31 and Q32 new in v3; Q33 and Q34 new in v3.2; Q35 and Q36 new in v3.5; Q37 new in v3.8)
 
 | # | Question | Owner |
 |---|---|---|
@@ -549,6 +579,7 @@ The v2 name proposals (Anamna, Strand, Histra) are retired; their reasoning stay
 | Q34 | **Answered in v3.5** (founder, 15 Nov: "Pricing -> No"). No price on slide 6b or in the scripts; the slide stays in the deck. | Founder |
 | Q35 | Pathien Vault (slide 6b, step 4): how a Pathien support person grants a doctor time-limited access to a record encrypted on the Vault without Pathien holding a key (for example, the call triggers the patient's own approval, or a grant the patient set up in advance). Slide 6 promises that nobody reads the record without the patient, including us. | Backend, CTO |
 | Q36 | Pathien Vault support desk: hours, languages and who staffs the verification call for patients abroad. | CEO, founder |
+| Q37 | Slide 7b (clinical trials): is it in the Gen AI Summit deck, or only in a version for the Athens LifeHack Clinical Trials Challenge? If in the main deck, it adds about 20 s to the 3-minute script, which does not mention it yet. | Founder |
 
 ---
 

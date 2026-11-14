@@ -154,8 +154,10 @@ export interface CompareSlide extends SlideBase {
 /* ---------- Steps (timeline or ascending cards) ---------- */
 export interface StepsSlide extends SlideBase {
   template: 'steps';
-  variant: 'path' | 'ascend';
+  variant: 'path' | 'ascend' | 'flow';
   headline: string;
+  /** flow variant only: one short paragraph under the headline. */
+  body?: string;
   steps: {
     title: string;
     text?: string;
