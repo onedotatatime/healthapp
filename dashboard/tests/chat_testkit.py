@@ -99,7 +99,7 @@ class Env:
         self.set_behavior()
         self.server = B.make_server(self.home, self.pages, 0, self.settings, [dict(a) for a in AGENTS], key=KEY, row_checker=fake_rows)
         self.chat, self.port = self.server.chat, self.server.port
-        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread = threading.Thread(target=lambda: self.server.serve_forever(poll_interval=0.02), daemon=True)
         self.thread.start()
 
     def set_behavior(self, **beh):

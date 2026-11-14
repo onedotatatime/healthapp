@@ -108,3 +108,58 @@ branches: { repo: "owner/repo"|null, bases: ["main","staging"], base: "staging",
 `config`: `linearProjectId`, `eurPerUsd`, `projectFilter`, caps, `agents[]` (display name, role, transcript `agentType`, Linear assignee name `linear`,
 or `roleLabel` for an agent that writes under the founder's account, the CTO: matched by its Role label, never by the assignee), `founder` (his Linear account name: issues
 assigned to him with no Role label count as `Founder`), `roleLabels` (Linear Role label -> role name in `tasks.byRole`). No secret belongs in this file.
+
+## Dashboard chat bridge (MIN-4497, run 1: the answer path)
+`chat_bridge.py` (stdlib, Python 3.9+) is one small server on **127.0.0.1 only** that serves the dashboard page folder and `/chat/*` on the
+same origin (no CORS, and it never sends a CORS header). Each message runs **one** headless `claude -p --agent <role>-minhos` turn,
+`--resume`d for the next one, **read-only** (`--permission-mode dontAsk` plus the PreToolUse hook `chat_guard.py`). The contract is on
+MIN-4495 and MIN-4497 (CTO decisions dfe40a71 and 285bad11). **Acting is not built yet (run 2):** `config.chat.act` defaults to `false`, and a
+Yes on a proposal answers `act_off` and runs nothing, even with `act: true`, until run 2 lands.
+
+```
+dashboard/chat_service.sh install [--page-dir DIR] [--port 8765]   copy files to ~/.healthapp-dashboard, make chat.key, load the launchd job
+dashboard/chat_service.sh uninstall | off | on | rotate-key | status
+python3 dashboard/chat_bridge.py --home ~/.healthapp-dashboard --page-dir docs/dashboard/drafts --port 8766   # by hand, from a Terminal
+python3 -m unittest discover -s dashboard/tests -p 'test_chat_*.py'                                             # claude is stubbed: no model call
+```
+- **Start.** `chat_service.sh install` writes the launchd job `ai.minhos.healthapp-dashboard-chat` (KeepAlive) and replaces the ad-hoc
+  `python3 -m http.server 8765`. It refuses while another process listens on the port; stop that one yourself first. Start it from launchd or a
+  Terminal, **never from a Claude session**. The child's environment is built from nothing, but the founder's Claude login is what answers.
+- **Stop.** `chat_service.sh uninstall` unloads the job. On SIGTERM the bridge kills the process group of every turn it started.
+  `chat_service.sh off` (file `~/.healthapp-dashboard/chat.off`) makes the bridge refuse every new turn at once; `on` removes it. The Stop button
+  (`POST /chat/sessions/<id>/stop`) ends one running turn's process group (SIGTERM, then SIGKILL after 3 s).
+- **Rotate the secret (MIN-4500).** `chat_service.sh rotate-key` writes a new `~/.healthapp-dashboard/chat.key` (`openssl rand -hex 32`, mode 600),
+  then sends the job SIGTERM so it restarts with the new key and every running turn ends. It prints no key. The key only ever exists in that file and
+  in the `#`-fragment of the local tab that `open.sh` opens: MIN-4500 teaches `open.sh` to read `chat.key` and append `&c=<key>` to the
+  **local** URL only. The page keeps it in memory, not in localStorage. `pages-bundle.sh` refuses `chat_bridge.py`, `chat.key` and any `c=` key.
+  Without a `chat.key` of at least 32 characters every `/chat` call answers 503 and nothing runs.
+
+**Every `/chat` call** needs `Host: 127.0.0.1:<port>` and `x-chat-key` (constant-time compare). A POST needs `Origin: http://127.0.0.1:<port>`
+(`null` and a missing header are refused) and `Content-Type: application/json`. A GET checks `Origin` when present and `Sec-Fetch-Site: same-origin`
+when present. A repeated Host, Origin or key header, an `OPTIONS`, and anything else answer **403 `{}`** and start nothing.
+```
+GET  /chat/health                              {ok, off, running, maxRunning, spentTodayUsd, dailyUsd, act, acting}
+GET  /chat/sessions?agent=Pix                  {agent, sessions:[Session]}  newest first
+GET  /chat/sessions/<id>                       {session, messages:[Msg]}
+GET  /chat/sessions/<id>/events?after=<n>      {state, events:[{n, at, tool, target}]}   polled; last 200 of the running turn, in memory only
+POST /chat/sessions {agent, text}              202 {session} | 4xx {refused, reason}
+POST /chat/sessions/<id>/messages {text}       202 {session} | 4xx {refused, reason}
+POST /chat/sessions/<id>/stop                  200 {session}
+POST /chat/sessions/<id>/proposals/<pid>/no    200 {session}
+POST /chat/sessions/<id>/proposals/<pid>/yes   409 {refused: "act_off"}   (run 1: never acts)
+```
+Refusal codes and the CTO's texts: `busy_session`, `agent_busy`, `cap_reached`, `chat_full`, `budget_reached`, `too_long`, `chat_off`, `finished`,
+`unknown_agent`, `act_off`, `empty`, `bad_request` (the table `REASONS` in `chat_bridge.py`). **Caps:** 3 turns at once, 1 per agent, 1 per chat;
+4,000 characters a message; an answer turn is 15 minutes and `--max-budget-usd 2`; a turn is admitted only when today's spend plus that cap fits
+`dailyUsd` (40); a chat is full at 12 turns or 400k context tokens, and finishes after 12 h idle.
+**Proposals.** The agent ends an action reply with one `<<<PROPOSAL {json} PROPOSAL>>>` block (the schema is in `ANSWER_PROMPT`). Only the agent's
+final text is parsed: exactly one block, last, strict fields. Two blocks, a block that is not last, broken JSON, an extra or missing field or a wrong type
+show the reply and no proposal and log `proposal_rejected` with no text. Every marker is stripped from the text either way. A valid one is checked with
+conductor's own `rows_by_role` and `bin/require-agent-model` (`bad_row`), `estUsd` against `perActUsd` and the forbidden-word backstop (`forbidden`),
+and today's budget (`budget_reached`), then shown with `status: open|refused`.
+**Config** (`~/.healthapp-dashboard/hand-set.json`, `config.chat` and `config.agents[].chat`, no secret): see `hand-set.sample.json`. Agent file =
+`agentFile`, else `agentType`. Default `chat` per agent is Sonnet at medium effort; the CTO is Fable at medium.
+**Files and logs.** `~/.healthapp-dashboard/chat/<id>.json` (mode 600, folder 700) holds the messages; `chat.log` gets one line per turn (kind, agent,
+short id, result, seconds, cost) and **no message text, no reply, no key**; `chat-audit.log` (from the guard) one line per tool call: tool, allow or deny,
+the command's first word or a relative path. The raw `stream-json` is read line by line and never written to disk. Run 2 adds the act turn, the
+worktree, the Yes and the result card.
