@@ -26,6 +26,14 @@ describe('callFunction', () => {
     const f = reply(401, { error: { code: 'bad_passcode', message: 'bad passcode' } });
     await expect(makeCall(env, f as unknown as typeof fetch)('demo-login', {}, DemoLoginResponse)).rejects.toMatchObject({ status: 401, message: 'bad passcode', code: 'bad_passcode' });
   });
+  it("reads Cron's nested error body and keeps its code", async () => {
+    const f = reply(503, { error: { code: 'model_unavailable', message: 'The model call failed.' } });
+    await expect(makeCall(env, f as unknown as typeof fetch)('extract-exam', {}, z.unknown())).rejects.toMatchObject({
+      status: 503,
+      code: 'model_unavailable',
+      message: 'The model call failed.',
+    });
+  });
   it('rejects an answer that does not match the schema instead of passing it on', async () => {
     const f = reply(200, { access_token: 'x', role: 'admin' });
     await expect(makeCall(env, f as unknown as typeof fetch)('demo-login', {}, DemoLoginResponse)).rejects.toBeInstanceOf(ApiError);
