@@ -10,6 +10,8 @@ import { Health } from './Health';
 // The simulation screen and the matches preview read synthetic data; they stay out of the main chunk.
 const Simulation = lazy(() => import('./features/matches/Simulation'));
 const MatchesPreview = lazy(() => import('./features/matches/MatchesPreview'));
+// The doctor's simulated matching over 5,000 synthetic records (MIN-4594): its data file stays out of the main chunk.
+const DoctorSimulate = lazy(() => import('./features/simulate/Simulate'));
 // Dev server only: import.meta.env.DEV is false in a build, so this route and its mock data are not in the shipped bundle.
 const DoctorAnalysisPreview = import.meta.env.DEV ? lazy(() => import('./features/assistant/Preview')) : null;
 const ExamsPreview = import.meta.env.DEV ? lazy(() => import('./features/exams/Preview')) : null;
@@ -46,6 +48,7 @@ export function App() {
           <Route path="/patient/access" element={<RequireRole role="patient"><AccessLog /></RequireRole>} />
           <Route path="/patient/diary" element={<RequireRole role="patient"><AddSymptom /></RequireRole>} />
           <Route path="/patient/*" element={<RequireRole role="patient"><PatientHome /></RequireRole>} />
+          <Route path="/doctor/simulate" element={<RequireRole role="doctor"><Suspense fallback={<Spinner label="Loading" />}><DoctorSimulate /></Suspense></RequireRole>} />
           <Route path="/doctor/*" element={<RequireRole role="doctor"><DoctorHome /></RequireRole>} />
           <Route path="/patient" element={<RequireRole role="patient"><PatientHome /><EntryBar to="/patient/share" label="Share with a doctor" /></RequireRole>} />
           <Route path="/patient/share" element={<RequireRole role="patient"><PatientShare /></RequireRole>} />
