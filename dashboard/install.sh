@@ -51,6 +51,12 @@ chmod 700 "$HOME_DIR"
 cp "$SRC/snapshot.py" "$SRC/rates.json" "$SRC/open.sh" "$HOME_DIR/"
 chmod 700 "$HOME_DIR/open.sh"
 [ -f "$HOME_DIR/hand-set.json" ] || cp "$SRC/hand-set.sample.json" "$HOME_DIR/hand-set.json"
+# Append-only sync AND bridge restart (MIN-4574): the bridge reads config.agents once, so only chat_service.sh sync-agents (which restarts
+# a loaded bridge) makes the new agents clickable. Safe when the bridge is not installed: it then only prints a hint, and a failure here
+# never stops the install.
+if [ -f "$SRC/chat_service.sh" ]; then
+  HEALTHAPP_DASHBOARD_HOME="$HOME_DIR" bash "$SRC/chat_service.sh" sync-agents || echo "warning: could not sync the sample's new agents into $HOME_DIR/hand-set.json" >&2
+fi
 [ -f "$HOME_DIR/directions.json" ] || cp "$SRC/directions.sample.json" "$HOME_DIR/directions.json"      # never overwritten: the founder's statuses stay
 
 for k in push view; do

@@ -9,6 +9,7 @@ A reply that ends with a <<<PROPOSAL {json} PROPOSAL>>> block makes a proposal c
 `#c=<key>` on the URL. Use a throw-away key here, never ~/.healthapp-dashboard/chat.key.
 """
 import argparse
+import json
 import os
 import sys
 import tempfile
@@ -39,10 +40,9 @@ def main():
     os.chmod(stub, 0o755)
     settings = dict(B.DEFAULTS)
     settings.update({"cwd": os.path.join(tmp, "healthapp"), "conductorDir": os.path.join(tmp, "conductor"), "claudeBin": stub, "act": bool(args.act)})
-    names = [("Back", "Product", "product-minhos"), ("Anna", "Marketing", "marketing-minhos"), ("Pix", "Design", "design-minhos"), ("Ren", "Frontend", "frontend-minhos"),
-             ("Cron", "Backend", "backend-minhos"), ("CTO", "CTO", "cto-minhos"), ("Spast", "Sales", "sales-minhos"), ("Release", "Release", "release-minhos"),
-             ("CEO", "CEO", "ceo-minhos"), ("E2E", "E2E", "e2e-minhos")]
-    agents = [{"n": n, "role": r, "agentType": f} for n, r, f in names]
+    # the roster is the sample's config.agents, the same list the feed and the installed bridge read (MIN-4574): no second list here
+    with open(os.path.join(os.path.dirname(HERE), "hand-set.sample.json"), encoding="utf-8") as f:
+        agents = [dict(a) for a in json.load(f)["config"]["agents"]]
     srv = B.make_server(os.path.join(tmp, "home"), args.pages, args.port, settings, agents, key=args.key, row_checker=T.fake_rows)
     print("dev bridge on 127.0.0.1:%d, stub folder %s" % (srv.port, os.path.join(tmp, "stub")), flush=True)
     try:
