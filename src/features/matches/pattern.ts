@@ -8,10 +8,15 @@ export function featureLabel(code: string): string {
   return c.charAt(0).toUpperCase() + c.slice(1);
 }
 
-/** "GR" -> "Greece" when the browser knows the code, the code itself otherwise. */
+/** The countries in the seeded cohort (a fixed small set), so the screen does not depend on the browser's Intl data. */
+const COUNTRIES: Record<string, string> = { DE: 'Germany', FR: 'France', GR: 'Greece', IT: 'Italy', NL: 'Netherlands', SE: 'Sweden' };
+
+/** "GR" -> "Greece". Unknown code: the browser's name when it has one, the code itself otherwise. */
 export function countryName(code: string): string {
+  const c = code.toUpperCase();
+  if (COUNTRIES[c]) return COUNTRIES[c];
   try {
-    return new Intl.DisplayNames(['en'], { type: 'region' }).of(code.toUpperCase()) ?? code;
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(c) ?? code;
   } catch {
     return code;
   }

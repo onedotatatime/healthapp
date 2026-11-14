@@ -1,8 +1,7 @@
 /**
- * LOCAL shapes of the two matching RPCs (MIN-4505, Cron). Cron adds them to `contract.ts`; until then they live here,
- * not in `src/api/contract.ts` (not edited from this issue). Swap = delete this file, import his, fix the names.
- *   healthapp_possible_matches(patient_id uuid) -> { match_count, groups: [{ n, pattern[], countries[], label }] }
- *   healthapp_set_matches_opt_in(opt_in boolean)
+ * LOCAL shapes of the three matching RPCs as built (MIN-4505, Cron; his `_shared/contract.ts` is Deno-side, not importable here).
+ *   healthapp_possible_matches({patient_id}) -> { match_count, groups: [{ n, pattern[], countries[], label }] }  (doctor with a live grant; else 42501)
+ *   healthapp_set_matches_opt_in({opt_in}) / healthapp_get_matches_opt_in() -> { matching_opt_in, matching_opt_in_at }
  * The server already applies k = 5 and the opt-in check and answers with the same empty shape for every "no".
  */
 import { z } from 'zod';
@@ -21,5 +20,13 @@ export const PossibleMatches = z.object({
 });
 export type PossibleMatches = z.infer<typeof PossibleMatches>;
 
-/** `profiles.matching_opt_in`, read under RLS (own row). Missing means off. */
-export const OptInRow = z.object({ matching_opt_in: z.boolean().nullish() });
+/**
+ * `healthapp_get_matches_opt_in()` and `healthapp_set_matches_opt_in({opt_in})` both answer this (MIN-4505). Since 010
+ * (MIN-4484) no client can read `profiles.matching_opt_in`, so the switch is loaded through the get function.
+ * A table-returning RPC may come back as a one-element array; `real.ts` unwraps that.
+ */
+export const OptInState = z.object({
+  matching_opt_in: z.boolean(),
+  matching_opt_in_at: z.string().nullable(),
+});
+export type OptInState = z.infer<typeof OptInState>;

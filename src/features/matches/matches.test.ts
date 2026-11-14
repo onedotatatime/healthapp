@@ -4,10 +4,12 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import simulationJson from '../../../data/synthetic/simulation.json';
+import { OptInState, PossibleMatches } from './contract';
 import { COPY } from './copy';
 import { createMockMatchesApi, EMPTY_RESULT, MARIA_RESULT } from './mock';
 import { countryName, featureLabel } from './pattern';
 import { isEmpty, MatchesView, type PanelState } from './PossibleMatchesPanel';
+import { toApiError } from './real';
 import { SimulationView } from './Simulation';
 import { assumptionPct, decimalsOf, frameAt, hasDropped, niceAxis, parseSimulation, SIM_DURATION_MS, type SimulationData } from './simData';
 
@@ -20,6 +22,30 @@ const real = () => {
   if (!p.ok) throw new Error('simulation.json did not parse');
   return p.data;
 };
+
+describe('the real contract (answers copied from Cron\'s dev fixtures, MIN-4505)', () => {
+  const CRON_MARIA = {
+    match_count: 9,
+    groups: [{ n: 9, pattern: ['CRP_high', 'RF_positive', 'anti_CCP_positive', 'joint_pain', 'morning_stiffness', 'spec_rheumatology'], countries: ['DE', 'FR', 'GR', 'IT', 'NL', 'SE'], label: 'seeded, synthetic' }],
+  };
+  it('parses the 9-record answer and shows the six chips, six countries and the permanent label, not the server label', () => {
+    const r = PossibleMatches.parse(CRON_MARIA);
+    const text = words(html({ status: 'ready', result: r }));
+    for (const c of ['CRP high', 'RF positive', 'Anti-CCP positive', 'Joint pain', 'Morning stiffness', 'Rheumatology', 'Germany', 'France', 'Greece', 'Italy', 'Netherlands', 'Sweden']) expect(text).toContain(c);
+    expect(text).toContain(COPY.panelLabel);
+    expect(text).not.toContain('seeded, synthetic');
+  });
+  it('parses both opt-in answers', () => {
+    expect(OptInState.parse({ matching_opt_in: false, matching_opt_in_at: null }).matching_opt_in).toBe(false);
+    expect(OptInState.parse({ matching_opt_in: true, matching_opt_in_at: '2026-11-14T17:25:33.783784+00:00' }).matching_opt_in).toBe(true);
+  });
+  it('maps PostgREST 42501 / 403 to a 403 grant_expired, anything else to its status', () => {
+    expect(toApiError({ code: '42501', message: 'no grant' }, 403)).toMatchObject({ status: 403, code: 'grant_expired' });
+    expect(toApiError({ code: '42501', message: 'no grant' })).toMatchObject({ status: 403 });
+    expect(toApiError({ code: 'PGRST301', message: 'x' }, 401)).toMatchObject({ status: 401, code: undefined });
+    expect(toApiError({ message: 'x' })).toMatchObject({ status: 500 });
+  });
+});
 
 describe('pattern words', () => {
   it('turns coded features into words', () => {
