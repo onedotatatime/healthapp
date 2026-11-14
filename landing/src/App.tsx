@@ -164,7 +164,7 @@ export default function App() {
     <div ref={root} className={staticMode ? 'static' : ''}>
       <a className="skip" href="#how">Skip to content</a>
       <nav className="nav" aria-label="Main">
-        <a className="logo" href="#top"><img src="/brand/pathien-lockup.svg" alt="Pathien" height={28} style={{ height: 28, width: "auto" }} /></a>
+        <a className="logo" href="#top"><img src="/brand/pathien-lockup.svg" alt="Pathien" height={32} style={{ height: 32, width: "auto" }} /></a>
         <ul className="nav-main">{navLinks.map(([id, l]) => <li key={id}><a href={`#${id}`}>{l}</a></li>)}</ul>
         <ul className="nav-aud">{audienceLinks.map(([id, l]) => <li key={id}><a href={`#${id}`}>{l}</a></li>)}</ul>
         <a className="btn btn-sm" href="#updates" onClick={() => setAudience(null)}>Get updates</a>
@@ -281,7 +281,7 @@ export default function App() {
 
       <footer id="contact" className="footer">
         <div className="wrap foot">
-          <img src="/brand/pathien-lockup-white.svg" alt="Pathien" style={{ height: 28, width: "auto" }} />
+          <img src="/brand/pathien-lockup-white.svg" alt="Pathien" style={{ height: 32, width: "auto" }} />
           <span>Built at GenAI Summit Hackathon · Athens · Nov 2026</span>
           <a className="btn" href="#top">[contact]</a>
         </div>

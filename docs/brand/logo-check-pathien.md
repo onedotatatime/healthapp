@@ -72,3 +72,11 @@ Pix redrew the symbol and the icon ground after the tweaks above. Same method: `
 - Lens still returns p-shaped app icons, as it will for any "p": Pivyt (#1, off-white thick "p" with a coral dot on dark green), Praxido (#2), Pepti (#3), Reluce (#5 and #17, off-white ground, thin sage looped "p", dot at lower right). None is a twin. Nearest in feel is **Reluce** (off-white ground, loop "p", dot lower right); ours has a thick stem with a baseline foot, a teal line and a coral dot, so it is distinguishable at icon size but not unrelated.
 
 **Verdict after redraw: low to medium crowding** (was caution). Not checked and still open: the figurative-mark search (TMview, EUIPO, USPTO design codes) and who owns Reluce and Pivyt. Lens is a visual sample, not a legal clearance.
+
+## Round 3 (final concept), 2026-11-14
+
+Pix, Linear MIN-4462. The founder reviewed the logo again: "use a better font and the logo should look like this" (with a screenshot of a wordmark whose "p" carries the path), then "maybe a more rounded font?" after round 1 (Plus Jakarta Sans, Figtree, Outfit), then **"back to jakarta"** after the rounded round (Nunito, Quicksand, M PLUS Rounded). Final: option A, Plus Jakarta Sans 600, with the custom "p" as the symbol, a dotless "i", and a path under the word that ends in a dot.
+
+**What changed against round 2:** the wordmark moved from Manrope to Plus Jakarta Sans 600; the "p" is now part of the word and the symbol is that "p" with its foot curving into a short path and a dot; the app icon and favicon use the same symbol (ink p, teal path, coral dot, on air). Font licence: Plus Jakarta Sans is SIL Open Font License 1.1, outlining it for a logo is allowed under the same OFL FAQ answer as for Manrope (check 4 above); not re-verified against the font's own `OFL.txt` in this round.
+
+**Still to do:** a fresh look-alike check on the new mark. Run `serper.google.serp.lens` on the new `app-icon-512.png` and `lockup@2x.png` (two calls, under one cent) and compare with the round-2 result. Watch Reluce (off-white ground, looped "p", dot lower right) and any wordmark that already puts a path under a lowercase "p". The figurative-mark search (TMview, EUIPO, USPTO design codes) is still open from round 1. The name "pathien" with a dotless i, and "path" wordmarks in classes 9, 42 and 44, are for the name check (`brand-check-pathien.md`).
