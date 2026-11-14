@@ -120,6 +120,53 @@ class Linear(unittest.TestCase):
         self.assertEqual(next(a for a in r2['agents'] if a['n'] == 'CTO')['state'], 'idle')   # F-1 is started and assigned to the founder
 
 
+    def test_all_thirteen_agents_are_listed_and_the_shared_identities_are_not_double_counted(self):
+        # Founder, 2026-11-14: "we need to show ALL agents here". Scrum writes in Linear as Back, SEO as Anna, JobScout as Spast, under the
+        # same Role labels: Linear cannot tell them apart, so they carry `linear: null` and every issue stays with the agent it is assigned to.
+        cfg = HAND['config']
+        self.assertEqual([a['n'] for a in cfg['agents']], ['Back', 'Anna', 'Pix', 'Ren', 'Cron', 'CTO', 'Spast', 'Release', 'CEO', 'E2E', 'Scrum', 'SEO', 'JobScout'])
+        by_type = {a['agentType'] for a in cfg['agents']}
+        self.assertTrue({'scrum-minhos', 'seo-minhos', 'jobscout-minhos'} <= by_type)
+        for n in ('Scrum', 'SEO', 'JobScout'):
+            self.assertIsNone(next(a for a in cfg['agents'] if a['n'] == n)['linear'])
+        nodes = [issue('B-1', 'In Progress', 'started', who='Back Logakis', role='Product Manager', started='2026-11-14T13:00:00Z'),
+                 issue('N-1', 'In Progress', 'started', who='Anna Lytica', role='Marketing Lead', started='2026-11-14T13:05:00Z'),
+                 issue('S-1', 'In Progress', 'started', who='Spast Arxidas', role='Sales Lead', started='2026-11-14T13:10:00Z'),
+                 issue('B-2', 'Done', 'completed', who='Back Logakis', role='Product Manager', started='2026-11-14T12:10:00Z', done='2026-11-14T12:50:00Z')]
+        r = sn.summarize_linear(nodes, cfg, HAND['milestones'], NOW, sn.parse(HAND['buildStart']), {'Scrum': '2026-11-14T14:30:00Z'})
+        self.assertEqual(len(r['agents']), 13)
+        self.assertEqual(len(r['lanes']), 13)
+        self.assertNotIn('_warning', r)
+        who = {a['n']: a for a in r['agents']}
+        self.assertEqual((who['Back']['state'], who['Back']['issue']), ('active', 'B-1'))
+        self.assertEqual((who['Anna']['state'], who['Anna']['issue']), ('active', 'N-1'))
+        self.assertEqual((who['Spast']['state'], who['Spast']['issue']), ('active', 'S-1'))
+        for n in ('Scrum', 'SEO', 'JobScout'):                     # idle cleanly: no issue, no title, no lane bars
+            self.assertEqual((who[n]['state'], who[n]['issue'], who[n]['title']), ('idle', '-', '-'))
+            self.assertEqual(next(l for l in r['lanes'] if l['agent'] == n)['bars'], [])
+        self.assertEqual((who['Scrum']['last'], who['SEO']['last']), ('30m', '-'))   # last-seen still comes from its own transcripts
+        bars = [b['issue'] for l in r['lanes'] for b in l['bars']]
+        self.assertEqual(sorted(bars), ['B-1', 'B-2', 'N-1', 'S-1'])                  # every issue appears in exactly one lane
+        self.assertEqual(r['tasks']['byRole']['Product'], 2)
+
+    def test_two_agents_given_the_same_identity_never_show_the_same_issues_twice(self):
+        # A config mistake (Scrum given Back's Linear name) must not copy Back's issues onto Scrum: the first agent keeps the identity,
+        # the later one shows idle, and the block carries a warning so nobody reads the page as clean.
+        cfg = copy.deepcopy(HAND['config'])
+        next(a for a in cfg['agents'] if a['n'] == 'Scrum')['linear'] = 'Back Logakis'
+        next(a for a in cfg['agents'] if a['n'] == 'JobScout')['roleLabel'] = 'Sales Lead'
+        next(a for a in cfg['agents'] if a['n'] == 'Spast')['roleLabel'] = 'Sales Lead'
+        nodes = [issue('B-1', 'In Progress', 'started', who='Back Logakis', role='Product Manager', started='2026-11-14T13:00:00Z'),
+                 issue('S-1', 'In Progress', 'started', who='Spast Arxidas', role='Sales Lead', started='2026-11-14T13:10:00Z')]
+        r = sn.summarize_linear(nodes, cfg, HAND['milestones'], NOW, sn.parse(HAND['buildStart']), {})
+        who = {a['n']: a for a in r['agents']}
+        self.assertEqual((who['Back']['issue'], who['Scrum']['state'], who['Scrum']['issue']), ('B-1', 'idle', '-'))
+        self.assertEqual((who['Spast']['issue'], who['JobScout']['state']), ('S-1', 'idle'))
+        self.assertEqual(sorted(b['issue'] for l in r['lanes'] for b in l['bars']), ['B-1', 'S-1'])
+        self.assertIn('Scrum shares the Linear identity "Back Logakis" of Back', r['_warning'])
+        self.assertIn('JobScout shares the Linear identity "Sales Lead" of Spast', r['_warning'])
+
+
 class Server(BaseHTTPRequestHandler):
     mode = 'ok'
     seen_auth = []

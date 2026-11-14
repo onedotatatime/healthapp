@@ -17,7 +17,7 @@ GH = 'GH-FAKE'
 # What the real-git world below must produce (worked out by hand in the comments of World).
 EXPECTED = {'branchesOpen': 3, 'branchesMerged': 2, 'prsOpen': 2, 'prsMerged': 3, 'prsTotal': 7,
             'commitsStaging': 4, 'commitsStaging24h': 2, 'commitsMain': 2, 'commitsMain24h': 1,
-            'linesAdded': 182, 'linesRemoved': 6, 'filesChanged': 6, 'codeLines': 14, 'codeFiles': 4}
+            'linesAdded': 10, 'linesRemoved': 6, 'filesChanged': 2, 'codeLines': 12, 'codeFiles': 3}
 NAMES_AND_PATHS = ('feat/', 'fix/', 'gone/', 'a.txt', 'old.txt', 'vendor', 'package-lock', 'deps.lock', 'img.bin', 'docs/', 'README', 'origin.git')
 
 
@@ -57,9 +57,10 @@ class World:
         commit(r, {'README': 1}, '2026-11-13T09:00:00Z')                                  # main 1
         sh(r, 'checkout', '-q', '-b', 'staging')
         commit(r, {'old.txt': 7}, '2026-11-13T12:00:00Z')                                 # staging 2: before the build and outside the 24 h
-        commit(r, {'a.txt': 10, 'package-lock.json': 100, 'vendor/v.js': 50, 'deps.lock': 20, 'img.bin': b'\x00\x01\x02' * 40},
-               '2026-11-14T11:00:00Z')                                                    # staging 3: +180 lines, 5 files (the binary has no lines)
-        commit(r, {'a.txt': 4, 'docs/n.md': 2}, '2026-11-14T15:00:00Z')                    # staging 4: a.txt 10 -> 4 is -6, n.md +2, 2 more paths (one repeated)
+        commit(r, {'a.txt': 10, 'package-lock.json': 100, 'vendor/v.js': 50, 'deps.lock': 20, 'img.bin': b'\x00\x01\x02' * 40,
+                   'data/f.json': 30, 'docs/f.svg': 8},
+               '2026-11-14T11:00:00Z')                                                    # staging 3: +10 lines of code and the binary; lockfiles, vendor, json and svg are left out
+        commit(r, {'a.txt': 4, 'docs/n.md': 2}, '2026-11-14T15:00:00Z')                    # staging 4: a.txt 10 -> 4 is -6; n.md +2 is prose, left out
         sh(r, 'push', '-q', 'origin', 'staging')
         sh(r, 'checkout', '-q', 'main')
         commit(r, {'m2.txt': 3}, '2026-11-14T14:00:00Z')                                  # main 2, inside the 24 h
@@ -139,9 +140,9 @@ class RealGit(unittest.TestCase):
 
     def test_lines_since_the_build_start(self):
         d = self.w.block()
-        self.assertEqual((d['linesAdded'], d['linesRemoved'], d['filesChanged']), (182, 6, 6))     # 180 + 2 added; 6 paths, a.txt counted once
+        self.assertEqual((d['linesAdded'], d['linesRemoved'], d['filesChanged']), (10, 6, 2))     # a.txt +10 then -6, counted as one path, plus the binary img.bin (a file with no lines); no lockfile, vendor, json, svg or md
         late = self.w.block(since=sn.parse('2026-11-14T13:00:00Z'))             # only the 15:00Z commit is inside
-        self.assertEqual((late['linesAdded'], late['linesRemoved'], late['filesChanged']), (2, 6, 2))
+        self.assertEqual((late['linesAdded'], late['linesRemoved'], late['filesChanged']), (0, 6, 1))
         after = self.w.block(since=sn.parse('2026-11-14T16:00:00Z'))
         self.assertEqual((after['linesAdded'], after['linesRemoved'], after['filesChanged']), (0, 0, 0))   # nothing yet: zero, not omitted
 
@@ -164,15 +165,16 @@ class RealGit(unittest.TestCase):
 
     def test_code_size_skips_lockfiles_vendor_and_binaries(self):
         d = self.w.block()
-        # README 1 + old.txt 7 + a.txt 4 + docs/n.md 2. Left out: package-lock.json (100), vendor/v.js (50), deps.lock (20), img.bin (binary)
-        self.assertEqual((d['codeLines'], d['codeFiles']), (14, 4))
+        # README 1 + old.txt 7 + a.txt 4. Left out: package-lock.json (100), vendor/v.js (50), deps.lock (20), img.bin (binary),
+        # data/f.json (30) and docs/f.svg (8) and docs/n.md (2): data and prose are not code (measured on the real repo, MIN-4568)
+        self.assertEqual((d['codeLines'], d['codeFiles']), (12, 3))
 
     def test_code_size_counts_the_ref_not_the_working_copy(self):
         path = os.path.join(self.w.repo, 'untracked-big.txt')
         with open(path, 'w') as f:
             f.write('x\n' * 500)
         try:
-            self.assertEqual(self.w.block()['codeLines'], 14)                  # an untracked file in the founder's checkout is nobody's code
+            self.assertEqual(self.w.block()['codeLines'], 12)                  # an untracked file in the founder's checkout is nobody's code
         finally:
             os.remove(path)
 

@@ -5,7 +5,7 @@ pushes it to the ingest function. Stdlib Python 3.9+. A launchd job on the found
 
 ```
 python3 dashboard/snapshot.py --home ~/.healthapp-dashboard --out /tmp/snap.json      # local file, no push
-python3 -m unittest discover -s dashboard/tests                                        # 253 tests, about 140 s (the branches and repo tests build real git repositories; the chat tests stub claude)
+python3 -m unittest discover -s dashboard/tests                                        # 301 tests, about 140 s (the branches and repo tests build real git repositories; the chat tests stub claude)
 deno test --allow-read supabase/functions/                                             # 23 tests (key matrix, limits, boundaries)
 deno check supabase/functions/*/index.ts && deno lint supabase/functions
 dashboard/install.sh [--viewer-url BASE] [--rotate]                                    # install or update the Mac job
@@ -130,8 +130,8 @@ repo: { branchesOpen, branchesMerged, prsOpen, prsMerged, prsTotal,
 | `prsOpen`, `prsMerged`, `prsTotal` | `gh pr list --state all --limit 1000` (one call, 10 s timeout): the PRs in each state; `prsTotal` is every PR, closed-without-merge ones included |
 | `commitsStaging`, `commitsMain` | `git rev-list --count origin/<branch>` (the local branch if origin has none): every commit reachable from the branch |
 | `commitsStaging24h`, `commitsMain24h` | `git rev-list --count --since=<now - 24 h> origin/<branch>`: commits whose committer time is in the last 24 hours. A total and its 24 h figure are written together or left out together |
-| `linesAdded`, `linesRemoved`, `filesChanged` | `git log --first-parent -M --numstat --since=<buildStart> origin/staging`: the sum over every commit integrated into staging since the build start (a squash merge is one commit; a merge commit shows its diff against the first parent), so it is the size of the merged work, not of work in open branches. `filesChanged` counts distinct paths; a binary file counts as a file with no lines |
-| `codeLines`, `codeFiles` | `git grep -I -c '' origin/staging`: lines (and file count) of tracked text files at that commit, not the working copy. `-I` skips binary files; left out: lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `*.lock`, `*.lockb`), `node_modules`, `vendor`, `third_party`, `*.min.js`, `*.min.css`, `*.map` |
+| `linesAdded`, `linesRemoved`, `filesChanged` | `git log --first-parent -M --numstat --since=<buildStart> origin/staging`: the sum over every commit integrated into staging since the build start, with the same exclusions as `codeLines` (below) (a squash merge is one commit; a merge commit shows its diff against the first parent), so it is the size of the merged work, not of work in open branches. `filesChanged` counts distinct paths; a binary file counts as a file with no lines |
+| `codeLines`, `codeFiles` | `git grep -I -c '' origin/staging`: lines (and file count) of tracked text files at that commit, not the working copy. `-I` skips binary files; left out (code only, MIN-4568, measured on the real repo: `data/` json and `docs/` had inflated 45k lines of code to 87k): lockfiles (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `*.lock`, `*.lockb`), `node_modules`, `vendor`, `third_party`, `*.min.js`, `*.min.css`, `*.map`, and data and prose files (`*.json`, `*.jsonl`, `*.ndjson`, `*.md`, `*.mdx`, `*.csv`, `*.svg`) |
 - **Failure.** Groups fail on their own: `prs` (gh: not installed, not authenticated, failed, not JSON), `commits staging`, `commits main`, `lines`, `code`
   (`no staging branch found`, a git error, a timeout). A failed group is left out of `repo` (never `null`, never zero) and the block is fresh with
   `blocks.repo.error` set, for example `prs: gh not authenticated`. Only when nothing at all could be read (folder gone, not a repository, every group
@@ -159,7 +159,7 @@ by `n`. A missing file omits the field (the page says "not reported yet"); a fil
 `credits[]`: `n`, `granted`, `used` (the founder or CTO types these; no source). `demo`: `build{state,label,at}`, `deploy{state,label}`, `url`,
 `cleanRuns`, `cleanTarget`, `steps[8]{n,t,s}` with `s` = pass|warn|fail|idle, `notes{"1".."8"}`. States are free to change by hand only.
 `config`: `forecast.cutOrder` (optional, issue ids), `linearProjectId`, `eurPerUsd`, `projectFilter`, caps, `agents[]` (display name, role, transcript `agentType`, Linear assignee name `linear`,
-or `roleLabel` for an agent that writes under the founder's account, the CTO: matched by its Role label, never by the assignee), `founder` (his Linear account name: issues
+or `roleLabel` for an agent that writes under the founder's account, the CTO: matched by its Role label, never by the assignee; `linear: null` for an agent with no Linear identity of its own: Release, CEO, E2E, and Scrum, SEO and JobScout, which write as Back, Anna and Spast under the same Role labels, so Linear cannot tell them apart and they show idle. One identity belongs to one agent: if two share it, the first keeps it and the block carries a warning). All 13 agents are listed in `agents[]` and `lanes[]`, `founder` (his Linear account name: issues
 assigned to him with no Role label count as `Founder`), `roleLabels` (Linear Role label -> role name in `tasks.byRole`). No secret belongs in this file.
 
 ## Dashboard chat bridge (MIN-4497: run 1 the answer path, run 2 the act path)

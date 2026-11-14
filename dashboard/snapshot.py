@@ -167,7 +167,7 @@ def build_usage(cfg, now, since, root, usage_bin, name_filter):
     top = lambda c, n: [{'n': k, 'v': int(round(v))} for k, v in c.most_common(n)]
     data = {
         'agentCaps': cfg['agentCaps'], 'chatCaps': cfg['chatCaps'],
-        'perAgent': top(per_agent, 12), 'perChat': top(per_chat, 8),
+        'perAgent': top(per_agent, max(12, len(cfg['agents']))), 'perChat': top(per_chat, 8),
         'series': [int(round(x)) for x in series], 'seriesFrom': iso(since), 'seriesStepMin': SERIES_STEP_MIN,
         'projection': project_line(series, since, now, deadline, SERIES_STEP_MIN),
         'window': {'since': iso(since), 'until': iso(now)},
@@ -346,9 +346,20 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
         d, tot = ms.get(m['id'], [0, 0])
         milestones.append(dict(m, done=d, total=tot))
     current = next((m['id'] for m in milestones if m['total'] == 0 or m['done'] < m['total']), None)
-    agents, lanes = [], []
+    agents, lanes, claimed, shared = [], [], {}, []
     for a in agents_cfg:
-        if a.get('roleLabel'):
+        # One Linear identity (an assignee name, or a Role label) belongs to ONE agent. Scrum, SEO and JobScout write as Back, Anna and
+        # Spast, under their Role labels, so Linear cannot tell them apart: they are configured with `linear: null` and show idle. If a
+        # config gives two agents the same identity anyway, the first keeps it and the later one gets nothing (and a warning), never a
+        # second copy of the same issues.
+        ident = ('label', a['roleLabel']) if a.get('roleLabel') else ('name', a['linear']) if a.get('linear') else None
+        dup = ident is not None and ident in claimed
+        if ident is not None and not dup:
+            claimed[ident] = a['n']
+        if dup:
+            shared.append('%s shares the Linear identity "%s" of %s, so it shows no issues' % (a['n'], ident[1], claimed[ident]))
+            mine = []
+        elif a.get('roleLabel'):
             # An agent that writes under the founder's Linear account (the CTO) is told apart by its Role label,
             # never by the assignee name, or every issue assigned to the founder would count as the agent's.
             mine = [n for n in live if role_label_name(n, role_labels) == a['roleLabel']]
@@ -374,7 +385,10 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
                          'state': 'done' if n['state']['type'] == 'completed' else 'active'})
         bars.sort(key=lambda b: b['from'])
         lanes.append({'agent': a['n'], 'bars': bars})
-    return {'milestones': milestones, 'current': current, 'tasks': tasks, 'agents': agents, 'lanes': lanes}
+    out = {'milestones': milestones, 'current': current, 'tasks': tasks, 'agents': agents, 'lanes': lanes}
+    if shared:
+        out['_warning'] = 'config.agents: ' + '; '.join(shared)
+    return out
 
 
 # ----------------------------------------------------------------------------- forecast (MIN-4565)
@@ -903,9 +917,13 @@ def read_directions(path):
 
 REPO_PR_LIMIT = 1000                   # one `gh pr list` call; reaching the limit is reported, never hidden
 REPO_LINES_TIMEOUT = 60                # seconds for the two git calls that walk history / the tree
-# Pathspecs left out of `codeLines` (lockfiles, vendored and generated files). `git grep -I` already skips binary files.
+# Pathspecs left out of every line count (codeLines, linesAdded, linesRemoved, filesChanged): lockfiles, vendored and generated files, and
+# data and prose that are not code (json fixtures, markdown, csv, svg). Measured on the real repo (MIN-4568): with only the lockfile rules,
+# data/ (33k lines of json) and docs/ (20k) made "lines of code" 87k when the code is about 45k. `git grep -I` already skips binary files.
 LOC_EXCLUDE = ('**/node_modules/**', '**/vendor/**', '**/third_party/**', '**/package-lock.json', '**/pnpm-lock.yaml', '**/yarn.lock',
-               '**/*.lock', '**/*.lockb', '**/*.min.js', '**/*.min.css', '**/*.map')
+               '**/*.lock', '**/*.lockb', '**/*.min.js', '**/*.min.css', '**/*.map',
+               '**/*.json', '**/*.jsonl', '**/*.ndjson', '**/*.md', '**/*.mdx', '**/*.csv', '**/*.svg')
+LOC_PATHSPEC = ['--', '.'] + [':(exclude,glob)' + p for p in LOC_EXCLUDE]
 REPO_FIELDS = ('branchesOpen', 'branchesMerged', 'prsOpen', 'prsMerged', 'prsTotal',
                'commitsStaging', 'commitsStaging24h', 'commitsMain', 'commitsMain24h',
                'linesAdded', 'linesRemoved', 'filesChanged', 'codeLines', 'codeFiles')
@@ -962,9 +980,9 @@ def repo_commits(runner, repo, ref, now):
 
 def repo_lines(runner, repo, ref, since):
     """(added, removed, files) from `git log --first-parent --numstat` on `ref` since the build start: every integrated commit
-    (a squash merge is one commit, a merge commit shows its diff against the first parent), summed. `files` counts distinct paths
-    touched. A binary file counts as a file with no lines."""
-    out = git_out(runner, repo, 'log', '--first-parent', '-M', '--numstat', '--format=', '--since=' + iso(since), ref, timeout=REPO_LINES_TIMEOUT)
+    (a squash merge is one commit, a merge commit shows its diff against the first parent), summed, with the same LOC_EXCLUDE as
+    codeLines. `files` counts distinct paths touched. A binary file counts as a file with no lines."""
+    out = git_out(runner, repo, 'log', '--first-parent', '-M', '--numstat', '--format=', '--since=' + iso(since), ref, *LOC_PATHSPEC, timeout=REPO_LINES_TIMEOUT)
     added = removed = 0
     paths = set()
     for line in out.splitlines():
@@ -980,7 +998,7 @@ def repo_lines(runner, repo, ref, since):
 def repo_code_size(runner, repo, ref):
     """(lines, files) of tracked text files at `ref`, minus LOC_EXCLUDE: one `git grep -I -c ''` (every line matches, binary files are
     skipped, `ref:path:count` per file). Paths are read and dropped, never published."""
-    argv = ['git', 'grep', '-I', '-c', '', ref, '--', '.'] + [':(exclude,glob)' + p for p in LOC_EXCLUDE]
+    argv = ['git', 'grep', '-I', '-c', '', ref] + LOC_PATHSPEC
     rc, out, err = runner(argv, repo, REPO_LINES_TIMEOUT)
     if rc == 1 and not err.strip():                    # grep's own "no match": an empty tree
         return 0, 0
@@ -1111,7 +1129,7 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         try:                                           # a forecast that fails must not blank the rest of the linear block
             data['forecast'] = build_forecast(nodes, cfg, now, since, parse(hand['freeze']), parse(hand['submitBy']))
         except Exception as ex:
-            data['_warning'] = 'forecast not computed: %s' % ex
+            data['_warning'] = '; '.join(w for w in (data.get('_warning'), 'forecast not computed: %s' % ex) if w)
         return data
     run_block(state, 'linear', linear, now)
 
