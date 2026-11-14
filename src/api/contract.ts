@@ -33,3 +33,21 @@ export type Profile = z.infer<typeof Profile>;
 /** grants.status, review 3 row 9. The timer reads `expires_at` from the grant. */
 export const GrantStatus = z.enum(['pending', 'active', 'refused', 'expired', 'revoked']);
 export type GrantStatus = z.infer<typeof GrantStatus>;
+
+/** diary_entries (review 3 row 12): a direct insert under RLS, no function. `recorded_at` is the server's `now()`. */
+export const DiaryEntry = z.object({
+  id: z.string(),
+  occurred_at: z.string(),
+  recorded_at: z.string().nullish(),
+  time_edited: z.boolean(),
+  text: z.string(),
+  severity: z.number().int().min(1).max(10),
+});
+export type DiaryEntry = z.infer<typeof DiaryEntry>;
+export const DiaryInsert = z.object({
+  // patient_id defaults to the caller; recorded_at and time_edited are set by the database.
+  occurred_at: z.string().min(1),
+  text: z.string().trim().min(1),
+  severity: z.number().int().min(1).max(10),
+});
+export type DiaryInsert = z.infer<typeof DiaryInsert>;
