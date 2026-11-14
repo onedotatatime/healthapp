@@ -4,9 +4,12 @@ import { expect, test, type Page } from '@playwright/test';
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
 const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const jwt = (sub: string) => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub, role: 'authenticated', aud: 'authenticated', exp: 4102444800 })}.sig`;
+// Ids are UUIDs because the app now parses the demo-login answer with Cron's contract (user_id is a Uuid).
+const P1 = '00000000-0000-4000-8000-0000000000a1';
+const D1 = '00000000-0000-4000-8000-0000000000b1';
 const PROFILES: Record<string, { id: string; role: 'patient' | 'doctor'; full_name: string }> = {
-  'p-1': { id: 'p-1', role: 'patient', full_name: 'Maria (synthetic)' },
-  'd-1': { id: 'd-1', role: 'doctor', full_name: 'Doctor (synthetic)' },
+  [P1]: { id: P1, role: 'patient', full_name: 'Maria (synthetic)' },
+  [D1]: { id: D1, role: 'doctor', full_name: 'Doctor (synthetic)' },
 };
 
 async function mockBackend(page: Page) {
@@ -19,7 +22,7 @@ async function mockBackend(page: Page) {
     if (url.pathname === '/functions/v1/healthapp-demo-login') {
       const { persona, passcode } = req.postDataJSON() as { persona: 'patient' | 'doctor'; passcode: string };
       if (passcode !== 'letmein') return json(401, { error: { code: 'bad_passcode', message: 'bad passcode' } });
-      const sub = persona === 'patient' ? 'p-1' : 'd-1';
+      const sub = persona === 'patient' ? P1 : D1;
       return json(200, { access_token: jwt(sub), refresh_token: `r-${sub}`, expires_at: 4102444800, user_id: sub, persona, role: persona });
     }
     const sub = JSON.parse(Buffer.from((req.headers()['authorization'] ?? '').split('.')[1] ?? 'e30', 'base64url').toString()).sub as string | undefined;

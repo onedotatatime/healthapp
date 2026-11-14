@@ -3,3 +3,5 @@
 - [healthapp Gemini model ids](project_healthapp_gemini_model_ids.md) — gemini-2.5-flash 404s for this key; 3.8/3.5-flash work; zsh `$m:g` URL trap
 - [healthapp edge DB direct](project_healthapp_edge_db_direct.md) — functions use SUPABASE_DB_URL, not PostgREST; jsonb/uuid param traps; deploy and SQL rules
 - [healthapp extraction measured](project_healthapp_extraction_measured.md) — Greek lookalike IDs, finding granularity, timings, M2 harness
+- [healthapp demo created](project_healthapp_demo_created.md) — healthapp_demo since 2026-11-14 17:45 UTC; personas by hash copy; not exposed; founder sign-in gap
+- [healthapp identity match](project_healthapp_identity_match.md) — B1 matcher in identity.ts, harness via demo-login, 012 needs 011

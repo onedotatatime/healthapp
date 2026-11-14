@@ -1,0 +1,90 @@
+/* Brand tokens. Source of truth: landing/src/styles.css (:root) and docs/brand/brand-guidelines.md.
+   Marketing site and product app both import this file. Values marked (new) are not in the live CSS. */
+:root {
+  /* 1. Brand palette (live site values) */
+  --air: #F7FAFA;          /* page base */
+  --white: #FFFFFF;        /* cards, nav pill */
+  --mist: #EAF3F2;         /* alt section, quiet surface */
+  --ink: #12201F;          /* text */
+  --ink-soft: #4A5D5B;     /* secondary text (site CSS name: --soft) */
+  --headline-grey: #C3CDCC;/* big decorative headline over photo only (site CSS name: --hg) */
+  --mint: #7FE3CF;         /* primary fill, text on it is ink */
+  --mint-hover: #6FD8C2;   /* button hover (live CSS literal) */
+  --teal-600: #0F766E;     /* links, ghost buttons, focus (site CSS name: --teal) */
+  --teal-night: #0B3B3D;   /* dark sections, footer (site CSS name: --night) */
+  --coral: #F4846B;        /* fills only: dots, step numbers, icons */
+  --coral-900: #9A3F2B;    /* coral as text on light */
+  --peach: #FFD9C7;        /* chip tint */
+  --skeleton: #DCE8E7;     /* skeleton bars, inactive dots */
+  --field-border: #6B7C7A; /* input border (live CSS literal) */
+
+  /* 2. Shape, space, shadow */
+  --radius-pill: 999px;
+  --radius-card: 32px;
+  --radius-image: 24px;
+  --radius-sm: 16px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px;
+  --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px;   /* (new) named steps over the values the CSS uses */
+  --shadow-card: 0 24px 60px -24px rgba(11, 59, 61, .25);
+  --shadow-soft: 0 8px 24px -16px rgba(11, 59, 61, .2);
+  --shadow-btn-hover: 0 10px 24px -10px rgba(15, 118, 110, .5);
+  --target-min: 44px;
+  --focus-ring: 3px solid var(--teal-600);
+  --focus-offset: 3px;
+
+  /* 3. Type */
+  --font: 'Manrope', system-ui, sans-serif;
+  --track-body: -.01em;
+  --track-display: -.04em;
+  --lh-display: .98;
+  --lh-body: 1.5;
+  /* site (fluid, live CSS) */
+  --fs-hero: clamp(56px, 9vw, 144px);
+  --fs-h2: clamp(40px, 6vw, 96px);
+  --fs-h3: clamp(32px, 4vw, 56px);
+  --fs-body-site: 18px;
+  /* app (mobile, new) */
+  --fs-app-display: 32px;  /* screen title */
+  --fs-app-title: 24px;    /* card title */
+  --fs-app-lead: 20px;
+  --fs-app-body: 16px;     /* minimum body size */
+  --fs-app-label: 14px;    /* chips and labels only */
+
+  /* 4. Motion */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);  /* (new) CSS stand-in for GSAP power2.out */
+  --dur-fast: .2s; --dur-step: .4s; --dur-reveal: .8s;
+}
+
+/* 5. Product semantic layer: the app uses these names only, never the raw palette. */
+:root {
+  --color-bg: var(--air);
+  --color-surface: var(--white);
+  --color-surface-quiet: var(--mist);
+  --color-primary: var(--mint);
+  --color-on-primary: var(--ink);
+  --color-primary-hover: var(--mint-hover);
+  --color-text: var(--ink);
+  --color-muted: var(--ink-soft);
+  --color-link: var(--teal-600);          /* links, ghost button, small accent text */
+  --color-accent-text: var(--teal-600);
+  --color-border: rgba(18, 32, 31, .08);  /* hairline between rows */
+  --color-border-strong: var(--field-border); /* inputs */
+  --color-success: var(--teal-600);       /* text/icon; pair with the mint fill for the badge */
+  --color-success-bg: var(--mint);
+  --color-info: var(--teal-night);
+  --color-info-bg: var(--mist);
+  --color-flag-dot: var(--coral);         /* "outside printed range": dot + label, never a red alarm */
+  --color-flag-text: var(--coral-900);
+  --color-flag-bg: rgba(244, 132, 107, .12);
+  --color-focus: var(--teal-600);
+  --color-skeleton: var(--skeleton);
+  --color-inverse-bg: var(--teal-night);
+  --color-inverse-text: var(--white);
+  /* Dark mode: not defined yet. Do not invent one in the app. */
+}
+
+:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-fast: .01s; --dur-step: .01s; --dur-reveal: .01s; }
+}

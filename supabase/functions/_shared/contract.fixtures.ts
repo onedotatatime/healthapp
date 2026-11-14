@@ -16,6 +16,8 @@ import type {
   GrantEnvelope,
   GrantStatusResponse,
   HandshakeCreateResponse,
+  MatchesOptIn,
+  PossibleMatchesResponse,
   ProfileRow,
   ResultRow,
 } from "./contract.ts";
@@ -192,13 +194,15 @@ export const extractDraft: ExtractResponse = {
 export const extractRefusedName: ExtractResponse = {
   outcome: "refused",
   reason: "name_mismatch",
-  message: "The name on the document is different.",
+  message: "The name on it (ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ) doesn't match your profile (Μαρία Παπαδοπούλου). Nothing was saved.",
+  mismatch: { printed: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", profile: "Μαρία Παπαδοπούλου" },
 };
 
 export const extractRefusedId: ExtractResponse = {
   outcome: "refused",
   reason: "id_mismatch",
-  message: "The ID on the document is different.",
+  message: "The ID on it (AK987654) doesn't match your profile (AK123456). Nothing was saved.",
+  mismatch: { printed: "AK987654", profile: "AK123456" },
 };
 
 export const extractRefusedUnreadable: ExtractResponse = {
@@ -325,3 +329,19 @@ export const errorBadPasscode: ErrorBody = {
 export const errorRateLimited: ErrorBody = {
   error: { code: "rate_limited", message: "Too many tries. Wait a minute." },
 };
+
+// Possible matches (MIN-4505): the answers healthapp_dev gave on 14 Nov 2026 for the synthetic persona,
+// copied verbatim (doctor in a live grant; Maria opted in, then out). Synthetic only.
+export const possibleMatchesMaria: PossibleMatchesResponse = {
+  match_count: 9,
+  groups: [{
+    n: 9,
+    pattern: ["CRP_high", "RF_positive", "anti_CCP_positive", "joint_pain", "morning_stiffness", "spec_rheumatology"],
+    countries: ["DE", "FR", "GR", "IT", "NL", "SE"],
+    label: "seeded, synthetic",
+  }],
+};
+/** Not opted in, no match and below k all look exactly like this. */
+export const possibleMatchesEmpty: PossibleMatchesResponse = { match_count: 0, groups: [] };
+export const matchesOptInOn: MatchesOptIn = { matching_opt_in: true, matching_opt_in_at: "2026-11-14T17:25:33.783784+00:00" };
+export const matchesOptInOff: MatchesOptIn = { matching_opt_in: false, matching_opt_in_at: null };

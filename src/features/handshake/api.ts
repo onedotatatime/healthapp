@@ -1,6 +1,6 @@
 /**
  * The one seam the handshake screens talk through. `real.ts` calls Cron's functions and subscribes to Realtime;
- * `mock.ts` is an in-memory server a fixture can drive (preview page, tests). Nothing else in this folder
+ * `mock.ts` is an in-memory server a fixture can drive (tests). Nothing else in this folder
  * imports `callFunction` or `supabase`.
  */
 import { ApiError } from '../../api/call';

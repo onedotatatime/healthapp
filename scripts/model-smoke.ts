@@ -1,7 +1,8 @@
 // One live call through the model wrapper on a synthetic document (MIN-4471 acceptance).
 // Prints status, attempts, time and counts only, never the answer's content.
-//   HEALTHAPP_GEMINI_API_KEY=... deno run --allow-env --allow-net --allow-read scripts/model-smoke.ts <synthetic.png>
+//   HEALTHAPP_GEMINI_API_KEY=... deno run --allow-env --allow-net --allow-read scripts/model-smoke.ts <synthetic.jpg|png>
 import { z } from "npm:zod@4.6.7";
+import { bytesToBase64 } from "../supabase/functions/_shared/b64.ts";
 import { generateJson, ModelError } from "../supabase/functions/_shared/model.ts";
 
 const Extract = z.object({
@@ -14,11 +15,12 @@ const Extract = z.object({
 });
 
 const path = Deno.args[0];
-const data = btoa(String.fromCharCode(...await Deno.readFile(path)));
+const data = bytesToBase64(await Deno.readFile(path));
+const mime = /\.jpe?g$/i.test(path) ? "image/jpeg" : "image/png";
 try {
   const r = await generateJson({
     system: "Copy exactly what is printed. Dates as YYYY-MM-DD. Never add an opinion.",
-    parts: [{ inline_data: { mime_type: "image/png", data } }, { text: "Extract this exam." }],
+    parts: [{ inline_data: { mime_type: mime, data } }, { text: "Extract this exam." }],
     schema: Extract,
     model: Deno.env.get("HEALTHAPP_GEMINI_MODEL") ?? undefined,
   }, { apiKey: Deno.env.get("HEALTHAPP_GEMINI_API_KEY") });

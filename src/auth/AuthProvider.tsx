@@ -1,14 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ApiError } from '../api/call';
 import { callFunction, supabase } from '../api/client';
-import { DemoLoginResponse, Profile, type Role } from '../api/contract';
+import { DemoLoginResponse, Profile, type DemoPersona, type Role } from '../api/contract';
 import type { AuthState } from './guard';
 
 interface Auth {
   state: AuthState;
   displayName: string | null;
   /** Throws ApiError (HTTP status in `.status`) when the passcode or the server refuses. */
-  signInDemo(persona: Role, passcode: string): Promise<Role>;
+  signInDemo(persona: DemoPersona, passcode: string): Promise<Role>;
   signOut(): Promise<void>;
 }
 
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signInDemo = useCallback(async (persona: Role, passcode: string): Promise<Role> => {
+  const signInDemo = useCallback(async (persona: DemoPersona, passcode: string): Promise<Role> => {
     if (!supabase || !callFunction) throw new ApiError(0, 'Not configured.');
     const res = await callFunction('demo-login', { persona, passcode }, DemoLoginResponse);
     const { error } = await supabase.auth.setSession({ access_token: res.access_token, refresh_token: res.refresh_token });
