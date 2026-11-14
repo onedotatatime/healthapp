@@ -10,15 +10,24 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import * as cron from '../../supabase/functions/_shared/contract';
 import * as api from './contract';
+import * as analysis from '../features/assistant/analysis.contract';
 import * as assistant from '../features/assistant/contract';
 import * as handshake from '../features/handshake/contract';
 
-/** Frontend-only shapes (a profiles row read under RLS). */
-const LOCAL_ONLY = new Set(['Profile']);
+/**
+ * Frontend-only shapes (a profiles row read under RLS), plus the ones I wrote from the CTO decision on MIN-4548 before
+ * Cron posted his (MIN-4549 `file_analysis`, MIN-4551 `healthapp-over-time`). When his `contract.ts` has a name below it is
+ * compared like every other shape, and a difference goes red: then copy his shape and delete the name from this list.
+ */
+const LOCAL_ONLY = new Set([
+  'Profile',
+  'FileDocType', 'FileItem', 'FileAnalysisRow',
+  'OverTimeRequest', 'OverTimePoint', 'Projection', 'OverTimeSeries', 'OverTimeCounts', 'OverTimeResponse',
+]);
 const isSchema = (v: unknown): v is z.ZodType => !!v && typeof v === 'object' && '_zod' in (v as object);
 const json = (s: z.ZodType) => z.toJSONSchema(s, { unrepresentable: 'any', io: 'input' });
 
-const copies = { 'src/api/contract.ts': api, 'handshake/contract.ts': handshake, 'assistant/contract.ts': assistant };
+const copies = { 'src/api/contract.ts': api, 'handshake/contract.ts': handshake, 'assistant/contract.ts': assistant, 'assistant/analysis.contract.ts': analysis };
 
 describe('frontend contract copies match Cron\'s contract.ts', () => {
   for (const [file, mod] of Object.entries(copies)) {

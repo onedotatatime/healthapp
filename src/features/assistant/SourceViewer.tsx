@@ -9,6 +9,7 @@ import { ProvenanceMark, type MarkKind } from '../../components/ProvenanceMark';
 import { Spinner } from '../../components/Primitives';
 import { isGrantGone, type AssistantApi } from './api';
 import type { DocPhotoResponse } from './contract';
+import { AboutFileView, type FileState } from './FileFacts';
 import { FLAG_WORD, KIND_LABEL, formatDate, formatTime, rangeText, valueText, type RecordData, type RecordIndex, type Subject } from './record';
 
 type Photo = { status: 'loading' } | { status: 'ok'; photo: DocPhotoResponse } | { status: 'error' };
@@ -72,6 +73,24 @@ function DocBody({ doc, focus, record, api, grantId, onGone }: { doc: NonNullabl
     };
   }, [api, doc.id, grantId, onGone]);
 
+  const [file, setFile] = useState<FileState>({ status: 'loading' });
+  const [fileTry, setFileTry] = useState(0);
+  useEffect(() => {
+    let alive = true;
+    setFile({ status: 'loading' });
+    api.fileAnalysis(doc.id).then(
+      (row) => alive && setFile({ status: 'ready', row }),
+      (e) => {
+        if (!alive) return;
+        setFile({ status: 'error' });
+        if (isGrantGone(e)) onGone();
+      },
+    );
+    return () => {
+      alive = false;
+    };
+  }, [api, doc.id, fileTry, onGone]);
+
   const results = record.results.filter((r) => r.document_id === doc.id);
   const findings = record.findings.filter((f) => f.document_id === doc.id);
   const marks: MarkKind[] = [doc.provenance === 'verified_by_source' ? 'verified' : 'uploaded', ...(doc.identity_status === 'name_only' ? (['name-match'] as MarkKind[]) : [])];
@@ -118,6 +137,7 @@ function DocBody({ doc, focus, record, api, grantId, onGone }: { doc: NonNullabl
           )}
         </div>
       </div>
+      <AboutFileView state={file} mark={marks[0]} onRetry={() => setFileTry((n) => n + 1)} />
     </div>
   );
 }

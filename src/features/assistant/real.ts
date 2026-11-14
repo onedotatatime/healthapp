@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ApiError } from '../../api/call';
 import { callFunction, supabase } from '../../api/client';
 import type { AssistantApi } from './api';
+import { FILE_ANALYSIS_COLUMNS, FileAnalysisRow, OverTimeResponse } from './analysis.contract';
 import { AssistantResponse, DIARY_COLUMNS, DOCUMENT_COLUMNS, DiaryRow, DocPhotoResponse, DocumentRow, FINDING_COLUMNS, FindingRow, RESULT_COLUMNS, ResultRow } from './contract';
 
 function need() {
@@ -40,5 +41,16 @@ export const realAssistantApi: AssistantApi = {
   },
   async photo(docId, grantId) {
     return need().callFunction('doc-photo', { doc_id: docId, grant_id: grantId }, DocPhotoResponse, { accessToken: await token() });
+  },
+  async fileAnalysis(docId) {
+    const { data, error, status } = await need().supabase.from('file_analysis').select(FILE_ANALYSIS_COLUMNS).eq('document_id', docId).maybeSingle();
+    if (error) throw new ApiError(status || 0, error.message, status === 401 || status === 403 ? 'grant_expired' : undefined);
+    if (!data) return null; // no row: not analysed yet (or the grant ended: the record read reports that)
+    const parsed = FileAnalysisRow.safeParse(data);
+    if (!parsed.success) throw new ApiError(status, 'Unexpected row from file_analysis.');
+    return parsed.data;
+  },
+  async overTime(grantId) {
+    return need().callFunction('over-time', { grant_id: grantId }, OverTimeResponse, { accessToken: await token() });
   },
 };

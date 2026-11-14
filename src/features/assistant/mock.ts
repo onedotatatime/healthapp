@@ -6,6 +6,8 @@
  */
 import { ApiError } from '../../api/call';
 import type { AssistantApi } from './api';
+import type { FileAnalysisRow, OverTimeResponse } from './analysis.contract';
+import { computeOverTime } from './analysis.calc';
 import type { AssistantResponse, DiaryRow, DocumentRow, FindingRow, ResultRow, Segment } from './contract';
 import type { RecordData } from './record';
 
@@ -83,7 +85,14 @@ export function answerFor(question: string, n = 1): AssistantResponse {
 export const MOCK_PHOTO = (label: string) =>
   `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480"><rect width="360" height="480" fill="#fff"/><rect x="16" y="16" width="328" height="448" fill="none" stroke="#6F8084"/><text x="32" y="56" font-family="monospace" font-size="16" fill="#12303A">SYNTHETIC EXAM PHOTO</text><text x="32" y="84" font-family="monospace" font-size="13" fill="#5B6B70">${label.replace(/[<&]/g, '')}</text>${Array.from({ length: 9 }, (_, i) => `<rect x="32" y="${120 + i * 36}" width="${200 + ((i * 53) % 90)}" height="10" fill="#DDE3E2"/>`).join('')}</svg>`)}`;
 
-export interface MockAssistantOptions { latencyMs?: number; record?: RecordData }
+export interface MockAssistantOptions {
+  latencyMs?: number;
+  record?: RecordData;
+  /** Per document: a row, `null` (not analysed yet) or an Error (the read fails). Default: not analysed. */
+  fileAnalyses?: Record<string, FileAnalysisRow | null | Error>;
+  /** The over-time answer, or an Error. Default: computed from the record. */
+  overTime?: OverTimeResponse | Error | ((record: RecordData) => OverTimeResponse);
+}
 
 export function createMockAssistant(opts: MockAssistantOptions = {}): AssistantApi & { asked: string[] } {
   const wait = () => new Promise((r) => setTimeout(r, opts.latencyMs ?? 900));
@@ -106,6 +115,19 @@ export function createMockAssistant(opts: MockAssistantOptions = {}): AssistantA
       await wait();
       const d = record.documents.find((x) => x.id === docId);
       return { signed_url: MOCK_PHOTO(d ? `${d.kind.replace('_', ' ')} ${d.exam_date}` : 'document'), expires_at: new Date(Date.now() + 60_000).toISOString(), content_type: 'image/png', fingerprint: 'unchecked' };
+    },
+    async fileAnalysis(docId) {
+      await new Promise((r) => setTimeout(r, Math.min(opts.latencyMs ?? 900, 400)));
+      const row = opts.fileAnalyses?.[docId] ?? null;
+      if (row instanceof Error) throw row;
+      return row;
+    },
+    async overTime() {
+      await new Promise((r) => setTimeout(r, Math.min(opts.latencyMs ?? 900, 500)));
+      const o = opts.overTime;
+      if (o instanceof Error) throw o;
+      if (typeof o === 'function') return o(record);
+      return o ?? computeOverTime(record);
     },
   };
 }
