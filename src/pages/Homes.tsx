@@ -4,6 +4,7 @@ import { DiaryList } from '../features/diary/DiaryList';
 import { EmptyState } from '../components/Primitives';
 import { RecordsList } from '../features/exams/RecordsList';
 import { MatchesOptIn } from '../features/matches/MatchesOptIn';
+import { COPY as SIMULATE } from '../features/simulate/copy';
 
 function SignOut() {
   const { signOut } = useAuth();
@@ -40,6 +41,7 @@ export function DoctorHome() {
       <h1>Patients</h1>
       <p className="muted" data-testid="signed-in-as">Signed in as {displayName ?? 'the doctor'}.</p>
       <EmptyState>No patient has shared a record with you yet.</EmptyState>
+      <p style={{ marginTop: 'var(--space-4)' }}><Link to="/doctor/simulate" data-testid="simulate-link">{SIMULATE.home}</Link></p>
       <p style={{ marginTop: 'var(--space-6)' }}>
         <SignOut />
       </p>
