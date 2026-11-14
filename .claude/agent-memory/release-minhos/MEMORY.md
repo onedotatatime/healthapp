@@ -2,3 +2,4 @@
 - [healthapp memory is tracked on staging](project_healthapp_memory_tracked_rebase.md) — untracked memory in a main-based worktree blocks the rebase; save, rebase, merge index
 - [healthapp local lane run](project_healthapp_local_lane_run.md) — Deno needs --node-modules-dir=auto, lint noise is baseline, smoke port 4173 may be taken
 - [Isolated worktree cleanup](feedback_isolated_worktree_cleanup.md) — isolated runs cannot dirty-check/remove other worktrees; detached push, full SHAs
+- [Landing release lessons](project_landing_release_lessons.md) — merge memory index files, check live sha256 vs staging first, no cache-bust needed on Pages
