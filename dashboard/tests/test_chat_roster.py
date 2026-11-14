@@ -278,5 +278,58 @@ class Service(unittest.TestCase):
         self.assertEqual(read(self.hand), "{broken")
 
 
+class InstallSh(unittest.TestCase):
+    """The real install.sh (fake launchctl, supabase, pbcopy, gh; --no-secrets): it runs chat_service.sh sync-agents, so a loaded bridge is
+    restarted and the new agents are clickable (MIN-4574 must-fix); with the bridge not loaded it still installs and says so."""
+
+    def setUp(self):
+        self.tmp = os.path.realpath(tempfile.mkdtemp(prefix="roster-inst-"))
+        self.addCleanup(os.system, "rm -rf %s" % self.tmp)
+        j = lambda *p: os.path.join(self.tmp, *p)
+        for d in ("bin", "home", "dash"):
+            os.makedirs(j(d))
+        self.log = j("launchctl.log")
+        bodies = {
+            "launchctl": '#!/bin/sh\necho "$@" >> "%s"\n[ \"$1\" = print ] && exit ${FAKE_LAUNCHCTL_PRINT:-0}\nexit 0\n' % self.log,
+            "supabase": '#!/bin/sh\necho \'[{"name":"anon","type":"legacy","api_key":"public-anon"}]\'\n',
+            "pbcopy": "#!/bin/sh\ncat >/dev/null\n",
+        }
+        for name, body in bodies.items():
+            with open(j("bin", name), "w") as f:
+                f.write(body)
+            os.chmod(j("bin", name), 0o755)
+        self.env = {"PATH": "%s:/usr/bin:/bin" % j("bin"), "HOME": j("home"), "HEALTHAPP_DASHBOARD_HOME": j("dash")}
+        self.hand = j("dash", "hand-set.json")
+        os.makedirs(j("dash"), exist_ok=True)
+        with open(self.hand, "w") as f:
+            json.dump({"config": {"agents": sample_agents()[:10]}}, f)
+
+    def run_install(self, **env):
+        return subprocess.run(["/bin/bash", os.path.join(HERE, "install.sh"), "--no-secrets"], env=dict(self.env, **env), capture_output=True, text=True, timeout=60)
+
+    def names(self):
+        with open(self.hand) as f:
+            return [a["n"] for a in json.load(f)["config"]["agents"]]
+
+    def test_install_syncs_through_chat_service_and_restarts_the_loaded_bridge(self):
+        r = self.run_install()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.names()[10:], ["Scrum", "SEO", "JobScout"])
+        self.assertIn("agents added", r.stdout)
+        self.assertIn("kill SIGTERM", read(self.log))                               # the bridge restart: without it the clicks stay refused
+
+    def test_install_with_the_bridge_not_installed_still_succeeds_and_restarts_nothing(self):
+        r = self.run_install(FAKE_LAUNCHCTL_PRINT="1")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(len(self.names()), 13)
+        self.assertIn("restart it by hand", r.stdout)
+        self.assertNotIn("kill", read(self.log) if os.path.exists(self.log) else "")
+
+    def test_install_has_no_direct_sync_agents_py_call_left(self):
+        code = "\n".join(l for l in read(os.path.join(HERE, "install.sh")).splitlines() if not l.lstrip().startswith("#"))
+        self.assertNotIn("sync_agents.py", code)
+        self.assertIn("chat_service.sh", code)
+
+
 if __name__ == "__main__":
     unittest.main()
