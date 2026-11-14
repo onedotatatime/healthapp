@@ -2,6 +2,14 @@
 
 **CTO · MIN-4426 · 13 Nov 2026.** This review covers the PRD and the technical solution: section 10 (Cron) and section 12 (Ren). It reads them against the founder's later decisions in `00-founder-brief.md`: global market, his own real exams as test data, a deployed demo that is wiped afterwards, and the CTO's choice of AI endpoint. It is reviewed once and does not open a second round. Back applies the changes in section 8 below to PRD v2.
 
+> **Amended 14 Nov 2026 (CTO, MIN-4449). Read this before sections 2.1, 2.7 and 2.9.**
+> The founder decided that healthapp uses the existing conductor Supabase project (`fnbnhvgrnkrbsrwhgcgc`, eu-west-1) for both environments, his real exams included: "Supabase we can use the onedotatatime db", "the conductor project", "Conductor too". No new project is created.
+> - **Section 2.1 is superseded.** `dev` and `demo` are two schemas (`healthapp_dev`, `healthapp_demo`) and two private buckets inside conductor, not two projects.
+> - **Section 2.7 rows 2 to 5 are superseded. Do not run `supabase projects delete`: on this ref it would delete Conductor.** The wipe drops the `healthapp_demo` schema, empties and deletes the bucket through the Storage API, and hard-deletes the marked auth users. Conductor's backups and platform logs cannot be wiped and age out on their own.
+> - **Section 2.9 is replaced** by the ten-point real-data gate on MIN-4449.
+> - "Frankfurt" now reads "Ireland". Everything else in this review stands.
+> The design, the rewritten wipe and the gate are in the three "CTO · Decision" comments on MIN-4449.
+
 Skills applied: `cto-advisor` (the verdict, and the endpoint decision in ADR form), `senior-pm` (the fit, three-point estimates, the cut order), `code-reviewer` (the Cron and Ren contract, read with the universal lens: security, async, resources, failure handling).
 
 ---
@@ -22,6 +30,8 @@ The build starts tomorrow on these conditions:
 N4 ("synthetic only") is overridden by the founder for **his own records only**. Synthetic data stays in place for development, for tests and for the stage persona. Real data is used only for the role-play with a doctor, and on stage only if he chooses (Founder decides #3).
 
 ### 2.1 Two environments, not one (decision)
+*Superseded on 14 Nov 2026 (MIN-4449): two schemas inside the conductor project, not two projects. See the note at the top.*
+
 | | `dev` | `demo` |
 |---|---|---|
 | Supabase project | EU (Frankfurt) | **A separate project**, EU (Frankfurt), created for this weekend only |
@@ -74,6 +84,8 @@ Why: Claude transcripts, agent memory and Linear evidence are the likeliest leak
 - Outside the app: the phone mirror shows only the app, Do Not Disturb is on, and notifications are hidden. **The fallback video (D4) and every deck screenshot are recorded on synthetic Maria only.**
 
 ### 2.7 The wipe (Release builds it; the CTO verifies)
+*Rows 2 to 5 superseded on 14 Nov 2026 (MIN-4449). Never delete the project: it is Conductor. See the note at the top.*
+
 **Principle: delete the container, not the rows.** The final wipe deletes the whole `demo` project. Release builds a one-command `wipe-demo` script with the steps below and runs it.
 
 | # | Surface | Action | Verification (counts and HTTP codes only, posted on the issue) |
@@ -94,6 +106,8 @@ Why: Claude transcripts, agent memory and Linear evidence are the likeliest leak
 That would be another person's real health data, with no consent record and no wipe plan for them. B1 would refuse it, but only after the model had already read it. Sign-up is closed. Judges can try the flow on Maria's account with the printed synthetic exams, including the "other person" refusal. This replaces Cron's SYNTHETIC-marker guard, which would also refuse the founder's real exams. **The marker guard is dropped** (saves 0.25 h). Synthetic documents keep the visible marker so they can never be mistaken for real ones.
 
 ### 2.9 The real-data gate (a new checkpoint at about H6–H8, run by the CTO)
+*Replaced on 14 Nov 2026 by the ten-point gate on MIN-4449 (decision 2).*
+
 His first real exam goes in only when **all** of these hold:
 1. The endpoint checks of section 2.3 are done and written on MIN-4427.
 2. `demo` is deployed: sign-up off, no demo-login for his account, RLS matrix green (run with synthetic accounts on `demo`), and no Sentry or analytics.
