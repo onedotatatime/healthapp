@@ -10,6 +10,7 @@ import {
   type HealthappEnv,
   ResultRow,
 } from "./contract.ts";
+import type { AnalysisFields } from "./analysis.ts";
 import { flagOf } from "./extract.ts";
 import type { DraftIn } from "./extract.ts";
 import type { IdentityProfile } from "./identity.ts";
@@ -67,6 +68,10 @@ export interface Store {
     sha256File: string,
     identity: "match" | "name_only",
   ): Promise<Saved | null>;
+  /** The stored object's own metadata (type, size, upload time) from storage, or null when there is no object. */
+  objectMeta(env: HealthappEnv, path: string): Promise<ObjectMeta | null>;
+  /** Upserts the one analysis row of a document of this patient (MIN-4549). Twice leaves one row. */
+  saveAnalysis(env: HealthappEnv, patientId: string, docId: string, f: AnalysisFields): Promise<void>;
   /** The match keys of the patient's own profile (never sent to a client). */
   identityOf(env: HealthappEnv, uid: string): Promise<IdentityProfile | null>;
   discardDraft(env: HealthappEnv, patientId: string, docId: string): Promise<void>;
@@ -77,6 +82,12 @@ export interface Store {
     docId: string,
     plan: (s: DocState) => Promise<PlanOutcome>,
   ): Promise<{ state: DocState } | { error: Extract<PlanOutcome, { kind: "error" }> } | null>;
+}
+
+export interface ObjectMeta {
+  mime: string | null;
+  size: number | null;
+  created_at: string | null;
 }
 
 export interface Blobs {

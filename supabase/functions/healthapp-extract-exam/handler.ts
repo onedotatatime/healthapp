@@ -1,8 +1,16 @@
 // healthapp-extract-exam (MIN-4475; PRD 10.4): one synchronous call, 60 s at most. Reads the patient's
 // uploaded photo, asks the model once (forced schema), then the server validates and decides. A refusal
 // stores nothing and deletes the upload. Logs only a status, a reason code and timings.
+import { analyseFile } from "../_shared/analysis.ts";
 import { bytesToBase64 } from "../_shared/b64.ts";
-import { bucketFor, type DocumentDraft, DocumentRow, ExtractRequest, type ExtractResponse } from "../_shared/contract.ts";
+import {
+  type AnalyseResponse,
+  bucketFor,
+  type DocumentDraft,
+  DocumentRow,
+  ExtractRequest,
+  type ExtractResponse,
+} from "../_shared/contract.ts";
 import { type Auth, authenticate, type Blobs, readJson, type Store } from "../_shared/docs.ts";
 import { build, EXTRACT_SYSTEM, ModelExtract } from "../_shared/extract.ts";
 import { fail, headersFor, json } from "../_shared/http.ts";
@@ -11,12 +19,16 @@ import { type JsonCall, type JsonResult, ModelError } from "../_shared/model.ts"
 
 /** The whole function stays under 60 s: the model gets what is left after the download. */
 export const MODEL_BUDGET_MS = 52_000;
+/** The file analysis runs after the answer is sent, so it has its own, longer budget. */
+export const ANALYSIS_BUDGET_MS = 45_000;
 
 export interface Deps {
   auth: Auth;
-  store: Pick<Store, "roleOf" | "getOwn" | "identityOf" | "saveExtraction" | "discardDraft">;
+  store: Pick<Store, "roleOf" | "getOwn" | "identityOf" | "saveExtraction" | "discardDraft" | "objectMeta" | "saveAnalysis">;
   blobs: Pick<Blobs, "download" | "remove">;
-  generate(call: JsonCall<ModelExtract>): Promise<JsonResult<ModelExtract>>;
+  generate<T>(call: JsonCall<T>): Promise<JsonResult<T>>;
+  /** Keeps the work alive after the response is sent (EdgeRuntime.waitUntil on the platform). */
+  background(work: Promise<unknown>): void;
   log(line: Record<string, unknown>): void;
   now(): number;
 }
@@ -40,6 +52,12 @@ export function makeHandler(deps: Deps) {
 
     const cur = await deps.store.getOwn(who.env, who.uid, parsed.data.doc_id);
     if (!cur) return fail(req, 404, "not_found", "No such document.");
+    if (parsed.data.analyse_only) {
+      // MIN-4549: only the file analysis, for this patient's own saved document (the dev backfill script).
+      const o = await analyseFile(deps, { env: who.env, patientId: who.uid, state: cur, budgetMs: MODEL_BUDGET_MS });
+      const done: AnalyseResponse = { outcome: "analysed", ...o };
+      return json(req, 200, done);
+    }
     if (cur.document.status !== "draft") return fail(req, 400, "bad_request", "This document is already saved.");
     const path = cur.meta.storage_path;
     const mime = cur.meta.content_type ?? null;
@@ -114,6 +132,12 @@ export function makeHandler(deps: Deps) {
       fn: "extract-exam", status: "draft", model: result.model, attempts: result.attempts,
       results: saved.results.length, findings: saved.findings.length, ms: deps.now() - started,
     });
+    // Direction 3: the second pass, over the same stored file, after the answer is sent. A failure is a row with a
+    // code, never an error for the patient, and a model that was slow cannot make the extraction slow.
+    deps.background(
+      analyseFile(deps, { env: who.env, patientId: who.uid, state: saved, bytes, budgetMs: ANALYSIS_BUDGET_MS })
+        .catch((e) => deps.log({ fn: "extract-exam", pass: "analysis", status: "not_saved", err: (e as Error)?.name ?? "error" })),
+    );
     const out: ExtractResponse = { outcome: "draft", draft };
     return json(req, 200, out);
   };
