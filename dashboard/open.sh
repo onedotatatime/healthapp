@@ -4,13 +4,13 @@
 #
 #   ~/.healthapp-dashboard/open.sh             check the feed with this Mac's keys, then open the page in Chrome
 #   ~/.healthapp-dashboard/open.sh --check     check only, open nothing
-#   ~/.healthapp-dashboard/open.sh --base URL  another copy of the page (default: the Pages Direction B page)
+#   ~/.healthapp-dashboard/open.sh --base URL  another copy of the page (default: the Pages Direction A page)
 #
 # The keys travel in the URL fragment (#k=&a=), which no server or log receives; the page stores them once in this
 # browser and removes them from the address bar. install.sh copies this file next to the keys.
 set -eu
 HOME_DIR="$HOME/.healthapp-dashboard"
-BASE="https://healthapp-dashboard.pages.dev/direction-B/"
+BASE="https://healthapp-dashboard.pages.dev/direction-A/"
 FEED="https://fnbnhvgrnkrbsrwhgcgc.supabase.co/functions/v1/healthapp-dashboard-feed"
 CHECK_ONLY=0
 while [ $# -gt 0 ]; do
