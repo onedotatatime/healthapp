@@ -12,7 +12,10 @@ import type {
   DocPhotoResponse,
   DocumentRow,
   ErrorBody,
+  ExamDeleteResponse,
+  ExamDraftResponse,
   ExtractResponse,
+  MyExamsResponse,
   FileAnalysisRow,
   FindingRow,
   GrantEnvelope,
@@ -22,6 +25,7 @@ import type {
   PossibleMatchesResponse,
   ProfileRow,
   ResultRow,
+  UnconfirmDocResponse,
 } from "./contract.ts";
 
 export const IDS = {
@@ -76,6 +80,7 @@ export const documents: DocumentRow[] = [
     status: "confirmed",
     created_at: "2026-03-12T10:00:00.000+00:00",
     confirmed_at: "2026-03-12T10:02:00.000+00:00",
+    unchecked: false,
   },
   {
     id: IDS.docImaging,
@@ -89,6 +94,7 @@ export const documents: DocumentRow[] = [
     status: "confirmed",
     created_at: "2026-02-02T12:00:00.000+00:00",
     confirmed_at: "2026-02-02T12:03:00.000+00:00",
+    unchecked: false,
   },
 ];
 
@@ -171,7 +177,7 @@ export const extractDraft: ExtractResponse = {
     document: {
       id: IDS.docDraft, patient_id: IDS.patient, kind: "blood_test", language: "el",
       exam_date: "2026-11-10", issuer: "Demo Lab Athens", identity_status: "match",
-      provenance: "uploaded_by_patient", status: "draft", created_at: NOW, confirmed_at: null,
+      provenance: "uploaded_by_patient", status: "draft", created_at: NOW, confirmed_at: null, unchecked: false,
     },
     printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ",
     printed_id: "AK 123456",
@@ -212,6 +218,39 @@ export const extractRefusedUnreadable: ExtractResponse = {
   reason: "unreadable",
   message: "The page could not be read. Try a sharper photo in more light.",
 };
+
+// MIN-4556: the call answers at once; the result is the row's status in the list.
+export const extractQueued: ExtractResponse = { outcome: "queued" };
+
+const ago = (s: number) => new Date(Date.parse(NOW) - s * 1000).toISOString().replace("Z", "+00:00");
+/** One row per status the screen has to draw, newest first. Synthetic. */
+export const myExams: MyExamsResponse = {
+  server_now: NOW,
+  exams: [
+    { id: "e1000000-0000-4000-8000-000000000001", status: "queued", reason: null, uploaded_at: ago(5), status_at: ago(5), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false },
+    { id: "e1000000-0000-4000-8000-000000000002", status: "reading", reason: null, uploaded_at: ago(60), status_at: ago(40), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false },
+    { id: IDS.docDraft, status: "draft", reason: null, uploaded_at: ago(300), status_at: ago(240), kind: "blood_test", exam_date: "2026-11-10", values_read: 2, can_retry: false, can_delete: true, unchecked: false },
+    { id: "e1000000-0000-4000-8000-000000000004", status: "refused", reason: "name_mismatch", uploaded_at: ago(600), status_at: ago(560), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false },
+    { id: "e1000000-0000-4000-8000-000000000005", status: "failed", reason: "model_timeout", uploaded_at: ago(900), status_at: ago(820), kind: null, exam_date: null, values_read: null, can_retry: true, can_delete: true, unchecked: false },
+    { id: "e1000000-0000-4000-8000-000000000006", status: "failed", reason: "too_many_attempts", uploaded_at: ago(1200), status_at: ago(1100), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false },
+    { id: IDS.docBlood, status: "confirmed", reason: null, uploaded_at: ago(86400), status_at: ago(86000), kind: "blood_test", exam_date: "2026-11-04", values_read: 4, can_retry: false, can_delete: false, unchecked: false },
+    // MIN-4556 addendum: scanned, saved with no tap, and its owner has not opened it yet.
+    { id: "e1000000-0000-4000-8000-000000000007", status: "confirmed", reason: null, uploaded_at: ago(120), status_at: ago(70), kind: "blood_test", exam_date: "2026-11-12", values_read: 3, can_retry: false, can_delete: false, unchecked: true },
+  ],
+};
+
+export const examDraft: ExamDraftResponse = { draft: (extractDraft as Extract<ExtractResponse, { outcome: "draft" }>).draft };
+
+/** Opening a saved exam answers the same shape as a draft; `draft.document.status` is "confirmed" and `unchecked` is false once opened. */
+export const examConfirmedOpen: ExamDraftResponse = {
+  draft: { ...examDraft.draft, document: { ...examDraft.draft.document, status: "confirmed", confirmed_at: NOW, unchecked: false } },
+};
+
+export const unconfirmed: UnconfirmDocResponse = {
+  document: { ...documents[0], id: IDS.docBlood, status: "draft", confirmed_at: null, unchecked: false },
+};
+
+export const examDeleted: ExamDeleteResponse = { deleted: true, doc_id: "e1000000-0000-4000-8000-000000000004" };
 
 export const confirmDoc: ConfirmDocResponse = {
   document: { ...documents[0], id: IDS.docDraft, exam_date: "2026-11-10", created_at: NOW, confirmed_at: NOW },

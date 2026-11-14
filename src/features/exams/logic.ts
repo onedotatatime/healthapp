@@ -176,6 +176,11 @@ export async function readExam(api: ExamsApi, ctx: ReadCtx, limitMs = EXTRACT_LI
       ctx.uploaded = false;
       return { phase: 'refused', view: refusalView(res.reason) };
     }
+    if (res.outcome === 'queued') {
+      // MIN-4556: the reading now runs in the background (202 at once). The scan screen of MIN-4557 replaces this wait;
+      // until it lands, a deployed extract-exam must not reach this screen.
+      return { phase: 'failed', failure: failureOf(new ApiError(202, 'The reading runs in the background.')) };
+    }
     return { phase: 'review', draft: res.draft };
   } catch (e) {
     return { phase: 'failed', failure: failureOf(e) };
