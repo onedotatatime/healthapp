@@ -124,7 +124,7 @@ export default function DemoPanel() {
         {done && <p data-testid="demo-done">{done}</p>}
         {error && <ErrorNote>{error}</ErrorNote>}
       </div>
-      <h2 style={{ marginTop: 'var(--space-6)' }}>Last handshake</h2>
+      <h2 style={{ marginTop: 'var(--space-5)' }}>Last handshake</h2>
       {handshake === undefined && <p className="muted">Not loaded.</p>}
       {handshake === null && <p className="muted" data-testid="demo-no-handshake">No handshake yet.</p>}
       {handshake && s && (

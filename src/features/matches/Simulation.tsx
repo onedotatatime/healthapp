@@ -45,7 +45,7 @@ function Chart({ s, xs, xLabel, p }: { s: SimSeries; xs: number[]; xLabel: strin
   const d = pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)} ${py.toFixed(1)}`).join(' ');
   const tip = pts[pts.length - 1];
   const dec = decimalsOf(s.values);
-  const color = COLORS[s.id] ?? 'var(--ink)';
+  const color = COLORS[s.id] ?? 'var(--color-text)';
   return (
     <figure className="sim-chart" data-testid={`sim-series-${s.id}`}>
       <h2>{s.label}</h2>

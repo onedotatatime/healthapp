@@ -1,71 +1,142 @@
-/* App base + the shared components. No shadows, no gradients, sentence case (Drop 0). */
+/* App base, the iOS shell and the shared components (MIN-4587). Values come from docs/brand/tokens.css (brand + glass layer)
+   and src/styles/tokens.css (role tokens). Glass rules: blur only on chrome (tab bar, navigation bar, sheet, timer, entry bar,
+   sign-in card), always -webkit- first, never animated, never over the camera, a photo or the QR card. Cards are translucent
+   with no blur. Spec: docs/design/ios-glass-handoff.md. */
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--paper);color:var(--ink);font:var(--text-patient-body)}
-h1{font:var(--text-h1);margin:0 0 var(--space-3)}
-h2{font:var(--text-h2);margin:0 0 var(--space-2)}
+body{margin:0;background:var(--color-bg);color:var(--color-text);font:var(--text-patient-body);letter-spacing:var(--track-body);font-variant-numeric:tabular-nums}
+h1{font:var(--text-display);letter-spacing:-.03em;margin:0 0 var(--space-2)}
+h2{font:var(--text-h2);letter-spacing:-.03em;margin:0 0 var(--space-3)}
+h3{font:var(--text-lead);margin:0 0 var(--space-2)}
 p{margin:0 0 var(--space-3)}
-:focus-visible{outline:var(--focus);outline-offset:2px}
+a{color:var(--color-text);text-underline-offset:3px}
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-.page{max-width:480px;margin:0 auto;padding:var(--space-6) var(--space-4) var(--space-12)}
-.page.doctor{max-width:960px;font:var(--text-doctor-body)}
-.muted{color:var(--ink-2)}
+.muted{color:var(--color-muted)}
+.mono{font-variant-numeric:tabular-nums}
+
+/* ---- ground: one fixed layer, not background-attachment:fixed (iOS Safari ignores it) ---- */
+.app-bg{position:fixed;inset:0;z-index:-1;background:linear-gradient(var(--ambient-veil),var(--ambient-veil)),url('/brand/bg-ambient.webp') 70% 40%/cover no-repeat,var(--color-bg)}
+body:has(.signin) .app-bg{background:url('/brand/bg-ambient.webp') 70% 40%/cover no-repeat,var(--color-bg)}
+@media (prefers-reduced-transparency:reduce){.app-bg,body:has(.signin) .app-bg{background:var(--color-bg)}}
+
+/* ---- pages ---- */
+.page{max-width:480px;margin:0 auto;padding:calc(var(--safe-top) + var(--space-3)) var(--page-pad) calc(var(--safe-bottom) + var(--space-7))}
+.page.tabbed{padding-bottom:calc(var(--tabbar-h) + max(var(--bar-gap),var(--safe-bottom)) + var(--space-7))}
+.page.pushed{padding-top:var(--space-3)}
+.page.doctor{max-width:1120px;font:var(--text-doctor-body);padding-bottom:calc(var(--tabbar-h) + max(var(--bar-gap),var(--safe-bottom)) + var(--space-7))}   /* room for the floating entry bar */
+
+/* ---- navigation bar (pushed screens): chrome glass, one 44 x 44 back control ---- */
+.navbar{position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:var(--space-2);height:calc(var(--navbar-h) + var(--safe-top));padding:var(--safe-top) var(--space-2) 0;background:var(--glass-chrome);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);border-bottom:1px solid var(--glass-edge-low)}
+.nav-back{flex:none;width:var(--target-min);height:var(--target-min);display:inline-flex;align-items:center;justify-content:center;border-radius:var(--radius-pill);color:var(--color-text);text-decoration:none}
+.nav-back:hover{background:var(--color-border)}
+.nav-back svg{flex:none}
+
+/* ---- patient tab bar: a floating chrome-glass pill ---- */
+.tabbar{position:fixed;z-index:20;left:max(var(--bar-gap),calc(50% - 228px));right:max(var(--bar-gap),calc(50% - 228px));bottom:max(var(--bar-gap),var(--safe-bottom));height:var(--tabbar-h);display:flex;gap:2px;padding:5px;border-radius:var(--radius-pill);background:var(--glass-chrome);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft)}
+.tabbar a{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:var(--radius-pill);color:var(--color-text);text-decoration:none;font:var(--text-label);letter-spacing:0;white-space:nowrap;transition:background var(--dur-fast) var(--ease-out)}
+.tabbar a svg{flex:none}
+.tabbar a[aria-current='page']{background:var(--color-primary);color:var(--color-on-primary)}
+/* content fades out under the floating bar and the home indicator */
+.tab-fade{position:fixed;z-index:19;left:0;right:0;bottom:0;height:calc(var(--tabbar-h) + max(var(--bar-gap),var(--safe-bottom)) + 32px);background:linear-gradient(to top,var(--air) 40%,transparent);pointer-events:none}
+
+/* ---- surfaces ---- */
+.card{background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);padding:var(--space-5) 20px;box-shadow:var(--shadow-soft)}
+.card+.card,.card+h2,h2+.card{margin-top:var(--space-4)}
+.group{list-style:none;margin:0;padding:0 20px;background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft)}
+.group>li,.group>a,.group>div{display:flex;align-items:center;gap:var(--space-3);min-height:56px;padding:var(--space-3) 0;border-bottom:1px solid var(--color-border);color:var(--color-text);text-decoration:none}
+.group>:last-child{border-bottom:0}
+.group .chev{margin-left:auto;flex:none;color:var(--color-muted)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin:var(--space-4) 0 var(--space-6)}
+.tile{display:flex;flex-direction:column;justify-content:space-between;gap:var(--space-3);min-height:104px;padding:var(--space-4);border-radius:var(--radius-image);text-decoration:none;font:var(--text-button);line-height:1.25;color:var(--color-text);background:var(--glass-card);border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft);transition:transform var(--dur-fast) var(--ease-out)}
+.tile:hover{transform:translateY(-1px)}
+.tile svg{flex:none;color:var(--color-link)}
+.tile.primary{background:var(--color-primary);border-color:transparent;color:var(--color-on-primary)}
+.tile.primary svg{color:var(--color-on-primary)}
+.section-title{margin:var(--space-6) 0 var(--space-3)}
+.sheet-scrim{position:fixed;inset:0;z-index:30;background:var(--scrim)}
+.sheet{position:fixed;z-index:31;left:0;right:0;bottom:0;max-height:92dvh;overflow:auto;padding:var(--space-2) var(--page-pad) calc(var(--safe-bottom) + var(--space-5));border-radius:var(--radius-card) var(--radius-card) 0 0;background:var(--glass-chrome);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);border:1px solid var(--glass-edge);border-bottom:0;box-shadow:var(--shadow-card)}
+.sheet>*{max-width:480px;margin-left:auto;margin-right:auto}
+.sheet::before{content:'';display:block;width:36px;height:5px;margin:0 auto var(--space-4);border-radius:var(--radius-pill);background:var(--color-border-strong);opacity:.5}
+.sheet h1{font:var(--text-h2);letter-spacing:-.03em}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:sheet-up var(--dur-step) var(--ease-out)}}
+@keyframes sheet-up{from{transform:translateY(100%)}}
+/* the sign-in card: chrome glass over the unveiled ground */
+.signin{margin:max(var(--space-6),calc(var(--safe-top) + var(--space-4))) auto 0;max-width:420px;padding:var(--space-5) var(--space-5) var(--space-5);border-radius:var(--radius-card);background:var(--glass-chrome);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);border:1px solid var(--glass-edge);box-shadow:var(--shadow-card)}
+.signin .lockup{display:block;width:150px;height:auto;margin:0 0 var(--space-5)}
+
+/* ---- controls ---- */
 .field{display:block;margin:0 0 var(--space-4)}
-.field>span{display:block;font:var(--text-label);margin-bottom:var(--space-1)}
-.field input{width:100%;min-height:var(--tap-patient);padding:0 var(--space-3);font:var(--text-patient-body);color:var(--ink);background:var(--surface);border:1.5px solid var(--line-strong);border-radius:var(--radius-md)}
+.field>span{display:block;font:var(--text-label);margin:0 0 var(--space-2) var(--space-4)}
+.field input,.field textarea{width:100%;min-height:var(--tap-input);padding:0 var(--space-5);font:var(--text-patient-body);color:var(--color-text);background:var(--color-surface);border:1.5px solid var(--color-border-strong);border-radius:var(--radius-pill)}
+.field textarea{padding:var(--space-4) var(--space-5);border-radius:var(--radius-image)}
+.field input[type='range']{padding:0;min-height:var(--target-min);border:0;background:transparent;accent-color:var(--color-link)}
+.field input[aria-invalid='true']{border-color:var(--color-flag-text);border-width:2px}
+.err{display:block;margin:var(--space-1) 0 0 var(--space-4);font:var(--text-label);font-style:normal;color:var(--color-flag-text)}
 
-/* buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--tap-patient);min-width:120px;padding:0 var(--space-4);font:var(--text-label);font-size:16px;border-radius:var(--radius-md);cursor:pointer;border:1.5px solid var(--ink);background:transparent;color:var(--ink)}
-.btn.primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--space-2);min-height:var(--tap-patient);min-width:120px;padding:0 28px;font:var(--text-button);letter-spacing:0;border-radius:var(--radius-pill);cursor:pointer;text-decoration:none;border:1.5px solid var(--color-link);background:var(--glass-card);color:var(--color-link);transition:background var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out)}
+.btn:hover{background:var(--color-surface)}
+.btn:active{transform:scale(.98)}
+.btn.primary{background:var(--color-primary);border-color:var(--color-primary);color:var(--color-on-primary)}
+.btn.primary:hover{background:var(--color-primary-hover);transform:translateY(-1px);box-shadow:var(--shadow-btn-hover)}
+.btn.primary:active{transform:scale(.98)}
 .btn.block{display:flex;width:100%}
+.btn.small{min-height:var(--target-min);padding:0 20px}
 .btn:disabled{opacity:.6;cursor:default}
+.btn svg{flex:none}
 .btn-stack{display:grid;gap:var(--space-3)}
-.btn small{display:block;font:400 13px/18px var(--font-sans);opacity:.9}
+.btn small{display:block;font:500 14px/1.3 var(--font);opacity:.9}
+/* teal-600 text is not AA on chrome glass in the worst case, so a ghost button on a bar, a sheet or the sign-in card is ink */
+.sheet .btn:not(.primary),.signin .btn:not(.primary),.timer .btn:not(.primary),.hs-entry .btn:not(.primary){border-color:var(--color-text);color:var(--color-text)}
+a.btn{text-decoration:none}
+.link-tap,.back,.photo figcaption a{display:inline-flex;align-items:center;min-height:var(--target-min)}   /* a text link is still a 44 px target */
+.link-quiet{color:var(--color-text);text-decoration:underline;text-underline-offset:3px}
 
-/* primitives */
-.note{display:flex;gap:var(--space-2);align-items:flex-start;padding:var(--space-3);border-radius:var(--radius-md);font:var(--text-doctor-body);border:1px solid var(--red-ink);background:var(--red-bg);color:var(--red-ink)}
-.note.caution{border-color:var(--amber-ink);background:var(--amber-bg);color:var(--amber-ink)}
-.spinner{display:inline-flex;align-items:center;gap:var(--space-2);color:var(--ink-2)}
-.spinner i{width:18px;height:18px;border-radius:50%;border:3px solid var(--line-strong);border-top-color:var(--teal);animation:spin .8s linear infinite}
+/* ---- primitives: notes carry no red. An error is white with a coral-900 edge and icon; a caution is peach ---- */
+.note{display:flex;gap:var(--space-2);align-items:flex-start;padding:var(--space-3) var(--space-4);border-radius:var(--radius-sm);font:var(--text-doctor-body);background:var(--color-surface);border:1.5px solid var(--color-flag-text);color:var(--color-text)}
+.note>svg{flex:none;color:var(--color-flag-text)}
+.note.caution{background:var(--color-caution-bg);border-color:transparent}
+.note.caution>svg{color:var(--color-text)}
+.spinner{display:inline-flex;align-items:center;gap:var(--space-2);color:var(--color-muted)}
+.spinner i{width:18px;height:18px;border-radius:50%;border:3px solid var(--color-skeleton);border-top-color:var(--color-link);animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.empty{padding:var(--space-6) var(--space-4);border:1px dashed var(--line-strong);border-radius:var(--radius-md);color:var(--ink-2);background:var(--surface)}
+.empty{padding:var(--space-6) var(--space-5);border:1.5px dashed var(--color-border-strong);border-radius:var(--radius-image);color:var(--color-muted);background:var(--glass-card)}
 
-/* provenance marks */
-.mark{display:inline-flex;align-items:center;gap:6px;height:28px;padding:4px 12px 4px 10px;border-radius:var(--radius-pill);font:var(--text-label);white-space:nowrap;border:1px solid transparent}
+/* ---- provenance marks: same meaning, brand colours. Ink labels, never white on mint ---- */
+.mark{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:4px 12px 4px 10px;border-radius:var(--radius-pill);font:var(--text-label);letter-spacing:0;white-space:nowrap;border:1px solid transparent;color:var(--color-text)}
 .mark svg{flex:none}
-.mark.doctor{height:24px}
-.mark.verified{background:var(--teal);color:#fff}
-.mark.uploaded{background:transparent;border-color:var(--line-strong);color:var(--ink)}
-.mark.edited{background:var(--surface-2);border-color:var(--line-strong);color:var(--ink)}
-.mark.name-match,.mark.unchecked{background:var(--amber-bg);border-color:var(--amber-ink);color:var(--amber-ink)}
+.mark.doctor{min-height:24px}
+.mark.verified{background:var(--color-success-bg)}
+.mark.uploaded{background:transparent;border-color:var(--color-border-strong)}
+.mark.edited{background:var(--color-surface-quiet);border-color:var(--color-border-strong)}
+.mark.name-match,.mark.unchecked{background:var(--color-caution-bg);border-color:var(--color-flag-text)}
 
-/* citation chip */
+/* ---- citation chip: the brand's source chip. Its card is solid white ---- */
 .chip-wrap{position:relative;display:inline-block;vertical-align:baseline;margin:0 2px}
-.chip{position:relative;height:24px;min-width:28px;padding:0 6px;border-radius:var(--radius-pill);cursor:pointer;font:500 13px/1 var(--font-mono);background:var(--teal-tint);border:1px solid var(--teal);color:var(--teal-text)}
+.chip{position:relative;height:28px;min-width:32px;padding:0 10px;border-radius:var(--radius-pill);cursor:pointer;font:var(--text-label);letter-spacing:0;background:var(--color-surface);border:1px solid var(--color-link);color:var(--color-link)}
 .chip::after{content:'';position:absolute;inset:-10px -8px}
-.chip:hover{border-color:var(--teal-text)}
-.chip[aria-pressed='true']{background:var(--teal);border-color:var(--teal);color:#fff}
-.chip-card{display:none;position:absolute;left:0;top:calc(100% + 6px);z-index:5;min-width:220px;padding:10px 12px;background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius-md);font:var(--text-doctor-body);color:var(--ink)}
+.chip:hover{border-color:var(--color-text)}
+.chip[aria-pressed='true']{background:var(--color-link);border-color:var(--color-link);color:var(--color-inverse-text)}
+.chip-card{display:none;position:absolute;left:0;top:calc(100% + 6px);z-index:5;min-width:220px;padding:10px 12px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-soft);font:var(--text-doctor-body);color:var(--color-text)}
 .chip-card strong{display:block;font-weight:600;margin-bottom:var(--space-2)}
 .chip-wrap:hover .chip-card,.chip-wrap:focus-within .chip-card{display:block}
 
-/* access timer */
-.timer{position:sticky;top:0;z-index:10;background:var(--surface);color:var(--ink);border-bottom:1px solid var(--line-strong)}
-.timer-row{min-height:56px;padding:10px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-2) var(--space-3);font:var(--text-doctor-body)}
-.timer.patient .timer-row{font:var(--text-patient-body);font-size:16px}
+/* ---- access timer: a chrome-glass bar, sticky under the status bar ---- */
+.timer{position:sticky;top:0;z-index:16;padding-top:var(--safe-top);background:var(--glass-chrome);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);color:var(--color-text);border-bottom:1px solid var(--glass-edge-low)}
+.timer-row{min-height:56px;padding:8px var(--page-pad);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-2) var(--space-3);font:var(--text-doctor-body)}
+.timer.patient .timer-row{font:var(--text-doctor-body)}
 .timer-label{flex:1 1 100px;min-width:0}
 .timer-right{display:flex;align-items:center;gap:var(--space-3);flex:0 0 auto;margin-left:auto}
 .timer-time{font:var(--text-timer)}
-.timer-track{height:4px;background:var(--line-strong)}
-.timer-fill{height:100%;background:var(--teal)}
-.timer.soon{background:var(--amber-bg);color:var(--amber-ink);border-bottom-color:var(--amber-ink)}
-.timer.soon .timer-fill{background:var(--amber-ink)}
-.timer.ended{background:var(--surface-2)}
+.timer-track{height:4px;background:var(--track)}
+.timer-fill{height:100%;background:var(--color-link)}
+.timer.soon{background:var(--glass-caution)}
+.timer.soon .timer-fill{background:var(--color-flag-text)}
+.timer.ended{background:var(--glass-quiet)}
 .timer.ended .timer-track{background:transparent}
-.timer .btn{min-height:48px;min-width:120px;height:48px;border-width:1.5px;font-size:14px}
-[id]{scroll-margin-top:72px}
+.timer .btn{min-height:var(--target-min);min-width:0;padding:0 20px;font-size:14px}
+[id]{scroll-margin-top:calc(var(--navbar-h) + var(--safe-top) + var(--space-4))}
 
-/* demo kit page */
-.kit h2{margin-top:var(--space-8)}
+/* ---- demo kit page (MIN-4588 restyles it) ---- */
+.kit h2{margin-top:var(--space-6)}
 .kit .row{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center;margin-bottom:var(--space-3)}
-.kit .timer{position:static}
+.kit .timer{position:static;background:var(--color-surface);-webkit-backdrop-filter:none;backdrop-filter:none}   /* a showcase of five timers: solid, so the page stays under three blurred surfaces */
