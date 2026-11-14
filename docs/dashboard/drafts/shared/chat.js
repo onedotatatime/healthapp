@@ -27,7 +27,7 @@ window.addEventListener('hashchange', () => { const had = key; takeKey(); if(key
 
 /* ---------- state ---------- */
 /* mode: host (not 127.0.0.1) | nokey | probing | absent (no bridge answered, or it refused the key) | up | down (it was up, now silent) */
-const S = { mode: isLocal ? (key ? 'probing' : 'nokey') : 'host', health: null, sessions: {}, peek: {}, whoAll: false };
+const S = { mode: isLocal ? (key ? 'probing' : 'nokey') : 'host', health: null, sessions: {}, peek: {} };
 let cur = null, timer = 0, busy = false, fastN = 0;
 const live = () => S.mode === 'up' || S.mode === 'down';
 const agents = () => (typeof DATA !== 'undefined' && DATA.agents) || [];
@@ -73,22 +73,20 @@ function paintCard(){
   if(!ag.length){ box.innerHTML = '<p class="muted bre">No agents in the feed yet.</p>'; return; }
   if(!live()){
     const note = S.mode === 'probing' ? '' : '<p class="muted note chnote">' + esc(isLocal ? M.text('not_local') : 'Chat runs on the local Mac only.') + '</p>';
-    box.innerHTML = ag.slice(0, 5).map(H.agentRow).join('') + (ag.length > 5 ? '<div class="muted more">+' + (ag.length - 5) + ' more, idle: ' + ag.slice(5).map(a => esc(a.n)).join(', ') + '</div>' : '') + note;
+    box.innerHTML = M.orderFeed(ag).map(H.agentRow).join('') + note;      // every agent is a row (MIN-4575): no cap, no "+N more"
     return;
   }
-  const all = rows().map((x, i) => Object.assign(x, { i })).sort((p, q) => p.r.rank - q.r.rank || p.i - q.i);
-  const sum = M.summary(all.map(x => x.r)), shown = S.whoAll ? all : all.slice(0, 5);
+  const all = M.order(rows());
+  const sum = M.summary(all.map(x => x.r));
   box.innerHTML = '<div class="chsum" role="status">' + (sum.length ? sum.map(s => '<span class="t-' + (s.tone === 'warn' ? 'warn' : 'brand') + '">' + esc(s.text) + '</span>').join(' · ') : '<span class="muted">Click an agent to talk to it.</span>')
     + (S.mode === 'down' ? ' <span class="t-warn">· bridge not reachable</span>' : '') + '</div>'
-    + shown.map(({ a, r }) => '<a class="arow chrow" href="#/chat/' + encodeURIComponent(a.n) + '" data-agrow="' + esc(a.n) + '" data-kind="' + r.kind + '" aria-label="' + esc('Chat with ' + a.n + ', ' + r.word) + '">'
+    + all.map(({ a, r }) => '<a class="arow chrow" href="#/chat/' + encodeURIComponent(a.n) + '" data-agrow="' + esc(a.n) + '" data-kind="' + r.kind + '" aria-label="' + esc('Chat with ' + a.n + ', ' + r.word) + '">'
       + '<span class="av" aria-hidden="true">' + esc(H.initials(a.n)) + '</span>'
       + '<div class="ainfo"><div class="aname"><b>' + esc(a.n) + '</b> ' + (a.role !== a.n ? '<span class="muted">' + esc(a.role) + '</span>' : '') + '</div>'
       + '<div class="atask"><i class="dot ' + r.tone + (r.ring ? ' ring' : '') + '" aria-hidden="true"></i><b class="rw ' + r.tone + '">' + esc(r.word) + '</b>'
       + (r.detail ? ' <span class="mono"' + (r.kind === 'acting' ? ' data-chel="' + esc(r.sid) + '"' : '') + '>' + esc(r.detail) + '</span>' : '') + '</div></div>'
-      + '<div class="astat">' + (r.reply ? '<span class="chip brand rep" title="This chat has an answer for you"><span aria-hidden="true">●</span> Reply</span>' : '') + '<span class="last muted">' + esc(lastTime(a)) + '</span></div></a>').join('')
-    + (all.length > 5 ? '<button class="linkbtn" id="whoMore" aria-expanded="' + S.whoAll + '">' + (S.whoAll ? 'show 5' : 'show all ' + all.length) + '</button>' : '');
+      + '<div class="astat">' + (r.reply ? '<span class="chip brand rep" title="This chat has an answer for you"><span aria-hidden="true">●</span> Reply</span>' : '') + '<span class="last muted">' + esc(lastTime(a)) + '</span></div></a>').join('');
 }
-document.addEventListener('click', e => { if(e.target.closest('#whoMore')){ S.whoAll = !S.whoAll; paintCard(); } });
 
 /* ---------- the drawer ---------- */
 const GLYPH = { neutral: '○', warn: '▲', bad: '■' };

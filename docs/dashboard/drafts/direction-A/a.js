@@ -54,15 +54,27 @@ function bandHTML(){
     + '<div class="cursor" id="cursor" aria-hidden="true"></div></div><div class="laxis" id="laxis"><span id="ax0"></span><span id="ax1"></span><span id="ax2"></span></div></div></section>';
 }
 
+/* repo numbers (MIN-4569): twelve tiles from the feed's `repo` block, near Branches. A field the feed did not read is "n/a, not reported yet", never 0;
+   a feed with no repo block at all is one quiet sentence. The reason text comes from the feed, so it only goes through esc(). */
+function repoCard(wide){
+  const load = Live.loaded ? 'ok' : Live.feedErr ? 'error' : 'loading', rec = Live.rec.repo, v = RepoNumbers.view(DATA.repo, load, rec && rec.error && rec.error.message);
+  return '<section class="card repo-card blk" data-enter data-blk="repo" id="'+(wide?'repo':'repoDr')+'" aria-labelledby="'+(wide?'repoH':'repoDrH')+'" data-state-view="'+v.state+'">'
+    + '<div class="card-h"><h2 id="'+(wide?'repoH':'repoDrH')+'">Repo numbers</h2>'+blkTag('repo')+'<span class="upd"></span></div>'
+    + (v.state==='ok'
+      ? '<div class="rtiles'+(wide?' wide':'')+'" role="group" aria-label="Repo numbers">'+v.tiles.map(t =>
+          '<div class="bt" data-id="'+esc(t.id)+'"'+(t.missing?' data-missing="1"':'')+'><span class="k">'+esc(t.k)+'</span><b'+(t.missing?' class="unk"':'')+'>'+esc(t.v)+'</b><span class="s">'+esc(t.s)+'</span></div>').join('')+'</div>'
+      : BRE(v.empty))
+    + '</section>';
+}
 function renderDyn(force){
   const dyn = $('#dyn'); if(!dyn) return;
   const sig = JSON.stringify([H.ms.map(m=>[m.id,m.name,m.start,m.end,m.gate,m.total,m.done]), DATA.tasks, DATA.tokens.perAgent, DATA.tokens.perChat, DATA.tokens.scope,
-    DATA.money.credits, DATA.money.estimateEUR, DATA.money.estimateSeries, DATA.money.rateCard, DATA.agents, DATA.demo, rolesAll, agAll]);
+    DATA.money.credits, DATA.money.estimateEUR, DATA.money.estimateSeries, DATA.money.rateCard, DATA.agents, DATA.demo, rolesAll, agAll, DATA.repo, Live.loaded, Live.feedErr, Live.rec.repo]);
   if(!force && sig===dynSig) return; dynSig = sig;
   const tk = DATA.tokens, rc = DATA.money.rateCard, ag = DATA.agents, dm = DATA.demo, st = dm.steps || [];
   const rateNote = rc ? esc(rc.label||'estimate at API list price, not a bill')+'.'+(rc.aliased && Object.keys(rc.aliased).length ? ' '+Object.keys(rc.aliased).map(k=>esc(k.replace('claude-',''))).join(', ')+' priced at the nearest rate row.' : '') : '';
   const bt = ((dm.build.label||'')+' '+(dm.build.at||'')).trim(), dp = dm.deploy.label || '';
-  dyn.innerHTML = bandHTML()
+  dyn.innerHTML = bandHTML() + repoCard(true)
   + '<section class="panels">'
   + '<div class="card panel p-tasks blk" data-enter data-flash data-blk="linear"><div class="card-h"><h2>Tasks</h2>'+blkTag('linear')+'<span class="upd"></span></div><p class="blkmsg"></p><div class="body bb">'
   +   '<div class="segbar" id="segbar">'+H.TSEG.map(s=>'<i data-seg="'+s[0]+'" title="'+s[1]+'"></i>').join('')+'</div>'
@@ -253,6 +265,7 @@ function branchesView(){
     + '<div class="bt"><span class="k">Closed</span>'+cnt(t.closed)+'<span class="s">closed without merging</span></div></div>';
   const emptyClosed = noPr ? 'Pull request state is unknown without GitHub access, so merged and closed branches are not listed.' : 'No merged or closed branches yet.';
   return '<p class="muted drintro">Which branches are open, what was merged, and how big each one is. Newest first.</p>'
+    + repoCard(false)
     + '<section class="card brcard blk" data-blk="branches"><div class="card-h"><h2>'+esc((B && B.repo) || 'Branches')+'</h2>'+blkTag('branches')+'<span class="upd"></span></div><p class="blkmsg"></p>'
     + (err ? '<p class="brwarn" role="note"><b>Partial reading.</b> '+esc(err.message)+'. Pull request state may be missing; branch names, commits and file counts are from local git.</p>' : '')
     + tiles

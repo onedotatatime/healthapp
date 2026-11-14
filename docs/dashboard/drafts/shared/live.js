@@ -6,7 +6,7 @@
 (function(){
 'use strict';
 window.HD_LIVE = true;                                   // common.js: no simulated updates
-const BLOCKS = { linear:'Linear', usage:'Usage', money:'Estimate', hand:'Hand-set', branches:'Branches', derived:'Derived' };
+const BLOCKS = { linear:'Linear', usage:'Usage', money:'Estimate', hand:'Hand-set', branches:'Branches', repo:'Repo', derived:'Derived' };
 const L = window.Live = { rec:{}, loaded:false, feedErr:null, meta:{ intervalSec:180 }, names:BLOCKS };
 
 /* ---- 1. blank the live blocks (names, windows and gates of milestones, demo step texts are hand-set copy and stay) ---- */
@@ -15,6 +15,7 @@ DATA.tasks = { done:0, inProgress:0, inReview:0, open:0, blocked:0, total:0, byR
 DATA.tokens = { agentCaps:DATA.tokens.agentCaps, chatCaps:DATA.tokens.chatCaps, perAgent:[], perChat:[], series:[], seriesFrom:null, seriesStepMin:15, projection:null, window:null, scope:'', lastSeen:{}, noCapFlags:true };
 DATA.money = { estimate:true, estimateEUR:0, estimateSeries:[], projection:null, credits:[], rateCard:null };
 DATA.branches = null;                                    // branches block (MIN-4460, MIN-4461); stays null on a feed that does not send it yet
+DATA.repo = null;                                        // repo numbers block (MIN-4569): integers only; null until the feed sends it
 DATA.agents = []; DATA.flags = []; DATA.flagsTimed = []; DATA.lanes = [];
 DATA.directions = [];                                    // the five project directions, hand-set on the Mac; a feed without the field leaves it empty
 DATA.demo.build = { state:'idle', label:'', at:'' }; DATA.demo.deploy = { state:'idle', label:'' }; DATA.demo.url = ''; DATA.demo.cleanRuns = 0;
@@ -25,8 +26,9 @@ const parseAth = s => { if(!s) return null; if(/(Z|[+-]\d\d:\d\d)$/.test(s)) ret
 L.apply = function(snap){
   const H = window.H, S = H.S;
   L.loaded = true; L.feedErr = null; L.lastOk = Date.now();
-  Object.keys(BLOCKS).forEach(k => { const b = (snap.blocks||{})[k]; if(b) L.rec[k] = { asOf:b.asOf||null, error:b.error||null }; else if(k==='branches') delete L.rec[k]; });
+  Object.keys(BLOCKS).forEach(k => { const b = (snap.blocks||{})[k]; if(b) L.rec[k] = { asOf:b.asOf||null, error:b.error||null }; else if(k==='branches' || k==='repo') delete L.rec[k]; });
   DATA.branches = (snap.branches && typeof snap.branches==='object' && Array.isArray(snap.branches.items)) ? snap.branches : null;
+  DATA.repo = (snap.repo && typeof snap.repo==='object' && !Array.isArray(snap.repo)) ? snap.repo : null;   // absent or malformed: the tiles say "not reported yet", never a throw
   L.meta = { generatedAt:snap.generatedAt||null, receivedAt:snap.receivedAt||null, intervalSec:snap.intervalSec||180 };
   ['deadline','buildStart','freeze','submitBy'].forEach(k => { if(snap[k]) DATA[k] = snap[k]; });
   H.T = { deadline:parseAth(DATA.deadline), start:parseAth(DATA.buildStart), freeze:parseAth(DATA.freeze), submit:parseAth(DATA.submitBy) };
@@ -83,10 +85,12 @@ L.state = function(b){
   if(!L.loaded) return L.feedErr ? { s:'nodata-error', msg:'No data yet: '+L.feedErr+'.' } : { s:'loading' };
   const r = L.rec[b];
   if(b==='branches' && !r) return { s:'nodata', msg:'This feed does not send branches yet. They appear after the next deploy of the feed and the Mac script.' };
+  if(b==='repo' && !r) return { s:'nodata', msg:'This feed does not send repo numbers yet.' };
   if(!r || !r.asOf) return r && r.error ? { s:'nodata-error', msg:'No data yet: '+r.error.message+'.' } : { s:'nodata', msg:'No reading yet.' };
   const age = Date.now() - parseAth(r.asOf), stale = age > 3*L.meta.intervalSec*1000, when = 'updated '+ago(age)+' ago';
   if(L.feedErr) return { s:'error', msg:'Could not reach the feed ('+L.feedErr+'). Showing the value '+when+'.', when };
   if(b==='branches' && r.error && DATA.branches) return { s:'warn', msg:'Partial reading: '+r.error.message+'. Branches are shown; pull request state may be missing, '+when+'.', when };   // gh missing is a warning, not a failed block
+  if(b==='repo' && r.error && DATA.repo) return { s:'warn', msg:'Partial reading: '+r.error.message+'. Numbers that could not be read show n/a, '+when+'.', when };   // one group failed, the rest is fresh
   if(r.error) return { s:'error', msg:'Could not refresh: '+r.error.message+'. Showing the last good value, '+when+'.', when };
   if(stale) return { s:'stale', msg:(L.isSilent() ? 'Mac silent for '+ago(L.silentMs())+'. ' : '')+'Stale, '+when+'.', when };
   return { s:'ok', msg:'Updated '+ago(age)+' ago', when };

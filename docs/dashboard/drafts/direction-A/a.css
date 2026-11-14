@@ -22,7 +22,7 @@ body{background-color:var(--bg);background-image:linear-gradient(color-mix(in sr
 .vchip.swap{opacity:.15;filter:blur(2px)}
 .top .clock{font:500 14px/18px var(--mono);color:var(--ink-2);white-space:nowrap}
 .tools{display:flex;gap:4px}
-main{padding:var(--gap);display:grid;gap:var(--gap);grid-template-rows:auto auto auto minmax(340px,1fr) auto;min-height:0;min-width:0}
+main{padding:var(--gap);display:grid;gap:var(--gap);grid-template-rows:auto auto auto auto 1fr auto;min-height:0;min-width:0}   /* hero, directions, milestones, repo numbers, panels (take the rest), demo strip */
 .dyn{display:contents}
 .hero{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:var(--gap)}
 .hero-main{position:relative;box-shadow:var(--glow);padding:var(--pad) 18px}
@@ -98,10 +98,11 @@ main{padding:var(--gap);display:grid;gap:var(--gap);grid-template-rows:auto auto
 .ladder-card .bre{height:64px;display:grid;place-items:center;padding:0}
 
 /* panels */
-.panels{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--gap);min-height:0}
+.panels{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:var(--gap);min-height:340px}   /* no min-height:0, so the row grows with the Who card (every agent is a row, MIN-4575) */
 .panel{display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .panel .body{overflow:auto;min-height:0;flex:1;padding-right:2px}
 .p-tasks{grid-column:span 2} .p-tokens{grid-column:span 3} .p-money{grid-column:span 3} .p-who{grid-column:span 4}
+.p-who,.p-who .body{overflow:visible}   /* every agent row is shown: the card grows, it never scrolls or hides one */
 .panel .card-h{margin-bottom:6px}
 .segbar{display:flex;gap:2px;height:14px;margin:4px 0 10px}
 .segbar i{display:block;min-width:2px;border-radius:2px;flex:1 1 0%;background:var(--idle)}
@@ -122,7 +123,6 @@ main{padding:var(--gap);display:grid;gap:var(--gap);grid-template-rows:auto auto
 .spark svg{width:100%;height:100%;display:block;overflow:visible}
 .spark .dotend{position:absolute;right:-3px;width:6px;height:6px;border-radius:50%;background:var(--brand);box-shadow:0 0 0 2px var(--surface)}
 .arow{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:8px;align-items:center;padding:3px 4px;border-radius:var(--r-1);min-height:52px}
-.more{font:500 11px/16px var(--mono);padding:2px 4px}
 @media (hover:hover) and (pointer:fine){.arow:hover{background:var(--surface-2)}}
 .aname{font-size:13px;line-height:16px;white-space:nowrap} .aname b{font-weight:600}
 .atask{font-size:11px;line-height:14px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -251,6 +251,14 @@ html[data-motion="reduced"] .blk[data-state="loading"]::after{animation:none}
 .bt>b{font:600 32px/38px var(--mono);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .bt>b.unk{font-size:20px;line-height:38px;color:var(--ink-2)}
 .bt .s{font-size:12px;line-height:16px;color:var(--ink-2)}
+.repo-card .card-h{margin-bottom:8px} .repo-card{--shim:48px}
+.rtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+@media (min-width:1280px){.rtiles.wide{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.rtiles .bt{padding:10px 12px;min-width:0}
+.rtiles .bt>b{font-size:26px;line-height:32px;overflow-wrap:anywhere}
+.rtiles .bt>b.unk{font-size:18px}
+.rtiles .bt[data-missing]{border-style:dashed}
+.dr-body .repo-card{margin-bottom:var(--gap)}
 .brsub{justify-content:flex-start;gap:8px;margin:20px 0 8px}
 .brsub .num{font:600 12px/16px var(--mono);padding:0 7px;border-radius:var(--r-pill);background:var(--surface-2);color:var(--ink)}
 .brl{list-style:none;margin:0;padding:0}
