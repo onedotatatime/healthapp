@@ -1,0 +1,12 @@
+export { Cover } from './Cover';
+export { Stats } from './Stats';
+export { Statement } from './Statement';
+export { Funnel } from './Funnel';
+export { Chart } from './Chart';
+export { Table } from './Table';
+export { Product } from './Product';
+export { Compare } from './Compare';
+export { Steps } from './Steps';
+export { TeamAsk } from './TeamAsk';
+export { Appendix } from './Appendix';
+export { Hero } from './Hero';
