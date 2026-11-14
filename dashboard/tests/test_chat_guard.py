@@ -112,6 +112,33 @@ class Guard(unittest.TestCase):
             with self.subTest(tool=tool, tin=tin):
                 self.assertFalse(self.decide(tool, tin))
 
+    def test_grep_glob_is_one_extension_pattern_only(self):
+        """CTO finding (2cc7efc9 rule 4): a Grep `glob` overrides ripgrep's ignore rules, so only `*.ext` or `**/*.ext` from the list passes."""
+        denied = [".env*", "*.local", "*", "**/*", ".e*", "*.key", "{.env.local,a.md}", "*.pem", "**/.env*", "*.md *.env", "*.md,*.env",
+                  "*.mdx", "*.Md", "*.md\n", "src/*.md", "/etc/*.md", "~/x/*.md", "../*.md", "**/**/*.md", "*.m?", "*.{md,env}", "", "!*.md",
+                  "*.ts/.env", ".*", "**/.*", "*.env.local", "*.jsonl"]
+        for gl in denied:
+            with self.subTest(glob=gl):
+                self.assertFalse(self.decide("Grep", {"pattern": "x", "glob": gl}))
+        for gl in ("*.md", "**/*.py", "*.ts", "**/*.tsx", "*.js", "*.mjs", "*.css", "*.html", "*.sh", "*.sql", "*.yml", "**/*.yaml", "*.toml",
+                   "*.txt", "*.json"):
+            with self.subTest(glob=gl):
+                self.assertTrue(self.decide("Grep", {"pattern": "x", "glob": gl}))
+        self.assertFalse(self.decide("Grep", {"pattern": "x", "glob": 5}))
+        self.assertFalse(self.decide("Grep", {"pattern": "x", "glob": ["*.md"]}))
+        self.assertTrue(self.decide("Grep", {"pattern": "x", "glob": None}))             # no glob: ripgrep keeps its own ignore rules
+        self.assertFalse(self.decide("Grep", {"pattern": "x", "glob": "*.md", "path": self.p("healthapp/.env")}))   # a path that is a file
+        self.assertFalse(self.decide("Grep", {"pattern": "x", "path": self.p("healthapp/server.pem")}))
+
+    def test_glob_denies_a_pattern_with_a_dot_segment(self):
+        denied = [".env*", "**/.env*", "src/.env", ".git/*", "**/.git/**", "{.env.local,a.md}", "[.]env", "a/{b,.env}", "src/.hidden/*", ".*"]
+        for pat in denied:
+            with self.subTest(pattern=pat):
+                self.assertFalse(self.decide("Glob", {"pattern": pat}))
+        for pat in ("**/*.ts", "src/*.ts", "*.md", "./src/*.ts", "docs/**/*.md", "{a,b}/*.ts"):
+            with self.subTest(pattern=pat):
+                self.assertTrue(self.decide("Glob", {"pattern": pat}))
+
     def test_fail_closed(self):
         self.assertFalse(self.decide("Read", {"file_path": self.p("healthapp/src/x.ts")}, mode="act"))     # act is not built (run 2)
         self.assertFalse(self.decide("Read", {"file_path": self.p("healthapp/src/x.ts")}, mode=""))
@@ -187,6 +214,70 @@ class Guard(unittest.TestCase):
     def test_settings_come_from_arguments_not_the_environment(self):
         src = open(G.__file__).read()
         self.assertNotIn("os.environ", src)
+
+
+def find_rg():
+    """A real ripgrep: `rg` on PATH, else the one built into the claude binary (it answers as rg when ARGV0=rg). None skips the canary test."""
+    import shutil
+    import subprocess
+    found = shutil.which("rg")
+    for cand, env in ((found, None), (os.path.expanduser("~/.local/bin/claude"), {"ARGV0": "rg"})):
+        if not cand or not os.access(cand, os.X_OK):
+            continue
+        try:
+            r = subprocess.run([cand, "--version"], capture_output=True, text=True, timeout=10, env=dict(os.environ, **(env or {})))
+        except (OSError, subprocess.SubprocessError):
+            continue
+        if r.returncode == 0 and r.stdout.lower().startswith("ripgrep"):
+            return cand, env or {}
+    return None
+
+
+@unittest.skipUnless(find_rg(), "no real ripgrep found (rg on PATH, or ARGV0=rg ~/.local/bin/claude)")
+class GrepCanary(unittest.TestCase):
+    """The CTO's canary (2cc7efc9 rule 4): a gitignored .env-style file under a readable root must not be found through any Grep the guard allows.
+    The control proves the premise: the same file IS found by `-g '.env*'`, the call the guard now refuses."""
+
+    def setUp(self):
+        self.tmp = os.path.realpath(tempfile.mkdtemp(prefix="canary-"))
+        self.addCleanup(os.system, "rm -rf %s" % self.tmp)
+        os.makedirs(os.path.join(self.tmp, "conductor", "." + "git"))       # an empty repo marker is enough for ripgrep's ignore rules
+        os.makedirs(os.path.join(self.tmp, "healthapp"))
+        self.root = os.path.join(self.tmp, "conductor")
+        for name, text in (("." + "gitignore", ".env*\n"), (".env.local", "CANARY-VALUE\n"), (".env", "CANARY-VALUE\n"), ("notes.md", "hello\n"),
+                           ("tool.py", "print(1)\n")):
+            with open(os.path.join(self.root, name), "w") as f:
+                f.write(text)
+        self.roots = [os.path.join(self.tmp, "healthapp"), self.root]
+        self.rg, self.env = find_rg()
+
+    def rg_files(self, glob):
+        import subprocess
+        argv = [self.rg, "-l"] + (["-g", glob] if glob else []) + ["CANARY-VALUE", self.root]
+        r = subprocess.run(argv, capture_output=True, text=True, timeout=20, env=dict(os.environ, **self.env))
+        return sorted(os.path.basename(p) for p in r.stdout.split())
+
+    def test_the_premise_a_glob_overrides_the_ignore_rules(self):
+        self.assertEqual(self.rg_files(None), [])                              # no glob: the ignored files are skipped
+        self.assertIn(".env.local", self.rg_files(".env*"))                    # the leak the finding describes
+        self.assertIn(".env.local", self.rg_files("*"))
+
+    def test_no_glob_the_guard_allows_finds_the_canary(self):
+        for gl in (None, "*.md", "**/*.py", "*.ts", "*.tsx", "*.js", "*.mjs", "*.css", "*.html", "*.sh", "*.sql", "*.yml", "*.yaml", "*.toml",
+                   "*.txt", "*.json"):
+            with self.subTest(glob=gl):
+                allowed, _ = G.decide({"tool_name": "Grep", "tool_input": dict({"pattern": "CANARY-VALUE", "path": self.root}, **({"glob": gl} if gl else {})),
+                                       "cwd": self.root}, "answer", self.roots)
+                self.assertTrue(allowed)
+                self.assertEqual([f for f in self.rg_files(gl) if f.startswith(".env")], [])
+
+    def test_the_calls_that_would_find_it_are_refused(self):
+        for gl in (".env*", "*", "*.local", ".e*", "**/*", "{.env.local,a.md}"):
+            with self.subTest(glob=gl):
+                self.assertFalse(G.decide({"tool_name": "Grep", "tool_input": {"pattern": "CANARY-VALUE", "path": self.root, "glob": gl}, "cwd": self.root},
+                                          "answer", self.roots)[0])
+        self.assertFalse(G.decide({"tool_name": "Read", "tool_input": {"file_path": os.path.join(self.root, ".env.local")}, "cwd": self.root},
+                                  "answer", self.roots)[0])
 
 
 if __name__ == "__main__":

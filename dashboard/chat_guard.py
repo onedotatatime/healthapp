@@ -37,6 +37,12 @@ DENIED_DIRS = {".git", ".healthapp-dashboard", "playground", ".ssh", ".aws", ".g
 DENIED_FILES = [".env", ".env.*", "*.env", "*.pem", "*.key", "*.p12", "id_rsa*", "id_ed25519*", ".npmrc", ".netrc",
                 "credentials*", "*.keystore", ".git-credentials", "push.json", "chat.key", "view.key", "push.key"]
 GLOB_CHARS = "*?[{"
+# CTO finding, MIN-4497 (comment 2cc7efc9, rule 4). ripgrep skips gitignored and hidden files, but a `glob` argument overrides both, so
+# `Grep {path: conductor, glob: ".env*"}` would read an ignored env file inside a readable root. Grep's `glob` is therefore allowed only
+# as one extension pattern from this list (measured with a real rg: `-g '.env*'`, `-g '*'`, `-g '*.local'` all find a gitignored `.env.local`).
+# Known residue, said plainly: a glob still overrides the ignore rules for the extensions below, so an ignored `secret.json` would match `*.json`.
+GREP_GLOB_EXTS = ("md", "py", "ts", "tsx", "js", "mjs", "css", "html", "sh", "sql", "ya?ml", "toml", "txt", "json")
+GREP_GLOB_RE = re.compile(r"(?:\*\*/)?\*\.(?:%s)" % "|".join(GREP_GLOB_EXTS))
 
 
 def deny(reason):
@@ -89,6 +95,13 @@ def _static_prefix(pattern):
     return prefix if prefix.endswith("/") or cut == len(pattern) else os.path.dirname(prefix) or "."
 
 
+def _dot_segment(pattern):
+    """True when any path segment, or any {a,b} alternative or [class] start, begins with a dot: that pattern can name .env and friends."""
+    if re.search(r"[\[{,]\.", pattern):
+        return True
+    return any(seg.startswith(".") and seg != "." for seg in pattern.split("/"))
+
+
 def _decide_read(tool, tin, cwd, roots):
     candidates = []
     if tool == "Read":
@@ -98,13 +111,20 @@ def _decide_read(tool, tin, cwd, roots):
     else:
         base = _real(tin["path"], cwd) if tin.get("path") else os.path.realpath(cwd)
         candidates.append(base)
-        pat = tin.get("pattern") if tool == "Glob" else tin.get("glob")
-        if pat:
-            pat = str(pat)
-            if ".." in pat.split("/"):
-                return deny("Not from the chat: '..' in a pattern.")
-            if pat.startswith(("/", "~")):
-                candidates.append(_real(_static_prefix(pat), cwd))
+        if tool == "Grep":
+            gl = tin.get("glob")
+            if gl is not None and not (isinstance(gl, str) and GREP_GLOB_RE.fullmatch(gl)):
+                return deny("Not from the chat: Grep's glob may only be one extension pattern such as *.md or **/*.py.")
+        else:
+            pat = tin.get("pattern")
+            if pat:
+                pat = str(pat)
+                if ".." in pat.split("/"):
+                    return deny("Not from the chat: '..' in a pattern.")
+                if _dot_segment(pat):
+                    return deny("Not from the chat: a pattern that names a dot file or folder.")
+                if pat.startswith(("/", "~")):
+                    candidates.append(_real(_static_prefix(pat), cwd))
     for c in candidates:
         why = path_problem(c, roots)
         if why:
