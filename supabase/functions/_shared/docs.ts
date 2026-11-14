@@ -12,6 +12,7 @@ import {
 } from "./contract.ts";
 import { flagOf } from "./extract.ts";
 import type { DraftIn } from "./extract.ts";
+import type { IdentityProfile } from "./identity.ts";
 import { readEnv } from "./env.ts";
 import { fail } from "./http.ts";
 import type { z } from "npm:zod@4.6.7";
@@ -64,7 +65,10 @@ export interface Store {
     docId: string,
     draft: DraftIn,
     sha256File: string,
+    identity: "match" | "name_only",
   ): Promise<Saved | null>;
+  /** The match keys of the patient's own profile (never sent to a client). */
+  identityOf(env: HealthappEnv, uid: string): Promise<IdentityProfile | null>;
   discardDraft(env: HealthappEnv, patientId: string, docId: string): Promise<void>;
   /** Runs `plan` on the row inside one transaction (row locked), then writes what it returns. */
   confirm(
