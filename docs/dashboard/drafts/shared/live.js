@@ -16,6 +16,7 @@ DATA.tokens = { agentCaps:DATA.tokens.agentCaps, chatCaps:DATA.tokens.chatCaps, 
 DATA.money = { estimate:true, estimateEUR:0, estimateSeries:[], projection:null, credits:[], rateCard:null };
 DATA.branches = null;                                    // branches block (MIN-4460, MIN-4461); stays null on a feed that does not send it yet
 DATA.agents = []; DATA.flags = []; DATA.flagsTimed = []; DATA.lanes = [];
+DATA.directions = [];                                    // the five project directions, hand-set on the Mac; a feed without the field leaves it empty
 DATA.demo.build = { state:'idle', label:'', at:'' }; DATA.demo.deploy = { state:'idle', label:'' }; DATA.demo.url = ''; DATA.demo.cleanRuns = 0;
 DATA.demo.steps.forEach(s => { s.s = 'idle'; }); DATA.demo.notes = {};
 
@@ -37,6 +38,7 @@ L.apply = function(snap){
   DATA.forecast = (snap.forecast && typeof snap.forecast==='object') ? snap.forecast : null;   // absent until the feed's first good Linear read
   if(snap.current) DATA.current = snap.current;
   if(snap.tasks) DATA.tasks = Object.assign({ byRole:{} }, snap.tasks);
+  DATA.directions = Array.isArray(snap.directions) ? snap.directions : [];      // missing, null or not an array: five "not reported yet" rows, never a throw
   if(Array.isArray(snap.agents)) DATA.agents = snap.agents;
   if(Array.isArray(snap.lanes)) DATA.lanes = snap.lanes.map(l => ({ agent:l.agent, bars:l.bars||[], waitsOn:l.waitsOn }));
   if(snap.tokens) DATA.tokens = Object.assign({}, DATA.tokens, snap.tokens, { noCapFlags:true });   // caps are per run; the feed totals are per build window, so cap flags do not apply

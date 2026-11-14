@@ -22,7 +22,7 @@ body{background-color:var(--bg);background-image:linear-gradient(color-mix(in sr
 .vchip.swap{opacity:.15;filter:blur(2px)}
 .top .clock{font:500 14px/18px var(--mono);color:var(--ink-2);white-space:nowrap}
 .tools{display:flex;gap:4px}
-main{padding:var(--gap);display:grid;gap:var(--gap);grid-template-rows:auto auto minmax(340px,1fr) auto;min-height:0;min-width:0}
+main{padding:var(--gap);display:grid;gap:var(--gap);grid-template-rows:auto auto auto minmax(340px,1fr) auto;min-height:0;min-width:0}
 .dyn{display:contents}
 .hero{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:var(--gap)}
 .hero-main{position:relative;box-shadow:var(--glow);padding:var(--pad) 18px}
@@ -47,6 +47,27 @@ main{padding:var(--gap);display:grid;gap:var(--gap);grid-template-rows:auto auto
 .flags .f.warn .g{color:var(--warn-text)} .flags .f.bad .g{color:var(--bad-text)} .flags .f.ok .g{color:var(--ok-text)}
 .linkbtn{all:unset;cursor:pointer;color:var(--brand-text);font:600 12px/16px var(--mono);text-decoration:underline;text-underline-offset:3px}
 .linkbtn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* the five directions of the project goal: a row per direction, a status pill (glyph and word), one note, the age of the reading */
+.dirs{padding:var(--pad) 18px}
+.dirs .card-h{margin-bottom:8px}
+.dirs .card-h h2{margin-right:0}
+.dirs .goal{font:700 11px/16px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:1px 8px}
+.dirs .dcount{margin-left:auto;font-size:12px;line-height:16px}
+.dlist{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.d{display:grid;grid-template-columns:20px minmax(0,1.25fr) 108px minmax(0,2fr) 124px;gap:2px 12px;align-items:center;padding:5px 10px;border:1px solid transparent;border-radius:var(--r-2);background:var(--surface-2)}
+.d.unrep{background:none;border:1px dashed var(--line-ui)}
+.d .dn{font:600 12px/16px var(--mono);color:var(--ink-2)}
+.d .dt{font:600 13px/17px var(--sans)}
+.d .dpill{justify-self:start;font:600 12px/18px var(--sans)}
+.d .dnote{font:400 13px/17px var(--sans);color:var(--ink-2);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.d .dnote.muted{color:var(--ink-2)}
+.d .dupd{font:500 11px/15px var(--mono);text-align:right;white-space:nowrap}
+@media (max-width:1279px){ .d{grid-template-columns:20px minmax(0,1fr) 108px minmax(0,1.4fr)} .d .dupd{grid-column:4;text-align:left} }
+@media (max-width:899px){
+  .d{grid-template-columns:20px minmax(0,1fr) auto;grid-template-areas:"n t p" ". note note" ". upd upd"}
+  .d .dn{grid-area:n} .d .dt{grid-area:t} .d .dpill{grid-area:p;justify-self:end} .d .dnote{grid-area:note} .d .dupd{grid-area:upd;text-align:left}
+}
 
 /* milestone band (B's M1 to M7 content in A's time-axis card; a segment is not a button) */
 .ladder-card{padding:var(--pad) 18px 10px}

@@ -1,0 +1,72 @@
+{
+  "_doc": "One chat per state the page can show (MIN-4498). Read by dashboard/tests/chat_mock_server.py; times are relative to when the server starts (`agoSec` = lastAt, `turnAgoSec` = turnStartedAt of a running turn, `acceptedAgoSec` = acceptedAt of a proposal that got its Yes). No real text, no key.",
+  "agents": {
+    "Back": [
+      {"id": "s-needs-yes", "title": "Add the chat link to the footer", "state": "needs_yes", "turns": 1, "costUsd": 0.21, "agoSec": 300,
+       "messages": [
+         {"role": "you", "text": "Can you add a link to the footer?", "agoSec": 310},
+         {"role": "agent", "text": "I would add one link in the footer and nothing else.", "agoSec": 300, "costUsd": 0.21,
+          "proposal": {"id": "p-open", "kind": "change", "summary": "Add a How it works link to the footer of the demo page.", "issue": "MIN-4498", "taskType": "New UI feature or screen from Figma",
+                       "model": "sonnet", "effort": "high", "lane": "A", "branch": null, "estMin": 12, "estUsd": 1.5, "spentTodayUsd": 3.2, "expiresInMin": 28, "status": "open"}}]}
+    ],
+    "Pix": [
+      {"id": "s-acting", "title": "Tidy the drawer header", "state": "acting", "turns": 2, "costUsd": 0.9, "agoSec": 252, "turnAgoSec": 252, "branch": "chore/chat-pix-3f2a",
+       "messages": [
+         {"role": "you", "text": "Tidy the drawer header.", "agoSec": 700},
+         {"role": "agent", "text": "I can do that in a branch.", "agoSec": 690, "costUsd": 0.2,
+          "proposal": {"id": "p-acc", "acceptedAgoSec": 258, "kind": "change", "summary": "Tidy the drawer header spacing and the close button.", "issue": "MIN-4498", "taskType": "UI polish, motion, taste",
+                       "model": "sonnet", "effort": "medium", "lane": "A", "branch": "chore/chat-pix-3f2a", "estMin": 10, "estUsd": 1.2, "spentTodayUsd": 3.2, "expiresInMin": 0, "status": "accepted"}}],
+       "events": [{"tool": "Read", "target": "docs/dashboard/drafts/direction-A/a.css"}, {"tool": "Grep", "target": "docs/dashboard/drafts"}, {"tool": "Edit", "target": "docs/dashboard/drafts/direction-A/a.css"}, {"tool": "Bash", "target": null}]}
+    ],
+    "Ren": [
+      {"id": "s-working", "title": "Which file has the drawer?", "state": "working", "turns": 0, "costUsd": 0, "agoSec": 20, "turnAgoSec": 20,
+       "messages": [{"role": "you", "text": "Which file has the drawer?", "agoSec": 20}],
+       "events": [{"tool": "Grep", "target": "docs/dashboard/drafts"}, {"tool": "Read", "target": "docs/dashboard/drafts/direction-A/a.css"}]}
+    ],
+    "Cron": [
+      {"id": "s-waiting", "title": "Is the bridge on 127.0.0.1 only?", "state": "waiting", "turns": 1, "costUsd": 0.18, "agoSec": 900,
+       "messages": [{"role": "you", "text": "Is the bridge on 127.0.0.1 only?", "agoSec": 910}, {"role": "agent", "text": "Yes. It binds 127.0.0.1 and refuses any other Host.", "agoSec": 900, "costUsd": 0.18}]}
+    ],
+    "CTO": [
+      {"id": "s-done", "title": "Fix the cap text", "state": "waiting", "turns": 3, "costUsd": 1.74, "agoSec": 1200, "branch": "fix/chat-cto-a1b2",
+       "messages": [
+         {"role": "you", "text": "Fix the cap text.", "agoSec": 2400},
+         {"role": "agent", "text": "I would change one string.", "agoSec": 2390, "costUsd": 0.3,
+          "proposal": {"id": "p-done", "acceptedAgoSec": 1300, "kind": "change", "summary": "Change the cap text to name the cap.", "issue": "MIN-4497", "taskType": "Bug", "model": "fable", "effort": "medium", "lane": "A", "branch": "fix/chat-cto-a1b2", "estMin": 8, "estUsd": 2, "spentTodayUsd": 3.2, "expiresInMin": 0, "status": "accepted"}},
+         {"role": "result", "text": "", "agoSec": 1200, "costUsd": 1.44, "result": {"outcome": "done", "issue": "MIN-4497", "branch": "fix/chat-cto-a1b2", "commits": 2, "filesChanged": 3, "summary": "The cap text now names the cap.", "costUsd": 1.44, "minutes": 7.4}}]}
+    ],
+    "Release": [
+      {"id": "s-refused", "title": "Merge the dashboard PR", "state": "waiting", "turns": 1, "costUsd": 0.2, "agoSec": 400,
+       "messages": [
+         {"role": "you", "text": "Merge the dashboard PR.", "agoSec": 410},
+         {"role": "agent", "text": "I would merge it.", "agoSec": 400, "costUsd": 0.2,
+          "proposal": {"id": "p-ref", "kind": "change", "summary": "Merge the dashboard pull request to staging.", "issue": null, "taskType": "Release", "model": null, "effort": null, "lane": "B", "branch": null, "estMin": 5, "estUsd": 1, "spentTodayUsd": 3.2, "expiresInMin": 20, "status": "refused", "refused": "forbidden", "reason": "Not from the chat: merges, production, deletes, money, databases and your exams. Ask the coordinator."}}]}
+    ],
+    "Anna": [
+      {"id": "s-expired", "title": "Reword the empty state", "state": "waiting", "turns": 1, "costUsd": 0.19, "agoSec": 4000,
+       "messages": [
+         {"role": "you", "text": "Reword the empty state.", "agoSec": 4010},
+         {"role": "agent", "text": "I can rewrite one sentence.", "agoSec": 4000, "costUsd": 0.19,
+          "proposal": {"id": "p-exp", "kind": "handoff", "summary": "Open a Linear issue to reword the empty state.", "issue": null, "taskType": "Copy", "model": "sonnet", "effort": "medium", "lane": "A", "branch": null, "estMin": 6, "estUsd": 0.8, "spentTodayUsd": 3.2, "expiresInMin": -35, "status": "open"}}]}
+    ],
+    "Spast": [
+      {"id": "s-declined", "title": "Draft an email", "state": "waiting", "turns": 2, "costUsd": 0.4, "agoSec": 600,
+       "messages": [
+         {"role": "you", "text": "Draft an email.", "agoSec": 900},
+         {"role": "agent", "text": "I can write one in Linear.", "agoSec": 890, "costUsd": 0.2,
+          "proposal": {"id": "p-dec", "kind": "handoff", "summary": "Write an email draft as a Linear comment.", "issue": "MIN-4501", "taskType": "Outreach", "model": "sonnet", "effort": "medium", "lane": "A", "branch": null, "estMin": 6, "estUsd": 0.8, "spentTodayUsd": 3.2, "expiresInMin": 5, "status": "declined"}},
+         {"role": "you", "text": "No, just tell me the subject line.", "agoSec": 600}]}
+    ],
+    "CEO": [
+      {"id": "s-failed", "title": "Summarise the day", "state": "waiting", "turns": 2, "costUsd": 0.5, "agoSec": 300,
+       "messages": [
+         {"role": "you", "text": "Summarise the day.", "agoSec": 800},
+         {"role": "error", "text": "CEO did not answer. Nothing was lost. Try again.", "agoSec": 790},
+         {"role": "result", "text": "", "agoSec": 300, "costUsd": 0.5, "result": {"outcome": "failed", "issue": "MIN-4502", "branch": null, "commits": 0, "filesChanged": 0, "summary": "The agent stopped before it wrote anything.", "costUsd": 0.5, "minutes": 3.1}}]}
+    ],
+    "E2E": [
+      {"id": "s-finished", "title": "Which scenarios are written?", "state": "finished", "turns": 12, "costUsd": 2.9, "agoSec": 50000, "full": true,
+       "messages": [{"role": "you", "text": "Which scenarios are written?", "agoSec": 50100}, {"role": "agent", "text": "None yet. They come after the merge to staging.", "agoSec": 50000, "costUsd": 0.2}]}
+    ]
+  }
+}

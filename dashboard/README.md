@@ -243,3 +243,30 @@ busy or full; **one turn per agent** (`agent_busy`), 3 turns at once, and today'
   origin with the result's commits, files and pushed matching git, (g) `--fallback-model` accepted, (h) Stop during a second act turn gives `stopped` and no process,
   (i) canary, key and message text in no log. It costs about $1 to $3. The script is checked against a stub `claude` (`LIVE_CHECK_CLAUDE_BIN`) for its plumbing; the guard lines
   need the real thing.
+
+## Dashboard chat, the page side (MIN-4498)
+Direction A's "Who is working" card is the chat list: each agent is a row that opens `#/chat/<Agent>`, the chat drawer (480 px). Files:
+`docs/dashboard/drafts/shared/chat-model.js` (pure: texts, the one-word-per-agent rule, formats), `shared/chat.js` (key, calls, polling, drawer),
+`shared/chat.css`; `direction-A/a.js` only mounts it. **The key** arrives once as `#c=<key>` (MIN-4500's `open.sh` adds it to the local URL), is removed from
+the address bar and lives in memory: a reload needs `open.sh` again. **Where it works:** only on `http://127.0.0.1` with a key and a bridge that answers
+`/chat/health`. On the Pages bundle (another host), on a plain file server, or with no key, the rows are the old plain rows plus one sentence ("Chat works
+on this Mac only. Open the dashboard with open.sh."), `#/chat/<Agent>` shows the same sentence, and no `/chat` call is made. **Polling:** every 10 s
+(health, then one `GET /chat/sessions?agent=` per agent), every 2 s only while the open chat is `working` or `acting` (the thread and `events?after=`),
+nothing while the tab is hidden. **States:** answered, sending, waiting for the answer (live events list: time, tool, path), no open chat, agent busy,
+cap hit, chat off, bridge not reachable (Try again), error, loading, finished or full; proposal card (Yes, No, expired, declined, refused, acting off),
+acting strip (Stop, branch, "See it in Branches"), result card (done, stopped, failed, timed out). `/chat/health` `act: false` shows "Answers only" in the
+header and a proposal with no Yes. Typing while a proposal is open declines it (the bridge does that; the card shows Declined after the next read).
+**Demo drawer:** a "How it works" link to `../how-it-works/index.html#how-it-works`, only on 127.0.0.1 and only when a HEAD request finds the file.
+**Looking at it without a model:** `python3 dashboard/tests/chat_dev_server.py` runs the real bridge with the stub `claude` from the test kit;
+`python3 dashboard/tests/chat_mock_server.py --act` serves every state from `dashboard/fixtures/chat.example.json`, including the act states the bridge does not
+build yet (Yes, acting, result, Stop). Open `http://127.0.0.1:<port>/direction-A/index.html?feed=../dev/fresh.json#c=<the throw-away key>` once.
+Tests: `dashboard/tests/test_chat_ui.py` (the model run in node, guards on the page source, the fixture, the mock).
+
+## The five directions panel (project goal, via coordinator, founder 2026-11-14)
+Direction A, under the clock: a "Project goal" card with five rows. **The page holds no title text** (CTO must-fix F2, MIN-4499): the titles come only from the key-gated
+feed, so they are not in the public page or the Pages bundle. **Feed field** `directions` (hand-set, optional): an array of `{n, title, status, note, updatedAt}`, `n` 1 to 5, `title` one short line (cut at 80 characters),
+`status` one of `on_track`, `at_risk`, `off_track`, `not_started` (spaces, hyphens and capitals are read too), `note` one sentence (cut at 200 characters), `updatedAt` an
+ISO time. A direction the feed does not send, sends with an unknown status, or a feed with no field (the public stub bundle, no key, a missing file), an empty array or
+junk, shows the neutral "Direction N" and "not reported yet" (dashed row, no title); nothing throws. Before the first snapshot the rows say "Loading the feed…", after a failed first read "The feed could not be
+read yet." Files: `shared/directions.js` (pure), the paint in `direction-A/a.js`, `shared/live.js` (reads the field), `a.css`. Dev feeds: `dev/directions.json` (field, four
+pills, direction 5 missing) and `dev/fresh.json` (no field). Tests: `dashboard/tests/test_directions.py`.
