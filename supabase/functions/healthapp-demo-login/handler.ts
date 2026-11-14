@@ -1,11 +1,11 @@
 // healthapp-demo-login (MIN-4471; MIN-4449 decision 1.5): the /demo panel signs a synthetic persona
 // in on the server. The browser sends a persona and the panel passcode, never a password.
-// 5 tries a minute per caller address; the sixth is refused before the passcode is checked.
+// 20 tries a minute per caller address (MIN-4518: a pitch signs in many times); the 21st is refused before the passcode is checked.
 import { DemoLoginRequest, type DemoLoginResponse } from "../_shared/contract.ts";
 import { type HealthappEnv, readEnv } from "../_shared/env.ts";
 import { clientAddress, fail, headersFor, json, sameSecret, sha256Hex } from "../_shared/http.ts";
 
-export const MAX_TRIES = 5;
+export const MAX_TRIES = 20;
 export const WINDOW_SECONDS = 60;
 /** A ceiling across every caller (MIN-4492 fix 2): the per-address limit trusts the first
  *  x-forwarded-for hop, which a caller can set, so on its own it limits nobody. */
