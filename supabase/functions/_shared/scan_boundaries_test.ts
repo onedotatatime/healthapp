@@ -116,6 +116,7 @@ Deno.test("one path writes `confirmed`: the store's confirm. The automatic save,
   const handler = code("healthapp-extract-exam/handler.ts");
   assertEquals(/status = 'confirmed'|"confirmed"\s*\)|status: "confirmed"/.test(handler.replace(/status: kept \? "confirmed" : "draft"/, "")), false);
   assertEquals(handler.includes("autoConfirmable(built.draft)"), true);
+  assertEquals(handler.includes("auto ? { plan:"), true); // a plan only when the test holds
   assertEquals(handler.includes("planConfirm(s, ConfirmDocRequest.parse("), true); // the plan is the patient's own, not a copy
   assertEquals(handler.includes("store.confirm("), false); // the store confirms inside the save, not a second call after a visible draft
 });
@@ -127,6 +128,7 @@ Deno.test("the store's statements carry the mark: confirm sets it from the calle
   assertEquals(part("async confirm(").includes("writeConfirm(tx, S, docId, outcome.plan, opts?.unchecked === true)"), true);
   const save = part("async saveExtraction(", "async deleteUnsaved(");
   assertEquals(save.includes("writeConfirm(tx, S, docId, o.plan, true)"), true); // automatic: marked
+  assertEquals(save.includes("if (st && auto) {") && save.includes('o.kind === "plan"'), true); // only when the handler handed a plan, and only if it yields one
   assertEquals(save.indexOf("writeConfirm(") > save.indexOf("insert into ${S}.findings"), true); // after the rows are in, same transaction
   const un = part("async unconfirm(", "async markOpened(");
   assertEquals(un.includes("set status = 'draft', confirmed_at = null, unchecked = false where id = $1::uuid and patient_id = $2::uuid and status = 'confirmed'"), true);
