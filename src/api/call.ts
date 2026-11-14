@@ -36,7 +36,7 @@ export function makeCall(env: OkEnv, fetchImpl: typeof fetch = (...a) => fetch(.
     name: string,
     body: unknown,
     schema: z.ZodType<T>,
-    opts: { accessToken?: string; signal?: AbortSignal } = {},
+    opts: { accessToken?: string; signal?: AbortSignal; /** MIN-4557: the call survives the tab closing (the scan kick). */ keepalive?: boolean } = {},
   ): Promise<T> {
     let res: Response;
     try {
@@ -50,6 +50,7 @@ export function makeCall(env: OkEnv, fetchImpl: typeof fetch = (...a) => fetch(.
         },
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: opts.signal,
+        keepalive: opts.keepalive,
       });
     } catch {
       throw new ApiError(0, 'Could not reach the server.');

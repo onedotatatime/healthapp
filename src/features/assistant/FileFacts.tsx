@@ -20,7 +20,7 @@ const Presence = ({ label, value }: { label: string; value: boolean | null }) =>
 );
 
 /** Presentational and pure, so every state can be rendered in a test. */
-export function AboutFileView({ state, mark, onRetry }: { state: FileState; mark: MarkKind; onRetry?: () => void }) {
+export function AboutFileView({ state, mark, unchecked = false, onRetry }: { state: FileState; mark: MarkKind; unchecked?: boolean; onRetry?: () => void }) {
   const row = state.status === 'ready' ? state.row : null;
   const tag = state.status === 'ready' ? (row ? row.status : 'none') : state.status;
   return (
@@ -39,12 +39,12 @@ export function AboutFileView({ state, mark, onRetry }: { state: FileState; mark
           The analysis of this file failed{row.error_code ? ` (code: ${row.error_code})` : ''}. The values above are unchanged.
         </p>
       )}
-      {row?.status === 'done' && <Done row={row} mark={mark} />}
+      {row?.status === 'done' && <Done row={row} mark={mark} unchecked={unchecked} />}
     </section>
   );
 }
 
-function Done({ row, mark }: { row: FileAnalysisRow; mark: MarkKind }) {
+function Done({ row, mark, unchecked }: { row: FileAnalysisRow; mark: MarkKind; unchecked: boolean }) {
   const quality = qualityWords(row);
   const hash = shortHash(row.sha256);
   const size = formatBytes(row.bytes);
@@ -59,7 +59,7 @@ function Done({ row, mark }: { row: FileAnalysisRow; mark: MarkKind }) {
         <dd data-testid="file-quality">{quality.length ? quality.map((w, i) => (i ? w.toLowerCase() : w)).join(', ') : 'No quality problem noted'}</dd>
         <dt>Provenance</dt>
         <dd>
-          <span className="as-marks"><ProvenanceMark kind={mark} surface="doctor" /></span>
+          <span className="as-marks"><ProvenanceMark kind={mark} surface="doctor" />{unchecked && <ProvenanceMark kind="unchecked" surface="doctor" />}</span>
           <span className="as-meta" data-testid="file-uploaded">Uploaded {uploadedLine(row.uploaded_at)}{size ? `, ${size}` : ''}{row.mime ? `, ${row.mime}` : ''}.</span>
           <span className="as-meta" data-testid="file-hash">{hash ? <>File fingerprint (SHA-256, first 8): <span className="mono">{hash}</span>. </> : 'No fingerprint recorded. '}{hashCheckWord(row.hash_verified)}</span>
         </dd>

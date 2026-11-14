@@ -22,7 +22,7 @@ export const GrantStatus = z.enum(['pending', 'active', 'refused', 'expired', 'r
 export type GrantStatus = z.infer<typeof GrantStatus>;
 
 // =============================================================================================
-// A1 + A2 (MIN-4476): copied VERBATIM from Cron's contract.ts (MIN-4471, CONTRACT_VERSION 2026-11-14.1),
+// A1 + A2 (MIN-4476): copied VERBATIM from Cron's contract.ts (MIN-4471, CONTRACT_VERSION 2026-11-14.5 for the MIN-4556 sections),
 // supabase/functions/_shared/contract.ts. Swap = delete this section and import his file. Do not edit here.
 // =============================================================================================
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

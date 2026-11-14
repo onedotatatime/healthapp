@@ -4,6 +4,7 @@ import { AddExam } from './AddExam';
 import { ExamsContext } from './context';
 import { realApi } from './real';
 import { RecordView } from './RecordView';
+import { ReviewRoute } from './ReviewRoute';
 import type { ExamsApi } from './logic';
 import './exams.css';
 
@@ -19,6 +20,7 @@ export function ExamsRoutes() {
         <Route index element={<Navigate to="/patient" replace />} />
         <Route path="add" element={<AddExam />} />
         <Route path=":id" element={<RecordView />} />
+        <Route path=":id/review" element={<ReviewRoute />} />
       </Routes>
     </ExamsContext.Provider>
   );

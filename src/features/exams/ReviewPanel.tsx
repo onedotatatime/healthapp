@@ -1,5 +1,6 @@
 import { Lock } from '@phosphor-icons/react';
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router';
 import { ApiError } from '../../api/call';
 import type { DocumentDraft } from '../../api/contract';
 import { ErrorNote, Spinner } from '../../components/Primitives';
@@ -19,7 +20,7 @@ import {
 } from './logic';
 
 /** A2: the fields beside the photo (above it on a phone). Name and ID are read from the exam and cannot change. */
-export function ReviewPanel({ draft, photoUrl, onRetake, onSaved }: { draft: DocumentDraft; photoUrl: string; onRetake: () => void; onSaved: (docId: string) => void }) {
+export function ReviewPanel({ draft, photoUrl, backTo, onRetake, onSaved }: { draft: DocumentDraft; photoUrl: string; backTo?: string; onRetake: () => void; onSaved: (docId: string) => void }) {
   const { api } = useExams();
   const [form, setForm] = useState<ReviewForm>(() => initForm(draft));
   const [shown, setShown] = useState(false);
@@ -48,8 +49,9 @@ export function ReviewPanel({ draft, photoUrl, onRetake, onSaved }: { draft: Doc
 
   return (
     <main className="page wide" data-testid="review">
+      {backTo && <p><Link to={backTo} className="back" data-testid="review-back">Back to my exams</Link></p>}
       <h1>Check what we read</h1>
-      <p className="muted">Fix anything that is wrong, then save. Nothing is saved until you do.</p>
+      <p className="muted">Fix anything that is wrong, then save. Until you save it, this exam stays out of your record.</p>
       <div className="review">
         <figure className="photo">
           <img src={photoUrl} alt="Your photo of the exam" />
