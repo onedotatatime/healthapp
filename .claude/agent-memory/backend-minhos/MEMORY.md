@@ -8,3 +8,4 @@
 - [healthapp assistant checks](project_healthapp_assistant_checks.md) — short-id citation check, measured 3 to 10 s, seed 011, short test grant then revoke
 - [healthapp handshake build lessons](project_healthapp_handshake_build_lessons.md) — policy subqueries obey RLS, RETURNING hides a missing insert policy, mutant functions, SQL check harness
 - [healthapp demo passcode](project_healthapp_demo_passcode.md) — passcode file ~/.config/healthapp/demo-login.env (600); rls-check tokens via demo-login
+- [Chat act path (MIN-4497)](project_healthapp_chat_act_path.md) — measured rg glob override, CI key-grep trap, what the act-path sweep found
