@@ -24,6 +24,7 @@ export function PatientHome() {
       <RecordsList />
       <p style={{ marginTop: 'var(--space-4)' }}><Link className="btn primary" to="/patient/diary" data-testid="add-symptom">Add symptom</Link></p>
       <DiaryList />
+      <p style={{ marginTop: 'var(--space-4)' }}><Link to="/patient/access" data-testid="access-log-link">Who had access to your record</Link></p>
       <MatchesOptIn />
       <p style={{ marginTop: 'var(--space-6)' }}>
         <SignOut />
