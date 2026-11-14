@@ -4,7 +4,7 @@ A web presentation built from reusable slide templates. The words live in one da
 
 - `slides.ts`: the whole deck as typed data. One object per slide. Words come from `docs/deck/deck-content.md`; speaker notes too.
 - `types.ts`: the props every template takes (a `Slide` is a union keyed by `template`).
-- `templates/`: layouts. `Cover`, `Hero` (full-bleed image + text column + optional `tag` of `'Concept render'` or `'Mock-up'`; used by slide 6b), `Stats`, `Statement` (points + side panel), `Funnel` (big number), `Chart` (stacked bars from data), `Table`, `Product` (phone frames), `Compare` (positioning map), `Steps` (timeline or ascending cards), `TeamAsk`, `Appendix`.
+- `templates/`: layouts. `Cover`, `Hero` (full-bleed image + text column + optional `tag` of `'Concept render'` or `'Mock-up'`, optional `stepsTitle` + `steps` (a small numbered "how it's used" list, numbers in teal); used by slide 6b), `Stats`, `Statement` (points + side panel), `Funnel` (big number), `Chart` (stacked bars from data), `Table`, `Product` (phone frames), `Compare` (positioning map), `Steps` (timeline or ascending cards), `TeamAsk`, `Appendix`.
 - `Deck.tsx`: the presenter (scaling, keys, hash, notes, print). `deck.css`: all styles, on a fixed 1920x1080 canvas.
 - Entry: `landing/deck/index.html` (`noindex`), built to `dist/deck/index.html`. The landing at `/` is a separate entry.
 
@@ -13,7 +13,7 @@ A web presentation built from reusable slide templates. The words live in one da
 1. Copy `slides.ts` to `slides.<name>.ts`, keep the `Slide[]` shape, and replace the data. Pick a `template` per slide; TypeScript tells you which fields it needs.
 2. Point `main.tsx` at the new file (or add `deck/<name>/index.html` and a second input in `vite.config.ts`).
 3. Rules baked into the types: every `product` card and every `statement` side panel of kind `notice`, `phone` or `matches` must carry a `tag` of `'Mock-up'` or `'Working demo · synthetic data'`. Do not add red, a trademark sign, or a funding-sources slide.
-4. A `hero` slide's `tag` is optional. If it has none, the slide must carry a concept or mock-up label elsewhere (kicker and footer). Never show a concept image without a label.
+4. A `hero` slide's `tag`, `kicker`, `stepsTitle` and `steps` are optional. Slide 6b carries no concept label (founder, 2026-11-15: it is no longer shown as a concept); a hero that does show an unbuilt thing should still say so with a `tag`.
 5. Keep every "assumption" or "our estimate" label at the same size as its number.
 
 ## Presenting

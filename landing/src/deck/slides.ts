@@ -25,7 +25,7 @@ const N: Record<string, string[]> = {
     "We designed privacy in from the first line. The key lives on the patient's device. A doctor gets in only face to face, only with a yes, and only for a set time. Every access goes into a log the patient can read and nobody can edit; the log holds fingerprints, never health data. Those are product rules, not settings."
   ],
   "6b": [
-    "Some people will not want their record on anyone's server, ours included. For them we are designing Pathien Vault: a small device they buy once, holding the whole record at home. The doctor still gets in by the code, for a set time. Pathien's own encryption runs on the device, so nothing sits in the cloud. It is a concept, not built yet, and an option, not the business."
+    "Pathien Vault keeps the whole record on a device the patient owns, under our own encryption, not in the cloud. Here is how it's used. The patient is abroad, or at a hospital, and not in a serious condition. The doctor scans the code on the Vault, and it opens our doctor page. One of our support team calls to verify the request with the patient, then gives the doctor access for a set time."
   ],
   "7": [
     "The founder's question was simple: somewhere in the world, someone has Maria's pattern. If she says yes, her doctor can see that similar unnamed cases exist and ask to talk to the doctor treating one of them. Not to sell data. To shorten the years patients spend going from doctor to doctor. Opt-in only, and she can withdraw at any time."
@@ -180,17 +180,23 @@ export const slides: Slide[] = [
     side: { kind: 'phone', caption: "Key on the patient's phone", tag: 'Mock-up' },
   },
   {
-    id: '6b', counter: '6b', template: 'hero', theme: 'air', kicker: 'Concept · not built', notes: N['6b'],
+    id: '6b', counter: '6b', template: 'hero', theme: 'air', notes: N['6b'],
     headline: 'Pathien Vault. The whole record, on a device the patient owns.',
-    body: 'For patients who want maximum privacy. A small device, bought once, holds the full record and every original, encrypted, at home or on a keyring. The phone opens it. A doctor gets in by the same code, for a set time.',
+    body: 'For patients who want maximum privacy. A small device, bought once, holds the full record and every original, encrypted, at home or on a keyring. The phone opens it.',
     points: [
       '**Our own encryption, on the device.** Pathien\'s software encrypts every record on the Vault itself. Nothing goes to the cloud unless the patient turns on an encrypted backup.',
       '**Same product, same rules.** It stores and shares. It never interprets, so it never diagnoses.',
-      '**Bought once, backup optional.** **About €249** for the device [[(assumption)]], plus an optional encrypted-backup subscription.',
+    ],
+    stepsTitle: "How it's used",
+    steps: [
+      'The patient is abroad or at a hospital, not in a serious condition.',
+      'The doctor scans the code on the Vault.',
+      'The code opens the Pathien doctor page.',
+      'A Pathien support person calls to verify the request with the patient, then gives the doctor access for a set time.',
     ],
     image: { src: '/deck/vault-hero.jpg', alt: 'A slim teal-night aluminium device, a rounded pebble with a tone-on-tone Pathien mark and one small coral light, on a pale surface' },
     lockupSuffix: 'Vault',
-    footer: 'Concept, not built. Price is our assumption, anchored to hardware wallets (about €100 to €150) and personal storage boxes (about €300 to €400). An option for privacy-first patients; the core business is unchanged.',
+    footer: 'An option for privacy-first patients. The core business is unchanged.',
   },
   {
     id: '7', template: 'statement', theme: 'air', no: '07', kicker: 'Possible matches', notes: N['7'],
