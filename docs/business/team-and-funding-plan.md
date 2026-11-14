@@ -346,7 +346,7 @@ Four hires and one research partner. Two build, two sell, and the partner checks
 
 **Speaker notes (~20 s):** "Why this amount. Four people: an engineer and an ML engineer to build it and make the reading accurate and cheap, business development and marketing to sell it. Twenty-eight percent goes to selling. A university hospital checks the work with clinicians. And today: if you know a hospital that treats patients from abroad, or a doctor who would try the doctor view, come and find me. Thank you."
 
-**Contact line** (slide 15, bottom): unchanged from v3 (`[email]` · healthapp-landing.pages.dev).
+**Contact line** (slide 15, bottom): `hello@onedotatatime.design` · healthapp-landing.pages.dev (email: founder, 2026-11-14).
 
 **Moved off the slides:** v1's non-money asks (a clinical champion pair, introductions, a regulatory adviser) are now one sentence in slide 15's speaker notes, so the slide keeps to the founder's three parts.
 

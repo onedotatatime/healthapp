@@ -5,7 +5,7 @@ import { prefersReducedMotion, useSmoothScroll } from './useSmoothScroll';
 import { Screens } from './DemoScreens';
 
 // Swap in one place. Shown as-is until the founder supplies the address; never claim the typed email is stored.
-const CONTACT_EMAIL = "[contact]";
+const CONTACT_EMAIL = "hello@onedotatatime.design";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -283,7 +283,7 @@ export default function App() {
         <div className="wrap foot">
           <img src="/brand/pathien-lockup-white.svg" alt="Pathien" style={{ height: 32, width: "auto" }} />
           <span>Built at GenAI Summit Hackathon · Athens · Nov 2026</span>
-          <a className="btn" href="#top">[contact]</a>
+          <a className="btn" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
         </div>
       </footer>
     </div>

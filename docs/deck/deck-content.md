@@ -438,7 +438,7 @@ Four hires and one research partner. Two build, two sell, and the partner checks
 
 **Footer, required:** \* Our plan. Every cost is an assumption at Athens rates, with employer contributions. Sell = business development €86.7k + marketing €45.7k + pilots and go-to-market €36.0k. Research partner: months 4 to 15.
 
-**Contact line** (bottom of the slide, unchanged from v3): `[email]` · **healthapp-landing.pages.dev** (live). The brand domain pathien.health is chosen but not registered (brand check, 14 Nov); it goes on the slide only once it resolves.
+**Contact line** (bottom of the slide, unchanged from v3): `hello@onedotatatime.design` · **healthapp-landing.pages.dev** (live). The brand domain pathien.health is chosen but not registered (brand check, 14 Nov); it goes on the slide only once it resolves.
 
 **Visual note for Pix:** Table 2 as one horizontal bar in four parts; "Sell" carries the one accent. "Assumption" and "our plan" at the same size as the numbers. No red. The DNA-shaped QR in a corner, pointing to https://healthapp-landing.pages.dev (live; the founder approves the link before print), as in v3.
 
