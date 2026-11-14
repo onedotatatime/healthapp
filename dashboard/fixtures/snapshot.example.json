@@ -22,6 +22,10 @@
     "branches": {
       "asOf": "2026-11-14T13:53:07Z",
       "error": null
+    },
+    "repo": {
+      "asOf": "2026-11-14T13:53:07Z",
+      "error": null
     }
   },
   "deadline": "2026-11-15T18:00:00+02:00",
@@ -532,7 +536,7 @@
   "directions": [
     {
       "n": 1,
-      "title": "Scan \u2192 AI reads",
+      "title": "Scan → AI reads",
       "status": "on_track",
       "note": "Example: a photo of a blood test becomes a record in the dev project.",
       "updatedAt": "2026-11-14T15:30:00+02:00"
@@ -923,5 +927,21 @@
         "agentFrom": null
       }
     ]
+  },
+  "repo": {
+    "branchesOpen": 6,
+    "branchesMerged": 21,
+    "prsOpen": 3,
+    "prsMerged": 34,
+    "prsTotal": 40,
+    "commitsStaging": 58,
+    "commitsStaging24h": 58,
+    "commitsMain": 31,
+    "commitsMain24h": 31,
+    "linesAdded": 14210,
+    "linesRemoved": 2980,
+    "filesChanged": 231,
+    "codeLines": 23850,
+    "codeFiles": 187
   }
 }
