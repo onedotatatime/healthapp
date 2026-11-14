@@ -2,12 +2,9 @@ import { supabase } from '../../api/client';
 import { DiaryEntry, DiaryInsert } from '../../api/contract';
 
 /** Direct insert under RLS (review 3 row 12). When MIN-4481 lands, only this file changes. */
-export async function addDiaryEntry(input: Omit<DiaryInsert, 'patient_id'>): Promise<void> {
+export async function addDiaryEntry(input: DiaryInsert): Promise<void> {
   if (!supabase) throw new Error('Not configured.');
-  const { data } = await supabase.auth.getSession();
-  const uid = data.session?.user.id;
-  if (!uid) throw new Error('Not signed in.');
-  const row = DiaryInsert.parse({ ...input, patient_id: uid });
+  const row = DiaryInsert.parse(input);
   const { error } = await supabase.from('diary_entries').insert(row);
   if (error) throw new Error(error.message);
 }

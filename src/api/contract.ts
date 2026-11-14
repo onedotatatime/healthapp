@@ -41,9 +41,8 @@ export const DiaryEntry = z.object({
 });
 export type DiaryEntry = z.infer<typeof DiaryEntry>;
 export const DiaryInsert = z.object({
-  patient_id: z.string().min(1),
+  // patient_id defaults to the caller; recorded_at and time_edited are set by the database.
   occurred_at: z.string().min(1),
-  time_edited: z.boolean(),
   text: z.string().trim().min(1),
   severity: z.number().int().min(1).max(10),
 });

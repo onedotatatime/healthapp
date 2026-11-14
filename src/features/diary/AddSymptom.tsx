@@ -22,7 +22,7 @@ export function AddSymptom() {
     setError(null);
     try {
       const iso = new Date(when).toISOString();
-      await addDiaryEntry({ text: text.trim(), severity, occurred_at: iso, time_edited: edited });
+      await addDiaryEntry({ text: text.trim(), severity, occurred_at: iso });
       setSavedAt(iso);
     } catch {
       setError('This entry was not saved. Check your connection and try again.');
