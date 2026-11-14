@@ -1,0 +1,113 @@
+{
+ "synthetic": true,
+ "label": "Simulation on synthetic data. A model, not a measurement",
+ "seed": 20261116,
+ "cohort_size": 400,
+ "k": 5,
+ "min_shared": 4,
+ "steps": 12,
+ "x": {
+  "label": "Synthetic records in the network",
+  "values": [
+   33,
+   67,
+   100,
+   133,
+   167,
+   200,
+   233,
+   267,
+   300,
+   333,
+   367,
+   400
+  ]
+ },
+ "assumption": {
+  "value": 0.2,
+  "status": "pending CEO approval of the 20% assumption",
+  "text": "We assume that a match lowers the chance of a wrong or missed diagnosis by 20%.",
+  "sourced": false
+ },
+ "series": [
+  {
+   "id": 1,
+   "key": "match_rate",
+   "label": "Records that find a match",
+   "unit": "% of records",
+   "origin": "computed by running the matching logic on cohort samples of growing size",
+   "values": [
+    0.0,
+    0.0,
+    1.1,
+    5.7,
+    6.5,
+    10.3,
+    21.4,
+    24.8,
+    29.3,
+    31.0,
+    30.4,
+    33.5
+   ]
+  },
+  {
+   "id": 2,
+   "key": "wrong_or_missed_per_100",
+   "label": "Wrong or missed diagnoses",
+   "unit": "per 100 visits",
+   "status": "pending CEO approval of the 20% assumption",
+   "baseline": 5,
+   "formula": "5 x (1 - 0.20 x match_rate)",
+   "sources": [
+    {
+     "name": "WHO, Patient safety fact sheet, 11 Sep 2023 (5-20% of physician-patient encounters; low end used)",
+     "url": "https://www.who.int/news-room/fact-sheets/detail/patient-safety"
+    }
+   ],
+   "values": [
+    5.0,
+    5.0,
+    4.99,
+    4.94,
+    4.93,
+    4.9,
+    4.79,
+    4.75,
+    4.71,
+    4.69,
+    4.7,
+    4.66
+   ]
+  },
+  {
+   "id": 3,
+   "key": "cost_pct_of_health_spend",
+   "label": "Cost of wrong or missed diagnoses",
+   "unit": "% of health spending",
+   "status": "pending CEO approval of the 20% assumption",
+   "baseline": 11,
+   "formula": "11 x (1 - 0.20 x match_rate)",
+   "sources": [
+    {
+     "name": "OECD Health Working Paper No. 176, The economics of diagnostic safety, 2025 (about 11% of health spending; an OECD model estimate)",
+     "url": "https://www.oecd.org/content/dam/oecd/en/publications/reports/2025/03/the-economics-of-diagnostic-safety_6e0ed50b/fc61057a-en.pdf"
+    }
+   ],
+   "values": [
+    11.0,
+    11.0,
+    10.98,
+    10.87,
+    10.86,
+    10.77,
+    10.53,
+    10.45,
+    10.35,
+    10.32,
+    10.33,
+    10.26
+   ]
+  }
+ ]
+}
