@@ -12,6 +12,7 @@ import { askErrorMessage, isGrantGone } from './api';
 import { AskPanel } from './Ask';
 import { useAssistantApi } from './context';
 import { OverviewPanel } from './Overview';
+import { OverTimePanel } from './OverTimePanel';
 import { buildIndex, buildOverview, type RecordData, type Subject } from './record';
 import { SourceViewer } from './SourceViewer';
 import './assistant.css';
@@ -82,6 +83,7 @@ export default function AssistantWorkspace() {
     <div className="as-grid" data-testid="assistant-workspace">
       <section className="as-col as-left" aria-label="Overview">
         <OverviewPanel overview={model.overview} openCite={open?.cite ?? null} onOpenCite={openCite} onOpenSubject={(s) => openSubject(s)} />
+        <OverTimePanel api={api} grantId={active.grant.grant_id} index={model.index} openCite={open?.cite ?? null} onOpenCite={openCite} onGone={gone} />
         <PossibleMatchesPanel patientId={active.grant.patient.id} />
       </section>
       <section className="as-col as-right" aria-label="Assistant">

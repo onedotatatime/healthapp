@@ -4,6 +4,7 @@
  * and the tests. Nothing else in this folder imports `callFunction` or `supabase`.
  */
 import { ApiError } from '../../api/call';
+import type { FileAnalysisRow, OverTimeResponse } from './analysis.contract';
 import type { AssistantResponse, DocPhotoResponse } from './contract';
 import type { RecordData } from './record';
 
@@ -14,6 +15,10 @@ export interface AssistantApi {
   ask(grantId: string, question: string): Promise<AssistantResponse>;
   /** The original photo as a 60 s signed URL. */
   photo(docId: string, grantId: string): Promise<DocPhotoResponse>;
+  /** MIN-4550: the file analysis of one document, read under RLS (doctor with a grant). `null`: not analysed yet. */
+  fileAnalysis(docId: string): Promise<FileAnalysisRow | null>;
+  /** MIN-4552: the series, the out-of-range history and the straight-line projection, calculated in code. Doctor only. */
+  overTime(grantId: string): Promise<OverTimeResponse>;
 }
 
 /** The grant is over (or never was): the caller should ask `grant-status` and close. */
