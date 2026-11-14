@@ -145,6 +145,23 @@ class RealGit(unittest.TestCase):
         after = self.w.block(since=sn.parse('2026-11-14T16:00:00Z'))
         self.assertEqual((after['linesAdded'], after['linesRemoved'], after['filesChanged']), (0, 0, 0))   # nothing yet: zero, not omitted
 
+    def test_a_merge_commit_counts_the_whole_branch_it_brings_once(self):
+        # A branch commit older than the build start, brought in by a merge commit after it: the work arrived during the build.
+        # `--first-parent` reads the merge against staging (+5 lines, 1 file); without it the old commit is filtered out and the merge shows nothing.
+        with tempfile.TemporaryDirectory() as t:
+            repo = os.path.join(t, 'r')
+            subprocess.run(['git', 'init', '-q', '-b', 'main', repo], check=True)
+            commit(repo, {'base.txt': 1}, '2026-11-13T09:00:00Z')
+            sh(repo, 'checkout', '-q', '-b', 'staging')
+            sh(repo, 'checkout', '-q', '-b', 'feat/old-work')
+            commit(repo, {'feat.txt': 5}, '2026-11-13T10:00:00Z')
+            sh(repo, 'checkout', '-q', 'staging')
+            commit(repo, {'other.txt': 2}, '2026-11-14T11:00:00Z')
+            sh(repo, 'merge', '-q', '--no-ff', '-m', 'merge feat', 'feat/old-work', GIT_COMMITTER_DATE='2026-11-14T12:00:00Z', GIT_AUTHOR_DATE='2026-11-14T12:00:00Z')
+            d = self.w.block(repoPath=repo, gh=lambda argv: (0, '[]', ''))
+            self.assertEqual((d['linesAdded'], d['linesRemoved'], d['filesChanged']), (7, 0, 2))      # other.txt 2 + feat.txt 5, each file once
+            self.assertEqual(d['commitsStaging'], 4)
+
     def test_code_size_skips_lockfiles_vendor_and_binaries(self):
         d = self.w.block()
         # README 1 + old.txt 7 + a.txt 4 + docs/n.md 2. Left out: package-lock.json (100), vendor/v.js (50), deps.lock (20), img.bin (binary)
@@ -447,6 +464,8 @@ class Safety(unittest.TestCase):
         gh = [a for a in log if a[0] == GH]
         self.assertEqual(len(gh), 1)
         self.assertEqual(gh[0][1:4], ['pr', 'list', '--state'])
+        self.assertEqual(gh[0][gh[0].index('--limit') + 1], str(sn.REPO_PR_LIMIT))      # the total depends on asking for them all
+        self.assertEqual(sn.REPO_PR_LIMIT, 1000)
         grep = next(a for a in log if a[:2] == ['git', 'grep'])
         self.assertEqual(grep[2:4], ['-I', '-c'])
         self.assertTrue(all(p.startswith(':(exclude,glob)') for p in grep[grep.index('--') + 2:]))
