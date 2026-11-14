@@ -142,3 +142,38 @@ Primary and mono go on light grounds, white on dark. Contrast of the p and path:
 
 ## 10. Voice (placeholder, Anna fills in)
 _Tone, vocabulary, words we avoid, how we phrase a result that is outside the printed range._
+
+## 11. Glass (product app only, new, MIN-4586)
+Tokens: `tokens.css` section 6. Working picture: `docs/design/min-4585/mockups.html`. Figma: https://www.figma.com/design/5jgmJHOs9AWAEjv4R3xN5I, page "iOS glass (MIN-4585)".
+
+**Two kinds of glass, one rule: blur only where content passes underneath.**
+| Kind | Token | Where | Blur |
+|---|---|---|---|
+| Chrome glass | `--glass-chrome` white 82% | Tab bar, navigation bar, sheet, access timer, the doctor's entry bar, the sign-in card | `--glass-filter` blur(20px) |
+| Card glass | `--glass-card` white 78% | Cards, tiles, list cards, empty state, ghost button fill, all on the ambient ground | none: nothing sharp is behind them, so the blur would cost frames and change nothing |
+| Peach / mist glass | `--glass-caution` peach 86%, `--glass-quiet` mist 80% | Access timer "ends soon" and "ended" only | blur(20px) |
+
+- **Ambient ground:** `public/brand/bg-ambient.webp` (the site's petal background, reused) under a 70% air veil (`--ambient-veil`), fixed behind the app. The sign-in screen shows it without the veil.
+- **Edge:** 1px `--glass-edge` (white 70%) on a surface; 1px `--glass-edge-low` (ink 8%) under a bar. **Shadow:** `--shadow-soft` on bars and cards, `--shadow-card` on sheets and the sign-in card. No other shadow, no inner glow, no gradient sheen.
+- **At most three blurred surfaces on a screen** (measured in the mockups: two at most).
+- **Never glass:** long reading text (results, the assistant's answers, the source viewer: solid white), the live camera image and the QR card (solid, for the scanner), the logo (no effects on it, section 9), inputs (solid white), anything on the teal-night scene.
+- **Solid fallback:** with `prefers-reduced-transparency: reduce`, and where `backdrop-filter` is not supported, every glass token becomes its solid colour (white, peach, mist), the edge becomes the ink 8% hairline and the ground is flat air. All pairs below only get better.
+
+**Contrast on glass** (WCAG 2.x relative luminance on the composited colour; blur only averages what is underneath, so solid ink under the glass is the darkest case there can be). AA = 4.5 text, 3 large text and UI.
+| Surface | Ground | ink | ink-soft | teal-600 | coral-900 | field-border (UI) |
+|---|---|---|---|---|---|---|
+| Chrome glass | lightest: white | 16.77 | 6.98 | 5.47 | 6.73 | 4.38 |
+| Chrome glass | darkest: solid ink under it (#D4D7D7) | 11.58 | 4.82 | **3.78** | 4.65 | 3.03 |
+| Card glass | lightest: white | 16.77 | 6.98 | 5.47 | 6.73 | 4.38 |
+| Card glass | darkest ground pixel #F3D1CC (#FCF5F4) | 15.57 | 6.48 | 5.08 | 6.25 | 4.07 |
+| No surface: text on the ground | darkest ground pixel #F3D1CC | 11.80 | 4.91 | **3.85** | 4.74 | n/a |
+| Sign-in card (chrome glass, no veil) | darkest image pixel #EB705F (#FBE5E2) | 13.94 | 5.80 | 4.55 | n/a | 3.64 |
+| Peach glass (timer) | solid ink under it | 9.73 | 4.05 | n/a | n/a | n/a |
+| Mist glass (timer) | solid ink under it | 9.89 | 4.12 | n/a | n/a | n/a |
+Also: flag chip (coral 12%) on card glass, coral-900 label 5.67. Teal-night scene: white 12.30, `--night-ink-2` #BBC8C9 7.16, mint 8.08, coral 4.90 (graphics). Fills: ink on mint 11.01, ink on peach 12.78, white on teal-600 5.47, teal-night on mist 10.90.
+
+**Rules that follow from the bold cells.** Teal-600 is never small text on chrome glass or straight on the ground: a ghost button on chrome glass uses ink for its edge and label, and a ghost button on the ground carries the card-glass fill (teal-600 on it 5.08). On peach and mist glass, text is ink only. The focus ring stays 3px teal-600 everywhere on light (3.78 at worst, needs 3) and white on teal-night.
+
+**No red, no amber.** Caution = peach fill, ink text, 1px coral-900 edge (`--color-caution-bg`). Error = white surface, 1.5px coral-900 edge and icon, ink text. Outside the printed range = the flag chip (section 5): coral dot plus the words, no alarm icon. Severity is carried by the icon, the words and `role="alert"`, never by hue alone.
+
+**App type (replaces the Drop 0 mono):** Manrope everywhere, `font-variant-numeric: tabular-nums` on values, timers and codes. The typed share code is 600 28px with .12em tracking. Tab-bar labels are the 14px/600 label style: the bar has three tabs so that they fit at 390.

@@ -83,6 +83,32 @@
   /* Dark mode: not defined yet. Do not invent one in the app. */
 }
 
+/* 6. Glass layer (new, MIN-4586). Product app only. Rules and measured contrast: brand-guidelines.md section 11.
+   Two kinds. Chrome glass: bars, sheets and the timer, the surfaces content scrolls under; real blur.
+   Card glass: cards and tiles that sit on the ambient ground only; translucent, NO blur (nothing sharp is behind them). */
+:root {
+  --glass-chrome: rgba(255, 255, 255, .82);   /* tab bar, navigation bar, sheet, access timer, entry bar */
+  --glass-card: rgba(255, 255, 255, .78);     /* cards, tiles, list cards on the ambient ground */
+  --glass-caution: rgba(255, 217, 199, .86);  /* timer "ends soon": peach glass, ink text only */
+  --glass-quiet: rgba(234, 243, 242, .80);    /* timer "ended": mist glass, ink text only */
+  --glass-filter: blur(20px);                 /* chrome glass only; at most three blurred surfaces on a screen */
+  --glass-edge: rgba(255, 255, 255, .7);      /* 1px light edge on a glass surface */
+  --glass-edge-low: rgba(18, 32, 31, .08);    /* 1px hairline under a bar (same value as --color-border) */
+  --ambient-veil: rgba(247, 250, 250, .70);   /* air over public/brand/bg-ambient.webp; the login uses the image without the veil */
+  /* Shadows on glass: --shadow-soft (bars, cards) and --shadow-card (sheets). No new shadow. */
+
+  /* Semantics the app needs and the page did not have */
+  --color-caution-bg: var(--peach);           /* caution chip and note: peach fill, ink text, coral-900 edge. Replaces amber */
+  --night-ink-2: #BBC8C9;                     /* secondary text on teal-night, 7.16:1 */
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root { --glass-chrome: var(--white); --glass-card: var(--white); --glass-caution: var(--peach); --glass-quiet: var(--mist);
+          --glass-filter: none; --glass-edge: rgba(18, 32, 31, .08); --ambient-veil: var(--air); }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root { --glass-chrome: var(--white); --glass-caution: var(--peach); --glass-quiet: var(--mist); }
+}
+
 :focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
 @media (prefers-reduced-motion: reduce) {
