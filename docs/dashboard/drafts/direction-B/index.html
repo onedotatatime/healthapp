@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-motion="full">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Journey Map · Health app</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../shared/base.css">
+<link rel="stylesheet" href="b.css">
+</head>
+<body>
+<a class="sr" href="#main">Skip to content</a>
+<header class="top">
+  <span class="brandname">Health app · Gen AI Summit</span>
+  <nav class="tabs-b" id="tabs" aria-label="Pages">
+    <a class="tab" href="#/timeline" data-t="timeline">Timeline</a>
+    <a class="tab" href="#/exercises" data-t="exercises">Exercises</a>
+    <a class="tab" href="#/decks" data-t="decks">Decks</a>
+    <a class="tab" href="#/demo" data-t="demo">Demo</a>
+    <i class="ind"></i>
+  </nav>
+  <div class="sp">
+    <span class="src none" id="feedstat" role="status" aria-live="polite">Loading the feed…</span>
+    <button class="btn ibtn" data-act="theme" aria-label="Toggle light and dark" title="Light / dark" aria-pressed="true">◐</button>
+    <button class="btn ibtn" data-act="motion" aria-label="Reduce motion" title="Reduce motion" aria-pressed="false">≋</button>
+    <button class="btn ibtn" data-act="pause" aria-label="Pause live updates" title="Pause live updates" aria-pressed="false">⏸</button>
+    <span class="clock" id="clock" title="Europe/Athens"></span>
+  </div>
+</header>
+<main class="wrap" id="main" tabindex="-1">
+  <section class="view" id="v-timeline" data-view="timeline"></section>
+  <section class="view" id="v-exercises" data-view="exercises" hidden></section>
+  <section class="view" id="v-ex" data-view="ex" hidden></section>
+  <section class="view" id="v-decks" data-view="decks" hidden></section>
+  <section class="view" id="v-demo" data-view="demo" hidden></section>
+</main>
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Deck viewer"></div>
+<div class="popover" id="pop" hidden role="dialog" aria-label="Issue details"></div>
+<script src="../sample-data.js"></script>
+<script src="../shared/feed-config.js"></script>
+<script src="../shared/live.js"></script>
+<script src="../shared/content.js"></script>
+<script src="../shared/common.js"></script>
+<script src="../shared/feed.js"></script>
+<script src="b.js"></script>
+</body>
+</html>

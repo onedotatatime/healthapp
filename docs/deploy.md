@@ -99,3 +99,31 @@ One location: `.claude/agent-memory/<role>/`, the folder the agents read at runt
 
 - `scripts/wipe-demo` and the temporary agent rule in `conductor/CLAUDE.md`, both before the real-data gate (a new issue for Release, written by Back).
 - A custom domain: out of scope.
+
+## 10. Project dashboard (internal tool, MIN-4445; MIN-4456, MIN-4457, MIN-4459)
+
+Not the demo app. A separate static page plus two Edge Functions. CTO decisions on MIN-4456 (comment "CTO · Pre-build review").
+
+| Thing | Value |
+| --- | --- |
+| Data home | Supabase project `conductor` (`fnbnhvgrnkrbsrwhgcgc`), private bucket `healthapp-dev`, one object `dashboard/snapshot.json`. No table, no DDL |
+| Functions | `healthapp-dashboard-ingest` (the Mac pushes, push key) and `healthapp-dashboard-feed` (the page reads, view key). Both `verify_jwt = true` in `supabase/config.toml`; deploy each by name, never `--prune` (section 6) |
+| Function secrets | `HEALTHAPP_DASHBOARD_PUSH_KEY`, `HEALTHAPP_DASHBOARD_VIEW_KEY`, `HEALTHAPP_DASHBOARD_ALLOWED_ORIGINS` (names only) |
+| Mac job | launchd `ai.minhos.healthapp-dashboard`, every 180 s, runs from `~/.healthapp-dashboard/` (outside every worktree, so cleanup cannot remove it). Code: `dashboard/snapshot.py`, installer `dashboard/install.sh` |
+| Page | Cloudflare Pages project `healthapp-dashboard` (not the `healthapp` project), static upload with `wrangler pages deploy`, not Git-connected. Upload set = `dashboard/pages-bundle.sh <out-dir>` (Direction B, `shared/`, `fonts/`, `_headers`, `robots.txt`; never `drafts/dev/`, `dev-snapshot.json`, Directions A and C) |
+| Access | Cloudflare Access (Zero Trust free plan, One-time PIN, the founder's email only) on the production host **and** the preview subdomains. The founder turns it on; `wrangler` cannot |
+
+**Wipe.** `wipe-demo --env dev` removes the dashboard with the rest (every `healthapp-*` function, every `HEALTHAPP_*` secret, the `healthapp-dev` bucket). That is intended: it runs only when the founder says the demo is no longer needed. `wipe-demo --env demo`, its dry run, and `demo-reset` never touch it; `dashboard/snapshot.json` is the one named exception to "object path = `<patient uuid>/<document uuid>`", and resets stay scoped to patient-UUID prefixes.
+
+**Key rotation.** `dashboard/install.sh --rotate`: new push and view keys (mode 600 in `~/.healthapp-dashboard/`), secrets set one by one with `--project-ref`, nothing printed, the new viewer URL with `#k=…&a=…` to the clipboard. The old link stops working. The URL with the fragment never goes into Linear, chat, a commit or a screenshot.
+
+**Pages order (no real content before Access answers, CTO decision 3):**
+1. Release creates the Pages project `healthapp-dashboard` and deploys a placeholder page (no dashboard content).
+2. The founder turns on Access for the production host and the previews (steps on MIN-4456, "The minimum from the founder").
+3. Release proves the redirect without credentials, on production and on a preview: `curl -sI https://healthapp-dashboard.pages.dev/` and `curl -sI https://<preview>.healthapp-dashboard.pages.dev/` answer a redirect to `*.cloudflareaccess.com` or 403, never 200. Pasted on MIN-4459.
+4. Real deploy from the merged commit: `dashboard/pages-bundle.sh "$TMPDIR/dashboard-pages" && npx wrangler pages deploy "$TMPDIR/dashboard-pages" --project-name healthapp-dashboard --branch main`.
+5. `dashboard/install.sh --viewer-url https://healthapp-dashboard.pages.dev/direction-B/index.html`, so the clipboard link points at Pages. The founder opens it once.
+
+**Rollback.** Pages: promote the previous deployment in the dashboard, or redeploy the placeholder. Feed: `launchctl bootout gui/$(id -u)/ai.minhos.healthapp-dashboard` stops the pushes; `dashboard/install.sh --rotate` kills every link already handed out.
+
+**Checks (Lane C `static`, `.github/workflows/dashboard.yml`):** `python3 -m unittest discover -s dashboard/tests`; `deno check`, `deno lint` and `deno test --allow-read supabase/functions/`; the key-pattern grep over tracked files; `dashboard/pages-bundle.sh` must build a clean upload set. No `smoke` (no Playwright for this tool), no funnel, no migration job.

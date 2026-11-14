@@ -1,1 +1,2 @@
 - [Healthapp real-data regime](project_healthapp_real_data_regime.md) — founder's real exams inside the shared conductor Supabase project: two schemas, wipe by drop schema (never delete the project), backups not wipeable, ten-point gate (MIN-4426, MIN-4449)
+- [Dashboard live feed](project_dashboard_feed.md) — MIN-4456/4458: conductor bucket healthapp-dev, E1/E2 yes, Lane C, post-build checks
