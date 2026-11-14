@@ -1,0 +1,34 @@
+{
+  "output": {
+    "metrics": {
+      "url": "eka.care",
+      "inlink_rank": 22,
+      "domain_inlink_rank": 73
+    }
+  },
+  "raw": {
+    "pages": [
+      {
+        "url": "eka.care",
+        "inlink_rank": 22,
+        "domain_inlink_rank": 73
+      }
+    ]
+  },
+  "_treg": {
+    "served_by": "seranking.web.url.metrics",
+    "provider": "seranking",
+    "tier": "platform",
+    "outcome": "hit",
+    "tried": [
+      {
+        "endpoint_id": "seranking.web.url.metrics",
+        "provider": "seranking",
+        "outcome": "hit",
+        "status": 200,
+        "charged_micro": 2685
+      }
+    ],
+    "charged_micro": 2685
+  }
+}
