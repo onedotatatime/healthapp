@@ -98,6 +98,7 @@ class YesRunsOneActTurn(ActCase):
         self.assertIn(self.wt_of(env, pid), [w[len("worktree "):] for w in self.worktrees(env)])
         self.assertIn(branch, env.git(env.cwd, "branch", "--list"))
         self.assertIn(branch, env.git(env.cwd, "ls-remote", "--heads", "origin"))
+        self.assertEqual(env.git(env.cwd, "for-each-ref", "--format=%(upstream)", "refs/heads/" + branch), "\n")   # created with --no-track: a bare `push` has no upstream
         self.assertNotIn(env.tmp, json.dumps(view))                                 # no local path in any response
         self.assertEqual(env.chat.spent_today(), 0.6)                               # the answer turn's 0.1 plus the act turn's 0.5
 
@@ -321,7 +322,14 @@ class Refusals(ActCase):
         env.git(c, "commit", "-q", "-m", "side removes the rule")
         norule = env.git(c, "rev-parse", "HEAD").strip()
         env.git(c, "checkout", "-q", "main")
-        for name, commit, want in (("no such commit", "1234567", False), ("not a hex string", "main; ls", False), ("present and an ancestor", good, True),
+        env.git(c, "checkout", "-q", "-b", "other", good)
+        with open(os.path.join(c, "docs", "elsewhere.md"), "w") as f:
+            f.write("x")
+        env.git(c, "add", "-A")
+        env.git(c, "commit", "-q", "-m", "a commit that has the rule file but is not in main")
+        elsewhere = env.git(c, "rev-parse", "HEAD").strip()
+        env.git(c, "checkout", "-q", "main")
+        for name, commit, want in (("has the file, not an ancestor of HEAD", elsewhere, False), ("no such commit", "1234567", False), ("not a hex string", "main; ls", False), ("present and an ancestor", good, True),
                                    ("commit without the file", norule, False)):
             with self.subTest(name):
                 env.chat.s["ruleCommit"] = commit
