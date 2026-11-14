@@ -6,7 +6,12 @@ create schema if not exists __SCHEMA__;
 revoke all on schema __SCHEMA__ from public, anon;
 grant usage on schema __SCHEMA__ to authenticated, service_role;
 
--- Deny by default for objects created later in this schema.
+-- Deny by default for tables and sequences created later in this schema (measured 2026-11-14).
+-- NOT for functions: a per-schema revoke cannot remove Postgres's built-in PUBLIC EXECUTE
+-- (measured: a probe function got EXECUTE for anon, authenticated and PUBLIC). Every function
+-- file must say `revoke execute on function ... from public, anon, authenticated` itself;
+-- `hdb check` (functions_exec_anon_or_public) goes red when one does not.
+-- Tables still need an explicit `grant ... to authenticated` plus RLS policies to be reachable.
 alter default privileges in schema __SCHEMA__ revoke all on tables from public, anon, authenticated;
 alter default privileges in schema __SCHEMA__ revoke all on sequences from public, anon, authenticated;
 alter default privileges in schema __SCHEMA__ revoke execute on functions from public, anon, authenticated;
