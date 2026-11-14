@@ -14,6 +14,7 @@ const MatchesPreview = lazy(() => import('./features/matches/MatchesPreview'));
 const DoctorAnalysisPreview = import.meta.env.DEV ? lazy(() => import('./features/assistant/Preview')) : null;
 const ExamsPreview = import.meta.env.DEV ? lazy(() => import('./features/exams/Preview')) : null;
 import { DoctorHome, PatientHome } from './pages/Homes';
+import { AccessLog } from './features/accesslog/AccessLog';
 import { AddSymptom } from './features/diary/AddSymptom';
 import { Kit } from './pages/Kit';
 import { Login } from './pages/Login';
@@ -42,6 +43,7 @@ export function App() {
           {ExamsPreview && <Route path="/preview/exams/*" element={<Suspense fallback={<Spinner label="Loading" />}><ExamsPreview /></Suspense>} />}
           <Route path="/preview/matches" element={<Suspense fallback={<Spinner label="Loading" />}><MatchesPreview /></Suspense>} />
           <Route path="/patient/exams/*" element={<RequireRole role="patient"><ExamsRoutes /></RequireRole>} />
+          <Route path="/patient/access" element={<RequireRole role="patient"><AccessLog /></RequireRole>} />
           <Route path="/patient/diary" element={<RequireRole role="patient"><AddSymptom /></RequireRole>} />
           <Route path="/patient/*" element={<RequireRole role="patient"><PatientHome /></RequireRole>} />
           <Route path="/doctor/*" element={<RequireRole role="doctor"><DoctorHome /></RequireRole>} />

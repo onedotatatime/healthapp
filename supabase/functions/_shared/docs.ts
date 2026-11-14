@@ -4,10 +4,15 @@
 import {
   ConfirmDocRequest,
   DocumentKind,
+  type DocumentDraft,
   DocumentRow,
   type ErrorCode,
+  type ExamListItem,
+  type ExamReason,
+  type FailReason,
   FindingRow,
   type HealthappEnv,
+  type RefusalReason,
   ResultRow,
 } from "./contract.ts";
 import type { AnalysisFields } from "./analysis.ts";
@@ -32,6 +37,8 @@ export interface DocMeta {
   sha256_record: string | null;
   printed_name: string | null;
   printed_id: string | null;
+  /** The per-field confidence the extraction stored (documents.extract_confidence), for the review of a draft. */
+  header_confidence?: DocumentDraft["header_confidence"] | null;
 }
 export interface DocState {
   document: DocRecord;
@@ -52,6 +59,57 @@ export type PlanOutcome =
   | { kind: "already" }
   | { kind: "error"; status: number; code: ErrorCode; message: string };
 
+/** One row of the patient's upload list as the store reads it: columns and a count, nothing from the file. */
+export interface ExamRow {
+  id: string;
+  status: string;
+  status_reason: string | null;
+  created_at: string;
+  status_at: string;
+  kind: string | null;
+  exam_date: string | null;
+  read_attempts: number;
+  has_file: boolean;
+  values_read: number;
+  unchecked: boolean;
+}
+
+/** The test for saving a reading with no tap (CTO, MIN-4555 addendum §1), on what the reading produced. The reading
+ *  succeeded and the identity check did not refuse by the time this runs; the reading must also say what kind of exam it is
+ *  and carry at least one result or finding. Not met: the reading is saved as a draft for the patient to confirm. */
+export function autoConfirmable(d: { kind: string | null; results: readonly unknown[]; findings: readonly unknown[] }): boolean {
+  return d.kind !== null && d.results.length + d.findings.length > 0;
+}
+
+/** A failed upload is read again by the patient at most this many times; then it is Delete only (CTO, MIN-4555 §3). */
+export const MAX_READS = 3;
+/** The lazy sweep's limits: a row reading this long, or waiting this long, is dead (CTO, MIN-4555 §3). */
+export const READING_STUCK_MINUTES = 3;
+export const QUEUED_STUCK_MINUTES = 10;
+
+/** The list's row for one upload. A draft that was never read (a row from before this change) is shown as failed,
+ *  computed here and never stored. Kind, date and the count are shown only once there is something read to show. */
+export function toListItem(r: ExamRow): ExamListItem {
+  const neverRead = r.status === "draft" && r.kind === null;
+  const status = (neverRead ? "failed" : r.status) as ExamListItem["status"];
+  const reason = (neverRead ? "not_read" : r.status_reason) as ExamReason | null;
+  const read = (status === "draft" || status === "confirmed");
+  return {
+    id: r.id,
+    status,
+    reason: status === "refused" || status === "failed" ? reason : null,
+    uploaded_at: r.created_at,
+    status_at: r.status_at,
+    kind: read ? (r.kind as ExamListItem["kind"]) : null,
+    exam_date: read ? r.exam_date : null,
+    values_read: read ? r.values_read : null,
+    can_retry: status === "failed" && r.has_file && r.read_attempts < MAX_READS && reason !== "no_file" && reason !== "unsupported_type",
+    can_delete: status !== "confirmed",
+    // The mark exists only on a saved exam; a draft, whatever its column says, is already waiting for the owner.
+    unchecked: status === "confirmed" && r.unchecked,
+  };
+}
+
 export interface Store {
   roleOf(env: HealthappEnv, uid: string): Promise<Role | null>;
   createDraft(env: HealthappEnv, patientId: string, contentType: string): Promise<{ id: string; storage_path: string }>;
@@ -60,6 +118,12 @@ export interface Store {
   getAny(env: HealthappEnv, docId: string): Promise<DocState | null>;
   /** The grant's end if the doctor holds a live grant on this patient, else null. */
   liveGrantEnd(env: HealthappEnv, grantId: string, doctorId: string, patientId: string): Promise<string | null>;
+  /** Atomically takes an upload for reading (queued, failed, or a draft that was never read, and read fewer than
+   *  MAX_READS times): status reading, one more attempt. Null when it is not the caller's or cannot be taken now, so
+   *  a second kick reads nothing twice. */
+  claimForReading(env: HealthappEnv, patientId: string, docId: string): Promise<DocState | null>;
+  /** Writes the draft of a row that is `reading`, and moves it to `draft`. Null when the row is not reading any more
+   *  (deleted, or swept as stuck). */
   saveExtraction(
     env: HealthappEnv,
     patientId: string,
@@ -67,20 +131,43 @@ export interface Store {
     draft: DraftIn,
     sha256File: string,
     identity: "match" | "name_only",
+    /** The automatic save (MIN-4555 addendum). When given, `plan` runs on the saved row inside the same transaction and, if
+     *  it yields a plan, the row is confirmed there and then (unchecked true): it goes from reading to confirmed with no
+     *  visible draft in between. When the plan is refused the row stays a draft. */
+    auto?: { plan: (s: DocState) => Promise<PlanOutcome> },
   ): Promise<Saved | null>;
+  /** reading -> refused, keeping the reason code and the times only: path, type, hashes and every extracted field
+   *  are set to null in the same statement. False when the row was not reading. The caller deleted the file first. */
+  markRefused(env: HealthappEnv, patientId: string, docId: string, reason: RefusalReason): Promise<boolean>;
+  /** reading -> failed with a reason code; at MAX_READS the code becomes too_many_attempts. Only from `reading`. */
+  markFailed(env: HealthappEnv, patientId: string, docId: string, reason: FailReason): Promise<void>;
+  /** The caller's rows that have been reading for READING_STUCK_MINUTES or queued for QUEUED_STUCK_MINUTES become
+   *  failed (stuck; no_file for a queued row whose photo never arrived). Returns how many. */
+  sweepStuck(env: HealthappEnv, patientId: string): Promise<number>;
+  /** The caller's own uploads, newest first. */
+  listOwn(env: HealthappEnv, patientId: string): Promise<ExamRow[]>;
   /** The stored object's own metadata (type, size, upload time) from storage, or null when there is no object. */
   objectMeta(env: HealthappEnv, path: string): Promise<ObjectMeta | null>;
   /** Upserts the one analysis row of a document of this patient (MIN-4549). Twice leaves one row. */
   saveAnalysis(env: HealthappEnv, patientId: string, docId: string, f: AnalysisFields): Promise<void>;
+  /** confirmed -> draft for the owner's own exam: confirmed_at null, unchecked false. Values, file and file analysis stay.
+   *  Null when the upload is not the caller's or does not exist; `not_confirmed` when it is not a saved exam. */
+  unconfirm(env: HealthappEnv, patientId: string, docId: string): Promise<DocState | "not_confirmed" | null>;
+  /** The owner opened a saved exam: clears `unchecked` on it. False when it was not marked (or not theirs, or not confirmed). */
+  markOpened(env: HealthappEnv, patientId: string, docId: string): Promise<boolean>;
   /** The match keys of the patient's own profile (never sent to a client). */
   identityOf(env: HealthappEnv, uid: string): Promise<IdentityProfile | null>;
-  discardDraft(env: HealthappEnv, patientId: string, docId: string): Promise<void>;
-  /** Runs `plan` on the row inside one transaction (row locked), then writes what it returns. */
+  /** Deletes an upload of the caller that is not saved (any status but confirmed). False when there is none. */
+  deleteUnsaved(env: HealthappEnv, patientId: string, docId: string): Promise<boolean>;
+  /** Runs `plan` on the row inside one transaction (row locked), then writes what it returns. The one place that writes
+   *  `confirmed`: the patient's confirm and the automatic save of a scanned exam both come through here, so they cannot
+   *  differ. `unchecked` is true only for the automatic one; any confirm by the patient leaves it false. */
   confirm(
     env: HealthappEnv,
     patientId: string,
     docId: string,
     plan: (s: DocState) => Promise<PlanOutcome>,
+    opts?: { unchecked?: boolean },
   ): Promise<{ state: DocState } | { error: Extract<PlanOutcome, { kind: "error" }> } | null>;
 }
 
@@ -93,7 +180,8 @@ export interface ObjectMeta {
 export interface Blobs {
   createSignedUpload(bucket: string, path: string): Promise<{ token: string; signed_url: string } | null>;
   download(bucket: string, path: string): Promise<Uint8Array | null>;
-  remove(bucket: string, path: string): Promise<void>;
+  /** True when the object is gone (or was never there); false when the storage refused. */
+  remove(bucket: string, path: string): Promise<boolean>;
   signedUrl(bucket: string, path: string, seconds: number): Promise<string | null>;
 }
 

@@ -19,6 +19,7 @@ async function setup() {
   const logs: Record<string, unknown>[] = [];
   const h = makeHandler({ auth: fakeAuth, store: s.store, log: (l) => logs.push(l) });
   const d = await s.store.createDraft("dev", PATIENT, "image/jpeg");
+  await s.store.claimForReading("dev", PATIENT, d.id); // queued -> reading, then the reading's draft
   await s.store.saveExtraction("dev", PATIENT, d.id, DRAFT, "a".repeat(64), "match");
   return { s, h, logs, id: d.id, st: () => s.docs.get(d.id)! };
 }
@@ -102,4 +103,11 @@ Deno.test("a doctor, no token, no profile: refused", async () => {
   assertEquals((await h(call("x", { doc_id: id }, "td"))).status, 403);
   assertEquals((await h(call("x", { doc_id: id }, null))).status, 401);
   assertEquals((await h(call("x", { doc_id: id }, "to"))).status, 403);
+});
+
+Deno.test("the patient's own confirm is never marked unchecked, even on a row the column said was", async () => {
+  const { h, id, st } = await setup();
+  st().document.unchecked = true;
+  assertEquals((await h(call("x", { doc_id: id }))).status, 200);
+  assertEquals([st().document.status, st().document.unchecked], ["confirmed", false]);
 });

@@ -13,7 +13,8 @@ export const blobs: Blobs = {
     return error || !data ? null : new Uint8Array(await data.arrayBuffer());
   },
   async remove(bucket, path) {
-    await adminClient().storage.from(bucket).remove([path]);
+    const { error } = await adminClient().storage.from(bucket).remove([path]);
+    return !error;
   },
   async signedUrl(bucket, path, seconds) {
     const { data, error } = await adminClient().storage.from(bucket).createSignedUrl(path, seconds);

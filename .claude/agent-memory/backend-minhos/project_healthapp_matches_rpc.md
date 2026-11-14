@@ -1,6 +1,6 @@
 ---
 name: project-healthapp-matches-rpc
-description: healthapp possible-matches RPC (MIN-4505) — files, how it was verified in dev, the profiles column-grant trap, and how to apply big seeds without psql
+description: healthapp possible-matches RPC (MIN-4505) — files, 013 coding (six markers, negation), how it was verified in dev, the profiles column-grant trap, and how to apply big seeds without psql
 metadata:
   type: project
 ---
@@ -23,3 +23,12 @@ Possible matches live in `supabase/sql/005_matches.sql` (RPCs), `006_seed_match_
 - Real-token checks: GoTrue password sign-in with `HEALTHAPP_PERSONA_PASSWORD` (`~/.claude/.env.agents`), then
   `POST /rest/v1/rpc/<fn>` with `Content-Profile: healthapp_<env>`. A test grant for the persona pair blocks the
   handshake's unique open-grant index (`grants_open_pair_idx`): delete it the moment the check is done.
+- 013_match_coding.sql (2026-11-14, dev only) replaces match_patient_codes with match_codes_from(labs, texts, specs) over plain
+  jsonb, so the coding is checked without writing rows (checks/match_coding_check.sql: 55 cases + all 400 cohort rows
+  rendered as the extraction stores them and coded back; must be 0/0). The extraction keys "Glycated haemoglobin" as
+  hemoglobin: 013 reads the printed name first (match_analyte_alias), so never trust analyte_key alone for HbA1c.
+- execute_sql dies (HTTP, not SQL) on long calls: the full 400-row check takes ~30-60 s, so mutant sweeps run on
+  match_coding_check(40) or (0). Immutable/stable functions with constant args are folded at plan time: time them
+  from a plpgsql loop with a variable argument, or the timing reads 0 ms.
+- Dev is shared: another chat may hold an active doctor/Maria grant (unique grants_open_pair_idx); test grants go in
+  with `on conflict do nothing` inside a block that ends in raise exception.

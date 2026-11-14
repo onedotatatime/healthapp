@@ -38,6 +38,7 @@ export const DocumentRow = z.object({
   status: DocumentStatus,
   created_at: Timestamp,
   confirmed_at: Timestamp.nullable(),
+  /** MIN-4556 addendum: true from the automatic save of a scanned exam until its owner opens, confirms or unconfirms it. */
   unchecked: z.boolean(),
 });
 export type DocumentRow = z.infer<typeof DocumentRow>;

@@ -1,12 +1,12 @@
-// healthapp-doc-create (MIN-4475; cto-review settlement 5): a draft document row and a signed
-// upload for the private bucket. The patient PUTs the photo there, then calls extract-exam.
+// healthapp-doc-create (MIN-4475; cto-review settlement 5): a document row (status queued, MIN-4556) and a signed
+// upload for the private bucket. The patient PUTs the photo there, then kicks extract-exam, which answers at once.
 import { bucketFor, DocCreateRequest, type DocCreateResponse } from "../_shared/contract.ts";
 import { type Auth, authenticate, type Blobs, readJson, type Store } from "../_shared/docs.ts";
 import { fail, headersFor, json } from "../_shared/http.ts";
 
 export interface Deps {
   auth: Auth;
-  store: Pick<Store, "roleOf" | "createDraft" | "discardDraft">;
+  store: Pick<Store, "roleOf" | "createDraft" | "deleteUnsaved">;
   blobs: Pick<Blobs, "createSignedUpload">;
 }
 
@@ -28,7 +28,7 @@ export function makeHandler(deps: Deps) {
     const doc = await deps.store.createDraft(who.env, who.uid, parsed.data.content_type);
     const up = await deps.blobs.createSignedUpload(bucket, doc.storage_path);
     if (!up) {
-      await deps.store.discardDraft(who.env, who.uid, doc.id);
+      await deps.store.deleteUnsaved(who.env, who.uid, doc.id);
       return fail(req, 500, "internal", "Could not prepare the upload.");
     }
     const out: DocCreateResponse = {
