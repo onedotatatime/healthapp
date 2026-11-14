@@ -56,6 +56,20 @@ the local-git data, with PR fields `null`, `prSource: "none"` and `blocks.branch
 `gh failed: ...`, a `gh` call that takes over 10 s is `gh failed: timed out after 10s`). Nothing in this block can fail the
 other blocks.
 
+## Forecast block (MIN-4565, additive: `schema` stays 1)
+
+`forecast` is a top-level field of the feed, built inside the `linear` block from the same read (a failure drops the block and sets `blocks.linear.error`; the rest of the linear block stays fresh). It reads
+each issue's description on the Mac only, to parse the `est. time: <n> min` line; the feed carries ids, titles and numbers, never description text. All times are Europe/Athens.
+
+- **Must-haves:** issues of the project in milestones M2 to M7, in Todo, In Progress or In Review (Done counts for pace when it moved to Done after `buildStart`). Backlog, Canceled, Duplicate, no
+  milestone and the whole subtree of MIN-4445 (followed up the parent chain) are out, on both sides: pace and work left use the same set. A parent counts 0 only when one of its sub-issues is in scope (an open must-have, or Done since `buildStart`); otherwise it counts its own estimate. An issue with no milestone takes its nearest ancestor's, on both the done and the left side.
+- **Estimate:** the first number of `est. time: ~35 min` or `30-45 min`. Missing: the median of every estimated must-have (done and open), or 30 min when fewer than 5 are estimated (`default_source: "fallback"`).
+- **Pace** = estimated minutes done since `buildStart` / hours since `buildStart`. **Remaining** = Todo + In Progress minutes; In Review is 0 minutes and counted. **Finish** = now + remaining / pace.
+- **Two finish times** (MIN-4564): M6 and M7 cannot start before the freeze. `remaining.pre_minutes` (M2 to M5) and `remaining.post_minutes` (M6, M7). `finish_at` = now + pre / pace (build work). `ready_at` = max(`finish_at`, `freeze`) + post / pace (the full plan, also `ready_label`).
+- **Verdict** (forecast only): `on` when `finish_at` <= `freeze` minus 1 h and `ready_at` <= `submitBy` minus 1 h; `risk` when `ready_at` <= `submitBy`; else `off`. Pace 0 with work left: `off`, `finish_at: null`. Fewer than 3 done issues: never `on` (`early_pace`).
+- **Cut** (only when `off`): drops build (pre) issues until `finish_at` is at or before the freeze, then post issues until `ready_at` is at or before `submitBy`. Order: `config.forecast.cutOrder` (a list of issue ids, Product's ordered list), then lowest priority first (no priority first), then largest estimate.
+- **Blocked:** must-haves with an unresolved blocking issue, with that issue's id and assignee.
+
 ## Branches block (MIN-4460, additive: `schema` stays 1)
 `blocks.branches` is `{asOf, error}` like the others; the data is the top-level key `branches`:
 ```
@@ -114,7 +128,7 @@ by `n`. A missing file omits the field (the page says "not reported yet"); a fil
 `milestones[]`: `id` (M1..M7, matched to the Linear milestone name by its first word), `name`, `start`, `end`, `gate` (text).
 `credits[]`: `n`, `granted`, `used` (the founder or CTO types these; no source). `demo`: `build{state,label,at}`, `deploy{state,label}`, `url`,
 `cleanRuns`, `cleanTarget`, `steps[8]{n,t,s}` with `s` = pass|warn|fail|idle, `notes{"1".."8"}`. States are free to change by hand only.
-`config`: `linearProjectId`, `eurPerUsd`, `projectFilter`, caps, `agents[]` (display name, role, transcript `agentType`, Linear assignee name `linear`,
+`config`: `forecast.cutOrder` (optional, issue ids), `linearProjectId`, `eurPerUsd`, `projectFilter`, caps, `agents[]` (display name, role, transcript `agentType`, Linear assignee name `linear`,
 or `roleLabel` for an agent that writes under the founder's account, the CTO: matched by its Role label, never by the assignee), `founder` (his Linear account name: issues
 assigned to him with no Role label count as `Founder`), `roleLabels` (Linear Role label -> role name in `tasks.byRole`). No secret belongs in this file.
 

@@ -23,7 +23,7 @@ try{
   /* Live data that is good: the feed has been read, did not fail, and the verdict inputs have readings.
      Anything else: do nothing at all (no open, no prune), so the stored set survives a reload. */
   const ready = () => !!(window.HD_LIVE && window.Live && Live.loaded && !Live.feedErr && Live.state && Live.state('derived').s==='ok');
-  const red = () => H.flags().filter(f => f.level==='bad');
+  const red = () => (H.alertReasons ? H.alertReasons() : H.flags().filter(f => f.level==='bad'));
 
   function asOf(){
     try{ const t = Live.meta && Live.meta.generatedAt; const d = t && H.parse(t); return d && !isNaN(d) ? 'Data as of '+H.hhmm(d)+', Athens time.' : ''; }catch(e){ return ''; }
