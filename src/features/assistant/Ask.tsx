@@ -50,7 +50,7 @@ export function AskPanel({ api, grantId, ctx, onGone }: Props) {
   };
 
   return (
-    <div data-testid="assistant">
+    <div className="as-panel" data-testid="assistant">
       <p className="as-strip" data-testid="ai-strip">Answers come from an AI reading this record. Check each one against its source.</p>
       <form onSubmit={(e) => { e.preventDefault(); void ask(text); }} className="as-form">
         <label className="field">

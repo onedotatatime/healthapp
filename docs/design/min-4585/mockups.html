@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pathien app: iOS glass mockups (MIN-4586). Synthetic data.</title>
+<!-- Mockup only: the app loads Manrope from @fontsource/manrope and icons from @phosphor-icons/react, no CDN. -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=block" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css">
+<link rel="stylesheet" href="reference.css">
+<style>
+  /* mock-only: a phone's safe areas, the status bar and the home indicator */
+  :root{--safe-top:47px;--safe-bottom:34px}
+  body.wide{--safe-top:0px;--safe-bottom:0px}
+  .screen{display:none} .screen.on{display:block}
+  .mock-status{position:fixed;z-index:50;top:0;left:0;right:0;height:47px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 28px 10px;font:600 16px/1 var(--font);pointer-events:none}
+  .mock-home{position:fixed;z-index:50;left:50%;bottom:8px;width:134px;height:5px;margin-left:-67px;border-radius:99px;background:var(--ink);pointer-events:none}
+  body.wide .mock-status,body.wide .mock-home{display:none}
+  .night .mock-status{color:#fff} .night .mock-home{background:#fff}
+  .ph-box{display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;color:var(--color-muted)}
+  nav.index{padding:24px;font:16px/2 var(--font)} nav.index a{display:block}
+</style>
+</head>
+<body>
+<nav class="index" id="index"><strong>Pathien app, iOS glass mockups. Synthetic data only.</strong></nav>
+
+<!-- ============ LOGIN ============ -->
+<section class="screen" id="login">
+  <div class="app-bg full"></div>
+  <main class="page" style="padding-top:calc(var(--safe-top) + 72px)">
+    <div class="card on-glass" style="background:var(--glass-chrome);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);box-shadow:var(--shadow-card)">
+      <img src="../../../public/brand/pathien-lockup.svg" alt="Pathien" style="display:block;width:150px;margin:8px 0 28px">
+      <h1>Sign in to the demo</h1>
+      <p class="muted">Synthetic people only. Type the demo passcode, then choose who to sign in as.</p>
+      <label class="field" style="margin-top:20px"><span>Demo passcode</span><input type="password" value="letmein1"></label>
+      <div class="btn-stack">
+        <button class="btn primary block">Sign in as the patient</button>
+        <button class="btn block">Sign in as the doctor</button>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- ============ PATIENT HOME ============ -->
+<section class="screen" id="patient-home">
+  <div class="app-bg"></div>
+  <main class="page">
+    <h1>Your record</h1>
+    <p class="muted" style="font-size:16px">Signed in as the patient.</p>
+    <div class="tiles">
+      <a class="tile primary" href="#"><i class="ph-bold ph-camera"></i>Scan an exam</a>
+      <a class="tile" href="#"><i class="ph-bold ph-qr-code"></i>Share with a doctor</a>
+    </div>
+    <h2>My exams</h2>
+    <ul class="records">
+      <li><a class="record-link" href="#"><span class="rtop"><span class="rtitle">Blood test</span><span class="mark status ready"><i class="ph-bold ph-list-checks"></i>Ready to check</span></span><span class="rdate">3 Nov 2026, Uploaded 14 Nov 2026</span><span class="rmeta"><span>9 values read</span></span></a></li>
+      <li><div class="record-link"><span class="rtop"><span class="rtitle">Exam photo</span><span class="mark status neutral"><i class="ph-bold ph-circle-notch"></i>Reading</span></span><span class="rdate">Uploaded 14 Nov 2026</span></div></li>
+      <li><a class="record-link" href="#"><span class="rtop"><span class="rtitle">Blood test</span><span class="mark status saved"><i class="ph-bold ph-check"></i>Saved</span></span><span class="rdate">12 Sep 2026, Uploaded 13 Nov 2026</span><span class="rmeta"><span>12 values read</span><span class="mark uploaded"><i class="ph-bold ph-upload-simple"></i>Uploaded by patient</span><span class="oor-count">2 outside the printed range</span></span></a></li>
+      <li><div class="record-link"><span class="rtop"><span class="rtitle">Exam photo</span><span class="mark status caution"><i class="ph-bold ph-warning-circle"></i>Could not read</span></span><span class="rdate">Uploaded 13 Nov 2026</span><p class="reason">The photo was too blurry to read.</p><div class="row-actions"><button class="btn primary">Try again</button><button class="btn">Delete</button></div></div></li>
+    </ul>
+    <h2 style="margin-top:32px">Your diary</h2>
+    <ul class="group"><li><span>Headache, 6 of 10<br><span class="muted small">13 Nov 2026, 08:40</span></span></li><li><a href="#" style="display:contents;color:inherit;text-decoration:none"><span>Who had access to your record</span><i class="ph-bold ph-caret-right chev"></i></a></li></ul>
+  </main>
+  <div class="tab-fade" aria-hidden="true"></div>
+  <nav class="tabbar">
+    <a href="#" aria-current="page"><i class="ph-bold ph-folder-simple"></i>Your record</a>
+    <a href="#"><i class="ph-bold ph-plus-circle"></i>Add symptom</a>
+    <a href="#"><i class="ph-bold ph-eye"></i>Who had access</a>
+  </nav>
+</section>
+
+<!-- ============ SCAN ============ -->
+<section class="screen" id="scan">
+  <div class="app-bg"></div>
+  <header class="navbar"><a class="nav-back" href="#" aria-label="Back to your record"><i class="ph-bold ph-caret-left"></i></a></header>
+  <main class="page pushed">
+    <h1>Scan an exam</h1>
+    <div class="saved scan-saved" style="margin-top:16px"><i class="ph-bold ph-check-circle"></i><span><strong>Saved.</strong> Scan the next one.</span><span class="scan-count">2 scanned</span></div>
+    <p class="muted">Reading happens in the background. Check the results in My exams.</p>
+    <div class="card" style="margin-top:16px">
+      <div class="btn-stack">
+        <label class="btn primary block" style="min-height:64px"><i class="ph-bold ph-camera"></i>Take a photo</label>
+        <label class="btn block"><i class="ph-bold ph-image"></i>Choose from gallery</label>
+      </div>
+    </div>
+    <p style="margin-top:24px"><a class="btn block" href="#">See my exams</a></p>
+  </main>
+  <div class="tab-fade" aria-hidden="true"></div>
+  <nav class="tabbar">
+    <a href="#" aria-current="page"><i class="ph-bold ph-folder-simple"></i>Your record</a>
+    <a href="#"><i class="ph-bold ph-plus-circle"></i>Add symptom</a>
+    <a href="#"><i class="ph-bold ph-eye"></i>Who had access</a>
+  </nav>
+</section>
+
+<!-- ============ RECORD VIEW ============ -->
+<section class="screen" id="record">
+  <div class="app-bg"></div>
+  <header class="navbar"><a class="nav-back" href="#" aria-label="Back to your record"><i class="ph-bold ph-caret-left"></i></a></header>
+  <main class="page pushed">
+    <h1>Blood test</h1>
+    <p class="muted">12 Sep 2026, Synthetic Lab</p>
+    <div class="mark-row"><span class="mark uploaded"><i class="ph-bold ph-upload-simple"></i>Uploaded by patient</span><span class="mark edited"><i class="ph-bold ph-pencil-simple"></i>Edited by patient</span></div>
+    <figure class="photo" style="margin:0 0 16px"><div class="ph ph-box" style="aspect-ratio:16/7"><i class="ph-bold ph-image" style="font-size:32px"></i></div></figure>
+    <h2>Results</h2>
+    <ul class="rows">
+      <li class="rrow"><div class="rname">Haemoglobin</div><div class="rvalue">13.2 g/dL</div><div class="rmeta"><span class="muted">Printed range: 12.0 to 15.5</span></div></li>
+      <li class="rrow"><div class="rname">Ferritin</div><div class="rvalue">9 ng/mL</div><div class="rmeta"><span class="muted">Printed range: 15 to 150</span><span class="oor">Below the printed range</span></div></li>
+      <li class="rrow"><div class="rname">Glucose</div><div class="rvalue">112 mg/dL</div><div class="rmeta"><span class="muted">Printed range: 70 to 100</span><span class="oor">Above the printed range</span></div></li>
+    </ul>
+    <p class="fixed-line">Only a doctor can tell you what your results mean.</p>
+    <button class="btn block">Unconfirm</button>
+  </main>
+  <div class="tab-fade" aria-hidden="true"></div>
+  <nav class="tabbar">
+    <a href="#" aria-current="page"><i class="ph-bold ph-folder-simple"></i>Your record</a>
+    <a href="#"><i class="ph-bold ph-plus-circle"></i>Add symptom</a>
+    <a href="#"><i class="ph-bold ph-eye"></i>Who had access</a>
+  </nav>
+</section>
+
+<!-- ============ DIARY ============ -->
+<section class="screen" id="diary">
+  <div class="app-bg"></div>
+  <main class="page">
+    <h1>Add symptom</h1>
+    <div class="card" style="margin-top:16px">
+      <label class="field"><span>What are you feeling?</span><input value="Headache"></label>
+      <label class="field"><span>How strong, 1 to 10: 6</span><input type="range" min="1" max="10" value="6" style="min-height:44px;padding:0;border:0;background:transparent;accent-color:#0F766E"></label>
+      <label class="field"><span>When</span><input value="14 Nov 2026, 08:40"></label>
+      <button class="btn primary block">Save</button>
+    </div>
+    <p class="muted" style="margin-top:16px;font-size:16px">In an emergency, call 112 or your local emergency number.</p>
+  </main>
+  <div class="tab-fade" aria-hidden="true"></div>
+  <nav class="tabbar">
+    <a href="#"><i class="ph-bold ph-folder-simple"></i>Your record</a>
+    <a href="#" aria-current="page"><i class="ph-bold ph-plus-circle"></i>Add symptom</a>
+    <a href="#"><i class="ph-bold ph-eye"></i>Who had access</a>
+  </nav>
+</section>
+
+<!-- ============ ACCESS LOG ============ -->
+<section class="screen" id="access">
+  <div class="app-bg"></div>
+  <main class="page">
+    <h1>Who had access</h1>
+    <p class="muted" style="font-size:16px">Every doctor who asked to see your record, newest first.</p>
+    <ul class="group" style="margin-top:16px">
+      <li><span><strong>Dr Demo Doctor</strong><br><span class="muted small">14 Nov 2026, 10:02 to 10:17. Ended by you.</span></span></li>
+      <li><span><strong>Dr Demo Doctor</strong><br><span class="muted small">13 Nov 2026, 16:30 to 16:45. The time ran out.</span></span></li>
+      <li><span><strong>Dr Demo Doctor</strong><br><span class="muted small">13 Nov 2026, 09:12. You declined.</span></span></li>
+    </ul>
+  </main>
+  <div class="tab-fade" aria-hidden="true"></div>
+  <nav class="tabbar">
+    <a href="#"><i class="ph-bold ph-folder-simple"></i>Your record</a>
+    <a href="#"><i class="ph-bold ph-plus-circle"></i>Add symptom</a>
+    <a href="#" aria-current="page"><i class="ph-bold ph-eye"></i>Who had access</a>
+  </nav>
+</section>
+
+<!-- ============ SHARE (night scene) ============ -->
+<section class="screen night" id="share">
+  <main class="hs-night">
+    <h1 class="hs-title">Share with a doctor</h1>
+    <div style="position:relative;width:100%;max-width:358px;display:flex;justify-content:center;padding:28px 0">
+      <svg viewBox="0 0 358 300" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true">
+        <path d="M-10 60 C 60 0, 120 120, 190 60 S 320 0, 370 60" fill="none" stroke="#7FE3CF" stroke-width="6" stroke-linecap="round"/>
+        <path d="M-10 60 C 60 120, 120 0, 190 60 S 320 120, 370 60" fill="none" stroke="#F4846B" stroke-width="6" stroke-linecap="round"/>
+        <path d="M-10 250 C 60 190, 120 310, 190 250 S 320 190, 370 250" fill="none" stroke="#7FE3CF" stroke-width="6" stroke-linecap="round"/>
+        <path d="M-10 250 C 60 310, 120 190, 190 250 S 320 310, 370 250" fill="none" stroke="#F4846B" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+      <div class="hs-card" style="position:relative"><svg id="qr" width="200" height="200" viewBox="0 0 25 25" shape-rendering="crispEdges"></svg></div>
+    </div>
+    <p class="hs-valid">Valid for 1:42</p>
+    <p class="hs-code">K7MQ 4RXD</p>
+    <div class="hs-actions">
+      <button class="btn hs-btn">New code</button>
+      <button class="hs-link">Show the code without the animation</button>
+      <a class="hs-link" href="#">Back to your record</a>
+    </div>
+    <p class="hs-hint">Turn the screen brightness up so the doctor's camera can read the code.</p>
+  </main>
+</section>
+
+<!-- ============ SHARE: the request, as a sheet ============ -->
+<section class="screen" id="share-asking">
+  <div class="app-bg"></div>
+  <main class="page" aria-hidden="true"><h1>Your record</h1><div class="tiles"><span class="tile primary"><i class="ph-bold ph-camera"></i>Scan an exam</span><span class="tile"><i class="ph-bold ph-qr-code"></i>Share with a doctor</span></div><h2>My exams</h2><ul class="records"><li><div class="record-link"><span class="rtop"><span class="rtitle">Blood test</span><span class="mark status saved"><i class="ph-bold ph-check"></i>Saved</span></span><span class="rdate">12 Sep 2026, Uploaded 13 Nov 2026</span></div></li><li><div class="record-link"><span class="rtop"><span class="rtitle">Blood test</span><span class="mark status ready"><i class="ph-bold ph-list-checks"></i>Ready to check</span></span><span class="rdate">3 Nov 2026, Uploaded 14 Nov 2026</span></div></li></ul></main>
+  <div class="sheet-scrim"></div>
+  <div class="sheet on-glass" role="dialog" aria-modal="true">
+    <h1 style="font:var(--text-title);letter-spacing:-.03em">Dr Demo Doctor is asking</h1>
+    <p>They want to see your record. Nothing is shared until you approve.</p>
+    <div class="btn-stack" style="margin-top:20px"><button class="btn primary block">Approve</button><button class="btn block">Decline</button></div>
+    <p class="muted" style="margin:16px 0 0;font-size:16px;color:var(--color-text)">The request ends in 1:12.</p>
+  </div>
+</section>
+
+<!-- ============ DOCTOR HOME ============ -->
+<section class="screen" id="doctor-home">
+  <div class="app-bg"></div>
+  <main class="page doctor" style="max-width:480px">
+    <h1>Patients</h1>
+    <p class="muted">Signed in as the doctor.</p>
+    <div class="empty" style="margin-top:16px">No patient has shared a record with you yet.</div>
+    <p style="margin-top:24px"><button class="btn small">Sign out</button></p>
+  </main>
+  <div class="tab-fade" aria-hidden="true"></div>
+  <div class="hs-entry"><a class="btn primary block" href="#"><i class="ph-bold ph-qr-code"></i>Connect to a patient</a></div>
+</section>
+
+<!-- ============ DOCTOR CONNECT ============ -->
+<section class="screen" id="doctor-connect">
+  <div class="app-bg"></div>
+  <header class="navbar"><a class="nav-back" href="#" aria-label="Back"><i class="ph-bold ph-caret-left"></i></a></header>
+  <main class="page doctor pushed" style="max-width:480px">
+    <h1>Connect to a patient</h1>
+    <p class="muted">Scan the code on the patient's phone, or type it.</p>
+    <div class="hs-scan"><div class="hs-frame"></div></div>
+    <div class="card">
+      <form class="hs-typed"><label class="field"><span>Or type the code</span><input value="K7MQ 4RXD"></label><button class="btn primary" type="button">Connect</button></form>
+      <p class="muted small" style="margin:8px 0 0 16px">The code works once and lasts two minutes.</p>
+    </div>
+  </main>
+</section>
+
+<!-- ============ DOCTOR WORKSPACE (390 and 1280) ============ -->
+<section class="screen" id="doctor-workspace">
+  <div class="app-bg"></div>
+  <div class="timer"><div class="timer-row"><span class="timer-label">Access ends 10:17</span><span class="timer-right"><span class="timer-time">12:48</span><button class="btn small">End access</button></span></div><div class="timer-track"><div class="timer-fill" style="width:85%"></div></div></div>
+  <main class="page doctor pushed" style="padding-top:20px">
+    <h1>The patient, 54</h1>
+    <p class="muted">Shared with you for 15 minutes.</p>
+    <div class="as-grid" style="margin-top:16px">
+      <section class="as-col" aria-label="Overview">
+        <div class="card">
+          <h2>Outside the printed range</h2>
+          <ul class="as-list">
+            <li><p class="as-item"><span class="as-date">12 Sep 2026</span> Ferritin 9 ng/mL, printed range 15 to 150 <button class="chip">1</button></p><span class="as-marks"><span class="mark uploaded"><i class="ph-bold ph-upload-simple"></i>Uploaded by patient</span></span></li>
+            <li><p class="as-item"><span class="as-date">12 Sep 2026</span> Glucose 112 mg/dL, printed range 70 to 100 <button class="chip" aria-pressed="true">2</button></p><span class="as-marks"><span class="mark uploaded"><i class="ph-bold ph-upload-simple"></i>Uploaded by patient</span><span class="mark unchecked"><i class="ph-bold ph-eye-slash"></i>Not checked</span></span></li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>About this file</h3>
+          <dl class="as-facts"><dt>Type</dt><dd>Laboratory report, 1 page</dd><dt>Readable</dt><dd>Readable</dd><dt>Quality</dt><dd>No quality problem noted</dd><dt>Provenance</dt><dd><span class="mark uploaded"><i class="ph-bold ph-upload-simple"></i>Uploaded by patient</span> <span class="muted small" style="display:block;margin-top:4px">File fingerprint (SHA-256, first 8): 3fa91c0e.</span></dd></dl>
+        </div>
+      </section>
+      <section class="as-col" aria-label="Assistant">
+        <div class="card" style="background:var(--color-surface)">
+          <p class="as-strip">Answers come from an AI reading this record. Check each one against its source.</p>
+          <form class="as-form"><label class="field"><span>Ask about this patient</span><input value="How has ferritin changed?"></label><button class="btn primary" type="button">Ask</button></form>
+        </div>
+        <div class="card">
+          <h2>Over time</h2>
+          <div class="ot-series"><span class="ot-name">Ferritin, ng/mL</span><span class="ot-sub">4 results, Mar 2025 to Sep 2026</span>
+            <svg class="ot-chart" viewBox="0 0 320 130" role="img" aria-label="Ferritin over time"><rect class="ot-band" x="30" y="20" width="280" height="56"/><line class="ot-axis" x1="30" y1="110" x2="310" y2="110"/><polyline class="ot-line" points="40,48 110,62 180,80 240,94"/><polyline class="ot-line proj" points="240,94 300,104"/><circle class="ot-pt" cx="40" cy="48" r="4"/><circle class="ot-pt" cx="110" cy="62" r="4"/><circle class="ot-pt" cx="180" cy="80" r="4"/><circle class="ot-pt" cx="240" cy="94" r="4"/><circle class="ot-end" cx="300" cy="104" r="4"/><text class="ot-tick" x="30" y="126">Mar 2025</text><text class="ot-tick" x="218" y="126">Sep 2026</text></svg>
+          </div>
+          <div class="ot-series"><span class="ot-name">Glucose, mg/dL</span><span class="ot-sub">3 results, Jan 2026 to Sep 2026</span></div>
+        </div>
+        <div class="card">
+          <h2>Possible matches</h2>
+          <p class="mx-label"><i class="ph-bold ph-info"></i>Seeded synthetic data. Not real patients.</p>
+          <div class="mx-group"><p class="mx-count">14 with this pattern</p><p class="mx-kicker">Shared pattern</p><ul class="mx-chips"><li class="mx-chip">Ferritin below the printed range</li><li class="mx-chip">Fatigue in the diary</li></ul></div>
+          <p class="muted small" style="margin:12px 0 0">A match is a shared pattern in the seeded data. It is not a person and not a diagnosis.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+</section>
+
+<div class="mock-status"><span>9:41</span><span><i class="ph-bold ph-cell-signal-full"></i> <i class="ph-bold ph-wifi-high"></i> <i class="ph-bold ph-battery-full"></i></span></div>
+<div class="mock-home"></div>
+<script>
+  const q=new URLSearchParams(location.search), id=q.get('screen');
+  const idx=document.getElementById('index');
+  document.querySelectorAll('.screen').forEach(s=>{const a=document.createElement('a');a.href='?screen='+s.id;a.textContent=s.id;idx.appendChild(a)});
+  if(id){idx.remove();const s=document.getElementById(id);s.classList.add('on');if(s.classList.contains('night'))document.body.classList.add('night');if(q.get('wide'))document.body.classList.add('wide')}
+  else document.querySelectorAll('.mock-status,.mock-home').forEach(e=>e.remove());
+  if(q.get('rt')){const st=document.createElement('style');st.textContent=':root{--glass-chrome:#fff;--glass-card:#fff;--glass-caution:#FFD9C7;--glass-quiet:#EAF3F2;--glass-filter:none;--glass-edge:rgba(18,32,31,.08)}.app-bg,.app-bg.full{background:#F7FAFA!important}';document.head.appendChild(st)}
+  // a stand-in QR: finder squares plus a fixed pattern. Not a real code.
+  const qr=document.getElementById('qr');let h='',seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const finder=(x,y)=>{h+=`<rect x="${x}" y="${y}" width="7" height="7" fill="#12201F"/><rect x="${x+1}" y="${y+1}" width="5" height="5" fill="#fff"/><rect x="${x+2}" y="${y+2}" width="3" height="3" fill="#12201F"/>`};
+  for(let y=0;y<25;y++)for(let x=0;x<25;x++){const f=(x<8&&y<8)||(x>16&&y<8)||(x<8&&y>16);if(!f&&rnd()>.5)h+=`<rect x="${x}" y="${y}" width="1" height="1" fill="#12201F"/>`}
+  finder(0,0);finder(18,0);finder(0,18);qr.innerHTML=h;
+</script>
+</body>
+</html>

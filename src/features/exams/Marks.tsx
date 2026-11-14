@@ -1,13 +1,11 @@
-import { Warning } from '@phosphor-icons/react';
 import { ErrorNote } from '../../components/Primitives';
 import { outOfRangeText, isLowConfidence, type RefusalView } from './logic';
 import type { ResultRow } from '../../api/contract';
 
-/** Out of range: an icon and the printed range in words, amber, never red on a patient result (Drop 0). Says nothing about meaning (N1). */
+/** Out of range: the brand's flag chip, a coral dot (CSS) and the printed range in words, never red and never an alarm icon. Says nothing about meaning (N1). */
 export function OutOfRange({ r }: { r: Pick<ResultRow, 'ref_text' | 'ref_low' | 'ref_high' | 'unit'> }) {
   return (
     <span className="oor" data-testid="out-of-range">
-      <Warning size={16} weight="bold" aria-hidden="true" />
       {outOfRangeText(r)}
     </span>
   );

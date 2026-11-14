@@ -1,7 +1,7 @@
 // Service worker: caches the app shell only (CTO review 2.2). It never caches a function
 // response: only same-origin GET requests are handled, so every call to Supabase (a different
 // origin) and every non-GET passes straight through to the network.
-const CACHE = 'healthapp-shell-v1';
+const CACHE = 'healthapp-shell-v2';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon.svg'];
 
 self.addEventListener('install', (event) => {

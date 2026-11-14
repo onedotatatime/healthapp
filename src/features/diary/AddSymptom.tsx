@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { ErrorNote } from '../../components/Primitives';
+import { PatientScreen } from '../../components/Shell';
 import { addDiaryEntry } from './diaryApi';
 import { formatWhen, isTimeEdited, toLocalInput } from './format';
 
@@ -33,23 +34,23 @@ export function AddSymptom() {
 
   if (savedAt) {
     return (
-      <main className="page" data-testid="diary-saved">
+      <PatientScreen data-testid="diary-saved">
         <h1>Saved for your doctor. {formatWhen(savedAt)}</h1>
         <p className="muted" data-testid="emergency-line">In an emergency, call 112 or your local emergency number.</p>
-        <div className="btn-stack" style={{ marginTop: 'var(--space-6)' }}>
+        <div className="btn-stack" style={{ marginTop: 'var(--space-5)' }}>
           <Link className="btn primary block" to="/patient">Back to your record</Link>
           <button type="button" className="btn block" data-testid="add-another" onClick={() => { setSavedAt(null); setText(''); }}>
             Add another
           </button>
         </div>
-      </main>
+      </PatientScreen>
     );
   }
 
   return (
-    <main className="page" data-testid="diary-form">
+    <PatientScreen data-testid="diary-form">
       <h1>Add symptom</h1>
-      <form onSubmit={submit} className="btn-stack">
+      <form onSubmit={submit} className="card btn-stack">
         <label className="field">
           <span>What are you feeling?</span>
           <input data-testid="diary-text" value={text} onChange={(e) => setText(e.target.value)} maxLength={500} autoFocus />
@@ -66,9 +67,9 @@ export function AddSymptom() {
         <button type="submit" className="btn primary block" data-testid="diary-save" disabled={busy || !text.trim()}>
           {busy ? 'Saving' : 'Save'}
         </button>
-        <p className="muted" data-testid="emergency-line">In an emergency, call 112 or your local emergency number.</p>
-        <Link to="/patient" className="muted">Cancel</Link>
       </form>
-    </main>
+      <p className="muted" data-testid="emergency-line" style={{ marginTop: 'var(--space-4)' }}>In an emergency, call 112 or your local emergency number.</p>
+      <Link to="/patient" className="muted link-tap">Cancel</Link>
+    </PatientScreen>
   );
 }

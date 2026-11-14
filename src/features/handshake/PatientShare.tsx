@@ -61,15 +61,17 @@ export function PatientShare() {
   const { title, body } = patientEnded(session.reason, session.grant);
   return (
     <main className="page hs-ended" data-testid="share-ended" data-reason={session.reason}>
-      <h1>{title}</h1>
-      <p>{body}</p>
-      <div className="btn-stack">
-        <button type="button" className="btn primary block" onClick={shareAgain} data-testid="share-again">
-          Share again
-        </button>
-        <Link className="btn block" to={home}>
-          Back to your record
-        </Link>
+      <div className="card">
+        <h1>{title}</h1>
+        <p>{body}</p>
+        <div className="btn-stack">
+          <button type="button" className="btn primary block" onClick={shareAgain} data-testid="share-again">
+            Share again
+          </button>
+          <Link className="btn block" to={home}>
+            Back to your record
+          </Link>
+        </div>
       </div>
     </main>
   );
@@ -149,20 +151,23 @@ function Asking({ feed }: { feed: Feed }) {
   const g = feed.session.grant;
   const lapse = g.expires_at ? secondsLeft(g.expires_at, feed.offsetMs, feed.nowMs) : null;
   return (
-    <main className="page" data-testid="share-asking">
-      <h1>{askingLine(g.doctor)} is asking</h1>
-      <p>They want to see your record. Nothing is shared until you approve.</p>
-      <div className="btn-stack">
-        <button type="button" className="btn primary block" disabled={busy} onClick={() => void act(() => api.decide(g.grant_id, true), 'Could not approve. Try again.')} data-testid="ask-approve">
-          Approve
-        </button>
-        <button type="button" className="btn block" disabled={busy} onClick={() => void act(() => api.decide(g.grant_id, false), 'Could not decline. Try again.')} data-testid="ask-decline">
-          Decline
-        </button>
-      </div>
-      {lapse !== null && <p className="muted" style={{ marginTop: 'var(--space-4)' }}>The request ends in {mmss(lapse)}.</p>}
-      {error && <ErrorNote>{error}</ErrorNote>}
-    </main>
+    <>
+      <div className="sheet-scrim" aria-hidden="true" />
+      <main className="sheet" data-testid="share-asking">
+        <h1>{askingLine(g.doctor)} is asking</h1>
+        <p>They want to see your record. Nothing is shared until you approve.</p>
+        <div className="btn-stack">
+          <button type="button" className="btn primary block" disabled={busy} onClick={() => void act(() => api.decide(g.grant_id, true), 'Could not approve. Try again.')} data-testid="ask-approve">
+            Approve
+          </button>
+          <button type="button" className="btn block" disabled={busy} onClick={() => void act(() => api.decide(g.grant_id, false), 'Could not decline. Try again.')} data-testid="ask-decline">
+            Decline
+          </button>
+        </div>
+        {lapse !== null && <p className="muted" style={{ marginTop: 'var(--space-4)' }}>The request ends in {mmss(lapse)}.</p>}
+        {error && <ErrorNote>{error}</ErrorNote>}
+      </main>
+    </>
   );
 }
 
@@ -181,9 +186,11 @@ function Running({ feed }: { feed: Feed }) {
         onEndAccess={busy ? undefined : () => void act(() => api.revoke(g.grant_id), 'Could not end access. Tap End access again.')}
       />
       <main className="page">
-        <h1>{g.doctor.full_name} can see your record</h1>
-        <p className="muted">Access ends by itself when the timer reaches zero, or as soon as you tap End access.</p>
-        {error && <ErrorNote>{error}</ErrorNote>}
+        <div className="card">
+          <h1>{g.doctor.full_name} can see your record</h1>
+          <p className="muted">Access ends by itself when the timer reaches zero, or as soon as you tap End access.</p>
+          {error && <ErrorNote>{error}</ErrorNote>}
+        </div>
       </main>
     </div>
   );
