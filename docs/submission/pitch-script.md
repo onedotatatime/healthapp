@@ -28,7 +28,7 @@ Semifinal, about Sun 19:00. Judging: usefulness, craft, aura. Run the live demo;
 ## 2:10 to 2:30. It ends
 
 *Screen: time runs out.*
-"Time ends. The doctor's screen clears in about 3 seconds. Maria's log shows who looked and until when. The log holds fingerprints and access events, never health data. No insurer ever gets in."
+"Time ends. The doctor's screen clears in about 3 seconds. Maria's log shows who looked and until when. The log holds fingerprints and access events, never health data."
 
 ## 2:30 to 3:00. Honest close, who pays, and the ask
 
@@ -38,7 +38,7 @@ Semifinal, about Sun 19:00. Judging: usefulness, craft, aura. Run the live demo;
 
 - Is it a medical device? Possibly, for the doctor-side possibilities. The regulatory path (EU MDR, GDPR, EHDS) is the closing slide of the deck, and nothing is certified.
 - Real patients or pilots? None. Synthetic data, nobody contacted.
-- How do you make money? Hospitals pay per case (international-patient departments, €40 to €80 a case) and clinic chains per doctor seat (€50 a month). Year three: about €0.56M to €4.85M. Every price and volume is an assumption the pilots test; the patient is free; insurers never. We never earn from a diagnosis because we never make one. (Deck slide 11.)
+- How do you make money? Hospitals pay per case (international-patient departments, €40 to €80 a case) and clinic chains per doctor seat (€50 a month). Year three: about €0.56M to €4.85M. Every price and volume is an assumption the pilots test; the patient is free. We never earn from a diagnosis because we never make one. (Deck slide 11.)
 - Is that a fraction of the savings? Slide 8 puts the saving on tests at €4M to €75M a year in Greece alone; our year-3 revenue from every country is about 6 to 14% of it. Our estimate.
 - Who is the team, and what do you ask? Today the founder, Lefteris Georgaras (onedotatatime.design), with AI agents. The ask is €600k over 18 months, our plan: €200k when a hospital agrees a pilot in writing, €400k only when the pilot proves €40 a case or more, 1,000 cases a year or more and €5 cost per case or less. It funds four hires (engineer, ML engineer, business development, marketing) and a research partner, a university hospital and an AI research centre, targets not yet contacted. 28% goes to selling. Nothing is raised before the pilot. (Deck slides 14 and 15.)
 - Blockchain? No. A signed, hash-chained log of fingerprints and grants; health data on a chain would conflict with GDPR erasure.

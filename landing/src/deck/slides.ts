@@ -22,7 +22,7 @@ const N: Record<string, string[]> = {
     "(Run the demo. If a step fails, switch to the screenshot version and narrate it; do not retry on stage.)"
   ],
   "6": [
-    "We designed privacy in from the first line. The key lives on the patient's device. A doctor gets in only face to face, only with a yes, and only for a set time. Every access goes into a log the patient can read and nobody can edit; the log holds fingerprints, never health data. And insurers never get in. Not as readers, not as buyers. That is a product rule, not a setting."
+    "We designed privacy in from the first line. The key lives on the patient's device. A doctor gets in only face to face, only with a yes, and only for a set time. Every access goes into a log the patient can read and nobody can edit; the log holds fingerprints, never health data. Those are product rules, not settings."
   ],
   "6b": [
     "Some people will not want their record on anyone's server, ours included. For them we are designing Pathien Vault: a small device they buy once, holding the whole record at home. The doctor still gets in by the code, for a set time. Pathien's own encryption runs on the device, so nothing sits in the cloud. It is a concept, not built yet, and an option, not the business."
@@ -37,7 +37,7 @@ const N: Record<string, string[]> = {
     "Epic summarises what is inside one hospital. National apps like MyHealth hold public lab results inside one country, and we complement them. ChatGPT Health and symptom checkers talk to the patient, from whatever the patient types in. OpenEvidence answers doctors from the literature, not from this patient. We sit where none of them sits: the record the patient carries across every provider and border, with an assistant that answers only the doctor, and shows its source."
   ],
   "10": [
-    "The patient is free. Insurers are excluded, by design. The first buyer is the hospital that treats patients from abroad: their records arrive in other languages, on paper, or not at all, and the hospital already asks for them before the trip. Clinic chains pay per doctor seat. Rare-disease networks are our free pilots. Later, national agencies. Research use, if ever, is opt-in and never a data sale."
+    "The patient is free. The first buyer is the hospital that treats patients from abroad: their records arrive in other languages, on paper, or not at all, and the hospital already asks for them before the trip. Clinic chains pay per doctor seat. Rare-disease networks are our free pilots. Later, national agencies. Research use, if ever, is opt-in and never a data sale."
   ],
   "11": [
     "How do we earn? Not from diagnoses: we never make one. Hospitals pay for the complete history in front of their doctors. An international-patient department pays per case; a clinic chain pays per doctor seat. On our assumptions, year three is between about half a million and five million euros. Compare that with slide 8: better records could save four to seventy-five million a year on tests, in Greece alone. Our customers pay a small share of what the system saves. Every price here is an assumption, and the pilots exist to test it."
@@ -169,16 +169,15 @@ export const slides: Slide[] = [
   },
   {
     id: '6', template: 'statement', theme: 'mist', no: '06', kicker: 'Privacy by design', notes: N['6'],
-    headline: 'The patient holds the key. The log holds only fingerprints. Insurers hold nothing.',
+    headline: 'The patient holds the key. The log holds only fingerprints.',
     pointStyle: 'bar',
     points: [
       { text: "**By design, the key is on the patient's phone.** Records are stored encrypted. Without the patient, nobody reads them, including us. (Demo: the key sits on our server tonight; slide 5.)" },
       { text: "**In person, for a set time.** A doctor gets in only by scanning the patient's code and getting a yes. Access ends by itself, or earlier with one tap." },
       { text: '**A log nobody can edit.** Every access is written to a signed, chained log the patient can read. The log holds fingerprints of documents and access grants. No health data ever goes on a chain.' },
-      { text: '**Never insurers.** No insurer account, no insurer export, no insurer as a customer.' },
       { text: '**No diagnosis for the patient.** The patient side has no AI question box at all.' },
     ],
-    side: { kind: 'phone', caption: "Key on the patient's phone", tag: 'Mock-up', crossed: 'Insurer' },
+    side: { kind: 'phone', caption: "Key on the patient's phone", tag: 'Mock-up' },
   },
   {
     id: '6b', counter: '6b', template: 'hero', theme: 'air', kicker: 'Concept · not built', notes: N['6b'],
@@ -251,7 +250,7 @@ export const slides: Slide[] = [
   {
     id: '10', template: 'table', theme: 'air', no: '10', kicker: 'Business model, who pays', notes: N['10'],
     footer: 'Models are hypotheses for pilots to test. Prices and volumes on slide 11 are assumptions.',
-    headline: 'The patient never pays. The insurer never sees. Hospitals pay for a better first decision and fewer repeated tests.',
+    headline: 'The patient never pays. Hospitals pay for a better first decision and fewer repeated tests.',
     cols: '170px 520px 600px 1fr',
     head: ['When', 'Who pays', 'For what', 'Model (to test in pilots)'],
     rows: [
@@ -260,7 +259,6 @@ export const slides: Slide[] = [
       { cells: ['Year 1', '**Rare-disease networks**', 'A pilot where possible matches matter most', '**Free pilot, grant-funded**'] },
       { cells: ['Year 1', '**Lab networks**', 'Results the patient carries, marked "Verified by source"', '**Partnership**'] },
       { cells: ['Year 2+', '**National health-data agencies**', 'A patient-held layer next to the national record', '**Tender, sandbox**'] },
-      { cells: ['Never', 'Insurers', '', 'Excluded by design'], emphasis: 'muted' },
     ],
   },
   {
@@ -285,7 +283,7 @@ export const slides: Slide[] = [
         { number: '€0.56M', label: 'conservative · assumption' },
         { number: '€4.85M', label: 'upside · assumption' },
       ],
-      note: 'Not counted: rare-disease pilots (free, grant-funded), national agencies (tenders, year 2+), research use (later, consent-gated, never a data sale), insurers (never).',
+      note: 'Not counted: rare-disease pilots (free, grant-funded), national agencies (tenders, year 2+), research use (later, consent-gated, never a data sale).',
     },
     strip: [
       { caption: 'Tests, Greece (slide 8 funnel)', value: '€4M to €75M a year', tag: 'our estimate' },
@@ -318,7 +316,7 @@ export const slides: Slide[] = [
   },
   {
     id: '13', template: 'steps', variant: 'ascend', theme: 'air', no: '13', kicker: 'Regulatory path', notes: N['13'],
-    footer: 'Every step keeps the same rules: no diagnosis to patients, no health data on a chain, no insurers.',
+    footer: 'Every step keeps the same rules: no diagnosis to patients, no health data on a chain.',
     headline: 'The record ships first. The assistant ships certified. A plan, not a risk.',
     steps: [
       { title: '1. The record', ships: 'Photo to history, identity match, handshake, cited search, symptom diary', applies: '**GDPR** (EU) and **HIPAA** (US): health data, explicit consent, impact assessment. Software that only stores, retrieves and shares is generally not a medical device.', badges: ['GDPR', 'HIPAA'] },
