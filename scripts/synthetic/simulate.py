@@ -8,7 +8,7 @@ STEPS = 12
 ASSUMPTION = 0.20           # ONE constant. Pending CEO approval; the CEO may change it.
 BASE_WRONG_PER_100 = 5      # WHO patient safety fact sheet (low end of 5-20%)
 BASE_COST_PCT = 11          # OECD Health Working Paper 176 (2025)
-PENDING = "pending CEO approval of the 20% assumption"
+PENDING = "approved by the CEO seat on the founder's behalf, 2026-11-14 (an assumption, not a measurement)"
 
 d = sys.argv[1]
 cohort = json.load(open(os.path.join(d, "cohort.json")))["records"]
