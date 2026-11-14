@@ -5,7 +5,7 @@ pushes it to the ingest function. Stdlib Python 3.9+. A launchd job on the found
 
 ```
 python3 dashboard/snapshot.py --home ~/.healthapp-dashboard --out /tmp/snap.json      # local file, no push
-python3 -m unittest discover -s dashboard/tests                                        # 168 tests, about 75 s (the branches tests build real git repositories; the chat tests stub claude)
+python3 -m unittest discover -s dashboard/tests                                        # 204 tests, about 95 s (the branches tests build real git repositories; the chat tests stub claude)
 deno test --allow-read supabase/functions/                                             # 23 tests (key matrix, limits, boundaries)
 deno check supabase/functions/*/index.ts && deno lint supabase/functions
 dashboard/install.sh [--viewer-url BASE] [--rotate]                                    # install or update the Mac job
@@ -100,6 +100,15 @@ branches: { repo: "owner/repo"|null, bases: ["main","staging"], base: "staging",
   (default: read from `origin`), `bases` (default `["main","staging"]`).
 - **Size.** About 0.5 KB per branch; 12 branches add about 6 KB to a 20 KB snapshot; the caps (60 open, 50 closed) keep it far under the ingest limit of 256 KB.
 
+## directions.json (the project goal's five directions, MIN-4497)
+`~/.healthapp-dashboard/directions.json` is a second hand-set file, read at every run (`--directions PATH` overrides). `install.sh` seeds it from
+`directions.sample.json` once (all five `not_started`, the five titles) and never overwrites it. Shape: `{"directions": [{"n": 1..5, "title", "status", "note", "updatedAt"}]}`,
+1 to 5 entries, `n` unique, `status` = `on_track | at_risk | off_track | not_started`, `title` at most 120 characters, `note` at most 300 (may be empty), `updatedAt` an ISO time
+**with an offset**. **Summary text only: no patient data, no exam content, no keys** (a key-shaped string is refused). The snapshot gets a top-level `directions` array sorted
+by `n`. A missing file omits the field (the page says "not reported yet"); a file that cannot be read or fails the check omits it too and puts the reason in
+`blocks.hand.error` (the hand data itself stays fresh), so a typo is never silent. **To set a status, edit the entry's `status`, `note` and `updatedAt` and save: the next run
+(within 3 minutes) carries it.**
+
 ## hand-set.json fields (copy `hand-set.sample.json`, edit, next run picks it up)
 `deadline`, `buildStart`, `freeze`, `submitBy`: ISO with offset. `current`: milestone id or null (null = first milestone not finished).
 `milestones[]`: `id` (M1..M7, matched to the Linear milestone name by its first word), `name`, `start`, `end`, `gate` (text).
@@ -117,7 +126,7 @@ MIN-4495 and MIN-4497 (CTO decisions dfe40a71, 2cc7efc9 and 285bad11). **Acting 
 with it off, or without the conductor rule at its merged commit, a Yes answers `act_off` and runs nothing. See "Act path" below.
 
 ```
-dashboard/chat_service.sh install [--page-dir DIR] [--port 8765]   copy files to ~/.healthapp-dashboard, make chat.key, load the launchd job
+dashboard/chat_service.sh install [--page-dir DIR] [--extra-dir NAME=DIR] [--port 8765]   copy files to ~/.healthapp-dashboard, make chat.key, load the launchd job
 dashboard/chat_service.sh uninstall | off | on | rotate-key | status
 python3 dashboard/chat_bridge.py --home ~/.healthapp-dashboard --page-dir docs/dashboard/drafts --port 8766   # by hand, from a Terminal
 python3 -m unittest discover -s dashboard/tests -p 'test_chat_*.py'                                             # claude is stubbed: no model call
@@ -125,6 +134,12 @@ python3 -m unittest discover -s dashboard/tests -p 'test_chat_*.py'             
 - **Start.** `chat_service.sh install` writes the launchd job `ai.minhos.healthapp-dashboard-chat` (KeepAlive) and replaces the ad-hoc
   `python3 -m http.server 8765`. It refuses while another process listens on the port; stop that one yourself first. Start it from launchd or a
   Terminal, **never from a Claude session**. The child's environment is built from nothing, but the founder's Claude login is what answers.
+- **Static files (CTO S1).** The page folder is served at `/`, and each `--extra-dir NAME=DIR` at `/NAME/` (for example
+  `--extra-dir how-it-works=~/.healthapp-dashboard-www/how-it-works`; repeatable). Same rules for both: **`Host` must be exactly `127.0.0.1:<port>` on every static request**
+  (a rebinding page cannot read a file; 403 otherwise), every file is resolved with `realpath` and must stay inside its own folder (a symlink out gives 404), no dot file or
+  dot folder is served, no directory listing (a folder answers with its `index.html` or 404; without the trailing slash it redirects). The bridge **refuses to start** when
+  the page folder or an extra folder is, contains or equals `~/.healthapp-dashboard` (the keys live there), or when a name is not lower-case letters, digits and dashes
+  (`chat` is reserved), or the folder does not exist.
 - **Stop.** `chat_service.sh uninstall` unloads the job. On SIGTERM the bridge kills the process group of every turn it started.
   `chat_service.sh off` (file `~/.healthapp-dashboard/chat.off`) makes the bridge refuse every new turn at once; `on` removes it. The Stop button
   (`POST /chat/sessions/<id>/stop`) ends one running turn's process group (SIGTERM, then SIGKILL after 3 s).
@@ -178,18 +193,26 @@ busy or full; **one turn per agent** (`agent_busy`), 3 turns at once, and today'
   `<feat|fix|chore>/chat-<agent>-<proposal id[:8]>` from `origin/staging` (`--no-track`). A branch or path that exists is refused (the result says `failed`, the agent
   never starts); nothing is reused, deleted or copied in (no `.env`). Every approved change is its own worktree. The agent runs there; Release opens the PR.
 - **A handoff** (`kind: "handoff"`): runs in the main checkout with Linear tools only (no file tools, no shell).
-- **The turn:** `claude -p --agent <role> --resume|--session-id ... --output-format stream-json --verbose --model <row model> [--fallback-model <next in the row's chain>]
+- **The turn:** `claude -p --agent <role> --session-id <a NEW uuid, stored on the proposal as actSession> --output-format stream-json --verbose --model <row model> [--fallback-model <next in the row's chain>]
   --effort <row effort> --permission-mode dontAsk --allowedTools <act set> --disallowedTools <never set> --max-budget-usd <perActUsd> --settings <guard hook>
-  --append-system-prompt <rule file + proposal JSON>`, in its own process group, `actMinutes` (90). `--allowedTools` carries path and command rules
+  --append-system-prompt <rule file + proposal JSON>`, in its own process group, `actMinutes` (90). **An act turn never `--resume`s the chat's answer session** (CTO M3):
+  it runs in a new worktree, where Claude keeps no session of the chat's, so it starts fresh; the prompt is the whole brief. The chat's next question still resumes its own
+  answer session. `actSession` is an internal id and is not in any response. `--allowedTools` carries path and command rules
   (`Edit(//<worktree>/**)`, `Bash(git push origin <branch>)`, ...) and `chat_guard.py --mode act` checks every call again. Never `bypassPermissions`, never a skip flag.
-- **The guard in act mode:** Edit and Write only in the worktree and `healthapp/.claude/agent-memory/<agent file>/`; Bash only as ONE plain command (no `$`, backtick,
+- **The guard in act mode:** Edit and Write only in the worktree and `healthapp/.claude/agent-memory/<agent file>/`, and **never** (CTO M2) inside the worktree under
+  `.github/`, `.claude/`, `.husky/`, `.githooks/` (any depth, any letter case) or to a file named `.mcp.json`: a workflow edit runs in CI before anyone reads it, `.claude/`
+  and `.mcp.json` change what a later agent loads, hooks run at commit time. Bash only as ONE plain command (no `$`, backtick,
   `<(`, `;`, `&`, `|`, redirect or line break; `env`, `printenv`, `set`, `export`, `declare`, `cd`, `git -C`, `curl` and every network tool denied) from: git status, diff,
   log, show, add, commit, restore, rm, mv, fetch; a push to `origin <the stored branch>` only (never a force, `--no-verify`, another branch, a bare push);
-  `npm ci`, `npm test`, `npm run <script>` (no deploy, migrate or publish script); `python3 -m pytest|unittest`; `~/.claude/bin/linear-as <own ROLE>` (a GraphQL
-  string with `$` is refused, so use the Linear tools); `python3 <conductor>/scripts/measure/extract-runs.py --actuals`. Linear: reads, `save_comment`, `save_issue`.
+  and `python3 <conductor>/scripts/measure/extract-runs.py --actuals`. **No `npm`, no `npx`, no `pytest`, no `python3 -m`** (CTO M1: the agent could write a
+  `package.json` script, a `postinstall` or a `conftest.py` and then run it past every rule; tests run in the PR's CI and in Release's lane run, after someone has read the
+  code, and come back only under Claude Code's Bash sandbox with the network off, proven by a live check). **No `linear-as`** (measured: with inline values it allowed any
+  mutation, deletes included). Linear: reads, `save_comment`, `save_issue` through the owner's connector, every comment starting with the agent's prefix (`Cron ·`).
   Never `Agent`, the web, `Skill`, Supabase, Cloudflare, Linear deletes, merges, reviews, shares or retires. Reads: healthapp and conductor only, never env files, keys,
-  `.git`, `~/.healthapp-dashboard`, `playground`; **Grep's `glob` only as one extension pattern** (`*.md`, `**/*.py` ...), because a glob overrides ripgrep's ignore rules
-  (measured: `-g '.env*'` finds a gitignored `.env.local`; known residue: an ignored `secret.json` would match `*.json`); Glob denies a pattern with a dot segment.
+  `.git`, `~/.healthapp-dashboard`, `playground`; **Grep's `glob` only as one extension pattern** from `md, py, ts, tsx, js, mjs, css, html`, because a glob overrides ripgrep's
+  ignore rules (measured with a real rg: `-g '.env*'` finds a gitignored `.env.local`, and `-g '*.json'` finds an ignored `launch.json`). For json, yaml, toml, txt, sh and
+  sql the agent uses Grep's `type` (`rg --type`), which filters by type and keeps the ignore rules (a canary test with a real rg proves both halves, CTO M4). Glob denies a
+  pattern with a dot segment.
 - **The result.** The agent ends with `<<<RESULT {"outcome": "done|failed", "issue": "MIN-n|null", "summary": "..."} RESULT>>>` under the proposal's rules (one block, last,
   strict). The bridge sends `Result {outcome: done|stopped|failed|timeout, issue, branch, commits, filesChanged, pushed, summary, costUsd, minutes}` where **branch, commits,
   filesChanged and pushed come from git** (commits ahead of `origin/staging`, files changed against it, whether `origin/<branch>` exists), never from the agent. Stop gives
@@ -197,4 +220,12 @@ busy or full; **one turn per agent** (`agent_busy`), 3 turns at once, and today'
 - **Logs.** `chat.log` per Yes: `yes agent sid proposal kind issue`; per turn: `turn kind=act agent sid proposal issue branch result seconds cost commits files pushed`
   (no message text, no summary). `chat-audit.log` as before. `reply_redacted sid=` is logged once when a reply or summary had a key-shaped string (`sk-ant-`, fal,
   Linear and Supabase keys, GitHub tokens, JWTs, `*_KEY=...`) replaced by `[redacted]` before it was stored.
-- **Live check** (a paid turn, only with the founder's go): `dashboard/live_check.sh --go` (bridge on 127.0.0.1:8766, never 8765).
+- **Live check** (paid turns, only with the founder's go, from a Terminal, never from a Claude session; bridge on 127.0.0.1:8766, never 8765):
+  `dashboard/live_check.sh --go` is the answer path (read-only chat, a canary file, the 403 matrix, the static Host check, and **L1a**: Stop on a running answer turn gives
+  "Stopped by you." and leaves no process in the group after 5 s). `dashboard/live_check.sh --go --act` (**L1b**) is the act path in a throw-away clone with a local bare
+  `origin` (act is on in the throw-away home only, nothing reaches GitHub): one proposal for a one-line docs change that also probes the guard, a Yes, then the lines
+  (a) worktree and branch from origin/staging with no untracked `.env*`, (b) its own Claude session and a valid result block, (c) a write inside the worktree allowed,
+  (d) a write outside denied, (e) `npm test`, `cat ~/.zshrc`, `git push origin main` and a Read of `.env.canary-act` denied and origin's main unmoved, (f) the branch on the
+  origin with the result's commits, files and pushed matching git, (g) `--fallback-model` accepted, (h) Stop during a second act turn gives `stopped` and no process,
+  (i) canary, key and message text in no log. It costs about $1 to $3. The script is checked against a stub `claude` (`LIVE_CHECK_CLAUDE_BIN`) for its plumbing; the guard lines
+  need the real thing.

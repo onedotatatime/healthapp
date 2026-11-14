@@ -5,7 +5,10 @@ The bridge passes it to every chat turn with `--settings` (matcher `.*`). Defaul
   answer  read-only: Read, Grep, Glob inside the two roots, Linear reads.
   act     an approved proposal (run 2): the same reads, plus Edit and Write only inside the chat's own worktree and the agent's memory folder,
           Bash only as ONE plain command from the allowlist (no `$`, backtick, `<(`, `;`, `&`, `|`, redirect, newline, `cd`, `git -C`, `env`,
-          `printenv`, `set`, `export`, `declare`), `git push` only to the stored branch, Linear reads plus `save_comment` and `save_issue`.
+          `printenv`, `set`, `export`, `declare`): git, and extract-runs.py --actuals. NO npm, NO pytest, NO unittest (CTO M1, MIN-4497: the agent
+          could write a package.json script or a conftest.py and then run it). `git push` only to the stored branch, Linear reads plus
+          `save_comment` and `save_issue` (no `linear-as`: it reaches any mutation). No writes to .github, .claude, .mcp.json, .husky, .githooks
+          inside the worktree (CTO M2).
 
 Settings come from the command line, never from the environment: the bridge builds the child's environment from nothing
 (HOME, USER, LOGNAME, TMPDIR, LANG, PATH) and a test pins that key set.
@@ -46,8 +49,10 @@ GLOB_CHARS = "*?[{"
 # CTO finding, MIN-4497 (comment 2cc7efc9, rule 4). ripgrep skips gitignored and hidden files, but a `glob` argument overrides both, so
 # `Grep {path: conductor, glob: ".env*"}` would read an ignored env file inside a readable root. Grep's `glob` is therefore allowed only
 # as one extension pattern from this list (measured with a real rg: `-g '.env*'`, `-g '*'`, `-g '*.local'` all find a gitignored `.env.local`).
-# Known residue, said plainly: a glob still overrides the ignore rules for the extensions below, so an ignored `secret.json` would match `*.json`.
-GREP_GLOB_EXTS = ("md", "py", "ts", "tsx", "js", "mjs", "css", "html", "sh", "sql", "ya?ml", "toml", "txt", "json")
+# CTO M4 (MIN-4497, comment 420bf529): the list holds only extensions that carry no ignored config or data file in either root. json, yaml, toml,
+# txt, sh and sql are NOT on it: conductor has ignored `.claude/launch.json`, `.local-stack/supabase/config.toml` and `.local-stack/supabase/seed.sql`,
+# and a `*.json` glob would read them. For those types the agent uses Grep's `type` (rg `--type`), which filters by type and keeps the ignore rules.
+GREP_GLOB_EXTS = ("md", "py", "ts", "tsx", "js", "mjs", "css", "html")
 GREP_GLOB_RE = re.compile(r"(?:\*\*/)?\*\.(?:%s)" % "|".join(GREP_GLOB_EXTS))
 
 
@@ -120,7 +125,7 @@ def _decide_read(tool, tin, cwd, roots):
         if tool == "Grep":
             gl = tin.get("glob")
             if gl is not None and not (isinstance(gl, str) and GREP_GLOB_RE.fullmatch(gl)):
-                return deny("Not from the chat: Grep's glob may only be one extension pattern such as *.md or **/*.py.")
+                return deny("Not from the chat: Grep's glob may only be one extension pattern such as *.md or **/*.py. For json, yaml, toml, txt, sh or sql use Grep's type instead.")
         else:
             pat = tin.get("pattern")
             if pat:
@@ -171,9 +176,12 @@ GIT_OPTS = {
 }
 COMMIT_OPTS = {"-a", "--all", "--amend", "--no-edit", "-s", "--signoff", "--allow-empty", "-q", "--quiet"}
 REF_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._/-]*$")
-SCRIPT_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9:_.-]*$")
-SCRIPT_NEVER = re.compile(r"deploy|migrat|publish|release|supabase|wrangler|db[:_-]|push|prod|ship|seed|drop|reset", re.I)
-LINEAR_AS = "~/.claude/bin/linear-as"
+LINEAR_AS = "~/.claude/bin/linear-as"          # never allowed in an act turn (CTO, MIN-4497); the constant stays so the bridge can deny it by name
+# CTO M2: inside the worktree these are never written. A workflow edit runs in CI before anyone reads it, `.claude/` and `.mcp.json` change what
+# a later agent session loads (and a `.claude/agents/*-minhos.md` breaks the one-source rule), and a hooks folder runs code at commit time.
+# Folders match on any path segment, files on the name, both case-insensitively (the Mac's disk is case-insensitive).
+WRITE_NEVER_DIRS = (".github", ".claude", ".husky", ".githooks")
+WRITE_NEVER_FILES = (".mcp.json",)
 
 
 def _secret_arg(arg):
@@ -313,31 +321,14 @@ def _decide_bash(tin, ctx):
         return _vcs_command(words, ctx)
     if any(_secret_arg(w) for w in words):
         return deny("Not from the chat: env files, keys and credentials are never touched here.")
-    if first == "npm":
-        sub, rest = (words[1] if len(words) > 1 else ""), words[2:]
-        if sub == "ci" and all(a in ("--ignore-scripts", "--no-audit", "--no-fund") for a in rest):
-            return allow_act()
-        if sub in ("test", "run"):
-            if sub == "run":
-                if not rest or not SCRIPT_RE.match(rest[0]) or SCRIPT_NEVER.search(rest[0]):
-                    return deny("Not from the chat: that npm script is not allowed.")
-                rest = rest[1:]
-            if any(SCRIPT_NEVER.search(a) for a in rest):
-                return deny("Not from the chat: that npm argument is not allowed.")
-            return allow_act()
-        return deny("Not from the chat: npm is only `ci`, `test` and `run <script>` (no install of a package).")
     if first == "python3":
-        if len(words) >= 3 and words[1] == "-m" and words[2] in ("pytest", "unittest"):
-            return allow_act()
+        # CTO M1: no `-m pytest` and no `-m unittest`. Running tests would run code the agent has just written (a conftest.py, a test file),
+        # past every rule above. The tests run in the PR's CI and in Release's lane run, after someone has read the code.
         conductor = ctx.get("conductor")
         if conductor and len(words) == 3 and words[2] == "--actuals" \
                 and os.path.realpath(os.path.expanduser(words[1])) == os.path.join(conductor, "scripts", "measure", "extract-runs.py"):
             return allow_act()
-        return deny("Not from the chat: python3 is only `-m pytest`, `-m unittest` and extract-runs.py --actuals.")
-    if first in (LINEAR_AS, os.path.expanduser(LINEAR_AS)):
-        if len(words) >= 3 and ctx.get("role") and words[1] == ctx["role"]:
-            return allow_act()
-        return deny("Not from the chat: linear-as only for this agent's own role.")
+        return deny("Not from the chat: python3 is only extract-runs.py --actuals.")
     return deny("Not from the chat: %s is not on the command list." % (os.path.basename(first)[:30] or "that"))
 
 
@@ -353,6 +344,10 @@ def _decide_write(tool, tin, cwd, roots, ctx):
     allowed = [ctx["worktree"]] + ([ctx["memory"]] if ctx.get("memory") else [])
     if not any(_inside_dir(path, d) for d in allowed):
         return deny("Not from the chat: writes only inside this chat's own worktree and the agent's memory folder.")
+    if _inside_dir(path, ctx["worktree"]):
+        parts = [x.lower() for x in os.path.relpath(path, ctx["worktree"]).split(os.sep)]
+        if any(x in WRITE_NEVER_DIRS for x in parts) or parts[-1] in WRITE_NEVER_FILES:
+            return deny("Not from the chat: workflows, agent settings, MCP config and git hooks are never edited here.")
     return allow_act()
 
 
