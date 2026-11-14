@@ -203,3 +203,20 @@ describe('About this file: the four states', () => {
     }
   });
 });
+
+describe('the "not checked" mark in the doctor view (MIN-4557, CTO addendum of MIN-4555)', () => {
+  const done: FileState = { status: 'ready', row: MOCK_FILE_ANALYSIS[ID.docOct] ?? null };
+  it('shows beside the provenance mark in "About this file" when the document is unchecked, and not otherwise', () => {
+    const on = text(html(h(AboutFileView, { state: done, mark: 'uploaded', unchecked: true })));
+    const off = text(html(h(AboutFileView, { state: done, mark: 'uploaded' })));
+    expect(on).toContain('Uploaded by patient');
+    expect(on).toContain('Not checked');
+    expect(off).not.toContain('Not checked');
+  });
+  it('isUnchecked reads only an explicit true', async () => {
+    const { isUnchecked } = await import('./unchecked');
+    expect(isUnchecked({ unchecked: true })).toBe(true);
+    expect(isUnchecked({ unchecked: false })).toBe(false);
+    expect(isUnchecked({})).toBe(false);
+  });
+});

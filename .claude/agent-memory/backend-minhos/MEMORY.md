@@ -7,3 +7,5 @@
 - [healthapp identity match](project_healthapp_identity_match.md) — B1 matcher in identity.ts, harness via demo-login, 012 needs 011
 - [Isolated worktree tooling](feedback_isolated_worktree_tooling.md) — what Bash refuses in a worktree-isolated run, and the ways around it that worked
 - [Chat act path (MIN-4497)](project_healthapp_chat_act_path.md) — measured rg glob override, CI key-grep trap, what the act-path sweep found
+- [healthapp scan-next](project_healthapp_scan_next.md) — MIN-4556 background reading: claim + 202 + waitUntil, measured times, test-named deploys, deno flags
+- [healthapp matches RPC](project_healthapp_matches_rpc.md) — 005-007 + 013 coding, check file, hash-verified applies, execute_sql limits

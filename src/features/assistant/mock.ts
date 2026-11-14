@@ -21,7 +21,7 @@ export const ID = {
 };
 
 const doc = (id: string, kind: DocumentRow['kind'], exam_date: string, issuer: string, provenance: DocumentRow['provenance'], identity: DocumentRow['identity_status'] = 'match'): DocumentRow => ({
-  id, patient_id: MOCK_PATIENT_ID, kind, language: 'en', exam_date, issuer, identity_status: identity, provenance, status: 'confirmed', created_at: `${exam_date}T09:00:00+02:00`, confirmed_at: `${exam_date}T09:05:00+02:00`,
+  id, patient_id: MOCK_PATIENT_ID, kind, language: 'en', exam_date, issuer, identity_status: identity, provenance, status: 'confirmed', created_at: `${exam_date}T09:00:00+02:00`, confirmed_at: `${exam_date}T09:05:00+02:00`, unchecked: false,
 });
 const res = (id: string, document_id: string, analyte: string, value: number, unit: string, lo: number | null, hi: number | null, flag: ResultRow['flag']): ResultRow => ({
   id, document_id, patient_id: MOCK_PATIENT_ID, analyte, analyte_key: analyte.toLowerCase(), value_num: value, value_text: null, unit, ref_low: lo, ref_high: hi, ref_text: null, flag, confidence: 0.97, edited_by_patient: false,
@@ -33,7 +33,7 @@ const entry = (id: string, at: string, text: string, severity: number): DiaryRow
 
 export const MOCK_RECORD: RecordData = {
   documents: [
-    doc(ID.docOct, 'blood_test', '2026-10-30', 'Synthetic Diagnostic Lab, Athens', 'uploaded_by_patient'),
+    Object.assign(doc(ID.docOct, 'blood_test', '2026-10-30', 'Synthetic Diagnostic Lab, Athens', 'uploaded_by_patient'), { unchecked: true }), // the not-checked mark (MIN-4557)
     doc(ID.docMar, 'blood_test', '2026-03-12', 'Synthetic Diagnostic Lab, Athens', 'verified_by_source'),
     doc(ID.docMri, 'imaging_report', '2026-06-02', 'Synthetic Imaging Centre', 'uploaded_by_patient', 'name_only'),
     doc(ID.docLetter, 'doctor_letter', '2026-01-20', 'Orthopaedics, Synthetic General Hospital', 'verified_by_source'),

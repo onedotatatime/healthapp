@@ -5,6 +5,7 @@
 #   hdb check  <dev|demo>             print the zero-count check (every number must be 0);
 #                                     runs it when HDB_DATABASE_URL is set
 #   hdb files  <dev|demo>             print the counts-only file analysis check (six values, no row content)
+#   hdb scan   <dev|demo>             print the counts-only scan check (uploads, per status, refused per reason, stuck...)
 set -euo pipefail
 cmd="${1:-}"; env="${2:-}"
 case "$env" in dev|demo) ;; *) echo "usage: hdb render|check dev|demo [file]" >&2; exit 2;; esac
@@ -41,5 +42,7 @@ SQL
     ;;
   files)
     sed -e "s/__SCHEMA__/${schema}/g" "$dir/checks/file_analysis_counts.sql" | run ;;
-  *) echo "usage: hdb render|check|files dev|demo [file]" >&2; exit 2;;
+  scan)
+    sed -e "s/__SCHEMA__/${schema}/g" -e "s/__BUCKET__/${bucket}/g" "$dir/checks/scan_counts.sql" | run ;;
+  *) echo "usage: hdb render|check|files|scan dev|demo [file]" >&2; exit 2;;
 esac

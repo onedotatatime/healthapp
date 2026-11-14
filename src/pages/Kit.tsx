@@ -17,12 +17,14 @@ export function Kit() {
         <ProvenanceMark kind="uploaded" />
         <ProvenanceMark kind="edited" />
         <ProvenanceMark kind="name-match" />
+        <ProvenanceMark kind="unchecked" />
       </div>
       <div className="row">
         <ProvenanceMark kind="verified" surface="doctor" />
         <ProvenanceMark kind="uploaded" surface="doctor" />
         <ProvenanceMark kind="edited" surface="doctor" />
         <ProvenanceMark kind="name-match" surface="doctor" />
+        <ProvenanceMark kind="unchecked" surface="doctor" />
       </div>
       <h2>Citation chip</h2>
       <p>

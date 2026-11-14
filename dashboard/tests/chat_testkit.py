@@ -88,7 +88,7 @@ AGENTS = [{"n": n, "role": r, "agentType": f} for n, r, f in [
 class Env:
     """A temp dashboard home, a fake healthapp and conductor, a stub claude, and a bridge listening on 127.0.0.1 port 0."""
 
-    def __init__(self, repo=False, **cfg):
+    def __init__(self, repo=False, static=False, **cfg):
         self.tmp = tempfile.mkdtemp(prefix="chatkit-")
         self.tmp = os.path.realpath(self.tmp)
         j = lambda *p: os.path.join(self.tmp, *p)
@@ -100,6 +100,9 @@ class Env:
                 f.write(body)
         if repo:
             self.init_repo(j("healthapp"), j("origin.git"))
+        self.extra_dirs = {}
+        if static:
+            self.make_static_tree()
         self.stub = j("stub", "claude")
         with open(self.stub, "w") as f:
             f.write(STUB % {"python": sys.executable, "dir": j("stub")})
@@ -111,10 +114,33 @@ class Env:
                               "ruleFile": os.path.join(self.conductor, "docs", "agents", "dashboard-chat.md")})
         self.settings.update(cfg)
         self.set_behavior()
-        self.server = B.make_server(self.home, self.pages, 0, self.settings, [dict(a) for a in AGENTS], key=KEY, row_checker=fake_rows)
+        self.server = B.make_server(self.home, self.pages, 0, self.settings, [dict(a) for a in AGENTS], key=KEY, row_checker=fake_rows,
+                                    extra_dirs=self.extra_dirs)
         self.chat, self.port = self.server.chat, self.server.port
         self.thread = threading.Thread(target=lambda: self.server.serve_forever(poll_interval=0.02), daemon=True)
         self.thread.start()
+
+    def make_static_tree(self):
+        """The static-serving fixture (CTO S1): a page folder with a symlink out, a dot file and a dot folder, a folder with no index, and a second folder
+        `extra` served at /how-it-works/ with its own symlink out. `outside/` holds the file nobody may reach."""
+        j = lambda *p: os.path.join(self.tmp, *p)
+        files = {"outside/secret.html": "OUTSIDE-SECRET", "pages/sub/index.html": "<h1>sub</h1>", "pages/sub/page.html": "sub page",
+                 "pages/.hidden.html": "HIDDEN", "pages/.dotdir/x.html": "DOTDIR", "extra/index.html": "<h1>how it works</h1>", "extra/a.css": "body{}",
+                 "extra/sub/index.html": "extra sub", "extra/.env": "SECRET=1", "extra/.hidden.html": "HIDDEN2", "extra/emptydir/keep.txt": "no index here"}
+        for rel, body in files.items():
+            os.makedirs(os.path.dirname(j(*rel.split("/"))), exist_ok=True)
+            with open(j(*rel.split("/")), "w") as f:
+                f.write(body)
+        os.makedirs(j("pages", "emptydir"))
+        os.makedirs(j("pages", "index-link"))
+        os.symlink(j("outside"), j("pages", "link-out"))
+        os.symlink(j("outside", "secret.html"), j("pages", "link-secret.html"))
+        os.symlink(j("pages", ".hidden.html"), j("pages", "link-dot.html"))
+        os.symlink(j("outside", "secret.html"), j("pages", "index-link", "index.html"))
+        os.symlink(j("outside"), j("extra", "link-out"))
+        os.symlink(j("pages"), j("extra", "link-pages"))
+        os.symlink(j("extra", ".env"), j("extra", "link-env"))
+        self.extra_dirs = {"how-it-works": j("extra")}
 
     @staticmethod
     def git(cwd, *args):

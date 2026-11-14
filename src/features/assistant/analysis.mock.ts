@@ -13,7 +13,7 @@ export const SERIES_ID = { docJun: uid(105), docAug: uid(106), crpJun: uid(206),
 
 const SHA = 'a3f19c0e5b7d42c8a1e6f0b9d4c27e83f5a0b1c2d3e4f5061728394a5b6c7d8e';
 
-const doc = (id: string, exam_date: string): DocumentRow => ({ id, patient_id: MOCK_PATIENT_ID, kind: 'blood_test', language: 'en', exam_date, issuer: 'Synthetic Diagnostic Lab, Athens', identity_status: 'match', provenance: 'uploaded_by_patient', status: 'confirmed', created_at: `${exam_date}T09:00:00+02:00`, confirmed_at: `${exam_date}T09:05:00+02:00` });
+const doc = (id: string, exam_date: string): DocumentRow => ({ id, patient_id: MOCK_PATIENT_ID, kind: 'blood_test', language: 'en', exam_date, issuer: 'Synthetic Diagnostic Lab, Athens', identity_status: 'match', provenance: 'uploaded_by_patient', status: 'confirmed', created_at: `${exam_date}T09:00:00+02:00`, confirmed_at: `${exam_date}T09:05:00+02:00`, unchecked: false });
 const crp = (id: string, document_id: string, value: number): ResultRow => ({ id, document_id, patient_id: MOCK_PATIENT_ID, analyte: 'CRP', analyte_key: 'crp', value_num: value, value_text: null, unit: 'mg/L', ref_low: null, ref_high: 5, ref_text: null, flag: value > 5 ? 'high' : 'normal', confidence: 0.97, edited_by_patient: false });
 
 /** MOCK_RECORD plus two more CRP results, so CRP has four results (a series with a projection) and ESR has two (not enough). */

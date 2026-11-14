@@ -3,8 +3,8 @@
 import { assertEquals } from "jsr:@std/assert@1";
 
 const ROOT = new URL("../", import.meta.url);
-const HANDLERS = ["doc-create", "extract-exam", "confirm-doc", "doc-photo"].map((n) => `healthapp-${n}/handler.ts`);
-const INDEXES = ["doc-create", "extract-exam", "confirm-doc", "doc-photo"].map((n) => `healthapp-${n}/index.ts`);
+const HANDLERS = ["doc-create", "extract-exam", "confirm-doc", "doc-photo", "my-exams", "exam-delete"].map((n) => `healthapp-${n}/handler.ts`);
+const INDEXES = ["doc-create", "extract-exam", "confirm-doc", "doc-photo", "my-exams", "exam-delete"].map((n) => `healthapp-${n}/index.ts`);
 const SHARED = ["_shared/docs.ts", "_shared/pgstore.ts", "_shared/blobs.ts", "_shared/extract.ts", "_shared/analysis.ts"];
 
 const code = (p: string) =>
