@@ -39,11 +39,22 @@ body:has(.signin) .app-bg{background:url('/brand/bg-ambient.webp') 70% 40%/cover
 /* content fades out under the floating bar and the home indicator */
 .tab-fade{position:fixed;z-index:19;left:0;right:0;bottom:0;height:calc(var(--tabbar-h) + max(var(--bar-gap),var(--safe-bottom)) + 32px);background:linear-gradient(to top,var(--air) 40%,transparent);pointer-events:none}
 
+/* ---- title row and profile (MIN-4595): the doctor's round photo link, the profile page ---- */
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin:0 0 var(--space-2)}
+.title-row h1{margin:0}
+.profile-link{flex:none;display:block;width:var(--target-min);height:var(--target-min);border-radius:50%;overflow:hidden;border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft)}
+.profile-link.right{float:right;margin:0 0 var(--space-2) var(--space-3)}
+.profile-link img{display:block;width:100%;height:100%;object-fit:cover}
+.profile-id{display:flex;flex-direction:column;align-items:center;gap:var(--space-4);margin:var(--space-6) 0 var(--space-6)}
+.profile-photo{display:block;width:128px;height:128px;border-radius:50%;object-fit:cover;border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft)}
+.profile-name{margin:0;font:var(--text-h2);letter-spacing:-.03em;text-align:center}
+
 /* ---- surfaces ---- */
 .card{background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);padding:var(--space-5) 20px;box-shadow:var(--shadow-soft)}
 .card+.card,.card+h2,h2+.card{margin-top:var(--space-4)}
 .group{list-style:none;margin:0;padding:0 20px;background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft)}
 .group>li,.group>a,.group>div{display:flex;align-items:center;gap:var(--space-3);min-height:56px;padding:var(--space-3) 0;border-bottom:1px solid var(--color-border);color:var(--color-text);text-decoration:none}
+.group>button{display:flex;align-items:center;gap:var(--space-3);width:100%;min-height:56px;padding:var(--space-3) 0;background:none;border:0;font:inherit;color:var(--color-text);text-align:left;cursor:pointer}
 .group>:last-child{border-bottom:0}
 .group .chev{margin-left:auto;flex:none;color:var(--color-muted)}
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);margin:var(--space-4) 0 var(--space-6)}

@@ -58,6 +58,7 @@ test('both personas sign in from the panel and land on their own home; a wrong r
   await page.goto('/doctor');
   await expect(page).toHaveURL(/\/patient$/);
 
+  await page.getByTestId('profile-tab').click();
   await page.getByTestId('sign-out').click();
   await expect(page).toHaveURL(/\/login$/);
 

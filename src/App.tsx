@@ -20,6 +20,7 @@ import { AccessLog } from './features/accesslog/AccessLog';
 import { AddSymptom } from './features/diary/AddSymptom';
 import { Kit } from './pages/Kit';
 import { Login } from './pages/Login';
+import { DoctorProfile, PatientProfile } from './pages/Profile';
 import { DoctorConnect } from './features/handshake/DoctorConnect';
 import { PatientShare } from './features/handshake/PatientShare';
 import { ClaimLink, EntryBar } from './features/handshake/routes';
@@ -47,8 +48,10 @@ export function App() {
           <Route path="/patient/exams/*" element={<RequireRole role="patient"><ExamsRoutes /></RequireRole>} />
           <Route path="/patient/access" element={<RequireRole role="patient"><AccessLog /></RequireRole>} />
           <Route path="/patient/diary" element={<RequireRole role="patient"><AddSymptom /></RequireRole>} />
+          <Route path="/patient/profile" element={<RequireRole role="patient"><PatientProfile /></RequireRole>} />
           <Route path="/patient/*" element={<RequireRole role="patient"><PatientHome /></RequireRole>} />
           <Route path="/doctor/simulate" element={<RequireRole role="doctor"><Suspense fallback={<Spinner label="Loading" />}><DoctorSimulate /></Suspense></RequireRole>} />
+          <Route path="/doctor/profile" element={<RequireRole role="doctor"><DoctorProfile /></RequireRole>} />
           <Route path="/doctor/*" element={<RequireRole role="doctor"><DoctorHome /></RequireRole>} />
           <Route path="/patient" element={<RequireRole role="patient"><PatientHome /><EntryBar to="/patient/share" label="Share with a doctor" /></RequireRole>} />
           <Route path="/patient/share" element={<RequireRole role="patient"><PatientShare /></RequireRole>} />

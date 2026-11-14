@@ -27,6 +27,17 @@ export function TabBar() {
   );
 }
 
+/** The round photo that opens the profile page, in the title row of the three tab screens (MIN-4595). Four tabs do not fit at 390
+ *  (the labels are 14 px and "Who had access" alone is 108 px wide), so the profile is a header link, the same pattern as the
+ *  doctor's. It floats right so each screen's h1 stays where it was. */
+export function PatientProfileLink() {
+  return (
+    <Link to="/patient/profile" className="profile-link right" aria-label="Profile" data-testid="profile-tab">
+      <img src="/profile/patient.webp" width={44} height={44} alt="" />
+    </Link>
+  );
+}
+
 /** The navigation bar of a pushed screen: one 44 x 44 back control. The screen's h1 stays in the page under it. */
 export function NavBar({ to, label = 'Back to your record' }: { to: string; label?: string }) {
   return (
@@ -52,6 +63,7 @@ export function PatientScreen({ children, back, className = '', ...rest }: Scree
     <>
       {back && <NavBar to={back} />}
       <main className={`page tabbed${back ? ' pushed' : ''}${className ? ` ${className}` : ''}`} {...rest}>
+        {!back && <PatientProfileLink />}
         {children}
       </main>
       <TabBar />

@@ -3,20 +3,11 @@ import { Link } from 'react-router';
 import { useAuth } from '../auth/AuthProvider';
 import { DiaryList } from '../features/diary/DiaryList';
 import { EmptyState } from '../components/Primitives';
-import { TabBar } from '../components/Shell';
+import { PatientProfileLink, TabBar } from '../components/Shell';
 import { RecordsList, ScanTile } from '../features/exams/RecordsList';
 import { ShareTile } from '../features/handshake/routes';
 import { MatchesOptIn } from '../features/matches/MatchesOptIn';
 import { COPY as SIMULATE } from '../features/simulate/copy';
-
-function SignOut() {
-  const { signOut } = useAuth();
-  return (
-    <button type="button" className="btn" data-testid="sign-out" onClick={() => void signOut()}>
-      Sign out
-    </button>
-  );
-}
 
 /** Empty shell: the screens of drops 1 to 4 are built into it. */
 export function PatientHome() {
@@ -24,6 +15,7 @@ export function PatientHome() {
   return (
     <>
       <main className="page tabbed" data-testid="patient-home">
+        <PatientProfileLink />
         <h1>Your record</h1>
         <p className="muted" data-testid="signed-in-as">Signed in as {displayName ?? 'the patient'}.</p>
         <div className="tiles">
@@ -44,9 +36,6 @@ export function PatientHome() {
           </Link>
         </div>
         <MatchesOptIn />
-        <p style={{ marginTop: 'var(--space-5)' }}>
-          <SignOut />
-        </p>
       </main>
       <TabBar />
     </>
@@ -57,13 +46,15 @@ export function DoctorHome() {
   const { displayName } = useAuth();
   return (
     <main className="page doctor" data-testid="doctor-home">
-      <h1>Patients</h1>
+      <div className="title-row">
+        <h1>Patients</h1>
+        <Link to="/doctor/profile" className="profile-link" aria-label="Profile" data-testid="profile-link">
+          <img src="/profile/doctor.webp" width={44} height={44} alt="" />
+        </Link>
+      </div>
       <p className="muted" data-testid="signed-in-as">Signed in as {displayName ?? 'the doctor'}.</p>
       <EmptyState>No patient has shared a record with you yet.</EmptyState>
       <p style={{ marginTop: 'var(--space-4)' }}><Link to="/doctor/simulate" data-testid="simulate-link">{SIMULATE.home}</Link></p>
-      <p style={{ marginTop: 'var(--space-5)' }}>
-        <SignOut />
-      </p>
     </main>
   );
 }
