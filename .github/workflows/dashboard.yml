@@ -30,8 +30,9 @@ jobs:
           deno lint --rules-exclude=no-import-prefix supabase/functions/
           deno test --node-modules-dir=none --allow-read supabase/functions/
       - name: Key-pattern grep over tracked files (MIN-4449)
+        # scripts/static-checks.mjs (the PWA's check, MIN-4451) names the patterns it looks for.
         run: |
-          if git grep -nE 'eyJ[A-Za-z0-9_-]{30,}|sb_''secret_|SUPABASE_SERVICE_''ROLE_KEY=[A-Za-z0-9_.-]{20,}|lin_''api_[A-Za-z0-9]{20,}|sb''p_[A-Za-z0-9]{20,}'; then
+          if git grep -nE 'eyJ[A-Za-z0-9_-]{30,}|sb_''secret_|SUPABASE_SERVICE_''ROLE_KEY=[A-Za-z0-9_.-]{20,}|lin_''api_[A-Za-z0-9]{20,}|sb''p_[A-Za-z0-9]{20,}' -- . ':!scripts/static-checks.mjs'; then
             echo "A key-shaped value is tracked. Remove it and rotate it." >&2
             exit 1
           fi
