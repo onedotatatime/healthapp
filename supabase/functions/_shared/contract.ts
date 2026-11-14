@@ -21,7 +21,7 @@
 // 12  diary is a direct insert, no function
 import { z } from "npm:zod@4.6.7";
 
-export const CONTRACT_VERSION = "2026-11-14.1";
+export const CONTRACT_VERSION = "2026-11-14.2";
 
 // ---------------------------------------------------------------------------------------------
 // Calling convention
@@ -406,6 +406,58 @@ export const AssistantResponse = z.object({
   created_at: Timestamp,
 });
 export type AssistantResponse = z.infer<typeof AssistantResponse>;
+
+// ---------------------------------------------------------------------------------------------
+// Possible matches (MIN-4505, F1 and F2): Postgres functions, not Edge Functions.
+// ---------------------------------------------------------------------------------------------
+// Called through the Data API: supabase.schema(schemaFor(env)).rpc(name, args), with the session.
+// No x-healthapp-env header (that is for Edge Functions only). A caller who may not call one gets
+// HTTP 403 with the PostgREST body { code: "42501", message } (not ErrorBody): show nothing, or
+// "not available", never a reason. SQL: supabase/sql/005_matches.sql.
+export const MATCH_K = 5; // a pattern shared by fewer than 5 seeded rows is never shown (same as SQL)
+export const MATCH_MIN_SHARED = 4; // a seeded row matches when it shares at least 4 codes
+export const MATCH_LABEL = "seeded, synthetic" as const;
+export const RPC_DENIED_CODE = "42501";
+
+// healthapp_possible_matches (doctor in a live grant) ------------------------------------------
+// A patient token, a doctor without a live grant for this patient, or no session: 403, 42501.
+// "Not opted in", "no match" and "every pattern below k" are the SAME answer, MATCHES_EMPTY: the
+// screen cannot and must not tell them apart.
+export const PossibleMatchesArgs = z.object({ patient_id: Uuid });
+export const MatchGroup = z.object({
+  n: z.number().int().min(MATCH_K), // seeded synthetic records sharing exactly this pattern
+  pattern: z.array(z.string().min(1)).min(MATCH_MIN_SHARED), // shared codes, e.g. "CRP_high", "joint_pain"
+  countries: z.array(z.string().regex(/^[A-Z]{2}$/)).min(1), // ISO country codes, nothing finer
+  label: z.literal(MATCH_LABEL),
+}).strict(); // no name, id, date, age or anything below country, ever
+export type MatchGroup = z.infer<typeof MatchGroup>;
+export const PossibleMatchesResponse = z.object({
+  match_count: z.number().int().min(0), // the sum of the groups' n
+  groups: z.array(MatchGroup), // largest group first; groups never overlap (exact shared set)
+}).strict();
+export type PossibleMatchesResponse = z.infer<typeof PossibleMatchesResponse>;
+export const MATCHES_EMPTY: PossibleMatchesResponse = { match_count: 0, groups: [] };
+
+// healthapp_set_matches_opt_in, healthapp_get_matches_opt_in (the patient herself) --------------
+// Off by default. On: matching_opt_in_at is the consent time (kept if already on). Off: takes
+// effect at once and clears it. Anyone but the patient: 403, 42501. profiles.matching_opt_in is not
+// readable through the Data API (010): the F1 screen reads the state with the get function.
+export const SetMatchesOptInArgs = z.object({ opt_in: z.boolean() });
+export const GetMatchesOptInArgs = z.object({});
+export const MatchesOptIn = z.object({
+  matching_opt_in: z.boolean(),
+  matching_opt_in_at: Timestamp.nullable(), // null exactly when matching_opt_in is false
+}).strict();
+export type MatchesOptIn = z.infer<typeof MatchesOptIn>;
+
+export const RPCS = {
+  healthapp_possible_matches: { args: PossibleMatchesArgs, response: PossibleMatchesResponse },
+  healthapp_set_matches_opt_in: { args: SetMatchesOptInArgs, response: MatchesOptIn },
+  healthapp_get_matches_opt_in: { args: GetMatchesOptInArgs, response: MatchesOptIn },
+} as const;
+export type RpcName = keyof typeof RPCS;
+export type RpcArgsOf<N extends RpcName> = z.input<(typeof RPCS)[N]["args"]>;
+export type RpcResponseOf<N extends RpcName> = z.infer<(typeof RPCS)[N]["response"]>;
 
 // ---------------------------------------------------------------------------------------------
 // The function table: one typed wrapper on the client can key off this.
