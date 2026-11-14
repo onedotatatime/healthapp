@@ -41,7 +41,7 @@ describe('one token source', () => {
 
 describe('glass rules', () => {
   // Blur only on chrome: the surfaces content scrolls under. Cards and list rows have no blur.
-  const CHROME = ['.navbar', '.tabbar', '.sheet', '.signin', '.timer', '.hs-entry'];
+  const CHROME = ['.navbar', '.tabbar', '.sheet', '.signin', '.timer', '.hs-entry', '.as-sheet', '.kit-bar'];
   const blurRules = src.filter((f) => f.endsWith('.css')).flatMap((f) =>
     [...text(f).matchAll(/([^{}]+)\{([^{}]*backdrop-filter[^{}]*)\}/g)].map((m) => ({ f, selector: m[1]!.trim(), body: m[2]! })),
   );

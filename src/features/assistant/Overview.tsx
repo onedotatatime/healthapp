@@ -28,7 +28,7 @@ export function OverviewPanel({ overview, openCite, onOpenCite, onOpenSubject }:
   );
   if (timeline.length === 0) return <EmptyState>This record has nothing in it yet.</EmptyState>;
   return (
-    <div data-testid="overview">
+    <div className="as-panel" data-testid="overview">
       <h2>Outside the printed range</h2>
       {outOfRange.length ? items(outOfRange, 'overview-out-of-range') : <p className="muted">No values outside the printed range.</p>}
       <h2>Conditions written in the documents</h2>

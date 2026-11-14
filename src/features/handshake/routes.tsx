@@ -18,7 +18,7 @@ export function ClaimLink() {
       <main className="page">
         <h1>This link has no code</h1>
         <p>Ask the patient to show their code again, then scan it.</p>
-        <Link to="/">Back</Link>
+        <Link to="/" className="back">Back</Link>
       </main>
     );
   }

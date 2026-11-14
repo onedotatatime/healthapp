@@ -35,7 +35,7 @@ body:has(.signin) .app-bg{background:url('/brand/bg-ambient.webp') 70% 40%/cover
 .tabbar{position:fixed;z-index:20;left:max(var(--bar-gap),calc(50% - 228px));right:max(var(--bar-gap),calc(50% - 228px));bottom:max(var(--bar-gap),var(--safe-bottom));height:var(--tabbar-h);display:flex;gap:2px;padding:5px;border-radius:var(--radius-pill);background:var(--glass-chrome);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft)}
 .tabbar a{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:var(--radius-pill);color:var(--color-text);text-decoration:none;font:var(--text-label);letter-spacing:0;white-space:nowrap;transition:background var(--dur-fast) var(--ease-out)}
 .tabbar a svg{flex:none}
-.tabbar a[aria-current='page']{background:var(--color-primary);color:var(--color-on-primary)}
+.tabbar a[aria-current='page']{background:var(--color-primary);color:var(--color-on-primary);box-shadow:inset 0 0 0 2px var(--color-link)}   /* the teal ring is the 3:1 state indicator: mint alone is 1.43:1 on the glass */
 /* content fades out under the floating bar and the home indicator */
 .tab-fade{position:fixed;z-index:19;left:0;right:0;bottom:0;height:calc(var(--tabbar-h) + max(var(--bar-gap),var(--safe-bottom)) + 32px);background:linear-gradient(to top,var(--air) 40%,transparent);pointer-events:none}
 
@@ -99,7 +99,7 @@ body:has(.signin) .app-bg{background:url('/brand/bg-ambient.webp') 70% 40%/cover
 /* teal-600 text is not AA on chrome glass in the worst case, so a ghost button on a bar, a sheet or the sign-in card is ink */
 .sheet .btn:not(.primary),.signin .btn:not(.primary),.timer .btn:not(.primary),.hs-entry .btn:not(.primary){border-color:var(--color-text);color:var(--color-text)}
 a.btn{text-decoration:none}
-.link-tap,.back,.photo figcaption a{display:inline-flex;align-items:center;min-height:var(--target-min)}   /* a text link is still a 44 px target */
+.link-tap,.back,.photo figcaption a{display:inline-flex;align-items:center;min-height:var(--target-min);min-width:var(--target-min)}   /* a text link is still a 44 px target */
 .link-quiet{color:var(--color-text);text-decoration:underline;text-underline-offset:3px}
 
 /* ---- primitives: notes carry no red. An error is white with a coral-900 edge and icon; a caution is peach ---- */
@@ -151,3 +151,12 @@ a.btn{text-decoration:none}
 .kit h2{margin-top:var(--space-6)}
 .kit .row{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:center;margin-bottom:var(--space-3)}
 .kit .timer{position:static;background:var(--color-surface);-webkit-backdrop-filter:none;backdrop-filter:none}   /* a showcase of five timers: solid, so the page stays under three blurred surfaces */
+
+/* /kit: the same primitives in glass and in the solid form the fallbacks use. One chrome bar in glass keeps the page at two blurred surfaces. */
+.kit .solid{--glass-chrome:var(--color-surface);--glass-card:var(--color-surface);--glass-filter:none}
+.kit-pair{display:grid;gap:var(--space-4);grid-template-columns:minmax(0,1fr)}
+@media (min-width:700px){.kit-pair{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kit-set{display:grid;gap:var(--space-3);align-content:start}
+.kit-set .tiles,.kit-set .row{margin:0}
+.kit-set h3{margin:0}
+.kit-bar{display:flex;justify-content:center;padding:6px;border-radius:var(--radius-pill);background:var(--glass-chrome);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft)}
