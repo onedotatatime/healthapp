@@ -3,3 +3,4 @@
 - [healthapp Gemini model ids](project_healthapp_gemini_model_ids.md) — gemini-2.5-flash 404s for this key; 3.8/3.5-flash work; zsh `$m:g` URL trap
 - [healthapp edge DB direct](project_healthapp_edge_db_direct.md) — functions use SUPABASE_DB_URL, not PostgREST; jsonb/uuid param traps; deploy and SQL rules
 - [healthapp extraction measured](project_healthapp_extraction_measured.md) — Greek lookalike IDs, finding granularity, timings, M2 harness
+- [healthapp matches RPC](project_healthapp_matches_rpc.md) — 005-007, RPC shapes, profiles column-grant trap, hash-proved applies, raise-to-rollback tests
