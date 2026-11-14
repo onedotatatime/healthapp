@@ -1,0 +1,31 @@
+# Landing: demo screens and CTAs (spec for Ren, MIN-4464)
+Founder 2026-11-14: "More abstract demo screens at 'See it in action' and more clear one by one". Tokens per `design-spec-v3.md` (Manrope, air #F7FAFA, white, mist #EAF3F2, ink #12201F, ink-soft #4A5D5B, mint #7FE3CF, teal-600 #0F766E, coral #F4846B, coral-900 #9A3F2B; radii 32/24/16). Captions verbatim from `copy.md` `## screens`. HTML/CSS only, synthetic data. Replaces the 4-device track.
+
+## 1. `screens` section (id `screens`, after `how`, before `who`)
+- Bg air. Head centred: chip "Synthetic demo data" (mist, ink-soft 13px/600, 999, 6x14, coral 6px dot), h2 "See it in action", sub (ink-soft 18px, 52ch). Drop the laptop and the `Device` variants: one `Screen` component, data in `screensData.ts`.
+- **Frame (all 4, identical):** one rounded phone, 320x640, radius 32, 8px ink bezel, bg air, shadow 0 24px 60px -24px rgba(11,59,61,.25). No status bar, no tab bar, no island. Inside: padding 28, gap 16. No text under 16px except the chip (14px/600).
+- **Skeleton bar:** height 12, radius 999, bg #DCE8E7 (mist-dark); widths 40/60/80%. Never text-like detail, never real data.
+- **Shapes per screen** (only these elements, nothing else):
+  - `s-history`: vertical 2px ink/10 line, 4 dots 16px (3 mist-dark, 1 mint with ring), each beside a white card (radius 24, 72px tall, 2 skeleton bars). The 2nd card is highlighted (mint 2px border, shadow) reads "Blood test · Mar 2026" 600 18px ink.
+  - `s-scan`: top, a tilted (-4deg) white paper 200x120 radius 16, "Source photo" skeleton lines inside. Arrow dot (mint 32px) down. Below, 3 rows (white, radius 16, 56px, 2 skeleton bars + 1 short right bar). Row 1 has coral/12 bg and a chip: coral dot 8px + "Outside printed range" coral-900, 14px/600.
+  - `s-share`: label "Doctor access" 600 22px centred; QR block 176x176 white card radius 24, 11x11 grid of ink squares (static pattern, 3 finder squares, mint centre tile); ring 120px, 8px mint stroke over mist track, "29:41" 600 28px tabular-nums centred in it.
+  - `s-ask`: question bubble right (ink bg, white text 16px, radius 20 20 4 20) "Was ferritin ever low?"; answer bubble left (mist bg, radius 20 20 20 4) with 2 skeleton bars; below it a chip (white, 1px teal-600 border, teal-600 14px/600, 999) "Source: Blood test · 12 Mar 2026". No "Not in this record".
+- Tag "Synthetic" is the section chip only; do not repeat it per screen.
+- **Desktop 1440 = pinned, one at a time.** Section pinned 100vh, `end: +=400%`, one timeline scrubbed (scrub 0.6, snap to 4 steps). Two columns, 1200 max, centred: left 360px caption (number "01" coral 600 20px, title 600 40px ink, caption line ink-soft 20px, 3 lines max); right the 320x640 phone centred in a 560px stage. Background stays; no horizontal track.
+- **ScrollTrigger steps:** step i = 25% of progress. At each boundary, 0.4s: outgoing phone+caption opacity 1 to 0 and y 0 to -24; incoming opacity 0 to 1 and y 24 to 0 (ease power2.out); only one is visible at a time (others `visibility:hidden`). Inside each screen the active one runs a 0.6s in-build: highlighted card/row/chip scales .96 to 1, ring `strokeDashoffset` draws on `s-share`. Progress: 4 numbers "01 02 03 04" in a row below the stage, 14px/600; active ink with 24px mint bar under, others ink/40; clicking one scrolls to that step.
+- **375 and reduced motion:** no pin, no scrub. Vertical stack, one per row: phone 320 wide centred (scale .92 at <340), 24px gap, caption below it (number, title 28px, line 17px), 72px between items; fade-up 24px once, none for reduced motion. Ring shown full. At 1440 with reduced motion: a 2x2 grid, each item phone + caption stacked.
+- A11y: each item is a `figure` with the caption as `figcaption`; the screens are `aria-hidden` decor with alt-like `aria-label` on the figure; progress numbers are buttons with `aria-current` on the active one; hidden steps use `visibility:hidden` so they leave the tab order.
+
+## 2. CTAs (labels per Anna's `copy.md`)
+- **Nav** (white pill): links How it works / Who it's for / Under the hood / Roadmap collapse into the menu on <1024. Add text links "For patients" (-> `#who-patient`) and "For doctors" (-> `#who-doctor`), ink-soft 15px/500, hover ink plus a 2px mint underline (offset 6px). "Get updates" is a mint pill (replaces "Get in touch"; -> `#updates`), 44px tall. Mobile menu: all links plus the pill full width.
+- **Hero**: row, gap 12px: primary mint "See how it works" (-> `#how`, with an arrow dot), then two ghost pills "For patients" and "For doctors". At 375 the primary is full width and the ghosts sit on one row of two (each 50%).
+- **Who cards**: a pill at the bottom of each overlay chip: patient card "For patients", doctor card "For doctors" (small primary, 40px). Targets are `#updates` with `?for=patient|doctor` in the mailto subject.
+- **Updates band** (id `updates`, full width, before footer, bg mist, radius 32 inner card on white at 1360 max, padding 64/24): h2 title (section scale), line (ink-soft 18px), then a form row, max 560px: pill input (white, 1px ink/15 border, 56px, padding 0 24, placeholder ink-soft) with the button inside the right end (mint, 44px). The button opens `mailto:[contact]?subject=Get%20updates` (placeholder `[contact]`, Anna/Back to fill). The input value is appended to the body (`&body=`). No backend. A 13px note: "No account. No spam." only if Anna supplies it. At 375, stacked, the button full width.
+
+## 3. Button styles (one `.btn` family, height 52px, padding 0 28px, radius 999, Manrope 600 16px, transition .2s)
+- **Primary**: bg mint #7FE3CF, text ink #12201F. Hover: bg #6FD8C2, translateY(-1px), shadow 0 10px 24px -10px rgba(15,118,110,.5). Active: translateY(0).
+- **Ghost**: transparent, 1.5px teal-600 border, teal-600 text. Hover: bg teal-600/8, border and text stay the same.
+- **Small** (nav, cards): 44px high, padding 0 20px.
+- **Focus (all)**: `:focus-visible` outline 3px solid teal-600, offset 3px (2px white inner gap on mint). Never remove the outline. On the dark footer use white 3px.
+- Targets at least 44x44. Contrast: ink on mint 11.9:1, teal-600 on air 5.9:1. Text links keep the underline on focus.
+- Reduced motion: no translate on hover or the pulse; colour changes only.
