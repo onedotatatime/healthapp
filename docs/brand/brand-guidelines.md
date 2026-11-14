@@ -1,5 +1,7 @@
 # Brand guidelines (lean v0.1, MIN-4462)
 
+Figma: https://www.figma.com/design/THuLsLkmvLjj9uYltxTteF
+
 One page for the marketing site and the product app. Values come from the live CSS (`landing/src/styles.css`, https://healthapp-landing.pages.dev). Anything marked **(new)** fills a gap and is not on the live site. Importable tokens: `docs/brand/tokens.css`.
 Name: Pathien (chosen by the founder, 2026-11-14). Logo: section 9. Voice is pending (Anna).
 
@@ -94,32 +96,47 @@ Manrope 400/500/600/700, fallback system-ui. Headings 600, tracking -0.04em, lin
 ## 9. Logo
 Name chosen by the founder, 2026-11-14: Pathien (pathien.health). Trademark clearance pending.
 
-**The idea.** One line becomes a "p": it loops into the bowl, runs down the stem and out along the baseline in a foot, and ends in a single dot with a gap, the next step on the path. A patient's history as one calm path, the dot being where you are heading (or the exam a doctor is shown). Redrawn in round 2 (2026-11-14) after the logo check found the old white-p-plus-dot-on-teal too common (`logo-check-pathien.md`). No medical cross, heart, pill or stethoscope.
+**The idea.** The "p" is the symbol. Its foot curves into a straight path that runs under the whole word and ends in a single dot, sitting where the dot of the "i" would be (the "i" is dotless). The p's foot becomes the path, and the path ends in the i's dot: the path leads to you. A patient's history as one calm line. No medical cross, heart, pill or stethoscope. Round 3 (final, 2026-11-14): founder picked the Plus Jakarta Sans version ("back to jakarta") after the Manrope redraw and two font rounds; history in `logo-check-pathien.md`.
 
-**Files** (`docs/brand/logo/`, hand-drawn SVG; the wordmark is Manrope 600 converted to paths, -2% tracking, so no font is needed):
+**Type.** The wordmark is Plus Jakarta Sans 600 (SIL Open Font License 1.1, outlined, so no font is needed), with a dotless "i" (U+0131). The "p" is drawn by hand on the same stem weight (112.5 units, like the font's stems) and sits at the x-height. This is the logo's own face: product and web type stay Manrope (section 3).
+
+**Files** (`docs/brand/logo/`, SVG, fill-only shapes, no strokes, no fonts):
 | File | Use |
 |---|---|
-| `pathien-lockup.svg` | Default logo, ink #12201F on transparent, on light backgrounds |
-| `pathien-lockup-white.svg` | Same, white, on teal-night, teal-600 or photos with an overlay |
-| `pathien-symbol.svg` | Symbol alone: teal-600 line, coral dot (avatars, small spots, social profile with a light background) |
-| `pathien-wordmark.svg` | Wordmark alone, ink; only where the symbol already sits next to it |
-| `pathien-app-icon.svg` | 1024 rounded square, air #F7FAFA ground with a hairline edge, teal-600 line, coral dot. Round the corners only through the store's mask for iOS (use a square export there) |
-| `favicon.svg` | 32 viewBox, readable at 16px |
-| `lockup@2x.png`, `app-icon-512.png` | Previews only (the lockup PNG has a white background); use the SVGs |
+| `pathien-lockup.svg` | Default logo, primary colour version, on light backgrounds (air, white, mist) |
+| `pathien-lockup-mono.svg` | One-colour print, stamps, anything that cannot carry teal and coral: ink letters and p, 70% ink path, ink dot |
+| `pathien-lockup-white.svg` | For dark grounds: teal-night, teal-600, photos with the teal-night overlay |
+| `pathien-wordmark.svg` | Same artwork as the lockup. The "p" is now part of the word, so wordmark and lockup are one logo; the file is kept only so existing links do not break. Do not use a version without the p |
+| `pathien-symbol.svg` | The p with a short path ending in the dot, alone: ink p, teal path, coral dot (avatars, social profile, small spots below 96px wide) |
+| `pathien-app-icon.svg` | 1024 rounded square, air #F7FAFA ground with a hairline edge, the symbol centred. Round the corners only through the store's mask on iOS (use a square export there; `landing/public/brand/apple-touch-icon.png` is one) |
+| `favicon.svg` | 32 viewBox, same symbol with heavier weights so it holds at 16px |
+| `lockup@2x.png`, `app-icon-512.png`, `favicon-strip.png` | Previews only (white background; the strip shows 16, 32 and 48px at 8x). Use the SVGs |
 
-**Colour versions.** Ink on light (default), white on dark. Symbol alone, icon and favicon: teal-600 line with a coral #F4846B dot on air #F7FAFA (or on light). The lockups stay one colour. The icon ground is air, not teal: every close match is a white mark on a teal or green square. Nothing else.
+**Colour versions.**
+| Version | p and letters | Path | Dot |
+|---|---|---|---|
+| Primary (colour) | ink #12201F | teal-600 #0F766E | coral #F4846B |
+| Mono ink | ink #12201F | 70% ink #566463 | ink #12201F |
+| White | white #FFFFFF | mint #7FE3CF | coral #F4846B |
 
-**Clear space.** On all sides at least the height of the wordmark's x-height (the "a"), which is about 55% of the "p" height. Keep other text, edges and images out of that zone.
+Primary and mono go on light grounds, white on dark. Contrast of the path: teal-600 on air 5.2:1, 70% ink on air 5.9:1, mint on teal-night 8.1:1, mint on teal-600 3.6:1 (graphic only; the letters carry the name). The coral dot is 2.4:1 on air and 4.9:1 on teal-night; it is a decoration, never the only carrier of meaning. The icon ground is air, not teal: every close match found in the logo check is a white mark on a teal or green square.
+
+**Clear space.** On all sides at least x, the x-height of the "a" in the wordmark, which is about 57% of the lockup's height. Keep other text, edges and images out of that zone.
 
 **Minimum sizes.** Lockup 96px wide on screen (24mm in print). Symbol alone 16px (favicon) and up. Below 96px use the symbol.
 
 **Don'ts.**
+- Do not add a dot back on the i. The dot under the i is the path's end; a dot above it makes two.
+- Do not separate the p from the word, or use the word without its p. Do not crop the path off.
+- Do not recolour the path outside teal, mint or 70% ink. Coral only for the dot (primary and white versions); the mono version has no coral. No gradients.
 - Do not stretch, squash, rotate or outline it.
-- Do not recolour outside the tokens (coral only for the dot of the symbol, icon and favicon; no gradients; the lockups stay one colour). Do not put the icon back on a teal or green square.
 - No shadows, glows, bevels, blur or other effects.
 - Do not retype the wordmark in a font, change its weight or tracking, or capitalise it ("Pathien" in running text, "pathien" only in the logo).
-- Do not put it on a busy photo without the teal-night overlay, or on a background under 4.5:1 contrast.
+- Do not put it on a busy photo without the teal-night overlay, or on a background under 4.5:1 contrast with the letters.
+- Do not put the icon on a teal or green square.
 - Do not add a medical symbol, a tagline or a registered mark inside the lockup.
+
+**Figma.** "Pathien — Brand" (https://www.figma.com/design/THuLsLkmvLjj9uYltxTteF), page Logo: components Symbol, Wordmark, Lockup/Ink, Lockup/White, Lockup/Mono, App icon, Favicon. Instances on the Logo page and the Cover follow the components.
 
 ## 10. Voice (placeholder, Anna fills in)
 _Tone, vocabulary, words we avoid, how we phrase a result that is outside the printed range._
