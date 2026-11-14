@@ -25,9 +25,43 @@
  },
  "assumption": {
   "value": 0.2,
-  "status": "approved by the CEO seat on the founder's behalf, 2026-11-14 (an assumption, not a measurement)",
-  "text": "We assume that a match lowers the chance of a wrong or missed diagnosis by 20%.",
+  "start": 0.1,
+  "ceiling": 0.2,
+  "effect": [
+   0.1,
+   0.1,
+   0.101,
+   0.106,
+   0.108,
+   0.115,
+   0.137,
+   0.15,
+   0.166,
+   0.177,
+   0.183,
+   0.2
+  ],
+  "status": "approved by the CEO seat on the founder's behalf, 2026-11-15 (an assumption, not a measurement)",
+  "text": "We assume that each match lowers the chance of a wrong or missed diagnosis by 10%, rising to 20% as matches accumulate.",
   "sourced": false
+ },
+ "matches": {
+  "label": "Records with a match",
+  "definition": "opted-in records in the sample with at least one match (k = 5, at least 4 shared codes)",
+  "count": [
+   0,
+   0,
+   1,
+   7,
+   10,
+   19,
+   46,
+   61,
+   81,
+   95,
+   102,
+   123
+  ]
  },
  "series": [
   {
@@ -56,9 +90,9 @@
    "key": "wrong_or_missed_per_100",
    "label": "Wrong or missed diagnoses",
    "unit": "per 100 visits",
-   "status": "approved by the CEO seat on the founder's behalf, 2026-11-14 (an assumption, not a measurement)",
+   "status": "approved by the CEO seat on the founder's behalf, 2026-11-15 (an assumption, not a measurement)",
    "baseline": 5,
-   "formula": "5 x (1 - 0.20 x match_rate)",
+   "formula": "5 x (1 - effect x match_rate), effect = 0.10 + 0.10 x (matches so far / matches in the full synthetic network)",
    "sources": [
     {
      "name": "WHO, Patient safety fact sheet, 11 Sep 2023 (5-20% of physician-patient encounters; low end used)",
@@ -69,14 +103,14 @@
     5.0,
     5.0,
     4.99,
+    4.97,
+    4.96,
     4.94,
-    4.93,
-    4.9,
-    4.79,
-    4.75,
-    4.71,
-    4.69,
-    4.7,
+    4.85,
+    4.81,
+    4.76,
+    4.72,
+    4.72,
     4.66
    ]
   },
@@ -85,9 +119,9 @@
    "key": "cost_pct_of_health_spend",
    "label": "Cost of wrong or missed diagnoses",
    "unit": "% of health spending",
-   "status": "approved by the CEO seat on the founder's behalf, 2026-11-14 (an assumption, not a measurement)",
+   "status": "approved by the CEO seat on the founder's behalf, 2026-11-15 (an assumption, not a measurement)",
    "baseline": 11,
-   "formula": "11 x (1 - 0.20 x match_rate)",
+   "formula": "11 x (1 - effect x match_rate), effect = 0.10 + 0.10 x (matches so far / matches in the full synthetic network)",
    "sources": [
     {
      "name": "OECD Health Working Paper No. 176, The economics of diagnostic safety, 2025 (about 11% of health spending; an OECD model estimate)",
@@ -97,17 +131,87 @@
    "values": [
     11.0,
     11.0,
-    10.98,
+    10.99,
+    10.93,
+    10.92,
     10.87,
-    10.86,
-    10.77,
-    10.53,
-    10.45,
-    10.35,
-    10.32,
-    10.33,
+    10.68,
+    10.59,
+    10.46,
+    10.39,
+    10.39,
     10.26
    ]
   }
- ]
+ ],
+ "euro": {
+  "currency": "EUR",
+  "geography": "EU-27",
+  "year": 2024,
+  "total_mio_eur": 1833973.32,
+  "total_eur_per_inhabitant": 4074.88,
+  "drop_pts": [
+   0.0,
+   0.0,
+   0.01,
+   0.07,
+   0.08,
+   0.13,
+   0.32,
+   0.41,
+   0.54,
+   0.61,
+   0.61,
+   0.74
+  ],
+  "drop_mio_eur": [
+   0.0,
+   0.0,
+   183.4,
+   1283.78,
+   1467.18,
+   2384.17,
+   5868.71,
+   7519.29,
+   9903.46,
+   11187.24,
+   11187.24,
+   13571.4
+  ],
+  "drop_eur_per_inhabitant": [
+   0.0,
+   0.0,
+   0.41,
+   2.85,
+   3.26,
+   5.3,
+   13.04,
+   16.71,
+   22.0,
+   24.86,
+   24.86,
+   30.15
+  ],
+  "loss_mio_eur": [
+   201737.07,
+   201737.07,
+   201553.67,
+   200453.28,
+   200269.89,
+   199352.9,
+   195868.35,
+   194217.77,
+   191833.61,
+   190549.83,
+   190549.83,
+   188165.66
+  ],
+  "formula": "drop_pts / 100 x 1833973.32 EUR million (EU-27 current health expenditure, 2024); drop_pts = 11 - cost, cost at 2 decimals",
+  "source": {
+   "name": "Eurostat, current health expenditure (hlth_sha11_hf, all financing schemes), EU-27, 2024",
+   "url": "https://ec.europa.eu/eurostat/databrowser/view/hlth_sha11_hf/default/table",
+   "query_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/hlth_sha11_hf?format=JSON&unit=MIO_EUR&icha11_hf=TOT_HF&geo=EU27_2020&time=2024",
+   "opened": "2026-11-15"
+  }
+ }
 }
