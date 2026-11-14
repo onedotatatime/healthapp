@@ -32,3 +32,21 @@ export function clientAddress(req: Request): string {
   const xff = req.headers.get("x-forwarded-for");
   return (xff ? xff.split(",")[0] : req.headers.get("cf-connecting-ip") ?? "unknown").trim();
 }
+
+/** Last line of defence for index.ts: an exception becomes the contract's 500, never a bare gateway page.
+ *  Logs the error's name only (a message can carry a row's text). */
+export function safely(handle: (req: Request) => Promise<Response>, name: string) {
+  return async (req: Request): Promise<Response> => {
+    try {
+      return await handle(req);
+    } catch (e) {
+      // Postgres errors carry a code and the constraint or column at fault: enough to debug, no row text.
+      const pg = e as { code?: string; constraint_name?: string; column_name?: string; routine?: string };
+      console.log(JSON.stringify({
+        fn: name, status: "exception", error: e instanceof Error ? e.name : "unknown",
+        code: pg.code, constraint: pg.constraint_name, column: pg.column_name, routine: pg.routine,
+      }));
+      return fail(req, 500, "internal", "Something went wrong. Try again.");
+    }
+  };
+}

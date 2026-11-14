@@ -4,7 +4,7 @@ import { ErrorNote, Spinner } from '../../components/Primitives';
 import { ProvenanceMark } from '../../components/ProvenanceMark';
 import { useExams } from './context';
 import { OutOfRange } from './Marks';
-import { FIXED_LINE, KIND_LABEL, formatDate, isOutOfRange, printedRange, valueString, type RecordFull } from './logic';
+import { FIXED_LINE, docMarks, KIND_LABEL, formatDate, isOutOfRange, printedRange, valueString, type RecordFull } from './logic';
 
 /** A saved record: its values, the out-of-range marks, the findings in the document's own words, and the original photo. */
 export function RecordView() {
@@ -33,8 +33,7 @@ export function RecordView() {
       <h1>{KIND_LABEL[d.kind]}</h1>
       <p className="muted" data-testid="record-meta">{formatDate(d.exam_date)}{d.issuer ? `, ${d.issuer}` : ''}</p>
       <div className="mark-row">
-        <ProvenanceMark kind={d.provenance === 'verified_by_source' ? 'verified' : 'uploaded'} />
-        {d.identity_status === 'name_only' && <ProvenanceMark kind="name-match" />}
+        {docMarks(d).map((k) => <ProvenanceMark key={k} kind={k} />)}
       </div>
 
       {rec.results.length > 0 && <h2 style={{ marginTop: 'var(--space-6)' }}>Results</h2>}

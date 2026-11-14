@@ -33,3 +33,17 @@ verify_jwt = true
 
 [functions.healthapp-demo-login]
 verify_jwt = false
+
+# MIN-4475: called from the browser, so the gateway must let the CORS preflight through; each function
+# verifies the session itself (GoTrue + a profile in healthapp_<env> + the role) before anything else.
+[functions.healthapp-doc-create]
+verify_jwt = false
+
+[functions.healthapp-extract-exam]
+verify_jwt = false
+
+[functions.healthapp-confirm-doc]
+verify_jwt = false
+
+[functions.healthapp-doc-photo]
+verify_jwt = false
