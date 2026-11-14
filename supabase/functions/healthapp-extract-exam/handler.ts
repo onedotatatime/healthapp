@@ -50,6 +50,8 @@ export function makeHandler(deps: Deps) {
     const parsed = ExtractRequest.safeParse(body.body);
     if (!parsed.success) return fail(req, 400, "bad_request", "doc_id is required");
 
+    // MIN-4549 (CTO): the second-pass-only mode is a dev backfill tool; demo and any other env refuse it.
+    if (parsed.data.analyse_only && who.env !== "dev") return fail(req, 400, "bad_request", "analyse_only is dev only");
     const cur = await deps.store.getOwn(who.env, who.uid, parsed.data.doc_id);
     if (!cur) return fail(req, 404, "not_found", "No such document.");
     if (parsed.data.analyse_only) {

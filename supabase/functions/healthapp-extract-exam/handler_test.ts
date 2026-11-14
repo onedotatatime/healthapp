@@ -278,6 +278,13 @@ Deno.test("analyse_only: twice leaves one row; only the caller's own document; a
   assertEquals(t.s.saves(), 3);
 });
 
+Deno.test("analyse_only on demo is 400: no read of the document, no model call", async () => {
+  const t = setup();
+  const d = await newDoc(t);
+  const res = await t.h(call("x", { doc_id: d.id, analyse_only: true }, "tp", "demo"));
+  assertEquals([res.status, t.analysisCalls(), t.s.analyses.size], [400, 0, 0]);
+});
+
 Deno.test("analyse_only with the stored object gone: a failed no_object row, no model call", async () => {
   const t = setup();
   const d = await newDoc(t, PATIENT, false);
