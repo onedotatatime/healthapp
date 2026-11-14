@@ -18,6 +18,10 @@
     "hand": {
       "asOf": "2026-11-14T13:53:07Z",
       "error": null
+    },
+    "branches": {
+      "asOf": "2026-11-14T13:53:07Z",
+      "error": null
     }
   },
   "deadline": "2026-11-15T18:00:00+02:00",
@@ -524,5 +528,363 @@
       "7": "Not run yet.",
       "8": "Not run yet."
     }
+  },
+  "branches": {
+    "repo": "onedotatatime/healthapp",
+    "bases": [
+      "main",
+      "staging"
+    ],
+    "base": "staging",
+    "staleRefs": 0,
+    "prSource": "gh",
+    "truncated": false,
+    "totals": {
+      "open": 8,
+      "openOnRemote": 3,
+      "total": 12,
+      "merged": 3,
+      "mergedToday": 3,
+      "closed": 1
+    },
+    "items": [
+      {
+        "name": "feat/dashboard-live-feed",
+        "state": "open",
+        "onRemote": true,
+        "hasWorktree": true,
+        "pr": {
+          "number": 6,
+          "state": "OPEN",
+          "url": "https://github.com/onedotatatime/healthapp/pull/6",
+          "base": "staging",
+          "mergedAt": null,
+          "closedAt": null
+        },
+        "vsMain": {
+          "ahead": 4,
+          "behind": 0
+        },
+        "vsStaging": {
+          "ahead": 1,
+          "behind": 0
+        },
+        "statsBase": "staging",
+        "files": 71,
+        "added": 9165,
+        "removed": 0,
+        "lastCommitAt": "2026-11-14T14:17:07Z",
+        "lastCommitAuthor": "onedotatatime",
+        "issue": "MIN-4459",
+        "issueFrom": "pr",
+        "agent": "Cron",
+        "agentFrom": "issue"
+      },
+      {
+        "name": "feat/min-4451-pwa-shell",
+        "state": "open",
+        "onRemote": true,
+        "hasWorktree": true,
+        "pr": {
+          "number": 4,
+          "state": "OPEN",
+          "url": "https://github.com/onedotatatime/healthapp/pull/4",
+          "base": "staging",
+          "mergedAt": null,
+          "closedAt": null
+        },
+        "vsMain": {
+          "ahead": 4,
+          "behind": 0
+        },
+        "vsStaging": {
+          "ahead": 2,
+          "behind": 1
+        },
+        "statsBase": "staging",
+        "files": 20,
+        "added": 2131,
+        "removed": 0,
+        "lastCommitAt": "2026-11-14T13:43:17Z",
+        "lastCommitAuthor": "onedotatatime",
+        "issue": "MIN-4451",
+        "issueFrom": "branch",
+        "agent": "Ren",
+        "agentFrom": "issue"
+      },
+      {
+        "name": "feat/min-4452-conductor-dev",
+        "state": "open",
+        "onRemote": true,
+        "hasWorktree": true,
+        "pr": {
+          "number": 5,
+          "state": "OPEN",
+          "url": "https://github.com/onedotatatime/healthapp/pull/5",
+          "base": "staging",
+          "mergedAt": null,
+          "closedAt": null
+        },
+        "vsMain": {
+          "ahead": 5,
+          "behind": 0
+        },
+        "vsStaging": {
+          "ahead": 3,
+          "behind": 1
+        },
+        "statsBase": "staging",
+        "files": 10,
+        "added": 207,
+        "removed": 0,
+        "lastCommitAt": "2026-11-14T13:40:15Z",
+        "lastCommitAuthor": "onedotatatime",
+        "issue": "MIN-4452",
+        "issueFrom": "branch",
+        "agent": "Cron",
+        "agentFrom": "issue"
+      },
+      {
+        "name": "claude/back-project-readiness-e7d7d9",
+        "state": "open",
+        "onRemote": false,
+        "hasWorktree": true,
+        "pr": null,
+        "vsMain": {
+          "ahead": 0,
+          "behind": 0
+        },
+        "vsStaging": {
+          "ahead": 0,
+          "behind": 3
+        },
+        "statsBase": "main",
+        "files": 0,
+        "added": 0,
+        "removed": 0,
+        "lastCommitAt": "2026-11-14T10:53:48Z",
+        "lastCommitAuthor": "onedotatatime",
+        "issue": null,
+        "issueFrom": null,
+        "agent": null,
+        "agentFrom": null
+      },
+      {
+        "name": "claude/boxd-setup-e928ed",
+        "state": "open",
+        "onRemote": false,
+        "hasWorktree": true,
+        "pr": null,
+        "vsMain": {
+          "ahead": 0,
+          "behind": 0
+        },
+        "vsStaging": {
+          "ahead": 0,
+          "behind": 3
+        },
+        "statsBase": "main",
+        "files": 0,
+        "added": 0,
+        "removed": 0,
+        "lastCommitAt": "2026-11-14T10:53:48Z",
+        "lastCommitAuthor": "onedotatatime",
+        "issue": null,
+        "issueFrom": null,
+        "agent": null,
+        "agentFrom": null
+      },
+      {
+        "name": "claude/deployment-cloudflare-options-d27eca",
+        "state": "open",
+        "onRemote": false,
+        "hasWorktree": false,
+        "pr": null,
+        "vsMain": {
+          "ahead": 0,
+          "behind": 0
+        },
+        "vsStaging": {
+          "ahead": 0,
+          "behind": 3
+        },
+        "statsBase": "main",
+        "files": 0,
+        "added": 0,
+        "removed": 0,
+        "lastCommitAt": "2026-11-14T10:53:48Z",
+        "lastCommitAuthor": "onedotatatime",
+        "issue": null,
+        "issueFrom": null,
+        "agent": null,
+        "agentFrom": null
+      },
+      {
+        "name": "claude/pix-pitching-deck-draft-094214",
+        "state": "open",
+        "onRemote": false,
+        "hasWorktree": true,
+        "pr": null,
+        "vsMain": {
+          "ahead": 0,
+          "behind": 0
+        },
+        "vsStaging": {
+          "ahead": 0,
+          "behind": 3
+        },
+        "statsBase": "main",
+        "files": 0,
+        "added": 0,
+        "removed": 0,
+        "lastCommitAt": "2026-11-14T10:53:48Z",
+        "lastCommitAuthor": "onedotatatime",
+        "issue": null,
+        "issueFrom": null,
+        "agent": null,
+        "agentFrom": null
+      },
+      {
+        "name": "claude/treg-chrome-install-eeec37",
+        "state": "open",
+        "onRemote": false,
+        "hasWorktree": true,
+        "pr": null,
+        "vsMain": {
+          "ahead": 0,
+          "behind": 0
+        },
+        "vsStaging": {
+          "ahead": 0,
+          "behind": 3
+        },
+        "statsBase": "main",
+        "files": 0,
+        "added": 0,
+        "removed": 0,
+        "lastCommitAt": "2026-11-14T10:53:48Z",
+        "lastCommitAuthor": "onedotatatime",
+        "issue": null,
+        "issueFrom": null,
+        "agent": null,
+        "agentFrom": null
+      },
+      {
+        "name": "chore/min-4450-deploy-doc",
+        "state": "merged",
+        "onRemote": true,
+        "hasWorktree": true,
+        "pr": {
+          "number": 3,
+          "state": "MERGED",
+          "url": "https://github.com/onedotatatime/healthapp/pull/3",
+          "base": "staging",
+          "mergedAt": "2026-11-14T13:34:12Z",
+          "closedAt": "2026-11-14T13:34:12Z"
+        },
+        "vsMain": {
+          "ahead": 3,
+          "behind": 0
+        },
+        "vsStaging": {
+          "ahead": 1,
+          "behind": 1
+        },
+        "statsBase": "staging",
+        "files": 13,
+        "added": 138,
+        "removed": 18,
+        "lastCommitAt": "2026-11-14T13:29:35Z",
+        "lastCommitAuthor": "onedotatatime",
+        "issue": "MIN-4450",
+        "issueFrom": "branch",
+        "agent": "Cron",
+        "agentFrom": "issue"
+      },
+      {
+        "name": "chore/min-4444-mobbin-mcp",
+        "state": "merged",
+        "onRemote": false,
+        "hasWorktree": false,
+        "pr": {
+          "number": 2,
+          "state": "MERGED",
+          "url": "https://github.com/onedotatatime/healthapp/pull/2",
+          "base": "staging",
+          "mergedAt": "2026-11-14T12:53:01Z",
+          "closedAt": "2026-11-14T12:53:01Z"
+        },
+        "vsMain": null,
+        "vsStaging": null,
+        "statsBase": "staging",
+        "files": 1,
+        "added": 1,
+        "removed": 0,
+        "lastCommitAt": null,
+        "lastCommitAuthor": "onedotatatime",
+        "issue": "MIN-4444",
+        "issueFrom": "branch",
+        "agent": "Back",
+        "agentFrom": "issue"
+      },
+      {
+        "name": "claude/business-design-exercises-status-179124",
+        "state": "merged",
+        "onRemote": true,
+        "hasWorktree": true,
+        "pr": {
+          "number": 1,
+          "state": "MERGED",
+          "url": "https://github.com/onedotatatime/healthapp/pull/1",
+          "base": "staging",
+          "mergedAt": "2026-11-14T12:52:32Z",
+          "closedAt": "2026-11-14T12:52:32Z"
+        },
+        "vsMain": {
+          "ahead": 1,
+          "behind": 0
+        },
+        "vsStaging": {
+          "ahead": 1,
+          "behind": 3
+        },
+        "statsBase": "staging",
+        "files": 19,
+        "added": 2297,
+        "removed": 0,
+        "lastCommitAt": "2026-11-14T12:52:18Z",
+        "lastCommitAuthor": "onedotatatime",
+        "issue": "MIN-4435",
+        "issueFrom": "pr",
+        "agent": null,
+        "agentFrom": null
+      },
+      {
+        "name": "feat/closed-example",
+        "state": "closed",
+        "onRemote": false,
+        "hasWorktree": false,
+        "pr": {
+          "number": 7,
+          "state": "CLOSED",
+          "url": "https://github.com/onedotatatime/healthapp/pull/7",
+          "base": "staging",
+          "mergedAt": null,
+          "closedAt": "2026-11-14T13:20:00Z"
+        },
+        "vsMain": null,
+        "vsStaging": null,
+        "statsBase": "staging",
+        "files": 3,
+        "added": 40,
+        "removed": 2,
+        "lastCommitAt": null,
+        "lastCommitAuthor": "onedotatatime",
+        "issue": null,
+        "issueFrom": null,
+        "agent": null,
+        "agentFrom": null
+      }
+    ]
   }
 }

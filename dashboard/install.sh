@@ -87,6 +87,12 @@ if [ "$SECRETS" = 1 ]; then
   supabase secrets set --project-ref "$PROJECT_REF" "HEALTHAPP_DASHBOARD_ALLOWED_ORIGINS=$ORIGINS" >/dev/null 2>&1
 fi
 
+# launchd's PATH has no /opt/homebrew/bin, where `gh` lives (MIN-4460). Put gh's own folder on the job's PATH (snapshot.py also looks
+# in the usual places by itself). If gh is not installed the branches block says so, it does not fail the job.
+JOB_PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+GH_DIR="$(dirname "$(command -v gh 2>/dev/null || true)")"
+case "$GH_DIR" in /*) case ":$JOB_PATH:" in *":$GH_DIR:"*) ;; *) JOB_PATH="$GH_DIR:$JOB_PATH" ;; esac ;; esac
+
 mkdir -p "$HOME/Library/LaunchAgents"
 cat > "$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -106,7 +112,7 @@ cat > "$PLIST" <<EOF
   <key>StandardOutPath</key><string>$HOME_DIR/run.log</string>
   <key>StandardErrorPath</key><string>$HOME_DIR/run.log</string>
   <key>EnvironmentVariables</key>
-  <dict><key>PATH</key><string>/usr/bin:/bin:/usr/sbin:/sbin</string></dict>
+  <dict><key>PATH</key><string>$JOB_PATH</string></dict>
 </dict>
 </plist>
 EOF
