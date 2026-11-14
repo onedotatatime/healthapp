@@ -132,9 +132,8 @@ function paintForecast(){
   if(key===lastFcKey) return; lastFcKey = key;
   if(!f){ box.innerHTML = ''; return; }
   let h = '<div class="micro">Forecast</div><p class="fc-line">'+esc(H.fcLine())+'</p>';
-  if(blocked.length) h += '<div class="micro">Blocked ('+blocked.length+')</div>' + blocked.slice(0,4).map(b => '<div class="f warn"><span class="g" aria-hidden="true">▲</span><span><b class="mono">'+esc(b.id)+'</b> '+esc(b.title)+' waits on '
-    + ((b.waits_on||[]).map(w => '<b class="mono">'+esc(w.id)+'</b> ('+esc(w.who)+')').join(', ') || 'an open issue')+'</span></div>').join('')
-    + (blocked.length>4 ? '<p class="muted">+'+(blocked.length-4)+' more</p>' : '');
+  if(blocked.length) h += '<div class="micro">Blocked ('+blocked.length+')</div>' + blocked.map(b => '<div class="f warn"><span class="g" aria-hidden="true">▲</span><span><b class="mono">'+esc(b.id)+'</b> '+esc(b.title)+' waits on '
+    + ((b.waits_on||[]).map(w => '<b class="mono">'+esc(w.id)+'</b> ('+esc(w.who)+')').join(', ') || 'an open issue')+'</span></div>').join('');
   if(cut.length) h += '<div class="micro">Cut, in this order</div><ol class="fc-cut">' + cut.map(c => '<li><b class="mono">'+esc(c.id)+'</b> '+esc(c.title)+' <span class="muted">'+esc(c.minutes)+' min, then finish '+esc(c.finish_after_label)+'</span></li>').join('') + '</ol>'
     + (f.cut_reaches_freeze===false ? '<p class="muted">Even cutting all of these does not get under the freeze.</p>' : '');
   box.innerHTML = h;

@@ -35,7 +35,9 @@ console.log(JSON.stringify({ verdict:ctx.window.H.verdict(), line:ctx.window.H.f
 """
 
 FC = {"tz": "Europe/Athens", "freeze": "2026-11-15T13:00:00+02:00", "submit": "2026-11-15T17:00:00+02:00",
-      "verdict": "on", "early_pace": False, "finish_label": "Sun 09:12", "blocked": [], "cut": [], "cut_reaches_freeze": True}
+      "verdict": "on", "early_pace": False, "finish_label": "Sun 00:23", "finish_at": "2026-11-15T00:23:47+02:00",
+      "ready_label": "Sun 13:27", "ready_at": "2026-11-15T13:27:35+02:00", "build_start": "2026-11-14T12:00:00+02:00", "pace_min_per_hour": 228.3,
+      "done": {"issues": 28, "minutes": 2330, "no_estimate": ["MIN-4527"]}, "remaining": {"issues": 14, "minutes": 605, "in_review": 0, "no_estimate": []}, "blocked": [], "cut": [], "cut_reaches_freeze": True}
 LATE = [{"id": "M1", "name": "x", "gate": "g", "start": "Sat 12:00", "end": "Sat 14:00", "done": 0, "total": 3}]
 CRED = [{"n": "Acme", "granted": 100, "used": 90}]
 
@@ -72,17 +74,20 @@ class ForecastUi(unittest.TestCase):
         self.assertEqual([a["id"] for a in r["alert"]], ["cr-Acme"])
 
     def test_forecast_line_text(self):
-        self.assertEqual(run(forecast=FC)["line"], "At the current pace, must-haves finish Sun 09:12 - freeze 13:00, submit 17:00.")
-        self.assertTrue(run(forecast=dict(FC, early_pace=True))["line"].startswith("Early pace (fewer than 3 done). must-haves"))
-        self.assertEqual(run(forecast=dict(FC, finish_label=None, verdict="off"))["line"],
-                         "No must-have is done yet, so no finish time can be projected - freeze 13:00, submit 17:00.")
+        head = "Done since 12:00: 28 issues, 2,330 min (228 min/h). Left: 14 issues, 605 min (0 with no estimate, 0 in review). "
+        self.assertEqual(run(forecast=FC)["line"], head + "Build done ~00:23 \u00b7 Full plan ready ~13:27 \u00b7 Submit 17:00 (freeze 13:00).")
+        self.assertIn("Early pace (fewer than 3 done). Build done", run(forecast=dict(FC, early_pace=True))["line"])
+        old = {k: v for k, v in FC.items() if k not in ("ready_label", "ready_at")}   # an old feed: the single finish time
+        self.assertEqual(run(forecast=old)["line"], head + "Must-haves finish Sun 00:23. Submit 17:00 (freeze 13:00).")
+        self.assertTrue(run(forecast=dict(FC, finish_label=None, verdict="off"))["line"].endswith(
+            "No must-have is done yet, so no finish time can be projected. Submit 17:00 (freeze 13:00)."))
 
     def test_off_forecast_opens_the_alert_with_the_cut_order(self):
         cut = [{"id": "MIN-7", "title": "t", "minutes": 60, "finish_after_label": "Sun 14:10"},
                {"id": "MIN-8", "title": "u", "minutes": 30, "finish_after_label": "Sun 12:40"}]
-        r = run(forecast=dict(FC, verdict="off", finish_label="Sun 15:00", cut=cut))
+        r = run(forecast=dict(FC, verdict="off", finish_label="Sun 15:00", finish_at="2026-11-15T15:00:00+02:00", ready_label="Sun 16:00", ready_at="2026-11-15T16:00:00+02:00", cut=cut))
         self.assertEqual(r["alert"][0]["id"], "forecast-off")
-        self.assertIn("Sun 15:00", r["alert"][0]["plain"])
+        self.assertIn("Build done ~15:00", r["alert"][0]["plain"])
         self.assertEqual(r["alert"][0]["act"], "Cut, in this order: MIN-7 (Sun 14:10), MIN-8 (Sun 12:40).")
         self.assertEqual(r["cut"], 2)
 

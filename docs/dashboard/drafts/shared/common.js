@@ -149,11 +149,20 @@ H.verdict = () => {
   return fc ? FC_K[Math.max(FC_V[fc.verdict], FC_V[flagV])] : flagV;
 };
 const fcHM = iso => typeof iso==='string' && iso.length>=16 ? iso.slice(11,16) : '';   // the feed writes Athens time already
+const fcN = n => typeof n==='number' && isFinite(n) ? Math.round(n).toLocaleString('en-US') : '0';
+const fcT = (iso, label) => fcHM(iso) || String(label||'').replace(/^\w+ /,'');   // 00:23 from the Athens ISO time, else the label's clock
 H.fcLine = () => {
   const f = H.forecast(); if(!f) return '';
-  const lim = ' - freeze '+fcHM(f.freeze)+', submit '+fcHM(f.submit);
-  if(!f.finish_label) return 'No must-have is done yet, so no finish time can be projected'+lim+'.';
-  return (f.early_pace ? 'Early pace (fewer than 3 done). ' : 'At the current pace, ')+'must-haves finish '+f.finish_label+lim+'.';
+  const d = f.done||{}, r = f.remaining||{}, ne = Array.isArray(r.no_estimate) ? r.no_estimate.length : 0;
+  const lim = 'Submit '+fcHM(f.submit)+' (freeze '+fcHM(f.freeze)+').';
+  const head = 'Done since '+fcHM(f.build_start)+': '+fcN(d.issues)+' issues, '+fcN(d.minutes)+' min ('+fcN(f.pace_min_per_hour)+' min/h). '
+    + 'Left: '+fcN(r.issues)+' issues, '+fcN(r.minutes)+' min ('+ne+' with no estimate, '+fcN(r.in_review)+' in review). ';
+  if(!f.finish_label) return head+'No must-have is done yet, so no finish time can be projected. '+lim;
+  const pre = f.early_pace ? 'Early pace (fewer than 3 done). ' : '';
+  const times = f.ready_label   // two finish times: build work, then the full plan with M6/M7 no earlier than the freeze
+    ? 'Build done ~'+fcT(f.finish_at,f.finish_label)+' \u00b7 Full plan ready ~'+fcT(f.ready_at,f.ready_label)+' \u00b7 '+lim
+    : 'Must-haves finish '+f.finish_label+'. '+lim;   // old feed: the one finish time
+  return head+pre+times;
 };
 H.fcBlocked = () => { const f = H.forecast(); return f && Array.isArray(f.blocked) ? f.blocked : []; };
 H.fcCut = () => { const f = H.forecast(); return f && f.verdict==='off' && Array.isArray(f.cut) ? f.cut : []; };
