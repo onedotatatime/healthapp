@@ -5,3 +5,5 @@
 - [healthapp extraction measured](project_healthapp_extraction_measured.md) — Greek lookalike IDs, finding granularity, timings, M2 harness
 - [healthapp demo created](project_healthapp_demo_created.md) — healthapp_demo since 2026-11-14 17:45 UTC; personas by hash copy; not exposed; founder sign-in gap
 - [healthapp identity match](project_healthapp_identity_match.md) — B1 matcher in identity.ts, harness via demo-login, 012 needs 011
+- [Isolated worktree tooling](feedback_isolated_worktree_tooling.md) — what Bash refuses in a worktree-isolated run, and the ways around it that worked
+- [Chat act path (MIN-4497)](project_healthapp_chat_act_path.md) — measured rg glob override, CI key-grep trap, what the act-path sweep found

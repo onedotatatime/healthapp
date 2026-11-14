@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import { ExtractResponse } from "../_shared/contract.ts";
+import { ModelAnalysis } from "../_shared/analysis.ts";
 import type { ModelExtract } from "../_shared/extract.ts";
 import { ModelError } from "../_shared/model.ts";
 import { call, fakeAuth, fakeBlobs, fakeStore, PATIENT, PATIENT2 } from "../_shared/testkit_docs.ts";
@@ -16,20 +17,39 @@ const GOOD: ModelExtract = {
   findings: [],
 };
 
-function setup(model: ModelExtract | Error = GOOD) {
+const GOOD_ANALYSIS: ModelAnalysis = {
+  readable: true, doc_type: "blood_test", pages: 1, blurred: false, cropped: false, rotated: false,
+  handwriting_present: false, issuer_present: true, date_present: true, stamp_or_signature_present: true, items: [],
+};
+
+function setup(model: ModelExtract | Error = GOOD, analysis: ModelAnalysis | Error = GOOD_ANALYSIS) {
   const s = fakeStore(), b = fakeBlobs();
-  let modelCalls = 0;
+  let modelCalls = 0, analysisCalls = 0;
   const logs: Record<string, unknown>[] = [];
-  const h = makeHandler({
+  const work: Promise<unknown>[] = [];
+  const inner = makeHandler({
     auth: fakeAuth, store: s.store, blobs: b.blobs,
-    generate: (_c) => {
-      modelCalls++;
-      if (model instanceof Error) return Promise.reject(model);
-      return Promise.resolve({ data: model, model: "m", attempts: 1, ms: 5 });
-    },
+    // deno-lint-ignore no-explicit-any
+    generate: ((c: any) => {
+      const second = c.schema === ModelAnalysis;
+      second ? analysisCalls++ : modelCalls++;
+      const answer = second ? analysis : model;
+      if (answer instanceof Error) return Promise.reject(answer);
+      return Promise.resolve({ data: answer, model: "m", attempts: 1, ms: 5 });
+      // deno-lint-ignore no-explicit-any
+    }) as any,
+    background: (w) => void work.push(w),
     log: (l) => logs.push(l), now: () => Date.now(),
   });
-  return { s, b, h, logs, modelCalls: () => modelCalls };
+  /** Waits for the work that runs after the answer is sent (the file analysis). Every call settles it before the
+   *  test goes on, so no timer or digest outlives the test. */
+  const settle = async () => void (await Promise.all(work.splice(0)));
+  const h = async (req: Request) => {
+    const res = await inner(req);
+    await settle();
+    return res;
+  };
+  return { s, b, h, logs, settle, modelCalls: () => modelCalls, analysisCalls: () => analysisCalls };
 }
 async function newDoc(s: ReturnType<typeof setup>, patient = PATIENT, upload = true) {
   const d = await s.s.store.createDraft("dev", patient, "image/jpeg");
@@ -51,7 +71,7 @@ Deno.test("a draft: header, results with the flag computed from the printed rang
   const text = JSON.stringify(raw);
   for (const secret of ["storage_path", "sha256", "content_type"]) assertEquals(text.includes(secret), false, secret);
   assertEquals(t.s.docs.get(d.id)?.meta.sha256_file?.length, 64);
-  assertEquals(t.logs.at(-1)?.status, "draft");
+  assertEquals(t.logs.find((l) => !l.pass)?.status, "draft"); // the other line is the analysis
   assertEquals(JSON.stringify(t.logs).includes("ΠΑΠΑΔΟΠΟΥΛΟΥ"), false); // a log never carries the document's words
 });
 
@@ -171,4 +191,119 @@ Deno.test("no request field can set provenance, the match result or the name to 
   const nameOnly = await run({ ...GOOD, printed_id: "" }, "tp", forged);
   if (nameOnly.out.outcome !== "draft") throw new Error("expected a draft");
   assertEquals([nameOnly.out.draft.document.identity_status, nameOnly.out.draft.document.provenance], ["name_only", "uploaded_by_patient"]);
+});
+
+// File analysis (MIN-4549, direction 3): the second pass over the stored file ----------------------
+Deno.test("a draft also gets one analysis row with the server's file facts; the patient's answer carries none of it", async () => {
+  const t = setup();
+  const d = await newDoc(t);
+  const res = await t.h(call("x", { doc_id: d.id }));
+  const raw = await res.json();
+  await t.settle();
+  const row = t.s.analyses.get(d.id)!;
+  assertEquals([row.status, row.error_code, row.doc_type, row.pages, row.readable, row.stamp_or_signature_present], ["done", null, "blood_test", 1, true, true]);
+  assertEquals(row.sha256, t.s.docs.get(d.id)?.meta.sha256_file); // the extraction's hash and the analysis's are the same object
+  assertEquals([row.bytes, row.mime, row.hash_verified, row.patient_id], [4, "image/jpeg", true, PATIENT]);
+  assertEquals(row.uploaded_at, "2026-11-14T10:00:30.000+00:00");
+  const text = JSON.stringify(raw);
+  for (const k of ["items", "stamp_or_signature", "hash_verified", "handwriting", "doc_type"]) assertEquals(text.includes(k), false, k);
+  assertEquals(t.logs.at(-1), { fn: "extract-exam", pass: "analysis", status: "done", error: null, items: 0, ms: t.logs.at(-1)!.ms });
+});
+
+Deno.test("an item the record already holds is dropped, one it lacks is kept once with its page, words capped at 200 and 20 items", async () => {
+  const many = Array.from({ length: 25 }, (_, i) => ({ text_original: `Ferritin test ${1000 + i} ng/mL`, page: 1 }));
+  const t = setup(GOOD, {
+    ...GOOD_ANALYSIS,
+    items: [
+      { text_original: "CRP 18,4 mg/L 0 - 5", page: 1 }, // every word and number is in the record
+      { text_original: "Ferritin 45 ng/mL", page: 1 }, // not in the record
+      { text_original: "Ferritin 45 ng/mL", page: 1 }, // the same twice
+      { text_original: "x".repeat(300), page: 2 },
+      ...many,
+    ],
+  });
+  const d = await newDoc(t);
+  await t.h(call("x", { doc_id: d.id }));
+  await t.settle();
+  const row = t.s.analyses.get(d.id)!;
+  assertEquals(row.items.slice(0, 2), [{ text_original: "Ferritin 45 ng/mL", page: 1 }, { text_original: "x".repeat(200), page: 2 }]);
+  assertEquals([row.items.length, row.items_count], [20, 20]);
+  assertEquals(row.items.some((i) => i.text_original.startsWith("CRP")), false);
+});
+
+Deno.test("an unreadable file lists no items, even when the model lists some", async () => {
+  const t = setup(GOOD, { ...GOOD_ANALYSIS, readable: false, items: [{ text_original: "Ferritin 45", page: 1 }] });
+  const d = await newDoc(t);
+  await t.h(call("x", { doc_id: d.id }));
+  await t.settle();
+  const row = t.s.analyses.get(d.id)!;
+  assertEquals([row.status, row.readable, row.items_count], ["done", false, 0]);
+});
+
+Deno.test("a failing second pass leaves the extraction's answer a 200 draft and stores a failed row with a code", async () => {
+  for (const [kind, code] of [["timeout", "model_timeout"], ["http", "model_http"], ["invalid", "model_invalid"], ["config", "config"]] as const) {
+    const t = setup(GOOD, new ModelError(kind, 500, 2));
+    const d = await newDoc(t);
+    const res = await t.h(call("x", { doc_id: d.id }));
+    assertEquals(ExtractResponse.parse(await res.json()).outcome, "draft");
+    await t.settle();
+    const row = t.s.analyses.get(d.id)!;
+    assertEquals([row.status, row.error_code, row.doc_type, row.items_count, row.hash_verified], ["failed", code, null, 0, true]);
+    assertEquals(row.sha256?.length, 64); // the file facts are still there
+  }
+});
+
+Deno.test("a refused extraction stores no analysis and never calls the second pass", async () => {
+  const t = setup({ ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", printed_id: "AB654321" });
+  const d = await newDoc(t);
+  await t.h(call("x", { doc_id: d.id }));
+  await t.settle();
+  assertEquals([t.s.analyses.size, t.analysisCalls(), t.s.saves()], [0, 0, 0]);
+});
+
+Deno.test("analyse_only: twice leaves one row; only the caller's own document; a doctor is refused; the second pass only", async () => {
+  const t = setup();
+  const d = await newDoc(t);
+  await t.h(call("x", { doc_id: d.id }));
+  await t.settle();
+  t.s.docs.get(d.id)!.document.status = "confirmed"; // a saved document: the extraction itself would answer 400
+  for (let i = 0; i < 2; i++) {
+    const res = await t.h(call("x", { doc_id: d.id, analyse_only: true }));
+    assertEquals([res.status, await res.json()], [200, { outcome: "analysed", status: "done", error_code: null, items_count: 0 }]);
+  }
+  assertEquals([t.s.analyses.size, t.s.saves(), t.modelCalls()], [1, 3, 1]); // 3 writes, 1 row; extraction ran once
+  assertEquals((await t.h(call("x", { doc_id: d.id, analyse_only: true }, "tp2"))).status, 404);
+  assertEquals((await t.h(call("x", { doc_id: d.id, analyse_only: true }, "td"))).status, 403);
+  assertEquals((await t.h(call("x", { doc_id: d.id, analyse_only: true }, null))).status, 401);
+  assertEquals(t.s.saves(), 3);
+});
+
+Deno.test("analyse_only on demo is 400: no read of the document, no model call", async () => {
+  const t = setup();
+  const d = await newDoc(t);
+  const res = await t.h(call("x", { doc_id: d.id, analyse_only: true }, "tp", "demo"));
+  assertEquals([res.status, t.analysisCalls(), t.s.analyses.size], [400, 0, 0]);
+});
+
+Deno.test("analyse_only with the stored object gone: a failed no_object row, no model call", async () => {
+  const t = setup();
+  const d = await newDoc(t, PATIENT, false);
+  const res = await t.h(call("x", { doc_id: d.id, analyse_only: true }));
+  assertEquals((await res.json()).error_code, "no_object");
+  assertEquals([t.analysisCalls(), t.s.analyses.get(d.id)?.sha256], [0, null]);
+});
+
+Deno.test("the object changing during the run is hash_verified false; an unchanged one is true", async () => {
+  const t = setup();
+  const d = await newDoc(t);
+  await t.h(call("x", { doc_id: d.id }));
+  await t.settle();
+  assertEquals(t.s.analyses.get(d.id)?.hash_verified, true);
+  // the same object is now a different file: the first download in the analysis sees the old bytes, the re-hash the new
+  let n = 0;
+  const orig = t.b.blobs.download;
+  t.b.blobs.download = (b, p) => (++n >= 2 ? Promise.resolve(new Uint8Array([9, 9, 9, 9])) : orig(b, p));
+  t.s.docs.get(d.id)!.document.status = "confirmed";
+  await t.h(call("x", { doc_id: d.id, analyse_only: true }));
+  assertEquals(t.s.analyses.get(d.id)?.hash_verified, false);
 });

@@ -95,6 +95,13 @@ if [ -e "$OUT/direction-B" ] || [ -e "$OUT/direction-C" ]; then echo "a directio
 if find "$OUT" \( -name 'dev-snapshot.json' -o -path '*/dev/*' -o -name 'snapshot.example.json' \) | grep -q .; then
   echo "dev fixture in the upload set" >&2; fail=1
 fi
+# The chat bridge, its guard and its key never leave the Mac, and no chat key (the c= fragment) is in a page (MIN-4497).
+if find "$OUT" \( -name 'chat_bridge.py' -o -name 'chat_guard.py' -o -name 'chat.key' -o -name 'chat.off' -o -name 'chat_service.sh' \) | grep -q .; then
+  echo "chat bridge file in the upload set" >&2; fail=1
+fi
+if grep -rnE '[#&]c=[A-Za-z0-9]{16,}' "$OUT" >&2; then
+  echo "chat key (a c= fragment) in the upload set" >&2; fail=1
+fi
 # The page loads no JSON; any *.json here is a fixture, renamed or not (CTO change 2, MIN-4458).
 if find "$OUT" -type f -iname '*.json' | grep . >&2; then
   echo "json file in the upload set" >&2; fail=1

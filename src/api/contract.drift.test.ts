@@ -10,15 +10,18 @@ import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import * as cron from '../../supabase/functions/_shared/contract';
 import * as api from './contract';
+import * as analysis from '../features/assistant/analysis.contract';
 import * as assistant from '../features/assistant/contract';
 import * as handshake from '../features/handshake/contract';
 
-/** Frontend-only shapes (a profiles row read under RLS). */
+/**
+ * Frontend-only shapes (a profiles row read under RLS).
+ */
 const LOCAL_ONLY = new Set(['Profile']);
 const isSchema = (v: unknown): v is z.ZodType => !!v && typeof v === 'object' && '_zod' in (v as object);
 const json = (s: z.ZodType) => z.toJSONSchema(s, { unrepresentable: 'any', io: 'input' });
 
-const copies = { 'src/api/contract.ts': api, 'handshake/contract.ts': handshake, 'assistant/contract.ts': assistant };
+const copies = { 'src/api/contract.ts': api, 'handshake/contract.ts': handshake, 'assistant/contract.ts': assistant, 'assistant/analysis.contract.ts': analysis };
 
 describe('frontend contract copies match Cron\'s contract.ts', () => {
   for (const [file, mod] of Object.entries(copies)) {

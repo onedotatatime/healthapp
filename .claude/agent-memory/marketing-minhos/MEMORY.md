@@ -1,2 +1,3 @@
 - [Do-not-use list vs brief](feedback_research_donotuse_vs_brief.md) — label assumption numbers on the slide and raise a Q with an owner; write both versions when AC and brief disagree.
 - [Status-tag every line](feedback_status_tag_every_line.md) — health app copy: runs / product-only / not built; check the mechanism, not only the wording; never widen a founder rule.
+- [Brand check tools](reference_brand_check_tools.md) — treg has no trademark tool; TMview in the browser covers EUIPO, USPTO, UK, Greece

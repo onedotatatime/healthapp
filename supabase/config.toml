@@ -51,3 +51,7 @@ verify_jwt = false
 # MIN-4487: the doctor's assistant. Called from the browser; the function verifies the session, the doctor role and a live grant itself.
 [functions.healthapp-assistant]
 verify_jwt = false
+
+# MIN-4551: a doctor's numbers over time (plain arithmetic, no model). Called from the browser; the function verifies the session, the doctor role and a live grant itself.
+[functions.healthapp-over-time]
+verify_jwt = false

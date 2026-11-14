@@ -10,6 +10,9 @@ const cases: [string, { safeParse(x: unknown): { success: boolean; error?: unkno
   ...F.results.map((r, i) => [`results[${i}]`, C.ResultRow, r] as [string, typeof C.ResultRow, unknown]),
   ...F.findings.map((r, i) => [`findings[${i}]`, C.FindingRow, r] as [string, typeof C.FindingRow, unknown]),
   ...F.diary.map((r, i) => [`diary[${i}]`, C.DiaryRow, r] as [string, typeof C.DiaryRow, unknown]),
+  ["fileAnalysisDone", C.FileAnalysisRow, F.fileAnalysisDone],
+  ["fileAnalysisFailed", C.FileAnalysisRow, F.fileAnalysisFailed],
+  ["analyseDone", C.AnalyseResponse, F.analyseDone],
   ["demoLoginPatient", C.DemoLoginResponse, F.demoLoginPatient],
   ["demoLoginDoctor", C.DemoLoginResponse, F.demoLoginDoctor],
   ["docCreate", C.DocCreateResponse, F.docCreate],
@@ -82,7 +85,7 @@ Deno.test("the contract refuses what the settlements forbid", () => {
 
 Deno.test("the function table names every P0 function with the healthapp- prefix", () => {
   for (const name of Object.keys(C.FUNCTIONS)) assert(name.startsWith("healthapp-"), name);
-  assertEquals(Object.keys(C.FUNCTIONS).length, 12);
+  assertEquals(Object.keys(C.FUNCTIONS).length, 13);
 });
 
 Deno.test("possible matches: one empty answer, nothing below country, nothing below k", () => {
