@@ -364,20 +364,25 @@ strong{font-weight:700}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 
-/* ---- TwoColumnRevenue (slide 7b) ---- */
-.tc-cols{position:absolute;left:120px;top:272px;width:1680px;display:grid;grid-template-columns:1fr 1fr;gap:0 96px}
-.tc-col h3{padding-bottom:10px;margin-bottom:18px;border-bottom:3px solid var(--teal)}
+/* ---- TwoColumn (slide 7b) ---- */
+.tc-cols{position:absolute;left:120px;top:330px;width:1680px;display:grid;grid-template-columns:1fr 1fr;gap:0 96px}
+.tc-col h3{padding-bottom:12px;margin-bottom:34px;border-bottom:3px solid var(--teal)}
 .tc-col ol{list-style:none;margin:0;padding:0}
-.tc-col li{position:relative;display:flex;gap:18px;align-items:baseline;margin-bottom:14px}
-.tc-col li i{flex:none;width:30px;font-style:normal;font-size:30px;line-height:36px;font-weight:700;letter-spacing:-.03em;color:var(--teal)}
-.tc-col li p{font-size:28px;line-height:36px;color:var(--ink)}
+.tc-col li{position:relative;display:flex;gap:22px;align-items:baseline;margin-bottom:30px}
+.tc-col li i{flex:none;width:38px;font-style:normal;font-size:40px;line-height:50px;font-weight:700;letter-spacing:-.03em;color:var(--teal)}
+.tc-col li p{font-size:38px;line-height:50px;color:var(--ink)}
 .tc-dot{display:inline-block;vertical-align:middle;margin-left:16px;width:22px;height:22px;border-radius:50%;background:var(--coral)}
-.tc-rev{position:absolute;left:120px;top:690px;width:1680px;height:262px;display:grid;grid-template-columns:1fr 1.25fr 1.1fr;gap:0 40px;padding:30px 40px;background:var(--mint-soft);border-radius:40px;align-items:start}
-.tc-cell{display:flex;flex-direction:column;min-width:0}
-.tc-lead{font-size:24px;line-height:29px;color:var(--ink);margin-bottom:6px}
-.tc-figs{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 28px}
-.tc-fig b{display:block;font-size:60px;line-height:64px;font-weight:800;letter-spacing:-.045em;color:var(--teal);white-space:nowrap}
-.tc-fig em{display:block;font-style:normal;font-size:24px;line-height:28px;font-weight:600;color:var(--ink)}
-.tc-tag{font-size:60px;line-height:64px;font-weight:500;letter-spacing:-.045em;color:var(--teal);white-space:nowrap}
-.tc-text{font-size:24px;line-height:29px;color:var(--ink)}
-.tc-src{font-size:22px;line-height:26px;color:var(--soft);margin-top:2px}
+.tc-pointer{position:absolute;left:120px;top:720px;width:1680px;font-size:30px;line-height:38px;color:var(--soft)}
+
+/* ---- ThreeCards (slide 7c) ---- */
+.th-cards{position:absolute;left:120px;top:288px;width:1680px;display:grid;grid-template-columns:repeat(3,1fr);gap:0 36px}
+.th-card{height:640px;padding:34px 38px;background:#fff;border-radius:48px;box-shadow:var(--sh);display:flex;flex-direction:column;min-width:0}
+.th-card h3{padding-bottom:10px;margin-bottom:22px;border-bottom:3px solid var(--teal)}
+.th-card.accent{background:var(--mint-soft);box-shadow:none;outline:3px solid var(--teal);outline-offset:-3px}
+.th-fig{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 16px}
+.th-fig b{font-size:54px;line-height:60px;font-weight:800;letter-spacing:-.045em;color:var(--teal);white-space:nowrap}
+.th-tag{font-size:54px;line-height:60px;font-weight:500;letter-spacing:-.045em;color:var(--teal);white-space:nowrap}
+.th-unit{font-size:24px;line-height:29px;color:var(--soft);margin-top:4px}
+.th-card ul{list-style:none;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:18px}
+.th-card li{font-size:26px;line-height:33px;color:var(--ink)}
+.th-flag{color:var(--teal);font-weight:500}

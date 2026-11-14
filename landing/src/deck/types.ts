@@ -1,11 +1,11 @@
 // Typed props for every slide template. A deck is an array of `Slide`.
 // Text fields accept **bold** markers. Apostrophes are typeset automatically.
 
-/** Every product or demo visual must carry one of these two tags. */
-export type DemoTag = 'Mock-up' | 'Working demo · synthetic data';
+/** The only demo tag in use. It is optional on every product or demo visual: the founder waived the concept and mock-up labels (14 and 15 Nov 2026), but a working pipeline on synthetic data still says so (slide 5). */
+export type DemoTag = 'Working demo · synthetic data';
 
-/** A Hero slide shows an image of something that does not exist yet, so when it carries a tag it is one of these two. The tag is optional. */
-export type HeroTag = 'Concept render' | 'Mock-up';
+/** A Hero slide may carry a tag when it shows something that does not exist yet. The tag is optional and no slide uses it since 15 Nov 2026. */
+export type HeroTag = 'Concept render';
 
 export type Theme = 'air' | 'mist' | 'night';
 
@@ -62,8 +62,10 @@ export interface StatsSlide extends SlideBase {
   template: 'stats';
   headline: string;
   groups: { label: string; tone: 'deep' | 'light'; cards: StatCard[] }[];
-  chips: string[];
-  closing: string;
+  /** Optional pill row under the cards (slide 2 dropped it on 15 Nov 2026). */
+  chips?: string[];
+  /** Optional closing line under the chips. */
+  closing?: string;
 }
 
 /* ---------- Statement (headline + points + optional side panel) ---------- */
@@ -75,9 +77,9 @@ export type StatementSide =
       clockTitle: string;
       clock: { when: string; what: string }[];
     }
-  | { kind: 'notice'; tag: DemoTag; blocks: { label: string; text: string }[] }
-  | { kind: 'phone'; caption: string; tag: DemoTag; crossed?: string }
-  | { kind: 'matches'; pattern: { title: string; sub: string }; optIn: string; tag: DemoTag; contact: string };
+  | { kind: 'notice'; tag?: DemoTag; blocks: { label: string; text: string }[] }
+  | { kind: 'phone'; caption: string; tag?: DemoTag; crossed?: string }
+  | { kind: 'matches'; pattern: { title: string; sub: string }; optIn: string; tag?: DemoTag; contact: string };
 
 export interface StatementSlide extends SlideBase {
   template: 'statement';
@@ -131,7 +133,7 @@ export interface TableSlide extends SlideBase {
 export interface ProductSlide extends SlideBase {
   template: 'product';
   headline: string;
-  steps: { n: number; title: string; icon: 'photo' | 'match' | 'timeline' | 'helix' | 'ask'; tag: DemoTag; text: string }[];
+  steps: { n: number; title: string; icon: 'photo' | 'match' | 'timeline' | 'helix' | 'ask'; tag?: DemoTag; text: string }[];
   under: { label: string; badges?: string[]; lines: string[] }[];
 }
 
@@ -172,24 +174,29 @@ export interface StepsSlide extends SlideBase {
   banner?: string;
 }
 
-/* ---------- TwoColumnRevenue (two titled columns of points + a full-width revenue strip) ---------- */
-export interface RevenueCell {
-  /** Small lead line above the number (optional). */
-  lead?: string;
-  /** The big figures, one or two. Each has the figure and its short label. */
-  figures: { value: string; label?: string }[];
-  /** Line under the figures. */
-  text?: string;
-  /** Honesty tag, same size as the figures: "(assumption)", "(our estimate)". */
-  tag?: string;
-  /** Source, small, e.g. "(Tufts CSDD, 2024)". */
-  source?: string;
-}
-export interface TwoColumnRevenueSlide extends SlideBase {
+/* ---------- TwoColumn (two titled columns of numbered lines, an optional pointer line) ---------- */
+export interface TwoColumnSlide extends SlideBase {
   template: 'twocol';
   headline: string;
   columns: { title: string; points: string[] }[];
-  revenue: RevenueCell[];
+  /** Optional small line under the columns, e.g. a pointer to the next slide. */
+  pointer?: string;
+}
+
+/* ---------- ThreeCards (three equal cards: title, short lines, one big number; the last can be accented) ---------- */
+export interface ThreeCard {
+  title: string;
+  /** The big figure and an optional honesty label at the same size, e.g. "(our estimate)". Put a short descriptor in `unit`. */
+  figure: { value: string; tag?: string; unit?: string };
+  /** Two or three short lines. **bold** and [[teal label]] markers work. */
+  lines: string[];
+  /** Accent the card (light teal band, teal outline). */
+  accent?: boolean;
+}
+export interface ThreeCardsSlide extends SlideBase {
+  template: 'threecards';
+  headline: string;
+  cards: [ThreeCard, ThreeCard, ThreeCard];
 }
 
 /* ---------- Team and ask ---------- */
@@ -224,6 +231,7 @@ export type Slide =
   | ProductSlide
   | CompareSlide
   | StepsSlide
-  | TwoColumnRevenueSlide
+  | TwoColumnSlide
+  | ThreeCardsSlide
   | TeamAskSlide
   | AppendixSlide;
