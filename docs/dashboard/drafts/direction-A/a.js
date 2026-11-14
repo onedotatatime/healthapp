@@ -41,7 +41,7 @@ function renderMain(){
   +   '<div class="sub">Chats · soft '+H.k(tk.chatCaps.soft)+' · hard '+H.k(tk.chatCaps.hard)+'</div>'+H.chatMeters()+'</div></div>'
   + '<div class="card panel p-money" data-enter data-flash><div class="card-h"><h2>Money</h2>'+H.src('none')+'<span class="upd"></span></div><div class="body compact">'
   +   '<div class="micro">Est. spend, EUR</div><div class="stat" data-flash><span data-v="eur" data-f="eur"></span></div><div class="spark" id="spark"></div>'
-  +   '<div class="sub">Credits left of granted</div>'+H.creditMeters()+'</div></div>'
+  +   '<div class="sub">Credits consumed of granted</div>'+H.creditMeters()+'</div></div>'
   + '<div class="card panel p-who" data-enter><div class="card-h"><h2>Who is working</h2>'+H.src('none','SAMPLE · Linear')+'<span class="upd"></span></div><div class="body">'
   +   DATA.agents.slice(0,5).map(H.agentRow).join('')+'<div class="muted" style="font:500 11px/16px var(--mono);padding:2px 4px">+'+(DATA.agents.length-5)+' more, idle: '+DATA.agents.slice(5).map(a=>esc(a.n)).join(', ')+'</div><div class="sub">Live log</div><div class="log" id="log" aria-live="off"></div></div></div>'
   + '</section>'
@@ -141,7 +141,7 @@ function renderDrawer(soft){
   } else if(r.v==='risk'){
     title = 'Risk flags'; const f = H.flags();
     html = (f.length ? f.map(x=>'<div class="risk-item"><span class="chip '+(x.level==='bad'?'bad':'warn')+'"><span class="g">'+(x.level==='bad'?'■':'▲')+'</span>'+(x.level==='bad'?'Late':'Risk')+'</span><div>'+esc(x.text)+(x.act?'<div class="muted" style="font-size:13px">'+esc(x.act)+'</div>':'')+'</div></div>').join('') : '<p>Nothing is flagged right now.</p>')
-      + '<p class="muted" style="font-size:13px;margin-top:12px">Rules: a chat or agent at 90% of its soft cap, credits under 30% left, a milestone window that ended with open issues.</p>';
+      + '<p class="muted" style="font-size:13px;margin-top:12px">Rules: a chat or agent at 90% of its soft cap, credits over 70% used, a milestone window that ended with open issues.</p>';
   }
   drawerKey = key; drTitle.textContent = title; drTabs.innerHTML = tabs; drBody.innerHTML = html;
   if(r.v==='exercises'){ H.wireExercise(drBody, drBody); }
