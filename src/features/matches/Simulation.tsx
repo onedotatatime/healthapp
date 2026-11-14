@@ -14,7 +14,7 @@ import {
 import './matches.css';
 
 const W = 320, H = 190, L = 38, R = 10, T = 10, B = 34;
-const COLORS: Record<number, string> = { 1: 'var(--teal)', 2: 'var(--slate)', 3: 'var(--amber-ink)' };
+const COLORS: Record<number, string> = { 1: 'var(--color-link)', 2: 'var(--color-info)', 3: 'var(--color-flag-text)' };
 
 function useProgress(duration: number, run: number, still: boolean) {
   const [p, setP] = useState(still ? 1 : 0);
@@ -45,7 +45,7 @@ function Chart({ s, xs, xLabel, p }: { s: SimSeries; xs: number[]; xLabel: strin
   const d = pts.map(([px, py], i) => `${i ? 'L' : 'M'}${px.toFixed(1)} ${py.toFixed(1)}`).join(' ');
   const tip = pts[pts.length - 1];
   const dec = decimalsOf(s.values);
-  const color = COLORS[s.id] ?? 'var(--ink)';
+  const color = COLORS[s.id] ?? 'var(--color-text)';
   return (
     <figure className="sim-chart" data-testid={`sim-series-${s.id}`}>
       <h2>{s.label}</h2>

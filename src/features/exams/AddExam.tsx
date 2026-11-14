@@ -2,6 +2,7 @@ import { Camera, CheckCircle, Image as ImageIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { ErrorNote, Spinner } from '../../components/Primitives';
+import { PatientScreen } from '../../components/Shell';
 import { useExams } from './context';
 import { preparePhoto } from './photo';
 import { scanPhoto, type Failure, type ScanCtx } from './logic';
@@ -57,7 +58,7 @@ export function AddExam() {
 
   const idle = phase.name === 'idle';
   return (
-    <main className="page" data-testid="add-exam">
+    <PatientScreen back={home} data-testid="add-exam">
       <h1>Scan an exam</h1>
 
       {idle && count > 0 && (
@@ -72,7 +73,7 @@ export function AddExam() {
         <>
           <p className="muted">{count > 0 ? 'Reading happens in the background. Check the results in My exams.' : 'Photograph the whole page, flat and in good light. Reading happens in the background.'}</p>
           {phase.error && <ErrorNote tone="caution">{phase.error}</ErrorNote>}
-          <div className="btn-stack" style={{ marginTop: 'var(--space-4)' }}>
+          <div className="card btn-stack">
             <label className="btn primary block pick">
               <Camera size={22} weight="bold" aria-hidden="true" />
               Take a photo
@@ -84,7 +85,7 @@ export function AddExam() {
               <input type="file" accept="image/*" className="sr-only" data-testid="input-gallery" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = ''; }} />
             </label>
           </div>
-          <p style={{ marginTop: 'var(--space-6)' }}>
+          <p style={{ marginTop: 'var(--space-5)' }}>
             <Link to={home} className="btn block" data-testid="see-my-exams">See my exams</Link>
           </p>
         </>
@@ -111,6 +112,6 @@ export function AddExam() {
           {thumb && <img className="thumb" src={thumb} alt="Your photo of the exam, kept for the retry" />}
         </div>
       )}
-    </main>
+    </PatientScreen>
   );
 }

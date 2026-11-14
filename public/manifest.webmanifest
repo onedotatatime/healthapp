@@ -1,10 +1,13 @@
 {
-  "name": "healthapp",
-  "short_name": "healthapp",
+  "name": "Pathien",
+  "short_name": "Pathien",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#ffffff",
-  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+  "background_color": "#F7FAFA",
+  "theme_color": "#F7FAFA",
+  "icons": [
+    { "src": "/brand/pathien-app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/brand/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
+  ]
 }

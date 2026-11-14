@@ -21,10 +21,10 @@ export function Helix({ height, width = 390, amp = 120 }: { height: number; widt
   return (
     <svg className="hs-helix" width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true" focusable="false">
       {rungs.map(([x1, x2, y]) => (
-        <line key={y} x1={x1} x2={x2} y1={y} y2={y} stroke="var(--night-ink)" strokeOpacity="0.16" strokeWidth="1.5" />
+        <line key={y} x1={x1} x2={x2} y1={y} y2={y} stroke="var(--color-inverse-text)" strokeOpacity="0.16" strokeWidth="1.5" />
       ))}
-      <polyline points={a.join(' ')} fill="none" stroke="var(--helix-patient)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-      <polyline points={b.join(' ')} fill="none" stroke="var(--helix-doctor)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points={a.join(' ')} fill="none" stroke="var(--mint)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline points={b.join(' ')} fill="none" stroke="var(--coral)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

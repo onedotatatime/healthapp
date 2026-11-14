@@ -1,29 +1,36 @@
-/* Design tokens: Pix's Drop 0 (MIN-4473, pasted from the handoff on MIN-4472). Figma: https://www.figma.com/design/5jgmJHOs9AWAEjv4R3xN5I */
+/* App role tokens (MIN-4587). The brand and glass values are defined once, in docs/brand/tokens.css, imported before this file
+   in main.tsx. This file defines no colour, space, radius or font value of its own: every line below is var() of a brand
+   token, a type shorthand, or a layout size. Figma: https://www.figma.com/design/5jgmJHOs9AWAEjv4R3xN5I */
 :root{
-  /* colour: light, the whole app */
-  --paper:#F7F8F6; --surface:#FFFFFF; --surface-2:#EEF2F1;
-  --ink:#12303A; --ink-2:#5B6B70;
-  --line:#DDE3E2;          /* dividers only, 1.22:1, never a control edge */
-  --line-strong:#6F8084;   /* control edges, timer track, outlined marks: 3.87:1 on paper, 4.12:1 on surface */
-  --teal:#0E7C86; --teal-text:#0A5F67; --teal-tint:#E1F0F1;   /* actions, "verified"; use teal-text for small teal text */
-  --slate:#3E5C8A; --slate-tint:#E6ECF5;                       /* the doctor's tone */
-  --amber-bg:#FFF4DC; --amber-ink:#8A4B08;                     /* caution */
-  --red-bg:#FDECEC; --red-ink:#9B2C2C;                         /* doctor-side errors only; never on patient results */
-  /* handshake scene only */
-  --night:#0B1F27; --night-ink:#E8F3F4; --night-ink-2:#9FB8BD;
-  --helix-patient:#2BB3BE; --helix-doctor:#6F8FC4; --qr-ink:#0B1F27;
-  /* type: IBM Plex Sans 400/500/600 + IBM Plex Mono 400/500 (@fontsource) */
-  --font-sans:'IBM Plex Sans',system-ui,sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,monospace;
-  --text-patient-body:18px/27px var(--font-sans);   --text-patient-value:500 20px/28px var(--font-mono);
-  --text-doctor-body:15px/22px var(--font-sans);    --text-doctor-value:500 16px/24px var(--font-mono);
-  --text-h1:600 28px/34px var(--font-sans);         --text-h2:600 22px/28px var(--font-sans);
-  --text-label:600 14px/20px var(--font-sans);      /* marks, tags, buttons */
-  --text-timer:500 20px/24px var(--font-mono);      --text-code:600 28px/36px var(--font-mono);
-  /* space (4 px base), radius, touch */
-  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px; --space-8:32px; --space-12:48px;
-  --radius-sm:4px; --radius-md:8px; --radius-pill:999px;
-  --tap-patient:48px; --tap-doctor:44px;
-  --focus:2px solid var(--ink);   /* offset 2px; on --night use var(--night-ink) */
+  /* type roles: Manrope (--font) with tabular figures everywhere (body, in app.css) */
+  --text-display:600 32px/1.1 var(--font);          /* the large title */
+  --text-h1:var(--text-display);
+  --text-h2:600 24px/1.2 var(--font);
+  --text-lead:600 20px/1.4 var(--font);
+  --text-label:600 14px/1.3 var(--font);            /* chips, marks, labels, tab labels */
+  --text-button:600 16px/1 var(--font);
+  --text-patient-body:400 18px/1.5 var(--font);     /* stays 18: read at arm's length */
+  --text-patient-value:600 20px/1.4 var(--font);
+  --text-doctor-body:400 16px/1.5 var(--font);      /* the brand's floor is 16 */
+  --text-doctor-value:600 16px/1.5 var(--font);
+  --text-timer:600 20px/1.4 var(--font);
+  --text-code:600 28px/1.3 var(--font);             /* the typed share code, .12em tracking */
+
+  /* shell: safe areas and bar sizes */
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+  --tabbar-h:64px;
+  --navbar-h:52px;
+  --page-pad:var(--space-4);
+  --bar-gap:12px;                                   /* space between a floating bar and the screen edge */
+
+  /* overlays derived from brand colours */
+  --scrim:color-mix(in srgb,var(--teal-night) 35%,transparent);   /* behind a sheet */
+  --track:color-mix(in srgb,var(--ink) 14%,transparent);          /* timer track */
+
+  /* touch */
+  --tap-patient:52px;                               /* buttons */
+  --tap-input:56px;                                 /* inputs */
+  --tap-doctor:var(--target-min);
 }
-body{font-variant-numeric:tabular-nums} .mono{font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
