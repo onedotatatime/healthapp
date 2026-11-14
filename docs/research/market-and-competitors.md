@@ -264,3 +264,10 @@ Pilot only; not the market. Facts from the earlier version, mostly press on offi
 4. Confirm primaries I could not open: HHS TEFCA release, NHS England statistics, Eurostat dataset, Global Genes, Apple Health Records country list.
 5. No global physician headcount was found in a primary; the TAM seat count is derived.
 6. Valuations, pricing and user counts of clinical-AI vendors conflict across sources.
+
+### treg update, 2026-11-14 (Anna, MIN-4469)
+Real data run on treg ($0.28). Full results: `treg-findings-2026-11-14.md`.
+- **Greece changed this month:** since 1 Nov 2026 labs must post EOPYY results into one national database, visible in MyHealth (Ta Nea, 2026-11-02). Item 1 is partly answered; uploads and sharing with any doctor are still open. The Greek paper angle is weaker; private, imaging, older and foreign records remain the gap.
+- **Search demand:** Greek terms for moving or storing exams are below Google's reporting floor; "myhealth app" gets 9,900 searches a month from Greece, "αποτελέσματα εξετάσεων" 3,600. Never write "εξετάσεις" alone in copy (Google reads it as school exams).
+- **Competitors in Greece:** myhealth.gov.gr gets about 88k Google visits a month from Greece; Doctolib, Eka Care, OpenEvidence and Glass have almost none.
+- **§4 status:** no deck stat re-verified by this run. OpenEvidence's rounds are now sourced (Aviato: about $1B raised to Sep 2026, $3.29B at Series B); the $15B valuation stays unverified. New lead to verify before any slide: 56% of GP-ordered lab tests repeated after referral (BJGP Open 2022, Netherlands).

@@ -1,0 +1,168 @@
+{
+  "version": "0.1.20261103",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.1489 sec.",
+  "cost": 0.01284,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "11141454-2171-0391-0000-13aba0371046",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.1422 sec.",
+      "cost": 0.01284,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "bulk_traffic_estimation",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "bulk_traffic_estimation",
+        "se_type": "google",
+        "targets": [
+          "myhealth.gov.gr",
+          "doctolib.com",
+          "doctolib.fr",
+          "doctolib.de",
+          "eka.care",
+          "glass.health",
+          "openevidence.com"
+        ],
+        "location_code": 2300,
+        "item_types": [
+          "organic",
+          "paid"
+        ]
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "location_code": 2300,
+          "language_code": null,
+          "total_count": 7,
+          "items_count": 7,
+          "items": [
+            {
+              "se_type": "google",
+              "target": "openevidence.com",
+              "metrics": {
+                "organic": {
+                  "etv": 8.411322593688965,
+                  "count": 1
+                },
+                "paid": {
+                  "etv": 0,
+                  "count": 0
+                },
+                "local_pack": null,
+                "featured_snippet": null
+              }
+            },
+            {
+              "se_type": "google",
+              "target": "glass.health",
+              "metrics": {
+                "organic": {
+                  "etv": 0.7945213913917542,
+                  "count": 1
+                },
+                "paid": {
+                  "etv": 0,
+                  "count": 0
+                },
+                "local_pack": null,
+                "featured_snippet": null
+              }
+            },
+            {
+              "se_type": "google",
+              "target": "eka.care",
+              "metrics": {
+                "organic": {
+                  "etv": 97.47817610923084,
+                  "count": 8
+                },
+                "paid": {
+                  "etv": 0,
+                  "count": 0
+                },
+                "local_pack": null,
+                "featured_snippet": null
+              }
+            },
+            {
+              "se_type": "google",
+              "target": "doctolib.fr",
+              "metrics": {
+                "organic": {
+                  "etv": 1004.0776410251856,
+                  "count": 16
+                },
+                "paid": {
+                  "etv": 0,
+                  "count": 0
+                },
+                "local_pack": null,
+                "featured_snippet": null
+              }
+            },
+            {
+              "se_type": "google",
+              "target": "doctolib.com",
+              "metrics": {
+                "organic": {
+                  "etv": 38.615089416503906,
+                  "count": 1
+                },
+                "paid": {
+                  "etv": 0,
+                  "count": 0
+                },
+                "local_pack": null,
+                "featured_snippet": null
+              }
+            },
+            {
+              "se_type": "google",
+              "target": "doctolib.de",
+              "metrics": {
+                "organic": {
+                  "etv": 358.14071259927005,
+                  "count": 26
+                },
+                "paid": {
+                  "etv": 0,
+                  "count": 0
+                },
+                "local_pack": null,
+                "featured_snippet": null
+              }
+            },
+            {
+              "se_type": "google",
+              "target": "myhealth.gov.gr",
+              "metrics": {
+                "organic": {
+                  "etv": 87687.99618933233,
+                  "count": 602
+                },
+                "paid": {
+                  "etv": 0,
+                  "count": 0
+                },
+                "local_pack": null,
+                "featured_snippet": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

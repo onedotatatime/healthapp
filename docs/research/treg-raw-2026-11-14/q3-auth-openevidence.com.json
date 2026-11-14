@@ -1,0 +1,34 @@
+{
+  "output": {
+    "metrics": {
+      "url": "openevidence.com",
+      "inlink_rank": 21,
+      "domain_inlink_rank": 84
+    }
+  },
+  "raw": {
+    "pages": [
+      {
+        "url": "openevidence.com",
+        "inlink_rank": 21,
+        "domain_inlink_rank": 84
+      }
+    ]
+  },
+  "_treg": {
+    "served_by": "seranking.web.url.metrics",
+    "provider": "seranking",
+    "tier": "platform",
+    "outcome": "hit",
+    "tried": [
+      {
+        "endpoint_id": "seranking.web.url.metrics",
+        "provider": "seranking",
+        "outcome": "hit",
+        "status": 200,
+        "charged_micro": 2685
+      }
+    ],
+    "charged_micro": 2685
+  }
+}

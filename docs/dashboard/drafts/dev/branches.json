@@ -1,0 +1,891 @@
+{
+ "schema": 1,
+ "intervalSec": 180,
+ "generatedAt": "2026-11-14T14:38:33Z",
+ "blocks": {
+  "linear": {
+   "asOf": "2026-11-14T14:38:33Z",
+   "error": null
+  },
+  "usage": {
+   "asOf": "2026-11-14T14:38:33Z",
+   "error": null
+  },
+  "money": {
+   "asOf": "2026-11-14T14:38:33Z",
+   "error": null
+  },
+  "hand": {
+   "asOf": "2026-11-14T14:38:33Z",
+   "error": null
+  },
+  "branches": {
+   "asOf": "2026-11-14T14:38:33Z",
+   "error": null
+  }
+ },
+ "deadline": "2026-11-15T18:00:00+02:00",
+ "buildStart": "2026-11-14T12:00:00+02:00",
+ "freeze": "2026-11-15T13:00:00+02:00",
+ "submitBy": "2026-11-15T17:00:00+02:00",
+ "milestones": [
+  {
+   "id": "M1",
+   "name": "Setup and dashboard pick",
+   "start": "Sat 15:00",
+   "end": "Sat 18:00",
+   "gate": "Both roles can log in as patient and doctor",
+   "done": 0,
+   "total": 7
+  },
+  {
+   "id": "M2",
+   "name": "Digitize and identity",
+   "start": "Sat 18:00",
+   "end": "Sat 22:00",
+   "gate": "A1 at 90% on 5 docs, else cut to English and 2 exam types",
+   "done": 0,
+   "total": 0
+  },
+  {
+   "id": "M3",
+   "name": "Diary and handshake",
+   "start": "Sat 22:00",
+   "end": "Sun 02:00",
+   "gate": "Demo steps 1, 2, 4 run end to end",
+   "done": 0,
+   "total": 0
+  },
+  {
+   "id": "M4",
+   "name": "Doctor's assistant",
+   "start": "Sun 02:00",
+   "end": "Sun 08:00",
+   "gate": "Demo steps 5 and 6 run",
+   "done": 0,
+   "total": 0
+  },
+  {
+   "id": "M5",
+   "name": "P1 if P0 is green",
+   "start": "Sun 08:00",
+   "end": "Sun 13:00",
+   "gate": "All 8 steps run",
+   "done": 0,
+   "total": 0
+  },
+  {
+   "id": "M6",
+   "name": "Freeze, 3 clean runs",
+   "start": "Sun 13:00",
+   "end": "Sun 15:30",
+   "gate": "3 clean runs in a row",
+   "done": 0,
+   "total": 0
+  },
+  {
+   "id": "M7",
+   "name": "Submission and pitch prep",
+   "start": "Sun 15:30",
+   "end": "Sun 18:00",
+   "gate": "Submitted by 17:00",
+   "done": 0,
+   "total": 0
+  }
+ ],
+ "current": "M1",
+ "tasks": {
+  "done": 2,
+  "inProgress": 2,
+  "inReview": 4,
+  "open": 15,
+  "blocked": 13,
+  "total": 36,
+  "byRole": {
+   "Frontend": 4,
+   "Release": 1,
+   "Backend": 6,
+   "CTO": 5,
+   "Founder": 5,
+   "Product": 8,
+   "Design": 3,
+   "Sales": 2,
+   "Marketing": 2
+  }
+ },
+ "agents": [
+  {
+   "n": "Back",
+   "role": "Product",
+   "state": "active",
+   "issue": "MIN-4448",
+   "title": "P \u00b7 Dashboard: goal, milestone timeline and metric definitions (Product)",
+   "last": "6m"
+  },
+  {
+   "n": "Anna",
+   "role": "Marketing",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "41m"
+  },
+  {
+   "n": "Pix",
+   "role": "Design",
+   "state": "active",
+   "issue": "MIN-4446",
+   "title": "D \u00b7 Dashboard: design guidelines with motion and animation (Mobbin) + 3 dashboard directions",
+   "last": "30m"
+  },
+  {
+   "n": "Ren",
+   "role": "Frontend",
+   "state": "active",
+   "issue": "MIN-4447",
+   "title": "F \u00b7 Dashboard: 3 clickable drafts (HTML artifacts, sample data) from Pix's directions",
+   "last": "11m"
+  },
+  {
+   "n": "Cron",
+   "role": "Backend",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "0m"
+  },
+  {
+   "n": "CTO",
+   "role": "CTO",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "6m"
+  },
+  {
+   "n": "Spast",
+   "role": "Sales",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "1h"
+  },
+  {
+   "n": "Release",
+   "role": "Release",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "22m"
+  },
+  {
+   "n": "CEO",
+   "role": "CEO",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "1h"
+  },
+  {
+   "n": "E2E",
+   "role": "E2E",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "-"
+  }
+ ],
+ "lanes": [
+  {
+   "agent": "Back",
+   "bars": [
+    {
+     "issue": "MIN-4423",
+     "from": "2026-11-14T10:00:00Z",
+     "to": "now",
+     "state": "active"
+    },
+    {
+     "issue": "MIN-4443",
+     "from": "2026-11-14T12:51:52Z",
+     "to": "now",
+     "state": "active"
+    },
+    {
+     "issue": "MIN-4445",
+     "from": "2026-11-14T12:59:15Z",
+     "to": "now",
+     "state": "active"
+    },
+    {
+     "issue": "MIN-4448",
+     "from": "2026-11-14T12:59:54Z",
+     "to": "now",
+     "state": "active"
+    }
+   ]
+  },
+  {
+   "agent": "Anna",
+   "bars": []
+  },
+  {
+   "agent": "Pix",
+   "bars": [
+    {
+     "issue": "MIN-4446",
+     "from": "2026-11-14T13:05:08Z",
+     "to": "now",
+     "state": "active"
+    }
+   ]
+  },
+  {
+   "agent": "Ren",
+   "bars": [
+    {
+     "issue": "MIN-4447",
+     "from": "2026-11-14T13:13:15Z",
+     "to": "now",
+     "state": "active"
+    }
+   ]
+  },
+  {
+   "agent": "Cron",
+   "bars": []
+  },
+  {
+   "agent": "CTO",
+   "bars": []
+  },
+  {
+   "agent": "Spast",
+   "bars": []
+  },
+  {
+   "agent": "Release",
+   "bars": []
+  },
+  {
+   "agent": "CEO",
+   "bars": []
+  },
+  {
+   "agent": "E2E",
+   "bars": []
+  }
+ ],
+ "tokens": {
+  "agentCaps": {
+   "soft": 300000,
+   "hard": 400000
+  },
+  "chatCaps": {
+   "soft": 350000,
+   "hard": 400000
+  },
+  "perAgent": [
+   {
+    "n": "Pix",
+    "v": 9236564
+   },
+   {
+    "n": "Ren",
+    "v": 6033214
+   },
+   {
+    "n": "Back",
+    "v": 5037126
+   },
+   {
+    "n": "Cron",
+    "v": 4522027
+   },
+   {
+    "n": "Anna",
+    "v": 3913157
+   },
+   {
+    "n": "CTO",
+    "v": 2849095
+   },
+   {
+    "n": "Release",
+    "v": 1469576
+   },
+   {
+    "n": "CEO",
+    "v": 969807
+   },
+   {
+    "n": "Spast",
+    "v": 801228
+   }
+  ],
+  "perChat": [
+   {
+    "n": "Business design exercises status",
+    "v": 10889335
+   },
+   {
+    "n": "Deployment and Cloudflare options",
+    "v": 9977658
+   },
+   {
+    "n": "Pix pitching deck draft",
+    "v": 7314766
+   },
+   {
+    "n": "Dashboard drafts: Pix with Mobbin, then Ren",
+    "v": 7207669
+   },
+   {
+    "n": "Real-time project dashboard design",
+    "v": 5802950
+   },
+   {
+    "n": "Remote repo creation",
+    "v": 2253176
+   },
+   {
+    "n": "Treg installation on Chrome",
+    "v": 411004
+   },
+   {
+    "n": "Boxd.sh setup",
+    "v": 287508
+   }
+  ],
+  "series": [
+   0,
+   0,
+   0,
+   2641921,
+   4952403,
+   5895051,
+   5895051,
+   5895051,
+   9358594,
+   15145111,
+   17703829,
+   20229483,
+   27627890,
+   34356000,
+   42228678,
+   44144065
+  ],
+  "seriesFrom": "2026-11-14T10:00:00Z",
+  "seriesStepMin": 15,
+  "projection": {
+   "at": "2026-11-15T16:00:00Z",
+   "v": 543572647.0
+  },
+  "window": {
+   "since": "2026-11-14T10:00:00Z",
+   "until": "2026-11-14T14:00:02Z"
+  },
+  "scope": "projects whose folder name contains 'healthapp'",
+  "totalWeighted": 44144065,
+  "lastSeen": {
+   "Back": "2026-11-14T13:57:32Z",
+   "Release": "2026-11-14T13:56:32Z",
+   "Pix": "2026-11-14T13:55:32Z",
+   "Anna": "2026-11-14T13:54:32Z",
+   "Spast": "2026-11-14T13:53:32Z",
+   "CTO": "2026-11-14T13:52:32Z",
+   "CEO": "2026-11-14T13:51:32Z",
+   "Ren": "2026-11-14T13:50:32Z",
+   "Cron": "2026-11-14T13:49:32Z"
+  }
+ },
+ "money": {
+  "estimate": true,
+  "estimateEUR": 103.52,
+  "estimateSeries": [
+   0.0,
+   0.0,
+   0.0,
+   6.77,
+   10.73,
+   12.49,
+   12.49,
+   12.49,
+   18.94,
+   36.49,
+   42.73,
+   49.02,
+   68.83,
+   84.16,
+   100.33,
+   103.52
+  ],
+  "projection": {
+   "at": "2026-11-15T16:00:00Z",
+   "v": 1292.09
+  },
+  "rateCard": {
+   "source": "conductor public.model_pricing (read-only select, 2026-11-14)",
+   "eurPerUsd": 0.92,
+   "cacheWriteTtl": "5m",
+   "label": "estimate at API list price, not a bill",
+   "usedModels": [
+    "claude-fable-5-1",
+    "claude-opus-5-5",
+    "claude-sonnet-5"
+   ],
+   "aliased": {
+    "claude-fable-5-2": "claude-fable-5-1",
+    "claude-sonnet-5-5": "claude-sonnet-5"
+   },
+   "unpricedTokens": 0
+  },
+  "credits": [
+   {
+    "n": "Google AI (Gemini)",
+    "granted": 300,
+    "used": 0
+   },
+   {
+    "n": "fal",
+    "granted": 50,
+    "used": 0
+   },
+   {
+    "n": "Firecrawl",
+    "granted": 100,
+    "used": 0
+   },
+   {
+    "n": "treg",
+    "granted": 50,
+    "used": 0
+   }
+  ]
+ },
+ "demo": {
+  "build": {
+   "state": "idle",
+   "label": "No build yet",
+   "at": ""
+  },
+  "deploy": {
+   "state": "idle",
+   "label": "Not deployed"
+  },
+  "url": "",
+  "cleanRuns": 0,
+  "cleanTarget": 3,
+  "steps": [
+   {
+    "n": 1,
+    "t": "Photograph a blood test, record appears",
+    "s": "idle"
+   },
+   {
+    "n": 2,
+    "t": "Refuses a document with the wrong name and ID",
+    "s": "idle"
+   },
+   {
+    "n": 3,
+    "t": "Symptom diary records without interpreting",
+    "s": "idle"
+   },
+   {
+    "n": 4,
+    "t": "DNA-shaped QR handshake, countdown starts",
+    "s": "idle"
+   },
+   {
+    "n": 5,
+    "t": "Doctor asks, answer cites the source exam",
+    "s": "idle"
+   },
+   {
+    "n": 6,
+    "t": "Possible causes, for the doctor only",
+    "s": "idle"
+   },
+   {
+    "n": 7,
+    "t": "Possible matches, opt-in",
+    "s": "idle"
+   },
+   {
+    "n": 8,
+    "t": "Access ends, log shows who looked",
+    "s": "idle"
+   }
+  ],
+  "notes": {
+   "1": "Not run yet.",
+   "2": "Not run yet.",
+   "3": "Not run yet.",
+   "4": "Not run yet.",
+   "5": "Not run yet.",
+   "6": "Not run yet.",
+   "7": "Not run yet.",
+   "8": "Not run yet."
+  }
+ },
+ "receivedAt": "2026-11-14T14:38:33Z",
+ "branches": {
+  "repo": "onedotatatime/healthapp",
+  "bases": [
+   "main",
+   "staging"
+  ],
+  "base": "staging",
+  "staleRefs": 0,
+  "prSource": "gh",
+  "truncated": false,
+  "totals": {
+   "open": 8,
+   "openOnRemote": 3,
+   "total": 12,
+   "merged": 3,
+   "mergedToday": 3,
+   "closed": 1
+  },
+  "items": [
+   {
+    "name": "feat/dashboard-live-feed",
+    "state": "open",
+    "onRemote": true,
+    "hasWorktree": true,
+    "pr": {
+     "number": 6,
+     "state": "OPEN",
+     "url": "https://github.com/onedotatatime/healthapp/pull/6",
+     "base": "staging",
+     "mergedAt": null,
+     "closedAt": null
+    },
+    "vsMain": {
+     "ahead": 4,
+     "behind": 0
+    },
+    "vsStaging": {
+     "ahead": 1,
+     "behind": 0
+    },
+    "statsBase": "staging",
+    "files": 71,
+    "added": 9165,
+    "removed": 0,
+    "lastCommitAt": "2026-11-14T14:35:40Z",
+    "lastCommitAuthor": "onedotatatime",
+    "issue": "MIN-4459",
+    "issueFrom": "pr",
+    "agent": "Cron",
+    "agentFrom": "issue"
+   },
+   {
+    "name": "feat/min-4451-pwa-shell",
+    "state": "open",
+    "onRemote": true,
+    "hasWorktree": true,
+    "pr": {
+     "number": 4,
+     "state": "OPEN",
+     "url": "https://github.com/onedotatatime/healthapp/pull/4",
+     "base": "staging",
+     "mergedAt": null,
+     "closedAt": null
+    },
+    "vsMain": {
+     "ahead": 4,
+     "behind": 0
+    },
+    "vsStaging": {
+     "ahead": 2,
+     "behind": 1
+    },
+    "statsBase": "staging",
+    "files": 20,
+    "added": 2131,
+    "removed": 0,
+    "lastCommitAt": "2026-11-14T14:01:50Z",
+    "lastCommitAuthor": "onedotatatime",
+    "issue": "MIN-4451",
+    "issueFrom": "branch",
+    "agent": "Ren",
+    "agentFrom": "issue"
+   },
+   {
+    "name": "feat/min-4452-conductor-dev",
+    "state": "open",
+    "onRemote": true,
+    "hasWorktree": true,
+    "pr": {
+     "number": 5,
+     "state": "OPEN",
+     "url": "https://github.com/onedotatatime/healthapp/pull/5",
+     "base": "staging",
+     "mergedAt": null,
+     "closedAt": null
+    },
+    "vsMain": {
+     "ahead": 5,
+     "behind": 0
+    },
+    "vsStaging": {
+     "ahead": 3,
+     "behind": 1
+    },
+    "statsBase": "staging",
+    "files": 10,
+    "added": 207,
+    "removed": 0,
+    "lastCommitAt": "2026-11-14T13:58:48Z",
+    "lastCommitAuthor": "onedotatatime",
+    "issue": "MIN-4452",
+    "issueFrom": "branch",
+    "agent": "Cron",
+    "agentFrom": "issue"
+   },
+   {
+    "name": "claude/back-project-readiness-e7d7d9",
+    "state": "open",
+    "onRemote": false,
+    "hasWorktree": true,
+    "pr": null,
+    "vsMain": {
+     "ahead": 0,
+     "behind": 0
+    },
+    "vsStaging": {
+     "ahead": 0,
+     "behind": 3
+    },
+    "statsBase": "main",
+    "files": 0,
+    "added": 0,
+    "removed": 0,
+    "lastCommitAt": "2026-11-14T11:12:21Z",
+    "lastCommitAuthor": "onedotatatime",
+    "issue": null,
+    "issueFrom": null,
+    "agent": null,
+    "agentFrom": null
+   },
+   {
+    "name": "claude/boxd-setup-e928ed",
+    "state": "open",
+    "onRemote": false,
+    "hasWorktree": true,
+    "pr": null,
+    "vsMain": {
+     "ahead": 0,
+     "behind": 0
+    },
+    "vsStaging": {
+     "ahead": 0,
+     "behind": 3
+    },
+    "statsBase": "main",
+    "files": 0,
+    "added": 0,
+    "removed": 0,
+    "lastCommitAt": "2026-11-14T11:12:21Z",
+    "lastCommitAuthor": "onedotatatime",
+    "issue": null,
+    "issueFrom": null,
+    "agent": null,
+    "agentFrom": null
+   },
+   {
+    "name": "claude/deployment-cloudflare-options-d27eca",
+    "state": "open",
+    "onRemote": false,
+    "hasWorktree": false,
+    "pr": null,
+    "vsMain": {
+     "ahead": 0,
+     "behind": 0
+    },
+    "vsStaging": {
+     "ahead": 0,
+     "behind": 3
+    },
+    "statsBase": "main",
+    "files": 0,
+    "added": 0,
+    "removed": 0,
+    "lastCommitAt": "2026-11-14T11:12:21Z",
+    "lastCommitAuthor": "onedotatatime",
+    "issue": null,
+    "issueFrom": null,
+    "agent": null,
+    "agentFrom": null
+   },
+   {
+    "name": "claude/pix-pitching-deck-draft-094214",
+    "state": "open",
+    "onRemote": false,
+    "hasWorktree": true,
+    "pr": null,
+    "vsMain": {
+     "ahead": 0,
+     "behind": 0
+    },
+    "vsStaging": {
+     "ahead": 0,
+     "behind": 3
+    },
+    "statsBase": "main",
+    "files": 0,
+    "added": 0,
+    "removed": 0,
+    "lastCommitAt": "2026-11-14T11:12:21Z",
+    "lastCommitAuthor": "onedotatatime",
+    "issue": null,
+    "issueFrom": null,
+    "agent": null,
+    "agentFrom": null
+   },
+   {
+    "name": "claude/treg-chrome-install-eeec37",
+    "state": "open",
+    "onRemote": false,
+    "hasWorktree": true,
+    "pr": null,
+    "vsMain": {
+     "ahead": 0,
+     "behind": 0
+    },
+    "vsStaging": {
+     "ahead": 0,
+     "behind": 3
+    },
+    "statsBase": "main",
+    "files": 0,
+    "added": 0,
+    "removed": 0,
+    "lastCommitAt": "2026-11-14T11:12:21Z",
+    "lastCommitAuthor": "onedotatatime",
+    "issue": null,
+    "issueFrom": null,
+    "agent": null,
+    "agentFrom": null
+   },
+   {
+    "name": "chore/min-4450-deploy-doc",
+    "state": "merged",
+    "onRemote": true,
+    "hasWorktree": true,
+    "pr": {
+     "number": 3,
+     "state": "MERGED",
+     "url": "https://github.com/onedotatatime/healthapp/pull/3",
+     "base": "staging",
+     "mergedAt": "2026-11-14T13:52:45Z",
+     "closedAt": "2026-11-14T13:52:45Z"
+    },
+    "vsMain": {
+     "ahead": 3,
+     "behind": 0
+    },
+    "vsStaging": {
+     "ahead": 1,
+     "behind": 1
+    },
+    "statsBase": "staging",
+    "files": 13,
+    "added": 138,
+    "removed": 18,
+    "lastCommitAt": "2026-11-14T13:48:08Z",
+    "lastCommitAuthor": "onedotatatime",
+    "issue": "MIN-4450",
+    "issueFrom": "branch",
+    "agent": "Cron",
+    "agentFrom": "issue"
+   },
+   {
+    "name": "chore/min-4444-mobbin-mcp",
+    "state": "merged",
+    "onRemote": false,
+    "hasWorktree": false,
+    "pr": {
+     "number": 2,
+     "state": "MERGED",
+     "url": "https://github.com/onedotatatime/healthapp/pull/2",
+     "base": "staging",
+     "mergedAt": "2026-11-14T13:11:34Z",
+     "closedAt": "2026-11-14T13:11:34Z"
+    },
+    "vsMain": null,
+    "vsStaging": null,
+    "statsBase": "staging",
+    "files": 1,
+    "added": 1,
+    "removed": 0,
+    "lastCommitAt": null,
+    "lastCommitAuthor": "onedotatatime",
+    "issue": "MIN-4444",
+    "issueFrom": "branch",
+    "agent": "Back",
+    "agentFrom": "issue"
+   },
+   {
+    "name": "claude/business-design-exercises-status-179124",
+    "state": "merged",
+    "onRemote": true,
+    "hasWorktree": true,
+    "pr": {
+     "number": 1,
+     "state": "MERGED",
+     "url": "https://github.com/onedotatatime/healthapp/pull/1",
+     "base": "staging",
+     "mergedAt": "2026-11-14T13:11:05Z",
+     "closedAt": "2026-11-14T13:11:05Z"
+    },
+    "vsMain": {
+     "ahead": 1,
+     "behind": 0
+    },
+    "vsStaging": {
+     "ahead": 1,
+     "behind": 3
+    },
+    "statsBase": "staging",
+    "files": 19,
+    "added": 2297,
+    "removed": 0,
+    "lastCommitAt": "2026-11-14T13:10:51Z",
+    "lastCommitAuthor": "onedotatatime",
+    "issue": "MIN-4435",
+    "issueFrom": "pr",
+    "agent": null,
+    "agentFrom": null
+   },
+   {
+    "name": "feat/closed-example",
+    "state": "closed",
+    "onRemote": false,
+    "hasWorktree": false,
+    "pr": {
+     "number": 7,
+     "state": "CLOSED",
+     "url": "https://github.com/onedotatatime/healthapp/pull/7",
+     "base": "staging",
+     "mergedAt": null,
+     "closedAt": "2026-11-14T13:38:33Z"
+    },
+    "vsMain": null,
+    "vsStaging": null,
+    "statsBase": "staging",
+    "files": 3,
+    "added": 40,
+    "removed": 2,
+    "lastCommitAt": null,
+    "lastCommitAuthor": "onedotatatime",
+    "issue": null,
+    "issueFrom": null,
+    "agent": null,
+    "agentFrom": null
+   }
+  ]
+ }
+}
