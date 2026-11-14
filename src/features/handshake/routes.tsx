@@ -1,4 +1,5 @@
-import { Link, Navigate } from 'react-router';
+import { QrCode } from '@phosphor-icons/react';
+import { Link, Navigate, useLocation } from 'react-router';
 import { extractToken } from './codes';
 import { PENDING_TOKEN_KEY } from './DoctorConnect';
 import './handshake.css';
@@ -24,8 +25,21 @@ export function ClaimLink() {
   return <Navigate to="/doctor/connect" replace />;
 }
 
-/** A bar fixed to the bottom of a home screen: the one big action. */
+/** The second tile on the patient home. The same link and test id the entry bar had (MIN-4587). */
+export function ShareTile() {
+  return (
+    <Link className="tile" to="/patient/share" data-testid="entry-link">
+      <QrCode size={26} weight="bold" aria-hidden="true" />
+      Share with a doctor
+    </Link>
+  );
+}
+
+/** A glass bar floating at the bottom of the doctor home: the one big action. On the patient home the same link is a tile at
+ *  the top of the screen, so the bar renders nothing there and the page keeps one `entry-link`. */
 export function EntryBar({ to, label }: { to: string; label: string }) {
+  const { pathname } = useLocation();
+  if (to === '/patient/share' && pathname === '/patient') return null;
   return (
     <div className="hs-entry">
       <Link className="btn primary block" to={to} data-testid="entry-link">

@@ -1,38 +1,39 @@
-/* Handshake screens (MIN-4485). Tokens are Pix's Drop 0; the night scene is the QR screen only. */
-.hs-night{min-height:100dvh;background:var(--night);color:var(--night-ink);padding:var(--space-6) var(--space-4) var(--space-8);display:flex;flex-direction:column;align-items:center;text-align:center}
-.hs-title{font:var(--text-h2);margin:var(--space-3) 0 var(--space-4);color:var(--night-ink)}
-.hs-night :focus-visible{outline:2px solid var(--night-ink);outline-offset:2px}
+/* Handshake screens (MIN-4485, restyled MIN-4587). The scene is teal-night: a dark surround helps the doctor's camera find the QR.
+   The QR card is solid white with ink modules: no glass, no tint, nothing over it. Nothing translucent or blurred lies over the
+   live camera. */
+.hs-night{min-height:100dvh;background:var(--color-inverse-bg);color:var(--color-inverse-text);padding:calc(var(--safe-top) + var(--space-5)) var(--page-pad) calc(var(--safe-bottom) + var(--space-6));display:flex;flex-direction:column;align-items:center;text-align:center}
+.hs-title{font:var(--text-h2);letter-spacing:-.03em;margin:var(--space-3) 0 var(--space-4);color:var(--color-inverse-text)}
+.hs-night :focus-visible{outline:3px solid var(--white);outline-offset:var(--focus-offset)}
 .hs-stage{position:relative;width:100%;max-width:390px;overflow:hidden}
 .hs-helix{position:absolute;left:50%;top:0;transform:translateX(-50%);max-width:none}
-.hs-card{position:absolute;left:50%;transform:translateX(-50%);background:#fff;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center}
+.hs-card{position:absolute;left:50%;transform:translateX(-50%);background:var(--white);border-radius:var(--radius-image);display:flex;align-items:center;justify-content:center}
 .hs-card svg{display:block}
-.hs-card-expired{margin:0;padding:var(--space-4);color:var(--qr-ink);font:var(--text-h2)}
-.hs-valid{font:var(--text-patient-body);margin:var(--space-4) 0 var(--space-1);color:var(--night-ink)}
-.hs-code{font:var(--text-code);letter-spacing:.08em;margin:0 0 var(--space-4);color:var(--night-ink)}
+.hs-card-expired{margin:0;padding:var(--space-4);color:var(--ink);font:var(--text-h2);letter-spacing:-.03em}
+.hs-valid{font:var(--text-patient-body);margin:var(--space-4) 0 var(--space-1);color:var(--color-inverse-text)}
+.hs-code{font:var(--text-code);letter-spacing:.12em;margin:0 0 var(--space-4);color:var(--color-inverse-text)}
 .hs-actions{display:flex;flex-direction:column;align-items:center;gap:var(--space-3)}
-.hs-btn{min-width:160px;color:var(--night-ink);border-color:var(--night-ink)}
-.hs-link{background:none;border:0;color:var(--night-ink-2);font:var(--text-label);text-decoration:underline;cursor:pointer;min-height:44px;padding:0 var(--space-3);display:inline-flex;align-items:center}
+.hs-btn{min-width:160px;color:var(--color-inverse-text);border-color:var(--color-inverse-text);background:transparent}
+.hs-btn:hover{background:transparent;transform:none}
+.hs-link{background:none;border:0;color:var(--night-ink-2);font:var(--text-label);letter-spacing:0;text-decoration:underline;cursor:pointer;min-height:var(--target-min);padding:0 var(--space-3);display:inline-flex;align-items:center}
 .hs-hint{font:var(--text-doctor-body);color:var(--night-ink-2);max-width:320px;margin:var(--space-3) 0 0}
-.hs-wait,.hs-error{margin:var(--space-6) 0;color:var(--night-ink-2)}
+.hs-wait,.hs-error{margin:var(--space-5) 0;color:var(--night-ink-2)}
 .hs-wait .spinner{color:var(--night-ink-2)}
 .hs-error{max-width:360px;text-align:left}
-.hs-ended h1{margin-top:var(--space-6)}
+.hs-ended h1{margin-top:0}
 
-/* doctor */
-.hs-scan{position:relative;aspect-ratio:4/3;max-width:560px;background:var(--night);border-radius:var(--radius-md);overflow:hidden;margin:0 0 var(--space-6);display:flex;align-items:center;justify-content:center}
+/* doctor (MIN-4588 restyles these) */
+.hs-scan{position:relative;aspect-ratio:4/3;max-width:560px;background:var(--color-inverse-bg);border-radius:var(--radius-image);overflow:hidden;margin:0 0 var(--space-5);display:flex;align-items:center;justify-content:center}
 .hs-scan video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .hs-hidden{display:none}
-.hs-frame{position:absolute;inset:18%;border:3px solid var(--helix-patient);border-radius:var(--radius-md);pointer-events:none}
-.hs-scan-note{position:relative;margin:0;padding:var(--space-4);color:var(--night-ink);font:var(--text-doctor-body);text-align:center}
-.hs-scan-foreign{position:absolute;left:var(--space-3);right:var(--space-3);bottom:var(--space-3);margin:0;padding:var(--space-2) var(--space-3);background:var(--amber-bg);color:var(--amber-ink);border-radius:var(--radius-md);font:var(--text-doctor-body)}
+.hs-frame{position:absolute;inset:18%;border:3px solid var(--mint);border-radius:var(--radius-sm);pointer-events:none}
+.hs-scan-note{position:relative;margin:0;padding:var(--space-4);color:var(--color-inverse-text);font:var(--text-doctor-body);text-align:center}
+.hs-scan-foreign{position:absolute;left:var(--space-3);right:var(--space-3);bottom:var(--space-3);margin:0;padding:var(--space-2) var(--space-3);background:var(--color-caution-bg);color:var(--color-text);border-radius:var(--radius-sm);font:var(--text-doctor-body)}
 .hs-typed{display:flex;gap:var(--space-3);align-items:flex-end;flex-wrap:wrap;margin-bottom:var(--space-2)}
 .hs-typed .field{flex:1 1 220px;margin:0}
-.hs-typed .field input{font:var(--text-code);font-size:20px;letter-spacing:.08em;min-height:var(--tap-doctor)}
+.hs-typed .field input{font:var(--text-code);font-size:20px;letter-spacing:.12em;min-height:var(--tap-doctor)}
 .hs-typed .btn{min-height:var(--tap-doctor)}
 .hs-doctor-actions{max-width:360px}
 
-/* entry bar on the two home screens */
-.hs-entry{position:sticky;bottom:0;padding:var(--space-3) var(--space-4) var(--space-4);background:var(--paper);border-top:1px solid var(--line);max-width:480px;margin:0 auto}
-
-
-a.btn{text-decoration:none}
+/* entry bar on the doctor home: a floating chrome-glass pill holding the one big action (the patient home has a tile instead) */
+.hs-entry{position:fixed;z-index:20;left:max(var(--page-pad),calc(50% - 224px));right:max(var(--page-pad),calc(50% - 224px));bottom:max(var(--bar-gap),var(--safe-bottom));padding:6px;border-radius:var(--radius-pill);background:var(--glass-chrome);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);border:1px solid var(--glass-edge);box-shadow:var(--shadow-soft)}
+.hs-entry .btn{border:0}

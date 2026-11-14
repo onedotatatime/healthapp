@@ -1,75 +1,73 @@
-/* Exam flow (MIN-4476). Tokens only; no shadows, no gradients. */
+/* Exam flow (MIN-4476, restyled MIN-4587). Brand + glass tokens only. Cards and list cards are translucent with no blur;
+   results are solid white (long reading); the photo, the thumbnail and the QR are never under glass. */
 .page.wide{max-width:960px}
-.small{font-size:14px;line-height:20px}
+.small{font:500 14px/1.4 var(--font)}
 .btn.pick{position:relative;cursor:pointer}
-.btn.pick:focus-within{outline:var(--focus);outline-offset:2px}
-.btn.primary.pick{color:#fff}
-.reading-label{font:var(--text-h2);margin:0 0 var(--space-3)}
-.bar{height:6px;background:var(--line);border-radius:var(--radius-pill);overflow:hidden;position:relative}
-.bar i{position:absolute;top:0;bottom:0;left:-35%;width:35%;background:var(--teal);border-radius:var(--radius-pill);animation:bar-slide 1.4s ease-in-out infinite}
+.btn.pick:focus-within{outline:var(--focus-ring);outline-offset:var(--focus-offset)}
+.btn.primary.pick{min-height:64px}   /* "Take a photo": the action of direction 1 */
+.reading-label{font:var(--text-h2);letter-spacing:-.03em;margin:0 0 var(--space-3)}
+.bar{height:6px;background:var(--color-border);border-radius:var(--radius-pill);overflow:hidden;position:relative}
+.bar i{position:absolute;top:0;bottom:0;left:-35%;width:35%;background:var(--color-link);border-radius:var(--radius-pill);animation:bar-slide 1.4s ease-in-out infinite}
 @keyframes bar-slide{to{left:100%}}
-.thumb{display:block;max-width:100%;max-height:200px;margin-top:var(--space-6);border:1px solid var(--line-strong);border-radius:var(--radius-md)}
+.thumb{display:block;max-width:100%;max-height:200px;margin-top:var(--space-5);border:1px solid var(--color-border);border-radius:var(--radius-image)}
 
 /* review: photo above the fields on a phone, beside them from 760 px */
-.review{display:grid;gap:var(--space-6)}
+.review{display:grid;gap:var(--space-5)}
 .photo{margin:0}
-.photo img{display:block;width:100%;max-height:30vh;object-fit:contain;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:var(--radius-md)}
-.photo figcaption{margin-top:var(--space-2);font-size:14px}
+.photo img{display:block;width:100%;max-height:30vh;object-fit:contain;background:var(--color-surface-quiet);border:1px solid var(--color-border);border-radius:var(--radius-image)}
+.photo figcaption{margin-top:var(--space-2);font:500 14px/1.4 var(--font)}
+.photo figcaption a{color:var(--color-text)}
 @media (min-width:760px){
   .review{grid-template-columns:minmax(0,5fr) minmax(0,6fr);align-items:start}
-  .photo{position:sticky;top:var(--space-4)}
+  .photo{position:sticky;top:calc(var(--navbar-h) + var(--safe-top) + var(--space-4))}
   .photo img{max-height:80vh}
 }
-.locked{margin:0 0 var(--space-2);padding:var(--space-3);background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-md);display:grid;gap:var(--space-2)}
+.locked{margin:0 0 var(--space-2);padding:var(--space-3) var(--space-4);background:var(--color-surface-quiet);border-radius:var(--radius-sm);display:grid;gap:var(--space-2)}
 .locked>div{display:grid;gap:2px}
-.locked dt{font:var(--text-label);color:var(--ink-2)}
+.locked dt{font:var(--text-label);color:var(--color-muted)}
 .locked dd{margin:0;display:flex;align-items:center;gap:6px;font:var(--text-patient-value);min-width:0;overflow-wrap:anywhere}
-.fields h2{margin-top:var(--space-6)}
-.field textarea{width:100%;padding:var(--space-3);font:var(--text-patient-body);color:var(--ink);background:var(--surface);border:1.5px solid var(--line-strong);border-radius:var(--radius-md)}
-.field input[aria-invalid='true']{border-color:var(--amber-ink);border-width:2px}
-.err{display:block;margin-top:var(--space-1);font:var(--text-label);font-style:normal;color:var(--amber-ink)}
-.rows{list-style:none;margin:0 0 var(--space-4);padding:0;display:grid;gap:var(--space-3)}
-.rrow{padding:var(--space-3);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md)}
-.rname{font:600 18px/26px var(--font-sans);overflow-wrap:anywhere}
+.fields h2{margin-top:var(--space-5)}
+.rows{list-style:none;margin:0 0 var(--space-4);padding:0 20px;background:var(--color-surface);border-radius:var(--radius-image);box-shadow:var(--shadow-soft)}   /* results: long reading, solid */
+.rrow{padding:var(--space-4) 0;border-bottom:1px solid var(--color-border)}
+.rrow:last-child{border-bottom:0}
+.rname{font:600 18px/1.4 var(--font);overflow-wrap:anywhere}
 .rinputs{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:var(--space-3);margin-top:var(--space-2)}
 .rinputs .field{margin:0}
 .rinputs input{font:var(--text-patient-value)}
 .rvalue{font:var(--text-patient-value)}
 .rmeta{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-3);margin-top:var(--space-2);font:var(--text-doctor-body)}
-.oor{display:inline-flex;align-items:center;gap:6px;padding:2px 10px 2px 8px;border-radius:var(--radius-pill);border:1px solid var(--amber-ink);background:var(--amber-bg);color:var(--amber-ink);font:var(--text-label)}
-.oor svg{flex:none}
-.check-this{display:inline-block;margin-left:var(--space-2);padding:1px 8px;border-radius:var(--radius-pill);border:1px solid var(--amber-ink);background:var(--amber-bg);color:var(--amber-ink);font:var(--text-label);white-space:nowrap}
+/* the flag: a coral dot and the words in coral-900, never red, never an alarm icon */
+.oor,.oor-count{display:inline-flex;align-items:center;gap:8px;padding:3px 12px 3px 10px;border-radius:var(--radius-pill);background:var(--color-flag-bg);color:var(--color-flag-text);font:var(--text-label);letter-spacing:0}
+.oor::before,.oor-count::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--color-flag-dot);flex:none}
+.check-this{display:inline-block;margin-left:var(--space-2);padding:2px 10px;border-radius:var(--radius-pill);border:1px solid var(--color-flag-text);background:var(--color-caution-bg);color:var(--color-text);font:var(--text-label);letter-spacing:0;white-space:nowrap}
 
-/* list and record */
+/* "My exams" list cards and a record */
 .records{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-3)}
-.record-link{display:grid;gap:var(--space-1);padding:var(--space-4);min-height:var(--tap-patient);background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--radius-md);color:var(--ink);text-decoration:none}
-.record-link:hover{border-color:var(--ink)}
-.rtitle{font:var(--text-h2)}
-.rdate{font:var(--text-patient-value)}
-.oor-count{display:inline-flex;align-items:center;padding:2px 10px;border-radius:var(--radius-pill);border:1px solid var(--amber-ink);background:var(--amber-bg);color:var(--amber-ink);font:var(--text-label)}
-.mark-row{display:flex;flex-wrap:wrap;gap:var(--space-2)}
-.saved{margin-bottom:var(--space-4);padding:var(--space-3);border:1px solid var(--teal-text);border-radius:var(--radius-md);background:var(--teal-tint);color:var(--teal-text);font:var(--text-label)}
-.back{color:var(--teal-text);font:var(--text-label)}
-.fixed-line{margin-top:var(--space-6);padding:var(--space-3);border-left:4px solid var(--teal);background:var(--surface-2);font:var(--text-patient-body)}
-.orig{display:block;width:100%;max-height:70vh;object-fit:contain;background:var(--surface-2);border:1px solid var(--line-strong);border-radius:var(--radius-md)}
+.record-link{display:grid;gap:var(--space-1);padding:var(--space-4) 20px;min-height:var(--tap-patient);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-image);box-shadow:var(--shadow-soft);color:var(--color-text);text-decoration:none;transition:transform var(--dur-fast) var(--ease-out)}
+a.record-link:hover{transform:translateY(-1px)}
+a.record-link:active{transform:scale(.99)}
+.rtitle{font:var(--text-lead)}
+.rdate{font:500 16px/1.5 var(--font);color:var(--color-muted)}
+.mark-row{display:flex;flex-wrap:wrap;gap:var(--space-2);margin-bottom:var(--space-4)}
+.saved:not(.mark){display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-2) var(--space-3);margin-bottom:var(--space-4);padding:var(--space-3) var(--space-4);border-radius:var(--radius-image);background:var(--color-success-bg);color:var(--color-on-primary);font:var(--text-label);font-size:16px;letter-spacing:0}
+.back{color:var(--color-text);font:var(--text-label);letter-spacing:0}
+.fixed-line{margin:var(--space-5) 0;padding:var(--space-4);border-radius:var(--radius-sm);background:var(--color-info-bg);color:var(--color-info);font:var(--text-patient-body)}
+.orig{display:block;width:100%;max-height:70vh;object-fit:contain;background:var(--color-surface-quiet);border:1px solid var(--color-border);border-radius:var(--radius-image)}
 
 /* MIN-4557: scan screen and "My exams" rows */
-.scan-saved{display:flex;align-items:center;flex-wrap:wrap;gap:var(--space-2) var(--space-3)}
 .scan-saved svg{flex:none}
-.scan-count{margin-left:auto;font:var(--text-label);padding:2px 10px;border:1px solid var(--teal-text);border-radius:var(--radius-pill);background:var(--surface)}
+.scan-count{margin-left:auto;font:var(--text-label);letter-spacing:0;padding:3px 12px;border-radius:var(--radius-pill);background:var(--color-surface)}
 .rtop{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-2) var(--space-3)}
 .record-link.static{cursor:default}
-.record-link.static:hover{border-color:var(--line-strong)}
-.rmeta{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-2) var(--space-3)}
-.mark.status{height:auto;min-height:28px;white-space:normal}
-.mark.status.neutral{background:transparent;border-color:var(--line-strong);color:var(--ink)}
-.mark.status.ready{background:var(--teal-tint);border-color:var(--teal-text);color:var(--teal-text)}
-.mark.status.saved{background:var(--surface-2);border-color:var(--line-strong);color:var(--ink)}
-.mark.status.caution{background:var(--amber-bg);border-color:var(--amber-ink);color:var(--amber-ink)}
+.mark.status{min-height:28px;white-space:normal}
+.mark.status.neutral{background:transparent;border-color:var(--color-border-strong)}
+.mark.status.ready{background:var(--color-success-bg)}
+.mark.status.saved{background:var(--color-surface-quiet);border-color:var(--color-border-strong)}
+.mark.status.caution{background:var(--color-caution-bg);border-color:var(--color-flag-text)}
 .reason{margin:var(--space-2) 0 0;font:var(--text-patient-body);overflow-wrap:anywhere}
-.reason.err-line{color:var(--amber-ink)}
+.reason.err-line{color:var(--color-flag-text);font-weight:600}
 .row-actions{display:flex;flex-wrap:wrap;gap:var(--space-3);margin-top:var(--space-3)}
-.row-actions .btn{min-width:0;flex:1 1 140px}
+.row-actions .btn{min-width:0;flex:1 1 120px;min-height:var(--target-min);padding:0 16px}
 @media (prefers-reduced-motion:no-preference){
   .mark.status[data-status='reading'] svg{animation:spin 1.2s linear infinite}
 }
