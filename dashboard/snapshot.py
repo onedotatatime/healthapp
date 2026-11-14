@@ -3,15 +3,16 @@
 
     snapshot.py [--out PATH] [--push] [--home DIR] [--hand PATH] [--rates PATH] [--root DIR] [--now ISO]
 
-Stdlib only (Python 3.9+). Four blocks, each with its own asOf and error:
+Stdlib only (Python 3.9+). Five blocks, each with its own asOf and error:
   linear  Linear GraphQL, READ-ONLY queries (a test fails if this file contains a write operation)
   usage   ~/.claude/projects transcripts, read through the same scan()/build_run() code as conductor's bin/usage
   money   usage tokens by model x rates.json x eurPerUsd. An estimate at API list price, never a bill
   hand    ~/.healthapp-dashboard/hand-set.json (credits, demo steps, clean runs, milestone metadata)
+  branches  the healthapp repo's branches: local git (read-only, plus a `git fetch --prune`) and PRs through `gh` (MIN-4460)
 A block that fails keeps its last good value, gets a newer `error`, keeps its old `asOf`; the others stay fresh.
 No key is ever printed, logged or put in the snapshot (see assert_clean).
 """
-import argparse, bisect, collections, importlib.machinery, importlib.util, json, os, re, sys, urllib.request, urllib.error
+import argparse, bisect, collections, importlib.machinery, importlib.util, json, os, re, shutil, subprocess, sys, urllib.request, urllib.error
 from datetime import datetime, timedelta, timezone
 
 SCHEMA = 1
@@ -19,11 +20,12 @@ INTERVAL_SEC = 180
 SERIES_STEP_MIN = 15
 LINEAR_API = 'https://api.linear.app/graphql'
 # Built from pieces so that the repo-wide key grep does not match this definition.
-SECRET_RE = re.compile('|'.join(['lin' + '_api_', 'eyJ' + '[A-Za-z0-9_-]{30,}', 'sb' + '_secret_', 'SUPABASE_SERVICE' + r'_ROLE_KEY\s*[=:]\s*\S{20,}', 'sbp' + '_[A-Za-z0-9]{20,}']))
+SECRET_RE = re.compile('|'.join(['lin' + '_api_', 'eyJ' + '[A-Za-z0-9_-]{30,}', 'sb' + '_secret_', 'SUPABASE_SERVICE' + r'_ROLE_KEY\s*[=:]\s*\S{20,}', 'sbp' + '_[A-Za-z0-9]{20,}',
+                                'gh' + '[pousr]_[A-Za-z0-9]{20,}', 'github' + '_pat_[A-Za-z0-9_]{20,}']))
 HOME_DEFAULT = '~/.healthapp-dashboard'
 USAGE_BIN_DEFAULT = '~/AppDevelopment/conductor/bin/usage'
 ENV_AGENTS = '~/.claude/.env.agents'
-BLOCKS = ('linear', 'usage', 'money', 'hand')
+BLOCKS = ('linear', 'usage', 'money', 'hand', 'branches')
 
 
 class BlockError(Exception):
@@ -42,6 +44,9 @@ def parse(s):
 def clean(msg):
     """An error text safe to publish: no key-shaped string, one line, short."""
     msg = SECRET_RE.sub('[redacted]', str(msg)).replace('\n', ' ')
+    home = os.path.expanduser('~')
+    if len(home) > 1:
+        msg = msg.replace(home, '~')              # a local path never leaves the Mac (MIN-4458)
     return msg[:300]
 
 
@@ -361,6 +366,224 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
     return {'milestones': milestones, 'current': current, 'tasks': tasks, 'agents': agents, 'lanes': lanes}
 
 
+# ----------------------------------------------------------------------------- branches (MIN-4460)
+
+REPO_DEFAULT = '~/AppDevelopment/healthapp'
+BRANCH_BASES = ('main', 'staging')
+GH_CANDIDATES = ('/opt/homebrew/bin/gh', '/usr/local/bin/gh', '/usr/bin/gh')   # launchd's PATH has none of them
+GH_FIELDS = 'number,state,headRefName,baseRefName,url,title,mergedAt,closedAt,additions,deletions,changedFiles,author'
+ISSUE_RE = re.compile(r'(?<![a-z0-9])min-(\d{1,6})(?!\d)', re.I)
+AUTHOR_TAG_RE = re.compile(r'^hello\+([a-z0-9]+)@', re.I)
+MAX_OPEN_LISTED, MAX_CLOSED_LISTED = 60, 30
+
+
+def default_runner(argv, cwd, timeout):
+    """(returncode, stdout, stderr). A missing binary raises FileNotFoundError; a timeout answers 124."""
+    env = dict(os.environ, GH_PROMPT_DISABLED='1', GH_NO_UPDATE_NOTIFIER='1', GIT_TERMINAL_PROMPT='0', NO_COLOR='1', LC_ALL='C')
+    try:
+        p = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=timeout, env=env)
+    except subprocess.TimeoutExpired:
+        return 124, '', 'timed out after %ss' % timeout
+    return p.returncode, p.stdout, p.stderr
+
+
+def find_gh():
+    return shutil.which('gh') or next((c for c in GH_CANDIDATES if os.path.isfile(c)), 'gh')
+
+
+def git_out(runner, repo, *args, timeout=30):
+    rc, out, err = runner(['git'] + list(args), repo, timeout)
+    if rc != 0:
+        raise BlockError('git %s failed: %s' % (args[0], clean(err.strip()) or 'exit %d' % rc))
+    return out
+
+
+def issue_of(*texts):
+    for kind, t in texts:
+        m = ISSUE_RE.search(t or '')
+        if m:
+            return 'MIN-%s' % m.group(1), kind
+    return None, None
+
+
+def agent_for_node(n, agents_cfg, role_labels):
+    """The agent whose issue this is: same two rules as summarize_linear (Role label for roleLabel agents, else assignee name)."""
+    for a in agents_cfg:
+        if a.get('roleLabel') and role_label_name(n, role_labels) == a['roleLabel']:
+            return a['n']
+    for a in agents_cfg:
+        if not a.get('roleLabel') and a.get('linear') and (n.get('assignee') or {}).get('name') == a['linear']:
+            return a['n']
+    return None
+
+
+def slug_of(url):
+    """owner/repo from a github.com remote URL (https, ssh, with or without credentials); None for anything else."""
+    m = re.search(r'github\.com[:/]([^/:@\s]+/[^/\s]+?)(?:\.git)?/?\s*$', url or '')
+    return m.group(1) if m else None
+
+
+def read_gh_prs(runner, repo, gh_bin):
+    """({head branch: its PR}, None) or (None, reason). Never raises: a missing or logged-out gh is data, not a failure."""
+    try:
+        rc, out, err = runner([gh_bin, 'pr', 'list', '--state', 'all', '--limit', '200', '--json', GH_FIELDS], repo, 40)
+    except FileNotFoundError:
+        return None, 'gh not installed'
+    if rc != 0:
+        low = err.lower()
+        if 'gh auth login' in low or 'not logged' in low or 'authentication' in low or 'bad credentials' in low or 'http 401' in low:
+            return None, 'gh not authenticated'
+        return None, 'gh failed: %s' % (clean(err.strip()) or 'exit %d' % rc)
+    try:
+        prs = json.loads(out)
+    except ValueError:
+        return None, 'gh failed: answer was not JSON'
+    by_head = {}
+    for pr in prs:
+        h = pr.get('headRefName')
+        cur = by_head.get(h)
+        # one PR per branch: an open one wins, else the newest
+        if cur is None or (pr['state'] == 'OPEN' and cur['state'] != 'OPEN') or (
+                (pr['state'] == 'OPEN') == (cur['state'] == 'OPEN') and pr['number'] > cur['number']):
+            by_head[h] = pr
+    return by_head, None
+
+
+def read_refs(runner, repo):
+    """{branch name: {'local': row, 'remote': row}} from one for-each-ref call; rows carry sha, time, author, email."""
+    fmt = '%1f'.join(['%(refname)', '%(objectname)', '%(committerdate:iso-strict)', '%(authorname)', '%(authoremail)'])
+    out = git_out(runner, repo, 'for-each-ref', '--format=' + fmt, 'refs/heads', 'refs/remotes/origin')
+    refs = collections.defaultdict(dict)
+    for line in out.splitlines():
+        f = line.split('\x1f')
+        if len(f) < 5:
+            continue
+        ref, sha, when, who, mail = f[:5]
+        if ref.startswith('refs/heads/'):
+            kind, name = 'local', ref[len('refs/heads/'):]
+        elif ref.startswith('refs/remotes/origin/'):
+            kind, name = 'remote', ref[len('refs/remotes/origin/'):]
+        else:
+            continue
+        if name == 'HEAD':
+            continue
+        refs[name][kind] = {'ref': ref, 'sha': sha, 't': parse(when), 'author': who, 'mail': mail.strip('<>')}
+    return refs
+
+
+def ahead_behind(runner, repo, base_ref, tip):
+    out = git_out(runner, repo, 'rev-list', '--left-right', '--count', '%s...%s' % (base_ref, tip))
+    behind, ahead = (int(x) for x in out.split())
+    return {'ahead': ahead, 'behind': behind}
+
+
+def diff_stats(runner, repo, base_ref, tip):
+    out = git_out(runner, repo, 'diff', '--numstat', '%s...%s' % (base_ref, tip))
+    files = added = removed = 0
+    for line in out.splitlines():
+        a, r, _ = line.split('\t', 2)
+        files += 1
+        added += int(a) if a.isdigit() else 0       # a binary file shows '-'
+        removed += int(r) if r.isdigit() else 0
+    return files, added, removed
+
+
+def build_branches(bcfg, now, tz, nodes, agents_cfg, role_labels, runner=default_runner, gh_bin=None):
+    """The branches block. Local git is the floor; `gh` adds PR state. If only gh fails the block still returns,
+    with PR fields null and a `_warning` that run_block turns into blocks.branches.error."""
+    repo = os.path.expanduser(bcfg.get('repoPath') or REPO_DEFAULT)
+    bases = tuple(bcfg.get('bases') or BRANCH_BASES)
+    if not os.path.isdir(repo):
+        raise BlockError('repo folder not found')
+    git_out(runner, repo, 'rev-parse', '--git-dir')
+    slug = bcfg.get('slug')
+    if not slug:
+        rc, url, _ = runner(['git', 'remote', 'get-url', 'origin'], repo, 10)
+        slug = slug_of(url) if rc == 0 else None
+    warnings = []
+    rc, _, err = runner(['git', 'fetch', '--prune', '--quiet', 'origin'], repo, 40)
+    if rc != 0:
+        warnings.append('git fetch failed, showing the last fetched state: %s' % (clean(err.strip()) or 'exit %d' % rc))
+    refs = read_refs(runner, repo)
+    base_ref = {}
+    for b in bases:
+        r = refs.get(b, {})
+        base_ref[b] = (r.get('remote') or r.get('local') or {}).get('ref')
+    worktrees = set()
+    for line in git_out(runner, repo, 'worktree', 'list', '--porcelain').splitlines():
+        if line.startswith('branch refs/heads/'):
+            worktrees.add(line[len('branch refs/heads/'):])
+    prs, gh_err = read_gh_prs(runner, repo, gh_bin or find_gh())
+    if gh_err:
+        warnings.append(gh_err)
+    prs = prs or {}
+    nodes_by_id = {n['identifier']: n for n in (nodes or [])}
+    day_start = now.astimezone(tz).replace(hour=0, minute=0, second=0, microsecond=0)
+
+    # 1. every branch that is not a base: live refs (local or remote) plus the head of every PR
+    entries = []
+    for name in sorted(set(n for n in refs if n not in bases) | set(n for n in prs if n and n not in bases)):
+        rs = refs.get(name, {})
+        tip = max(rs.values(), key=lambda r: r['t']) if rs else None
+        pr = prs.get(name)
+        state = {'OPEN': 'open', 'MERGED': 'merged', 'CLOSED': 'closed'}[pr['state']] if pr else 'open'
+        ended = (pr or {}).get('mergedAt') or (pr or {}).get('closedAt')
+        when = parse(ended) if ended else None
+        entries.append({'name': name, 'state': state, 'tip': tip, 'pr': pr, 'rs': rs, 'sort': (when or (tip['t'] if tip else None) or now)})
+    totals = {'open': sum(e['state'] == 'open' for e in entries),
+              'openOnRemote': sum(e['state'] == 'open' and ('remote' in e['rs'] or bool(e['pr'])) for e in entries),
+              'total': len(entries), 'merged': None, 'mergedToday': None, 'closed': None}
+    if not gh_err:
+        totals['merged'] = sum(e['state'] == 'merged' for e in entries)
+        totals['closed'] = sum(e['state'] == 'closed' for e in entries)
+        totals['mergedToday'] = sum(e['state'] == 'merged' and parse(e['pr']['mergedAt']) >= day_start for e in entries)
+
+    # 2. order and cap on cheap data, then spend git calls only on what is listed
+    opens = sorted((e for e in entries if e['state'] == 'open'), key=lambda e: e['sort'], reverse=True)
+    rest = sorted((e for e in entries if e['state'] != 'open'), key=lambda e: e['sort'], reverse=True)
+    listed = opens[:MAX_OPEN_LISTED] + rest[:MAX_CLOSED_LISTED]
+    truncated = len(listed) < len(entries)
+    items = []
+    for e in listed:
+        tip, pr = e['tip'], e['pr']
+        tref = tip['ref'] if tip else None
+        vs = {b: (ahead_behind(runner, repo, base_ref[b], tref) if tref and base_ref[b] else None) for b in bases}
+        sbase = None
+        if pr and pr.get('baseRefName') in bases:
+            sbase = pr['baseRefName']
+        elif tref:
+            known = [b for b in bases if vs[b]]
+            sbase = min(known, key=lambda b: vs[b]['ahead']) if known else None   # the nearest base
+        files = added = removed = None
+        if tref and sbase and base_ref[sbase]:
+            files, added, removed = diff_stats(runner, repo, base_ref[sbase], tref)
+        elif pr:                                          # the ref is gone (deleted after merge): the PR remembers the size
+            files, added, removed = pr.get('changedFiles'), pr.get('additions'), pr.get('deletions')
+        issue, issue_from = issue_of(('branch', e['name']), ('pr', (pr or {}).get('title')))
+        agent, agent_from = None, None
+        if issue and issue in nodes_by_id:
+            agent = agent_for_node(nodes_by_id[issue], agents_cfg, role_labels)
+            agent_from = 'issue' if agent else None
+        if not agent and tip:
+            m = AUTHOR_TAG_RE.match(tip['mail'])
+            hit = next((a['n'] for a in agents_cfg if m and a['role'].lower() == m.group(1).lower()), None)
+            agent, agent_from = (hit, 'author') if hit else (None, None)
+        items.append({
+            'name': e['name'], 'state': e['state'], 'onRemote': 'remote' in e['rs'], 'hasWorktree': e['name'] in worktrees,
+            'pr': {'number': pr['number'], 'state': pr['state'], 'url': pr['url'], 'base': pr.get('baseRefName'),
+                   'mergedAt': pr.get('mergedAt'), 'closedAt': pr.get('closedAt')} if pr else None,
+            'vsMain': vs.get('main'), 'vsStaging': vs.get('staging'), 'statsBase': sbase,
+            'files': files, 'added': added, 'removed': removed,
+            'lastCommitAt': iso(tip['t']) if tip else None,
+            'lastCommitAuthor': (tip['author'] if tip else ((pr or {}).get('author') or {}).get('login')) or None,
+            'issue': issue, 'issueFrom': issue_from, 'agent': agent, 'agentFrom': agent_from})
+    data = {'repo': slug, 'bases': list(bases), 'prSource': 'none' if gh_err else 'gh',
+            'truncated': truncated, 'totals': totals, 'items': items}
+    if warnings:
+        data['_warning'] = '; '.join(warnings)
+    return data
+
+
 # ----------------------------------------------------------------------------- hand
 
 def build_hand(hand):
@@ -384,14 +607,16 @@ def run_block(state, name, fn, now):
     """Run one block. On success: new data + asOf=now. On failure: keep the last good data and asOf, record the error."""
     try:
         data = fn()
-        state[name] = {'asOf': iso(now), 'data': data, 'error': None}
+        # A block may succeed with a warning (branches without `gh`): fresh data AND an error, so no one reads it as clean.
+        warn = data.pop('_warning', None) if isinstance(data, dict) else None
+        state[name] = {'asOf': iso(now), 'data': data, 'error': {'message': clean(warn), 'at': iso(now)} if warn else None}
     except Exception as ex:
         prev = state.get(name) or {'asOf': None, 'data': None}
         state[name] = {'asOf': prev.get('asOf'), 'data': prev.get('data'),
                        'error': {'message': clean(ex), 'at': iso(now)}}
 
 
-def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API):
+def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runner=default_runner, gh_bin=None):
     cfg = dict(hand['config'])
     cfg['_deadline'] = hand['deadline']
     since = parse(hand['buildStart'])
@@ -413,13 +638,19 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API):
 
     def linear():
         nodes = fetch_linear(cfg['linearProjectId'], key_fn(), api)
+        holder['nodes'] = nodes
         meta = (state.get('hand') or {}).get('data') or {}
         ls = ((state.get('usage') or {}).get('data') or {}).get('lastSeen', {})
         return summarize_linear(nodes, cfg, meta.get('milestonesMeta', hand['milestones']), now, since, ls)
     run_block(state, 'linear', linear, now)
 
+    def branches():
+        tz = parse(hand['buildStart']).tzinfo            # "today" is the deadline's own day (+02:00)
+        return build_branches(cfg.get('branches') or {}, now, tz, holder.get('nodes'), cfg['agents'], cfg['roleLabels'], runner, gh_bin)
+    run_block(state, 'branches', branches, now)
+
     g = lambda b: (state.get(b) or {}).get('data') or {}
-    h, lin, us, mo = g('hand'), g('linear'), g('usage'), g('money')
+    h, lin, us, mo, br = g('hand'), g('linear'), g('usage'), g('money'), g('branches')
     snap = {
         'schema': SCHEMA, 'intervalSec': INTERVAL_SEC, 'generatedAt': iso(now),
         'blocks': {b: {'asOf': (state.get(b) or {}).get('asOf'), 'error': (state.get(b) or {}).get('error')} for b in BLOCKS},
@@ -439,6 +670,8 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API):
         snap['money'] = dict(mo, credits=h.get('credits', []))
     if h:
         snap['demo'] = h['demo']
+    if br:
+        snap['branches'] = br
     return snap
 
 
