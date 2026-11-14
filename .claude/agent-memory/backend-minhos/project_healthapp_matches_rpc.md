@@ -23,5 +23,3 @@ Possible matches live in `supabase/sql/005_matches.sql` (RPCs), `006_seed_match_
 - Real-token checks: GoTrue password sign-in with `HEALTHAPP_PERSONA_PASSWORD` (`~/.claude/.env.agents`), then
   `POST /rest/v1/rpc/<fn>` with `Content-Profile: healthapp_<env>`. A test grant for the persona pair blocks the
   handshake's unique open-grant index (`grants_open_pair_idx`): delete it the moment the check is done.
-- A session hook may confine Write/Edit to the coordinator's worktree; then work in a `git archive` export in the
-  scratchpad and commit with plumbing (`GIT_INDEX_FILE`, `commit-tree`, `branch`) instead of writing into another worktree.

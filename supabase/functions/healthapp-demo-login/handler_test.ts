@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { type Deps, makeHandler, MAX_TRIES, type Session } from "./handler.ts";
+import { type Deps, GLOBAL_MAX_TRIES, makeHandler, MAX_TRIES, type Session } from "./handler.ts";
 
 const PASS = "correct-passcode";
 const PW = "p".repeat(32);
@@ -101,4 +101,33 @@ Deno.test("preflight from the Pages origin answers 204 with CORS", async () => {
   }));
   assertEquals(res.status, 204);
   assertEquals(res.headers.get("access-control-allow-origin"), "https://staging.healthapp-8ui.pages.dev");
+});
+
+Deno.test("a global ceiling: callers who each send a new x-forwarded-for are still stopped at 30 a minute (MIN-4492)", async () => {
+  const { deps, signIns } = fakeDeps();
+  const h = makeHandler(deps);
+  const codes: number[] = [];
+  for (let i = 0; i < GLOBAL_MAX_TRIES; i++) {
+    codes.push((await h(req({ persona: "patient", passcode: "nope" }, { "x-forwarded-for": `198.51.100.${i}` }))).status);
+  }
+  assertEquals(codes.every((c) => c === 401), true);
+  const next = await h(req({ persona: "patient", passcode: PASS }, { "x-forwarded-for": "203.0.113.200" }));
+  assertEquals(next.status, 429);
+  assertEquals((await next.json()).error.code, "rate_limited");
+  assertEquals(signIns.length, 0); // refused before the passcode or a sign-in is looked at
+});
+
+Deno.test("tries refused by the per-address limit do not eat the global ceiling", async () => {
+  const { deps } = fakeDeps();
+  const h = makeHandler(deps);
+  for (let i = 0; i < 60; i++) await h(req({ persona: "patient", passcode: "nope" })); // one address, 55 refused
+  // 5 counted, so a fresh address still has the rest of the ceiling
+  assertEquals((await h(req({ persona: "patient", passcode: PASS }, { "x-forwarded-for": "198.51.100.77" }))).status, 200);
+});
+
+Deno.test("the global ceiling store failing closes the door (503), never opens it", async () => {
+  const { deps } = fakeDeps({
+    allowTry: (_e, key) => (key === "global" ? Promise.reject(new Error("down")) : Promise.resolve(true)),
+  });
+  assertEquals((await makeHandler(deps)(req({ persona: "patient", passcode: PASS }))).status, 503);
 });
