@@ -1,5 +1,5 @@
 // The pitch deck: the whole content of the presentation, as typed data.
-// Source of the words: docs/deck/deck-content.md (v3.9). Speaker notes are copied from the same file.
+// Source of the words: docs/deck/deck-content.md (v4.1). Speaker notes are copied from the same file.
 // Templates live in ./templates; to make another deck, copy this file and change the data (see README.md).
 import type { Slide } from './types';
 
@@ -31,7 +31,10 @@ const N: Record<string, string[]> = {
     "The founder's question was simple: somewhere in the world, someone has Maria's pattern. If she says yes, her doctor can see that similar unnamed cases exist and ask to talk to the doctor treating one of them. Not to sell data. To shorten the years patients spend going from doctor to doctor. Opt-in only, and she can withdraw at any time."
   ],
   "7b": [
-    "Clinical trials. The challenge says recruitment is the most common cause of delay, and one day of delay costs a sponsor about forty thousand dollars. With a separate yes, we pre-screen the patient's record against a trial's published criteria. The site confirms, the patient chooses. Between visits, the trial team sees her diary in her own words and her values over time. Sponsors pay per trial and per randomised patient. Never the patient."
+    "Clinical trials. With a separate yes, we pre-screen the patient's record against a trial's criteria. The site confirms, the patient chooses. Between visits, the trial team sees her diary in her own words and her values over time. Here is what that is worth."
+  ],
+  "7c": [
+    "Today, the trials recruiting in Europe carry about three hundred and sixty million dollars of recruitment budget, and a day of delay costs a sponsor about forty thousand dollars. If our pre-screen brings a trial to full enrolment five days sooner, that is about two hundred thousand dollars saved. We charge five thousand euros to set a trial up and a thousand per randomised patient. The sponsor keeps most of the saving. The patient never pays."
   ],
   "8": [
     "The OECD put a price on it last year: diagnostic error eats 17.5 percent of health spending, almost 2 percent of GDP. Halving it would free 8 percent. Take Greece, where we are standing: that is about three and a half billion euros a year. We start with the smallest, most measurable slice, unnecessary and repeated tests. On tests alone, between 4 and 75 million euros a year in Greece, depending on adoption. The bigger prize is the diagnosis itself."
@@ -99,8 +102,6 @@ export const slides: Slide[] = [
         ],
       },
     ],
-    chips: ['Orthopaedist', 'Rheumatologist', 'Private lab', 'Search history'],
-    closing: 'The history exists, split across providers, apps, private labs, paper and other countries. It never reaches one desk.',
   },
   {
     id: '3', template: 'statement', theme: 'air', no: '03', kicker: 'Why now', notes: N['3'],
@@ -132,11 +133,11 @@ export const slides: Slide[] = [
     id: '4', template: 'product', theme: 'air', no: '04', kicker: 'Product', notes: N['4'],
     headline: 'Everything the patient has, in one history. The doctor asks, and every answer shows its source.',
     steps: [
-      { n: 1, title: 'Photograph', icon: 'photo', tag: 'Mock-up', text: '**Photograph** an old exam. Pathien reads it: date, lab, every value with its unit and range.' },
-      { n: 2, title: 'Match', icon: 'match', tag: 'Mock-up', text: "**It must be yours.** The name and ID on the exam must match the account. Someone else's exam is refused." },
-      { n: 3, title: 'Timeline', icon: 'timeline', tag: 'Mock-up', text: '**One timeline.** Exams and the symptom diary, in date order. Patients log symptoms; the doctor gets the full picture; no self-diagnosis.' },
-      { n: 4, title: 'Handshake', icon: 'helix', tag: 'Mock-up', text: '**The DNA handshake.** The patient shows a helix-shaped code, the doctor scans it, the patient approves. Access runs for a set time.' },
-      { n: 5, title: 'Ask', icon: 'ask', tag: 'Mock-up', text: '**The doctor asks.** "When was her CRP raised?" The answer lists dates and values, each linked to the exam it came from.' },
+      { n: 1, title: 'Photograph', icon: 'photo', text: '**Photograph** an old exam. Pathien reads it: date, lab, every value with its unit and range.' },
+      { n: 2, title: 'Match', icon: 'match', text: "**It must be yours.** The name and ID on the exam must match the account. Someone else's exam is refused." },
+      { n: 3, title: 'Timeline', icon: 'timeline', text: '**One timeline.** Exams and the symptom diary, in date order. Patients log symptoms; the doctor gets the full picture; no self-diagnosis.' },
+      { n: 4, title: 'Handshake', icon: 'helix', text: '**The DNA handshake.** The patient shows a helix-shaped code, the doctor scans it, the patient approves. Access runs for a set time.' },
+      { n: 5, title: 'Ask', icon: 'ask', text: '**The doctor asks.** "When was her CRP raised?" The answer lists dates and values, each linked to the exam it came from.' },
     ],
     under: [
       { label: 'Under step 3', lines: ['Instead of searching at night, Maria logs the symptom and taps **Send to my doctor**. Her doctor sees it with her whole history. The app does not explain it. Fixed line: "If this is an emergency, call 112."'] },
@@ -180,7 +181,7 @@ export const slides: Slide[] = [
       { text: '**A log nobody can edit.** Every access is written to a signed, chained log the patient can read. The log holds fingerprints of documents and access grants. No health data ever goes on a chain.' },
       { text: '**No diagnosis for the patient.** The patient side has no AI question box at all.' },
     ],
-    side: { kind: 'phone', caption: "Key on the patient's phone", tag: 'Mock-up' },
+    side: { kind: 'phone', caption: "Key on the patient's phone" },
   },
   {
     id: '6b', counter: '6b', template: 'hero', theme: 'air', notes: N['6b'],
@@ -212,35 +213,61 @@ export const slides: Slide[] = [
       { text: 'The doctor can ask to talk to the doctor treating that patient, to compare cause and treatment.' },
     ],
     callout: { number: '4.7 years', text: 'average wait for a rare-disease diagnosis in Europe, longer the more doctors are involved.', source: 'EURORDIS · S3' },
-    side: { kind: 'matches', pattern: { title: "Maria's pattern", sub: '3 markers · 2 symptoms' }, optIn: 'Opt-in', tag: 'Mock-up', contact: 'Contact requested' },
+    side: { kind: 'matches', pattern: { title: "Maria's pattern", sub: '3 markers · 2 symptoms' }, optIn: 'Opt-in', contact: 'Contact requested' },
   },
   {
     id: '7b', counter: '7b', template: 'twocol', theme: 'air', kicker: 'Clinical trials', notes: N['7b'],
-    headline: 'We help trials find the right patients, and hear them between visits. Only when the patient says yes.',
+    headline: 'The right patients for trials, heard between visits. Only with their yes.',
     columns: [
       {
         title: 'Patient selection and recruitment',
         points: [
-          "With a separate yes, the patient's record (lab values, units, printed ranges, dates) is pre-screened against a trial's published criteria.",
-          'Each criterion comes back met, not met or unknown, with the source document.',
-          'The site confirms “possibly eligible”. The patient chooses whether to be contacted.',
+          "With consent, we pre-screen the record against the trial's criteria.",
+          'The site confirms the match. The patient chooses.',
         ],
       },
       {
         title: 'Patient experience',
         points: [
-          "The symptom diary keeps the patient's words, with the time and a 1 to 10 severity. It never says what a symptom might be.",
-          'Each lab value is a series over time, across every lab and doctor.',
-          "With the patient's consent, the trial team sees both between visits.",
+          "A symptom diary in the patient's own words.",
+          'Values over time, shared with the trial team with consent.',
         ],
       },
     ],
-    revenue: [
-      { lead: 'One day of delay costs a sponsor', figures: [{ value: 'About $40,000' }], text: 'in direct trial costs.', source: '(Tufts CSDD, 2024)' },
-      { lead: 'Sponsors and CROs pay. Never the patient.', figures: [{ value: '€5,000', label: 'per trial set-up' }, { value: '€1,500', label: 'per randomised patient' }], tag: '(assumption)' },
-      { lead: 'One trial, 50 referrals the site accepts, about 19 patients randomised:', figures: [{ value: 'about €33,500' }], tag: '(our estimate)' },
+    pointer: 'What it saves a sponsor, and what we charge: next slide.',
+    footer: 'Consent only. A pre-screen, never a diagnosis. Never a data sale.',
+  },
+  {
+    id: '7c', counter: '7c', template: 'threecards', theme: 'air', kicker: 'Clinical trials', notes: N['7c'],
+    headline: 'Recruitment is slow and costly. We make it faster, and charge only per patient.',
+    cards: [
+      {
+        title: 'Today, what recruitment costs',
+        figure: { value: 'about $360M', tag: '(our estimate)', unit: 'the recruitment budget of the trials recruiting in the EU today' },
+        lines: [
+          '1,497 industry phase 2 and 3 trials are recruiting in the EU, planning 776,650 participants. [[(ClinicalTrials.gov, 15 Nov 2026, S31, verified)]]',
+          'Recruiting one participant costs about **$500 to $700**. [[(ASPE, S29 and S30, our estimate)]]',
+        ],
+      },
+      {
+        title: 'With Pathien, how much cheaper',
+        figure: { value: 'about $200,000', tag: '(our estimate)', unit: 'saved per trial: 5 days sooner to full enrolment (assumption) × $40,000 a day of delay (S23, verified)' },
+        lines: [
+          'Fewer failed screenings: today 36.3% fail [[(S26, secondary)]]. If a third fewer of our referrals fail, the site screens about 6 fewer people per trial [[(assumption)]].',
+          'Across the 1,497 trials: about **$300M** [[(our estimate, if each saved 5 days)]].',
+        ],
+      },
+      {
+        title: 'How we charge, and our revenue',
+        accent: true,
+        figure: { value: 'about €24,000', tag: '(our estimate)', unit: 'per trial: €5,000 set-up + €1,000 per randomised patient (assumptions) × about 19 randomised' },
+        lines: [
+          'The sponsor keeps about **€158,000** per trial after our fee [[(our estimate, at $1.10 to €1, assumption)]].',
+          '10 trials a year: about **€240,000** [[(assumption; not in slide 11\'s totals)]]. Never the patient.',
+        ],
+      },
     ],
-    footer: 'Consent only, separate from care. A pre-screen, never a diagnosis: the investigator decides. Never a data sale. Prices and volumes are assumptions; "our estimate" is our arithmetic on sourced inputs.',
+    footer: 'Prices, volumes, days saved and the exchange rate are assumptions. "Our estimate" is our arithmetic on sourced inputs, not a result. Consent only. Never a data sale.',
   },
   {
     id: '8', template: 'funnel', theme: 'night', no: '08', kicker: 'Impact, what better decisions save', notes: N['8'],
@@ -320,7 +347,7 @@ export const slides: Slide[] = [
         { number: '€0.56M', label: 'conservative · assumption' },
         { number: '€4.85M', label: 'upside · assumption' },
       ],
-      note: 'Not counted: rare-disease pilots (free, grant-funded), national agencies (tenders, year 2+), clinical-trial pre-screening (slide 7b: priced per trial and per randomised patient, not projected until a sponsor pilot sets the volume), research use (later, consent-gated, never a data sale).',
+      note: 'Not counted: rare-disease pilots (free, grant-funded), national agencies (tenders, year 2+), clinical-trial pre-screening (slide 7c: priced per trial and per randomised patient, not projected until a sponsor pilot sets the volume), research use (later, consent-gated, never a data sale).',
     },
     strip: [
       { caption: 'Tests, Greece (slide 8 funnel)', value: '€4M to €75M a year', tag: 'our estimate' },

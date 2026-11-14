@@ -1,9 +1,5 @@
 import type { HeroSlide } from '../types';
-import { Headline, Lockup, rich, typo } from '../util';
-
-/** [[accent]] renders teal and bold; the rest goes through rich(). */
-const withAccent = (s: string) =>
-  s.split(/\[\[|\]\]/).map((part, i) => (i % 2 ? <b key={i} className="hero-flag">{typo(part)}</b> : <span key={i}>{rich(part)}</span>));
+import { Headline, Lockup, typo, withAccent } from '../util';
 
 export function Hero({ s }: { s: HeroSlide }) {
   return (

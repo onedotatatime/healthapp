@@ -80,7 +80,7 @@ This is direction 5's most concrete use. "Possible matches" (slide 7) connects a
 - **False hope.** "You may be eligible" can read as a promise of treatment. Route it through the doctor, and say plainly that most people pre-screened are not enrolled.
 - **Crowded market.** Hospital-network players already sell this to sponsors. We must show what the patient-held record adds, not claim to be first.
 
-## 8. Recruitment economics and pricing (added 15 Nov 2026, deck v3.9)
+## 8. Recruitment economics and pricing (added 15 Nov 2026, deck v3.9; updated in v4.0 for slide 7c)
 
 The founder, verbatim: *"Connect with revenue from trial clinics (find data from treg to see how difficult and expensive is recruitment and calculate how we can charge)"*. Researched with treg (three cited web answers, $0.0053 in total) and direct reads of the sources below. Labels: **verified** (primary source read), **secondary** (a reputable report of a primary source, or a trade article by the study's author), **vendor claim** (a company's own figures), **unverified, do not use**.
 
@@ -99,7 +99,22 @@ The founder, verbatim: *"Connect with revenue from trial clinics (find data from
 | 9 | Pre-screened referrals at $20 to $50 each plus a subscription; ad leads $20 to $45 | **unverified, do not use** (vendor pages; the referral page returned 429 when opened) | https://www.allclinicaltrials.com/researchers ; https://www.dataally.ai/blog/best-clinical-trial-patient-recruitment-companies |
 | 10 | "$1,500 to $10,000 recruitment cost per patient"; "80% of trials miss enrolment timelines" | **unverified, do not use** (widely repeated, no primary found) | none |
 
-Not found: a sourced recruitment cost per patient **by phase and therapy area**. The US ASPE report (Sertkaya et al., 2016 and its 2024 update) has per-patient costs by phase and area, but recruitment sits inside patient-level costs and the table was not opened. That gap stays open.
+| 11 | Patient recruitment costs **per study**: phase 2 **$161,140**, phase 3 **$308,672** (1.7% to 2.7% of trial costs; site recruitment is a separate line). About one year of recruitment per phase. EHR-based recruitment modelled at **35.9% lower recruitment cost per patient**, 12.3% fewer patients to enrol, and **$0.46M to $2.53M saved per phase 3 study** (3.1% to 8.8% of its cost) | verified (primary PDF read; deck S29) | ASPE, Sertkaya et al., Eastern Research Group, 25 Jul 2014, Table 2, §5.1, Table 4: https://www.aspe.hhs.gov/sites/default/files/migrated_legacy_files/44516/rpt_erg.pdf |
+| 12 | Weighted average patients per trial: phase 2 **235**, phase 3 **630** | verified (primary PDF read; deck S30) | ASPE, *Drug Development* final report, Sertkaya and Berger, 26 Sep 2024, Table 4: https://aspe.hhs.gov/sites/default/files/documents/ba3c3c99877862bac0b1d04460ad01b1/drug-development.pdf |
+| 13 | **1,497** industry-sponsored phase 2 or 3 interventional trials recruiting with at least one EU-27 site (710 phase 2 only, 787 phase 3 or 2/3), planning **776,650** participants (global enrolment; median 240). All sponsors: 3,003 | verified (our registry query, 15 Nov 2026; changes daily; EU CTIS not queried; deck S31) | ClinicalTrials.gov API v2: https://clinicaltrials.gov/data-api/api |
+
+**The gap is closed, with a caveat (v4.0).** Recruiting one participant costs about **$500 to $700** in the recruitment line: $161,140 ÷ 235 ≈ $690 (phase 2), $308,672 ÷ 630 ≈ $490 (phase 3). **Our estimate**: rows 11 and 12 are two ASPE reports ten years apart, and 2014 dollars are not inflated. It is the recruitment line only (adverts, outreach); staff time for screening sits in other lines, so the true cost is higher. Row 8's vendor figures ($577 to $2,000, average $1,379) are digital campaigns and sit above it.
+
+### The three cards on slide 7c (v4.0)
+
+The founder, verbatim: *"Pricing -> show different in 3 cards / * The current situation, the cost of one hire, number of trials and the participants, total cost / * How cheaper could be from our patient match and selection and how many money we can save them / * How we can charge and the revenue"*. Pre-screening is not running today: every saving below is our estimate on sourced inputs, never a result.
+
+| Card | Big number | Arithmetic | Label |
+|---|---|---|---|
+| 1. Today | **about $360M** recruitment budget of the trials recruiting in the EU today | 710 × $161,140 + 787 × $308,672 ≈ $357M (rows 11, 13); over the life of those trials, not per year | our estimate |
+| 2. With Pathien | **about $200,000 saved per trial** | 5 days sooner to full enrolment (assumption; about 1.4% of ASPE's year of recruitment) × $40,000 a day (row 1). Below ASPE's lowest modelled phase 3 saving from EHR-based recruitment, $0.46M (row 11). Across 1,497 trials, if each saved 5 days: about $300M | our estimate |
+| 2, second line | about 6 fewer failed screenings per trial | 50 referrals × (36.3% − 24.2%), if a third fewer of our referrals fail screening (assumption; row 5) | assumption |
+| 3. How we charge | **about €24,000 per trial** | €5,000 + 19 × €1,000 (both assumptions). Sponsor keeps $200,000 ≈ €181,800 (at $1.10 to €1, assumption) − €24,000 ≈ **€158,000**. 10 trials a year: about €240,000 (assumption, not in slide 11) | our estimate |
 
 ### Pricing model
 
@@ -114,18 +129,20 @@ Not found: a sourced recruitment cost per patient **by phase and therapy area**.
 | Input | Value | Label |
 |---|---|---|
 | Set-up fee, per trial and country | €5,000 | assumption |
-| Success fee, per randomised patient | €1,500 (range €1,000 to €2,000) | assumption, anchored to row 8 ($577 to $2,000, vendor claim) and row 7 (€1,500 is about 4% of the median $41,117 per patient) |
+| Success fee, per randomised patient | **€1,000** (range €750 to €1,500; v3.9 had €1,500) | assumption. Lowered in v4.0: rows 11 and 12 put the recruitment line at about $500 to $700 per participant and row 8's vendor average is $1,379, so €1,500 (about $1,650) sat above both. €1,000 (about $1,100) stays under the vendor average and is about 2.7% of the median $41,117 per patient (row 7). The value case rests on days saved, not on the fee |
 | Referrals the site accepts, per trial | 50 | assumption |
-| Screen failure at the site | 36.3% | secondary (row 5); we do not claim to lower it |
+| Screen failure at the site | 36.3% | secondary (row 5). The revenue keeps today's rate; slide 7c's "a third fewer" is an assumption shown as people screened, not as money |
 | Share of patients who pass screening and are randomised | 60% | assumption |
 | Cost of one day of delay to the sponsor | about $40,000 | verified (row 1) |
+| Days sooner to full enrolment, per trial | 5 | assumption (v4.0) |
+| Exchange rate | $1.10 to €1 | assumption (v4.0) |
 
-**Worked example, one trial in one country** *(our estimate)*: 50 accepted referrals × (1 − 36.3%) = about 32 pass screening × 60% = about 19 randomised. Revenue: €5,000 + 19 × €1,500 = **about €33,500**. For the sponsor that is about the direct cost of one day of delay (row 1).
+**Worked example, one trial in one country** *(our estimate)*: 50 accepted referrals × (1 − 36.3%) = about 32 pass screening × 60% = about 19 randomised. Revenue: €5,000 + 19 × €1,000 = **about €24,000** (v3.9, at €1,500: about €33,500). For the sponsor that is less than the direct cost of one day of delay (row 1).
 
-**Slide 11.** The trial revenue is **not** added as a line D. Slide 11 projects the hospital wedge (per case, per seat, labs); trial pre-screening has no volume history and no sponsor pilot, and the funding plan funds direction 5's consent design this round, not a matching product. Slide 11 names it under "Not counted", and slide 7b carries the unit, the price and the example. Totals unchanged: €26k / €180k / €560k (conservative) and €258k / €1,705k / €4,850k (upside).
+**Slide 11.** The trial revenue is **not** added as a line D. Slide 11 projects the hospital wedge (per case, per seat, labs); trial pre-screening has no volume history and no sponsor pilot, and the funding plan funds direction 5's consent design this round, not a matching product. Slide 11 names it under "Not counted", and slide 7c (since v4.0; 7b in v3.9) carries the unit, the price and the example. Totals unchanged: €26k / €180k / €560k (conservative) and €258k / €1,705k / €4,850k (upside).
 
-**Topic 3, patient experience.** Deck v3.9 also puts Topic 3 on slide 7b: the symptom diary in the patient's words and lab values as a series over time, shared with the trial team with consent. The verdict in section 1 ("partly") stands: the diary is not a validated patient-reported outcome instrument and detects no side effects. It has no separate price; it is part of what a sponsor gets for a randomised patient.
+**Topic 3, patient experience.** Deck v3.9 also puts Topic 3 on slide 7b (cut to two lines in v4.0, founder: "Reduct the content of patient selection and patient experience"): the symptom diary in the patient's words and lab values as a series over time, shared with the trial team with consent. The verdict in section 1 ("partly") stands: the diary is not a validated patient-reported outcome instrument and detects no side effects. It has no separate price; it is part of what a sponsor gets for a randomised patient.
 
 ## Sources
 
-Challenge text (founder's Google Doc, 15 Nov). `docs/PRD.md` §6F, §10.2 to §10.4, §10.10, §10.B.5, §8. `docs/research/buyers.md` §1.10 and target 39. `docs/research/market-and-competitors.md` §2.3. `docs/business/team-and-funding-plan.md` (directions 1 to 5). Registry and law names are from general knowledge and should be checked against their official pages before any public use. Section 8: sources with URLs in its table.
+Challenge text (founder's Google Doc, 15 Nov). `docs/PRD.md` §6F, §10.2 to §10.4, §10.10, §10.B.5, §8. `docs/research/buyers.md` §1.10 and target 39. `docs/research/market-and-competitors.md` §2.3. `docs/business/team-and-funding-plan.md` (directions 1 to 5). Registry and law names are from general knowledge and should be checked against their official pages before any public use. Section 8: sources with URLs in its table (rows 11 to 13 added in v4.0; treg not used in v4.0, sources read directly).
