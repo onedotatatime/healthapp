@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the exact folder that is uploaded to the Cloudflare Pages project `healthapp-dashboard`
-# (MIN-4459). Only Direction B and what it loads. Never the dev fixtures (they hold real Linear
-# titles and spend), never Directions A and C or the picker page (they load Google Fonts).
+# (MIN-4459). Only Direction A (the dashboard base since MIN-4530) and what it loads. Never the dev
+# fixtures (they hold real Linear titles and spend), never Directions B and C or the picker page.
 #
 #   dashboard/pages-bundle.sh <out-dir>
 #   npx wrangler pages deploy <out-dir> --project-name healthapp-dashboard --branch main
@@ -20,7 +20,7 @@ esac
 
 rm -rf "$OUT"
 mkdir -p "$OUT"
-cp -R "$SRC/direction-B" "$SRC/shared" "$SRC/fonts" "$OUT/"
+cp -R "$SRC/direction-A" "$SRC/shared" "$SRC/fonts" "$OUT/"
 cp "$SRC/_headers" "$SRC/robots.txt" "$OUT/"
 
 # Public bundle, view key as the only gate (CTO decision on MIN-4458, 14 Nov 2026): until Cloudflare
@@ -80,15 +80,18 @@ c = sub_once(c, r' · <a href="https://linear\.app/[^"]*">MIN-\d+</a>', "", "the
 open(p, "w").write(c)
 PY
 
-# The root sends the viewer to Direction B. No inline script (the CSP forbids it).
+# The root sends the viewer to Direction A. No inline script (the CSP forbids it).
 cat > "$OUT/index.html" <<'HTML'
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="robots" content="noindex, nofollow">
-<meta http-equiv="refresh" content="0; url=/direction-B/index.html"><title>healthapp dashboard</title></head>
-<body><a href="/direction-B/index.html">Open the dashboard</a></body></html>
+<meta http-equiv="refresh" content="0; url=/direction-A/index.html"><title>healthapp dashboard</title></head>
+<body><a href="/direction-A/index.html">Open the dashboard</a></body></html>
 HTML
 
 fail=0
+# The bundle ships Direction A and nothing else (MIN-4530): B, C and the picker stay in the repo, not on Pages.
+[ -f "$OUT/direction-A/index.html" ] || { echo "direction-A is missing from the upload set" >&2; fail=1; }
+if [ -e "$OUT/direction-B" ] || [ -e "$OUT/direction-C" ]; then echo "a direction other than A is in the upload set" >&2; fail=1; fi
 if find "$OUT" \( -name 'dev-snapshot.json' -o -path '*/dev/*' -o -name 'snapshot.example.json' \) | grep -q .; then
   echo "dev fixture in the upload set" >&2; fail=1
 fi

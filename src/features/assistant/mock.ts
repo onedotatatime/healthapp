@@ -1,5 +1,5 @@
 /**
- * An in-memory record and assistant for `/preview/handshake` and the tests. SYNTHETIC only: Maria Papadopoulou is the
+ * An in-memory record and assistant for the tests. SYNTHETIC only: Maria Papadopoulou is the
  * persona (no real person, no real exam). It follows Cron's contract: whole answers, `r:`/`f:`/`d:` cite ids, a flag
  * the server computed, a 60 s photo URL. The answers are canned by keyword, so the demo screen works before
  * `healthapp-assistant` (MIN-4487) is live; the shape is what matters.

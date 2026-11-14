@@ -68,6 +68,8 @@ Check it: `gh api repos/onedotatatime/healthapp/branches/main/protection` (and `
 | `CF_PAGES_COMMIT_SHA` | provided by Pages at build time | read in `vite.config`, shown on the health page; nothing to set |
 | `HEALTHAPP_*` | Supabase function secrets only (`supabase secrets set HEALTHAPP_… --project-ref fnbnhvgrnkrbsrwhgcgc`, one at a time) | never in Pages, never prefixed `VITE_` |
 
+Demo sign-in passcodes (MIN-4541), one per deployment: `HEALTHAPP_DEMO_PASSCODE` opens dev only, `HEALTHAPP_DEMO_PASSCODE_DEMO` opens demo only (patient, doctor, and the `founder` persona, demo only). Values live in `~/.config/healthapp/demo-login.env` and `demo-login.demo.env` (mode 600), never in chat, Linear or git.
+
 Status on 14 Nov 2026: none of the three Pages variables is set yet (Production and Preview both empty).
 
 `src/lib/env.ts` derives the schema (`healthapp_<env>`), the bucket and the function prefix from `VITE_HEALTHAPP_ENV`, and the app shows an error for any value other than `dev` or `demo`.
@@ -110,7 +112,7 @@ Not the demo app. A separate static page plus two Edge Functions. CTO decisions 
 | Functions | `healthapp-dashboard-ingest` (the Mac pushes, push key) and `healthapp-dashboard-feed` (the page reads, view key). Both `verify_jwt = true` in `supabase/config.toml`; deploy each by name, never `--prune` (section 6) |
 | Function secrets | `HEALTHAPP_DASHBOARD_PUSH_KEY`, `HEALTHAPP_DASHBOARD_VIEW_KEY`, `HEALTHAPP_DASHBOARD_ALLOWED_ORIGINS` (names only) |
 | Mac job | launchd `ai.minhos.healthapp-dashboard`, every 180 s, runs from `~/.healthapp-dashboard/` (outside every worktree, so cleanup cannot remove it). Code: `dashboard/snapshot.py`, installer `dashboard/install.sh` |
-| Page | Cloudflare Pages project `healthapp-dashboard` (not the `healthapp` project), static upload with `wrangler pages deploy`, not Git-connected. Upload set = `dashboard/pages-bundle.sh <out-dir>` (Direction B, `shared/`, `fonts/`, `_headers`, `robots.txt`; never `drafts/dev/`, `dev-snapshot.json`, any `*.json`, Directions A and C) |
+| Page | Cloudflare Pages project `healthapp-dashboard` (not the `healthapp` project), static upload with `wrangler pages deploy`, not Git-connected. Upload set = `dashboard/pages-bundle.sh <out-dir>` (Direction A, `shared/`, `fonts/`, `_headers`, `robots.txt`; never `drafts/dev/`, `dev-snapshot.json`, any `*.json`, Directions B and C). Direction A replaced B as the base on 14 Nov 2026 (MIN-4530, PR #35); `/direction-B/` is gone from Pages and `open.sh` opens `/direction-A/` |
 | Access | Cloudflare Access (Zero Trust free plan, One-time PIN, the founder's email only) on the production host **and** the preview subdomains. The founder turns it on; `wrangler` cannot |
 
 **Wipe.** `wipe-demo --env dev` removes the dashboard with the rest (every `healthapp-*` function, every `HEALTHAPP_*` secret, the `healthapp-dev` bucket). That is intended: it runs only when the founder says the demo is no longer needed. `wipe-demo --env demo`, its dry run, and `demo-reset` never touch it; `dashboard/snapshot.json` is the one named exception to "object path = `<patient uuid>/<document uuid>`", and resets stay scoped to patient-UUID prefixes.
@@ -134,7 +136,7 @@ Not the demo app. A separate static page plus two Edge Functions. CTO decisions 
 2. The founder turns on Access for the production host and the previews (steps on MIN-4456, "The minimum from the founder").
 3. Release proves the redirect without credentials, on production and on a preview: `curl -sI https://healthapp-dashboard.pages.dev/` and `curl -sI https://<preview>.healthapp-dashboard.pages.dev/` answer a redirect to `*.cloudflareaccess.com` or 403, never 200. Pasted on MIN-4459.
 4. Real deploy from the merged commit, run from an empty folder, upload folder by absolute path: `dashboard/pages-bundle.sh "$TMPDIR/dashboard-pages" && npx wrangler pages deploy "$TMPDIR/dashboard-pages" --project-name healthapp-dashboard --branch main`. Curl the printed URL right after: it must answer the Access redirect or 403, like step 3.
-5. `dashboard/install.sh --viewer-url https://healthapp-dashboard.pages.dev/direction-B/index.html`, so the clipboard link points at Pages.
+5. `dashboard/install.sh --viewer-url https://healthapp-dashboard.pages.dev/direction-A/index.html`, so the clipboard link points at Pages.
 6. **The founder opens it in this order (CTO change 1, MIN-4458):** first the bare `https://healthapp-dashboard.pages.dev/`, and he logs in to Access with the PIN; **only then** the clipboard link. Opened the other way round, Access's login redirect carries the `#k=…&a=…` fragment onto the `cloudflareaccess.com` page (where the page cannot strip it from his history) and the PIN form drops it, so the page says the key is missing. Release does not call it "live with real data" until he has opened it and the header says "Live, updated N min ago".
 
 **Open check (CTO change 4):** when PR #4 lands, confirm the Git-connected `healthapp` Pages project publishes only `dist`, so `docs/dashboard/` and the dev fixtures are never published there.
@@ -142,3 +144,24 @@ Not the demo app. A separate static page plus two Edge Functions. CTO decisions 
 **Rollback.** Pages: promote the previous deployment in the dashboard, or redeploy the placeholder. Feed: `launchctl bootout gui/$(id -u)/ai.minhos.healthapp-dashboard` stops the pushes; `dashboard/install.sh --rotate` kills every link already handed out.
 
 **Checks (Lane C `static`, `.github/workflows/dashboard.yml`):** `python3 -m unittest discover -s dashboard/tests`; `deno check`, `deno lint` and `deno test --allow-read supabase/functions/`; the key-pattern grep over tracked files; `dashboard/pages-bundle.sh` must build a clean upload set. No `smoke` (no Playwright for this tool), no funnel, no migration job.
+
+## 11. Landing page (MIN-4462, MIN-4539)
+
+The public one-page showcase. Not the app and not the dashboard: its own Pages project, so nothing here touches `healthapp`.
+
+| Thing | Value |
+| --- | --- |
+| Source | `landing/` (Vite + React + TS, its own `package.json`; not in the app's `tsconfig` or build). Copy and design specs: `docs/landing/` |
+| Pages project | `healthapp-landing`, **direct upload**, not Git-connected. Production branch `main` |
+| Production URL | `https://healthapp-landing.pages.dev` |
+| Data, env, secrets | none. Static files only (fonts from Google Fonts) |
+
+**Redeploy** (Lane A: merge the change to `staging` first, then deploy from that commit):
+
+```sh
+cd landing && npm ci && npm run build          # in a clean worktree, no .env
+cd "$(mktemp -d)"                               # empty folder: wrangler must not pick up a stray static folder
+npx wrangler pages deploy "<absolute path>/landing/dist" --project-name healthapp-landing --branch main
+```
+
+Then `curl -s -o /dev/null -w '%{http_code}' https://healthapp-landing.pages.dev/` (200) and the same for `/img/hero.webp` and the `/assets/index-*.js` named in the built `index.html`. Never pass `--force` again: it was needed once, to create the project as Pages instead of a Worker (section 10, step 1). **Rollback:** promote the previous deployment in the dashboard (Pages → healthapp-landing → Deployments).

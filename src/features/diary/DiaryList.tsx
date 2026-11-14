@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { DiaryEntry } from '../../api/contract';
+import type { DiaryRow } from '../../api/contract';
 import { listDiaryEntries } from './diaryApi';
 import { formatWhen } from './format';
 
 /** Entries on the patient home, by date. Shows only the patient's own words and severity. */
 export function DiaryList() {
-  const [rows, setRows] = useState<DiaryEntry[] | null>(null);
+  const [rows, setRows] = useState<DiaryRow[] | null>(null);
   useEffect(() => {
     let live = true;
     void listDiaryEntries().then((r) => live && setRows(r));

@@ -3,13 +3,12 @@ import type { HandshakeApi } from './api';
 import { realApi } from './real';
 import type { GrantView } from './contract';
 
-/** `home` is where "Back" goes; `preview` turns on the simulated scan button (no camera in the preview page). */
+/** `home` is where "Back" goes. Tests provide the in-memory api from mock.ts; the app never does. */
 export interface HandshakeCtx {
   api: HandshakeApi;
   home: string;
-  preview: boolean;
 }
-export const HandshakeContext = createContext<HandshakeCtx>({ api: realApi, home: '/', preview: false });
+export const HandshakeContext = createContext<HandshakeCtx>({ api: realApi, home: '/' });
 export const useHandshake = () => useContext(HandshakeContext);
 
 /**
