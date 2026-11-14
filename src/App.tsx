@@ -6,6 +6,10 @@ import { homeFor } from './auth/guard';
 import { Spinner } from './components/Primitives';
 import { ExamsRoutes } from './features/exams/ExamsRoutes';
 import { Health } from './Health';
+
+// The simulation screen and the matches preview read synthetic data; they stay out of the main chunk.
+const Simulation = lazy(() => import('./features/matches/Simulation'));
+const MatchesPreview = lazy(() => import('./features/matches/MatchesPreview'));
 import { DoctorHome, PatientHome } from './pages/Homes';
 import { AddSymptom } from './features/diary/AddSymptom';
 import { Kit } from './pages/Kit';
@@ -30,6 +34,8 @@ export function App() {
         <Routes>
           <Route path="/" element={<Root />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/simulation" element={<Suspense fallback={<Spinner label="Loading" />}><Simulation /></Suspense>} />
+          <Route path="/preview/matches" element={<Suspense fallback={<Spinner label="Loading" />}><MatchesPreview /></Suspense>} />
           <Route path="/patient/exams/*" element={<RequireRole role="patient"><ExamsRoutes /></RequireRole>} />
           <Route path="/preview/exams/*" element={<ExamsRoutes preview />} />
           <Route path="/patient/diary" element={<RequireRole role="patient"><AddSymptom /></RequireRole>} />

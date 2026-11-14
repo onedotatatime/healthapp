@@ -60,7 +60,7 @@ async function upload(g: Gt): Promise<{ doc_id: string } | null> {
 }
 
 const rows: string[] = [];
-let correct = 0, total = 0, nameBad = 0, idBad = 0, idFolded = 0, dateBad = 0, refusalsOk = 0, refusalsExpected = 0;
+let correct = 0, total = 0, identityBad = 0, nameBad = 0, idBad = 0, idFolded = 0, dateBad = 0, refusalsOk = 0, refusalsExpected = 0;
 const times: number[] = [];
 const draftIds: Record<number, string> = {};
 const drafts: Record<number, any> = {};
@@ -77,7 +77,10 @@ for (const g of gt) {
   if (g.expected.outcome === "refused") {
     refusalsExpected++;
     const got = r.json.outcome === "refused" ? r.json.reason : r.json.outcome;
-    const ok = got === g.expected.reason;
+    // B1: a mismatch refusal carries the two values that differ
+    const mm = r.json.outcome === "refused" && (got === "name_mismatch" || got === "id_mismatch")
+      ? !!(r.json.mismatch?.printed && r.json.mismatch?.profile) : true;
+    const ok = got === g.expected.reason && mm;
     // "leaves no record": the document must be gone, so its photo link is 404
     const gone = (await fn("doc-photo", { doc_id: up.doc_id }, patient)).status === 404;
     if (ok && gone) refusalsOk++;
@@ -91,6 +94,9 @@ for (const g of gt) {
   const out: DraftOut = { document: d.document, printed_name: d.printed_name, printed_id: d.printed_id, results: d.results, findings: d.findings };
   const s = score(g, out);
   correct += s.correct; total += s.total;
+  const wantIdentity = (g.expected as { identity?: string }).identity;
+  if (wantIdentity && d.document.identity_status !== wantIdentity) { identityBad++; wrongBy.push(`doc ${g.n}: identity_status`); }
+  if (d.document.provenance !== "uploaded_by_patient") { identityBad++; wrongBy.push(`doc ${g.n}: provenance`); }
   if (!s.nameOk) nameBad++;
   if (!s.idOk) idBad++;
   else if (!s.idExact) idFolded++;
@@ -106,6 +112,7 @@ console.log("");
 if (total) console.log(`fields correct: ${correct}/${total} = ${(100 * correct / total).toFixed(1)}%   (target >= 90%)`);
 console.log(`name wrong: ${nameBad}   id wrong: ${idBad}   exam date wrong: ${dateBad}   (target 0 each)`);
 if (idFolded) console.log(`ok* = ${idFolded} ID(s) printed with Greek lookalike letters, equal after normalizeId() (B1 must compare with it)`);
+console.log(`identity_status / provenance wrong on drafts: ${identityBad}   (target 0)`);
 console.log(`refusals as expected: ${refusalsOk}/${refusalsExpected}`);
 times.sort((a, b) => a - b);
 if (times.length) console.log(`extract-exam ms: min ${times[0]}  median ${times[Math.floor(times.length / 2)]}  max ${times.at(-1)}  (30 s target, 60 s limit)`);

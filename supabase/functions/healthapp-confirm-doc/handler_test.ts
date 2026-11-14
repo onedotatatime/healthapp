@@ -19,7 +19,7 @@ async function setup() {
   const logs: Record<string, unknown>[] = [];
   const h = makeHandler({ auth: fakeAuth, store: s.store, log: (l) => logs.push(l) });
   const d = await s.store.createDraft("dev", PATIENT, "image/jpeg");
-  await s.store.saveExtraction("dev", PATIENT, d.id, DRAFT, "a".repeat(64));
+  await s.store.saveExtraction("dev", PATIENT, d.id, DRAFT, "a".repeat(64), "match");
   return { s, h, logs, id: d.id, st: () => s.docs.get(d.id)! };
 }
 

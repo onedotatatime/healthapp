@@ -66,6 +66,15 @@ export const pgStore: Store = {
     return role === "patient" || role === "doctor" ? (role as Role) : null;
   },
 
+  async identityOf(env, uid) {
+    const rows = await db().unsafe(
+      `select full_name, full_name_latin, national_id_norm from ${schema(env)}.profiles where id = $1`,
+      [uid],
+    );
+    const r = rows[0];
+    return r ? { full_name: r.full_name, full_name_latin: r.full_name_latin, national_id_norm: r.national_id_norm } : null;
+  },
+
   async createDraft(env, patientId, contentType) {
     const id = crypto.randomUUID();
     const path = `${patientId}/${id}`;
@@ -93,15 +102,15 @@ export const pgStore: Store = {
     return rows[0]?.e ?? null;
   },
 
-  async saveExtraction(env, patientId, docId, draft: DraftIn, sha256File): Promise<Saved | null> {
+  async saveExtraction(env, patientId, docId, draft: DraftIn, sha256File, identity): Promise<Saved | null> {
     const S = schema(env);
     return await db().begin(async (tx) => {
       const up = await tx.unsafe(
         `update ${S}.documents set kind = $3, language = $4, exam_date = $5, issuer = $6, printed_name = $7,
-                printed_id = $8, extract_confidence = $9::jsonb, sha256_file = $10
+                printed_id = $8, extract_confidence = $9::jsonb, sha256_file = $10, identity_status = $11
           where id = $1 and patient_id = $2 and status = 'draft' returning id`,
         [docId, patientId, draft.kind, draft.language, draft.exam_date, draft.issuer, draft.printed_name,
-          draft.printed_id, jsonb(draft.header_confidence), sha256File],
+          draft.printed_id, jsonb(draft.header_confidence), sha256File, identity],
       );
       if (up.length === 0) return null;
       await tx.unsafe(`delete from ${S}.results where document_id = $1`, [docId]);
