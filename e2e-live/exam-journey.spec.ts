@@ -15,11 +15,26 @@ test('patient signs in, adds a synthetic exam from the gallery, confirms, and se
   let t0 = Date.now();
   const lap = (k: string) => { timings[k] = Date.now() - t0; t0 = Date.now(); };
 
+  // 0. refuse to run anywhere but the dev environment: /health must report env = dev before any passcode is typed
+  await page.goto('/health');
+  await expect(page.getByTestId('env'), 'target is not the dev environment: aborting before sign-in').toHaveText('dev', { timeout: 15_000 });
+
   // 1. sign in as the patient persona
   await page.goto('/login');
-  await page.getByLabel('Demo passcode').fill(PASSCODE);
-  await page.getByTestId('login-patient').click();
-  await expect(page).toHaveURL(/\/patient$/, { timeout: 30_000 });
+  const field = page.getByLabel('Demo passcode');
+  // Playwright writes an accessibility snapshot into test-results/**/error-context.md when a step fails, and
+  // that snapshot includes field values. So the passcode must leave the field the moment the click has submitted
+  // it (the click handler reads it synchronously), and again on any error, before anything can fail with it on screen.
+  const clearPasscode = () => field.fill('', { timeout: 2_000 }).catch(() => {});
+  try {
+    await field.fill(PASSCODE);
+    await page.getByTestId('login-patient').click();
+    await clearPasscode();
+    await page.waitForURL(/\/patient$/, { timeout: 30_000 });
+  } catch {
+    await clearPasscode();
+    throw new Error('sign-in did not reach /patient (wrong or rotated demo passcode, or the sign-in call failed)');
+  }
   await expect(page.getByTestId('records')).toBeVisible();
   lap('1_sign_in_ms');
   await page.screenshot({ path: path.join(OUT, '1-patient-home.png') });
