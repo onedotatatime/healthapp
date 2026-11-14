@@ -22,8 +22,8 @@ export function Stats({ s }: { s: StatsSlide }) {
           </section>
         ))}
       </div>
-      <ul className="stats-chips">{s.chips.map((c) => <li key={c}>{c}</li>)}</ul>
-      <p className="stats-closing">{rich(s.closing)}</p>
+      {s.chips && <ul className="stats-chips">{s.chips.map((c) => <li key={c}>{c}</li>)}</ul>}
+      {s.closing && <p className="stats-closing">{rich(s.closing)}</p>}
     </div>
   );
 }
