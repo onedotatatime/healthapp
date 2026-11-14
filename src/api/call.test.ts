@@ -24,7 +24,7 @@ describe('callFunction', () => {
   });
   it('turns a non-2xx answer into an ApiError that keeps the status', async () => {
     const f = reply(401, { error: { code: 'bad_passcode', message: 'bad passcode' } });
-    await expect(makeCall(env, f as unknown as typeof fetch)('demo-login', {}, DemoLoginResponse)).rejects.toMatchObject({ status: 401, message: 'bad passcode' });
+    await expect(makeCall(env, f as unknown as typeof fetch)('demo-login', {}, DemoLoginResponse)).rejects.toMatchObject({ status: 401, message: 'bad passcode', code: 'bad_passcode' });
   });
   it("reads Cron's nested error body and keeps its code", async () => {
     const f = reply(503, { error: { code: 'model_unavailable', message: 'The model call failed.' } });
