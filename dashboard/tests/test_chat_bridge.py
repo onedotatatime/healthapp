@@ -104,6 +104,29 @@ class OriginRules(ChatCase):
             with self.subTest(name):
                 self.assert_refused(env, *env.get("/chat/sessions?agent=Pix", **kw))
 
+    def test_a_repeated_security_header_is_refused(self):
+        """Two copies of Origin, Host or the key: which one a proxy or the server reads is not the caller's to choose."""
+        env = self.make()
+        good = {"Host": "127.0.0.1:%d" % env.port, "Origin": "http://127.0.0.1:%d" % env.port, "x-chat-key": KEY}
+        for dup, extra in (("Origin", "http://evil.example"), ("x-chat-key", "w" * 40), ("Host", "evil.example")):
+            with self.subTest(dup):
+                lines = ["GET /chat/health HTTP/1.1"] + ["%s: %s" % kv for kv in good.items()] + ["%s: %s" % (dup, extra), "Connection: close", "", ""]
+                s = socket.create_connection(("127.0.0.1", env.port), 5)
+                s.sendall("\r\n".join(lines).encode())
+                head = b""
+                while True:
+                    chunk = s.recv(4096)
+                    if not chunk:
+                        break
+                    head += chunk
+                s.close()
+                self.assertIn(b" 403 ", head.split(b"\r\n")[0])
+        ok = "\r\n".join(["GET /chat/health HTTP/1.1"] + ["%s: %s" % kv for kv in good.items()] + ["Connection: close", "", ""])
+        s = socket.create_connection(("127.0.0.1", env.port), 5)
+        s.sendall(ok.encode())
+        self.assertIn(b" 200 ", s.recv(4096).split(b"\r\n")[0])      # the same request without the extra header is fine
+        s.close()
+
     def test_options_is_403_everywhere_and_never_cors(self):
         env = self.make()
         for path in ("/chat/sessions", "/chat/health", "/index.html", "/"):
@@ -193,6 +216,19 @@ class Argv(ChatCase):
         self.assertIn("--resume", second)
         self.assertNotIn("--session-id", second)
         self.assertEqual(second[second.index("--resume") + 1], argv[argv.index("--session-id") + 1])   # same Claude session
+
+    def test_a_failed_first_turn_starts_again_with_session_id_and_only_an_answer_makes_it_resumable(self):
+        env = self.make()
+        env.set_behavior(is_error=True, reply="boom")
+        sid = env.start_chat()
+        env.wait_idle()
+        env.set_behavior(reply="fine")
+        self.assertEqual(env.post("/chat/sessions/%s/messages" % sid, {"text": "again"})[0], 202)
+        env.wait_idle()
+        self.assertEqual(env.post("/chat/sessions/%s/messages" % sid, {"text": "third"})[0], 202)
+        env.wait_idle()
+        flags = [("--resume" in r["argv"], "--session-id" in r["argv"]) for r in (env.record(i) for i in range(3))]
+        self.assertEqual(flags, [(False, True), (False, True), (True, False)])
 
     def test_read_only_flags_and_no_bypass(self):
         env = self.make()
