@@ -376,6 +376,15 @@ class Safety(BranchesBase):
         self.assertNotIn(home, text)
         self.assertNotIn('/Users/', text)
 
+    def test_a_home_folder_outside_users_is_scrubbed_too(self):
+        # the /Users/<name> rule would hide a broken own-home rule on this Mac; a home elsewhere does not
+        old = os.environ.get('HOME')
+        os.environ['HOME'] = '/srv/people/zed'
+        try:
+            self.assertEqual(sn.clean('read /srv/people/zed/.config/gh failed'), 'read ~/.config/gh failed')
+        finally:
+            os.environ['HOME'] = old
+
     def test_nothing_local_or_personal_leaves_the_block(self):
         text = json.dumps(self.w.block())
         for needle in (self.tmp.name, self.w.wt, os.path.expanduser('~'), '@minhos.ai', 'example.com', 'hello+'):
