@@ -24,10 +24,11 @@ jobs:
       - name: Generator tests (stdlib, no network)
         run: python3 -m unittest discover -s dashboard/tests
       - name: Edge function checks
+        # The root package.json (the PWA, MIN-4451) must not switch Deno to node_modules mode.
         run: |
-          deno check supabase/functions/healthapp-dashboard-ingest/index.ts supabase/functions/healthapp-dashboard-feed/index.ts
+          deno check --node-modules-dir=none supabase/functions/healthapp-dashboard-ingest/index.ts supabase/functions/healthapp-dashboard-feed/index.ts
           deno lint supabase/functions/
-          deno test --allow-read supabase/functions/
+          deno test --node-modules-dir=none --allow-read supabase/functions/
       - name: Key-pattern grep over tracked files (MIN-4449)
         run: |
           if git grep -nE 'eyJ[A-Za-z0-9_-]{30,}|sb_''secret_|SUPABASE_SERVICE_''ROLE_KEY=[A-Za-z0-9_.-]{20,}|lin_''api_[A-Za-z0-9]{20,}|sb''p_[A-Za-z0-9]{20,}'; then
