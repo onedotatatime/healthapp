@@ -77,9 +77,8 @@ a.arow.chrow:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
 .ch-strip.tone-warn .g{color:var(--warn)} .ch-strip.tone-bad .g{color:var(--bad)} .ch-strip.tone-neutral .g{color:var(--ink-2)}
 .ch-sm{flex:1;min-width:0}
 .ch-br{font-size:11px;line-height:16px;margin-top:2px;overflow-wrap:anywhere}
-.ch-ev{list-style:none;margin:6px 0 0;padding:0;max-height:112px;overflow:auto;font:400 12px/18px var(--sans);display:grid}
-.ch-ev li{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ch-ev .t{color:var(--ink-2)}
+.ch-ev{margin:4px 0 0;font:400 12px/16px var(--mono);color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-ev:empty{display:none}
 
 /* composer */
 .ch-comp{padding:8px 16px 12px;border-top:1px solid var(--line)}

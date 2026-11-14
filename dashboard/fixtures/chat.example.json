@@ -40,7 +40,7 @@
        "messages": [
          {"role": "you", "text": "Merge the dashboard PR.", "agoSec": 410},
          {"role": "agent", "text": "I would merge it.", "agoSec": 400, "costUsd": 0.2,
-          "proposal": {"id": "p-ref", "kind": "change", "summary": "Merge the dashboard pull request to staging.", "issue": null, "taskType": "Release", "model": null, "effort": null, "lane": "B", "branch": null, "estMin": 5, "estUsd": 1, "spentTodayUsd": 3.2, "expiresInMin": 20, "status": "refused", "refused": "forbidden"}}]}
+          "proposal": {"id": "p-ref", "kind": "change", "summary": "Merge the dashboard pull request to staging.", "issue": null, "taskType": "Release", "model": null, "effort": null, "lane": "B", "branch": null, "estMin": 5, "estUsd": 1, "spentTodayUsd": 3.2, "expiresInMin": 20, "status": "refused", "refused": "forbidden", "reason": "Not from the chat: merges, production, deletes, money, databases and your exams. Ask the coordinator."}}]}
     ],
     "Anna": [
       {"id": "s-expired", "title": "Reword the empty state", "state": "waiting", "turns": 1, "costUsd": 0.19, "agoSec": 4000,

@@ -30,7 +30,8 @@ const now = Date.parse('2026-11-14T20:00:00Z');
 const S = (id, state, o) => Object.assign({ id, state, title: 'T ' + id, lastAt: '2026-11-14T19:55:48Z' }, o || {});
 const A = (state, issue) => ({ n: 'Pix', role: 'Design', state, issue: issue || '-', title: issue ? 'Some title' : '' });
 const out = {};
-out.strip = {}; ['agent_busy','cap_reached','chat_full','finished','chat_off','busy_session','act_off','rate_limited','budget_reached','too_long'].forEach(c => out.strip[c] = M.strip(c, { Agent: 'Pix', N: 3 }));
+out.page = Object.assign({}, M.PAGE); out.text = { working: M.text('working', { Agent: 'Pix' }), acting: M.text('acting', { Agent: 'Pix', issue: 'MIN-4498' }), act_off: M.text('act_off', { Agent: 'Pix' }) };
+out.tone = {}; ['busy_session','agent_busy','cap_reached','chat_full','finished','chat_off','budget_reached','forbidden','bad_row','yes_expired','declined','too_long','rate_limited','whatever'].forEach(c => out.tone[c] = M.toneOf(c));
 out.row = {
   needsYes: M.rowOf(A('active','MIN-1'), [S('a','waiting'), S('b','needs_yes')], { b: { summary: 'Do X' } }, now),
   acting: M.rowOf(A('active','MIN-1'), [S('a','acting')], { a: { issue: 'MIN-4498' } }, now),
@@ -63,17 +64,33 @@ class Model(unittest.TestCase):
         assert r.returncode == 0, r.stderr
         cls.o = json.loads(r.stdout)
 
-    def test_texts_the_page_writes_itself_equal_the_bridges_texts(self):
-        """The page says some things before it asks (a busy agent, a full cap); they must be the words the bridge would answer with."""
-        for code, got in self.o["strip"].items():
-            want = B.REASONS[code][1].replace("{Agent}", "Pix")
-            self.assertEqual(got["text"], want, code)
+    def test_the_page_holds_only_the_texts_no_bridge_answer_stands_behind(self):
+        """CTO decision 2cc7efc9: the bridge is the one source of words. The page's own table is these six and nothing per refusal code."""
+        self.assertEqual(set(self.o["page"]), {"working", "acting", "not_local", "down", "act_off", "refused"})
+        self.assertEqual(self.o["text"]["working"], "Waiting for Pix's answer. You can write again when it arrives.")
+        self.assertEqual(self.o["text"]["acting"], "Pix is working on MIN-4498 in its own branch.")
 
-    def test_strip_tones(self):
-        s = self.o["strip"]
-        self.assertEqual(s["budget_reached"]["tone"], "bad")
-        self.assertEqual(s["agent_busy"]["tone"], "warn")
-        self.assertEqual(s["chat_full"]["tone"], "neutral")
+    def test_no_bridge_text_is_copied_into_the_page(self):
+        """Every refusal text in chat_bridge.REASONS stays out of the page's two files, except act_off, which state 15 shows without a refusal."""
+        src = open(MODEL).read() + open(CHAT_JS).read()
+        for code, (_, text) in B.REASONS.items():
+            if code == "act_off":
+                continue
+            plain = text.replace("{Agent}", "").strip()
+            sentences = [x.strip() for x in re.split(r"(?<=[.!?])\s+", plain) if len(x.strip()) >= 15] or [plain]
+            self.assertTrue(all(len(x) >= 10 for x in sentences), code)
+            for sent in sentences:                      # a sentence of the bridge's wording, not the whole string, so a pasted half is caught too
+                self.assertNotIn(sent, src, code)
+        self.assertEqual(B.REASONS["act_off"][1].replace("{Agent}", "Pix"), self.o["text"]["act_off"])      # the one copied text equals the bridge's
+
+    def test_tone_per_code(self):
+        t = self.o["tone"]
+        for code in ("budget_reached", "forbidden", "bad_row"):
+            self.assertEqual(t[code], "bad", code)
+        for code in ("busy_session", "chat_full", "finished", "yes_expired", "declined"):
+            self.assertEqual(t[code], "neutral", code)
+        for code in ("agent_busy", "cap_reached", "chat_off", "too_long", "rate_limited", "whatever"):
+            self.assertEqual(t[code], "warn", code)
 
     def test_one_word_per_agent_first_match_wins(self):
         r = self.o["row"]

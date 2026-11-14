@@ -72,7 +72,7 @@ function paintCard(){
   const ag = agents();
   if(!ag.length){ box.innerHTML = '<p class="muted bre">No agents in the feed yet.</p>'; return; }
   if(!live()){
-    const note = S.mode === 'probing' ? '' : '<p class="muted note chnote">' + esc(isLocal ? M.strip('not_local').text : 'Chat runs on the local Mac only.') + '</p>';
+    const note = S.mode === 'probing' ? '' : '<p class="muted note chnote">' + esc(isLocal ? M.text('not_local') : 'Chat runs on the local Mac only.') + '</p>';
     box.innerHTML = ag.slice(0, 5).map(H.agentRow).join('') + (ag.length > 5 ? '<div class="muted more">+' + (ag.length - 5) + ' more, idle: ' + ag.slice(5).map(a => esc(a.n)).join(', ') + '</div>' : '') + note;
     return;
   }
@@ -94,9 +94,6 @@ document.addEventListener('click', e => { if(e.target.closest('#whoMore')){ S.wh
 const GLYPH = { neutral: '○', warn: '▲', bad: '■' };
 const agentRec = n => agents().find(a => a.n === n) || null;
 const ownBusy = c => !!(c.session && (c.session.state === 'working' || c.session.state === 'acting'));
-const otherBusy = c => (S.sessions[c.agent] || []).some(s => (s.state === 'working' || s.state === 'acting') && (!c.session || s.id !== c.session.id));
-const agentRunning = c => ownBusy(c) || otherBusy(c);
-const capHit = c => !!(S.health && S.health.running >= S.health.maxRunning && !agentRunning(c));
 const sessList = c => { const l = (S.sessions[c.agent] || []).slice(); return l; };
 
 function mount(body, agent){
@@ -156,7 +153,7 @@ async function loadEvents(){
   const r = await api('GET', '/chat/sessions/' + c.sid + '/events?after=' + c.lastN);
   if(c !== cur || r.status !== 200) return;
   (r.json.events || []).forEach(e => { if(e.n > c.lastN){ c.events.push(e); c.lastN = e.n; } });
-  if(c.events.length > 200) c.events = c.events.slice(-200);
+  if(c.events.length > 30) c.events = c.events.slice(-30);
 }
 
 function schedule(){
@@ -171,6 +168,7 @@ async function tick(force){
   busy = true;
   try{
     const c = cur, fast = c && ownBusy(c) && !force;
+    if(c && c.notice && Date.now() - (c.notice.at || 0) > 20000){ c.notice = null; lastSig.stripSig = null; }
     if(!fast || ++fastN % 5 === 0){ await probe(); if(S.mode === 'up') await loadAll(); }
     if(c && c === cur){ if(S.mode === 'up' && c.sid) await loadThread(); else if(S.mode === 'up' && !c.sid && !c.newMode){ await loadAgent(); } if(c === cur) paint(); }
     paintCard();
@@ -186,33 +184,31 @@ function stateLine(c){
 function composerState(c){
   const name = c.agent;
   if(S.mode !== 'up') return { on: false, ph: 'Chat is not available', newOn: false };
-  if(S.health && S.health.off) return { on: false, ph: 'Chat is switched off', newOn: false };
   if(!c.loaded) return { on: false, ph: 'Loading chats…', newOn: false };
   const st = c.session ? c.session.state : '';
   if(st === 'acting') return { on: false, ph: 'Composer is off while ' + name + ' works', newOn: false };
   if(st === 'working') return { on: false, ph: 'Composer is off until ' + name + ' answers', newOn: false };
-  if(otherBusy(c)) return { on: false, ph: name + ' is busy in another chat', newOn: false };
-  if(capHit(c)) return { on: false, ph: 'Wait for another agent to finish', newOn: false };
   if(c.newMode || (c.session && (st === 'waiting' || st === 'needs_yes') && !c.session.full)) return { on: true, ph: 'Ask ' + name + '…', newOn: true };
   if(st === 'finished' || (c.session && c.session.full)) return { on: false, ph: 'This chat is finished', newOn: true };
   return { on: false, ph: 'Start a chat to write', newOn: true };
 }
 
+/* One strip at a time. Its words are the bridge's (a refusal's `reason`) except for the states the page reads itself (CTO 2cc7efc9). */
 function stripFor(c){
-  const o = { Agent: c.agent, N: S.health ? S.health.maxRunning : 3 }, st = c.session ? c.session.state : '';
-  if(S.mode === 'absent' || S.mode === 'nokey' || S.mode === 'host') return { k: 'x', tone: 'neutral', text: M.strip('not_local', o).text };
-  if(S.mode === 'down') return { k: 'down', tone: 'warn', text: M.strip('down', o).text, retry: true };
+  const o = { Agent: c.agent }, st = c.session ? c.session.state : '';
+  if(S.mode === 'absent' || S.mode === 'nokey' || S.mode === 'host') return { k: 'x', tone: 'neutral', text: M.text('not_local', o) };
+  if(S.mode === 'down') return { k: 'down', tone: 'warn', text: M.text('down', o), retry: true };
   if(S.mode === 'probing') return null;
-  if(S.health && S.health.off) return { k: 'off', tone: 'warn', text: M.strip('chat_off', o).text };
   if(st === 'acting'){
     const p = [...c.msgs].reverse().map(m => m.proposal).find(x => x && x.status === 'accepted'), iss = p && M.issueOk(p.issue) ? p.issue : 'the issue';
-    return { k: 'acting', tone: 'neutral', text: M.strip('acting', Object.assign({ issue: iss }, o)).text, el: true, branch: c.session.branch, stop: true, events: true };
+    return { k: 'acting', tone: 'neutral', text: M.text('acting', Object.assign({ issue: iss }, o)), el: true, branch: c.session.branch, stop: true, events: true };
   }
-  if(st === 'working') return { k: 'working', tone: 'neutral', text: M.strip('working', o).text, stop: true, events: true };
-  if(c.notice) return Object.assign({ k: 'notice' }, c.notice);
-  if(otherBusy(c)){ const os = (S.sessions[c.agent] || []).find(x => x.state === 'working' || x.state === 'acting'); return { k: 'busy', tone: 'warn', text: M.strip('agent_busy', o).text, stop: true, stopSid: os ? os.id : null }; }
-  if(capHit(c)) return { k: 'cap', tone: 'warn', text: M.strip('cap_reached', o).text };
-  if(c.session && st === 'finished') return { k: 'fin', tone: 'neutral', text: M.strip(c.session.full ? 'chat_full' : 'finished', o).text };
+  if(st === 'working') return { k: 'working', tone: 'neutral', text: M.text('working', o), stop: true, events: true };
+  if(c.notice){
+    const n = Object.assign({ k: 'notice' }, c.notice);
+    if(n.code === 'agent_busy'){ const os = (S.sessions[c.agent] || []).find(x => x.state === 'working' || x.state === 'acting'); if(os){ n.stop = true; n.stopSid = os.id; } }
+    return n;
+  }
   return null;
 }
 
@@ -227,7 +223,7 @@ function paint(){
   setHtml('top', $('#chTop', body), topHtml);
   /* sessions */
   const l = sessList(c), mark = s => ({ working: '◌ Working', waiting: 'Waiting for you', finished: 'Finished', needs_yes: '▲ Needs your yes', acting: '● Acting' }[s.state] || s.state);
-  const sessHtml = '<div class="ch-sh"><span class="micro">Open chats · ' + l.length + '</span><button type="button" class="btn sm" id="chNew"' + (cs.newOn ? '' : ' disabled aria-disabled="true"') + (!cs.newOn ? ' title="' + esc(newOffWhy(c)) + '"' : '') + '>+ New chat</button></div>'
+  const sessHtml = '<div class="ch-sh"><span class="micro">Open chats · ' + l.length + '</span><button type="button" class="btn sm" id="chNew"' + (cs.newOn ? '' : ' disabled aria-disabled="true"') + '' + '>+ New chat</button></div>'
     + (l.length || c.newMode ? '<div class="ch-sl">' + (c.newMode ? '<div class="ch-srow on" aria-current="true"><span class="ttl">New chat</span><span class="mk">Not sent yet</span></div>' : '') + l.map(s => '<button type="button" class="ch-srow' + (!c.newMode && c.sid === s.id ? ' on' : '') + '" data-sid="' + esc(s.id) + '"' + (!c.newMode && c.sid === s.id ? ' aria-current="true"' : '') + '><span class="ttl">' + esc(s.title || 'Chat') + '</span><span class="mk">' + esc(mark(s)) + '</span>'
       + '<span class="sub mono">' + esc(sing(s.turns, 'turn') + ' · ' + M.money(s.costUsd) + ' · ' + hm(s.lastAt)) + '</span></button>').join('') + '</div>' : '');
   setHtml('sess', $('#chSess', body), sessHtml);
@@ -238,7 +234,7 @@ function paint(){
   if(lastSig.stripSig !== stSig){ lastSig.stripSig = stSig; lastSig.strip = null; lastSig.ev = null; }
   setHtml('strip', $('#chStrip', body), st ? stripHtml(c, st) : '');
   const evEl = $('#chEv', body);                            // the events list is updated in place, so the sentence above it is not re-announced on every poll
-  if(evEl){ const h = evHtml(c); if(lastSig.ev !== h){ lastSig.ev = h; evEl.innerHTML = h; evEl.scrollTop = evEl.scrollHeight; } }
+  if(evEl){ const h = evHtml(c); if(lastSig.ev !== h){ lastSig.ev = h; evEl.innerHTML = h; } }
   /* composer */
   const ta = $('#chatText', body), send = $('#chSend', body);
   ta.disabled = !cs.on; ta.placeholder = cs.ph; send.disabled = !cs.on || c.sending;
@@ -252,39 +248,33 @@ function setHtml(k, el, html){
   el.innerHTML = html;
   if(had){ const t = (id && el.querySelector('#' + id)) || (sid && el.querySelector('[data-sid="' + sid + '"]')); if(t && !t.disabled) t.focus({ preventScroll: true }); }
 }
-function newOffWhy(c){
-  if(S.health && S.health.off) return M.strip('chat_off').text;
-  if(agentRunning(c)) return M.strip('agent_busy', { Agent: c.agent }).text;
-  if(capHit(c)) return M.strip('cap_reached', { N: S.health.maxRunning }).text;
-  return 'Not available right now';
-}
-
+/* the latest event only, one mono line in --ink-2: tool and path (CTO 2cc7efc9). The client keeps the last 30; the page shows one. */
 function evHtml(c){
-  const ev = c.events.slice(-30);
-  return ev.length ? ev.map(e => '<li><span class="mono t">' + esc(hmsOf(e.at)) + '</span> <b>' + esc(e.tool) + '</b>' + (e.target ? ' <span class="mono">' + esc(e.target) + '</span>' : '') + '</li>').join('') : '<li class="muted">Nothing reported yet.</li>';
+  const e = c.events[c.events.length - 1];
+  return e ? esc(e.tool) + (e.target ? ' ' + esc(e.target) : '') : '';
 }
 function stripHtml(c, s){
   return '<div class="ch-strip tone-' + s.tone + '"><span class="g" aria-hidden="true">' + (s.k === 'acting' ? '\u25CF' : GLYPH[s.tone]) + '</span><div class="ch-sm"><span role="status">' + esc(s.text) + '</span>'
     + (s.el ? ' <span class="mono" id="chEl">' + esc(c.session ? M.elapsed(Date.now() - Date.parse(c.session.lastAt)) : '') + '</span>' : '')
     + (s.branch ? '<div class="mono ch-br">' + esc(s.branch) + ' <a class="linkbtn" href="#/branches">See it in Branches \u203A</a></div>' : '')
-    + (s.events ? '<ul class="ch-ev" id="chEv" aria-label="What ' + esc(c.agent) + ' is doing" tabindex="0"></ul>' : '') + '</div>'
+    + (s.events ? '<p class="ch-ev mono" id="chEv" aria-label="What ' + esc(c.agent) + ' is doing, latest step" title="Latest step"></p>' : '') + '</div>'
     + (s.stop ? '<button type="button" class="btn sm" id="chStop"' + (s.stopSid ? ' data-stopsid="' + esc(s.stopSid) + '"' : '') + (c.stopping ? ' disabled aria-disabled="true">Stopping…' : '>■ Stop') + '</button>' : '')
     + (s.retry ? '<button type="button" class="btn sm" id="chRetryConn">Try again</button>' : '')
     + (s.k === 'notice' && s.retry2 ? '<button type="button" class="btn sm" id="chRetrySend">Retry</button>' : '') + '</div>';
 }
-const hmsOf = at => { const d = new Date(at); return isNaN(d) ? '' : H.hhmmss(d); };
 
 /* ---------- the thread: appended, never rebuilt, so a reader and the scroll position are left alone ---------- */
 function bubble(role, text, meta, cls){ return '<div class="ch-m ' + role + (cls ? ' ' + cls : '') + '"><div class="bub">' + esc(text) + '</div><div class="meta mono">' + esc(meta) + '</div></div>'; }
 function rowsHtml(pairs){ return '<dl class="ch-kv">' + pairs.filter(Boolean).map(([k, v, raw]) => '<dt>' + esc(k) + '</dt><dd>' + (raw ? v : esc(v)) + '</dd>').join('') + '</dl>'; }
 function proposalHtml(c, p){
   const loc = c.localRefused[p.id], actOn = !!(S.health && S.health.act);
-  const v = loc ? { status: 'refused', buttons: false, line: [M.STRIP[loc.code] ? M.STRIP[loc.code][0] : 'warn', loc.code] } : M.proposalView(p, actOn, Date.now());
+  const v = loc ? { status: 'refused', buttons: false, line: [M.toneOf(loc.code), loc.code] } : M.proposalView(p, actOn, Date.now());
   const o = { Agent: c.agent }, issue = M.issueOk(p.issue) ? '<a href="https://linear.app/minhos/issue/' + esc(p.issue) + '" target="_blank" rel="noopener">' + esc(p.issue) + '<span class="sr"> (opens Linear)</span></a>' : 'New issue';
   let line = '';
   if(v.line){
     const code = v.line[1];
-    const txt = code === 'declined' ? 'Declined' : code === 'yes_expired' ? 'Expired. Ask again.' : (loc && loc.reason) || (v.status === 'refused' ? M.refusedText(code, o) : M.strip(code, o).text);
+    const txt = code === 'declined' ? 'Declined' : code === 'yes_expired' ? 'Expired. Ask again.' : code === 'act_off' && !loc ? M.text('act_off', o)
+      : (loc && loc.reason) || p.reason || M.text('refused', o);                    // the bridge's words; a refused proposal carries its `reason`
     line = '<div class="ch-pl t-' + v.line[0] + '"><span aria-hidden="true">' + (code === 'declined' || code === 'yes_expired' ? '○' : GLYPH[v.line[0]]) + '</span> ' + esc(txt) + '</div>';
   }
   const mins = Math.max(0, Math.round((Date.parse(p.expiresAt) - Date.now()) / 60000));
@@ -364,14 +354,14 @@ async function send(){
   const code = r.json.refused;
   if(r.status === 0 || (r.status >= 500 && !code) || r.status === 404 && !code){
     c.opt = { role: 'you', text, failed: true };
-    c.notice = Object.assign(M.strip('send_failed', { Agent: c.agent }), { retry2: true });
+    c.notice = { tone: 'bad', text: r.json.reason || 'Not sent.', retry2: true, at: Date.now() };
     if(r.status === 0) S.mode = 'down';
   } else if(r.status === 403){ c.opt = null; S.mode = 'absent'; }
   else {
     c.opt = null;
-    c.notice = { tone: (M.STRIP[code] || ['warn'])[0], text: r.json.reason || M.strip(code || 'bad_request', { Agent: c.agent, N: S.health ? S.health.maxRunning : 3 }).text };
+    c.notice = { tone: M.toneOf(code), code, text: r.json.reason || 'Not sent.', at: Date.now() };
     if(code === 'chat_off' || code === 'cap_reached' || code === 'budget_reached' || code === 'agent_busy'){ probe().then(() => cur && paint()); }
-    if(code === 'finished' || code === 'chat_full') loadAgent();
+    if(code === 'finished' || code === 'chat_full' || code === 'agent_busy') loadAgent();
   }
   lastSig.stripSig = null; paint();
   if(!ta.disabled) ta.focus();
@@ -386,7 +376,7 @@ async function answer(pid, yes){
   if(r.status === 200 || r.status === 202){ if(yes){ c.events = []; } await loadThread(); loadAll().then(paintCard); paint(); schedule(); return; }
   const code = r.json.refused || 'forbidden';
   if(yes) c.localRefused[pid] = { code, reason: r.json.reason };
-  else c.notice = { tone: 'warn', text: r.json.reason || M.strip(code, { Agent: c.agent }).text };
+  else c.notice = { tone: M.toneOf(code), code, text: r.json.reason || 'Not sent.', at: Date.now() };
   if(code === 'act_off' && S.health) S.health.act = false;
   lastSig = {}; paint();
 }
@@ -396,7 +386,9 @@ async function stop(sid){
   c.stopping = true; lastSig.stripSig = null; paint();
   const r = await api('POST', '/chat/sessions/' + sid + '/stop');
   if(c !== cur) return;
-  if(r.status !== 200){ c.stopping = false; c.notice = { tone: 'warn', text: r.json.reason || 'Could not stop it. Try again.' }; lastSig.stripSig = null; }
+  if(r.status !== 200){ c.stopping = false; c.notice = { tone: 'warn', text: r.json.reason || 'Not stopped.', at: Date.now() }; }
+  else if(c.notice && c.notice.code === 'agent_busy') c.notice = null;     // the refusal is answered: the other turn is stopped
+  lastSig.stripSig = null;
   if(c.sid) await loadThread(); loadAgent(); paint(); schedule();
 }
 
@@ -408,5 +400,5 @@ H.onSecond(() => {
 
 /* ---------- boot ---------- */
 if(isLocal && key){ tick(true); }
-window.Chat = { isLocal, live, mount, unmount, paintCard, calm: () => M.strip('not_local').text, get mode(){ return S.mode; }, refresh: () => tick(true) };
+window.Chat = { isLocal, live, mount, unmount, paintCard, calm: () => M.text('not_local'), get mode(){ return S.mode; }, refresh: () => tick(true) };
 })();

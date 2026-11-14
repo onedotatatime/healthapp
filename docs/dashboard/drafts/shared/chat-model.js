@@ -1,39 +1,25 @@
 /* Dashboard chat, the pure part (MIN-4498): the words, the one-word-per-agent rule, money and time formats. No DOM, no network, so
-   `node` can test it (dashboard/tests/test_chat_ui_model.py). Texts are the CTO's final wording (MIN-4496, MIN-4495) and Pix's frames. */
+   `node` can test it (dashboard/tests/test_chat_ui.py). Texts are the CTO's final wording (MIN-4496, MIN-4495) and Pix's frames. */
 (function(root){
 'use strict';
 
-/* code -> [tone, text]. {Agent} is the display name, {N} the cap. The bridge sends its own `reason`; this table is for what the page
-   knows before it asks (a busy agent, a full cap, a bridge that is not there) and for a bridge that sent a code with no text. */
-const STRIP = {
-  working:        ['neutral', "Waiting for {Agent}'s answer. You can write again when it arrives."],
-  acting:         ['neutral', '{Agent} is working on {issue} in its own branch.'],
-  not_local:      ['neutral', 'Chat works on this Mac only. Open the dashboard with open.sh.'],
-  down:           ['warn',    'Chat bridge not reachable. Chat works on this Mac only.'],
-  chat_off:       ['warn',    'Chat is switched off on this Mac.'],
-  busy_session:   ['neutral', '{Agent} is still answering this chat.'],
-  agent_busy:     ['warn',    '{Agent} is already working. Wait for it to finish, or stop it.'],
-  cap_reached:    ['warn',    '{N} agents are already answering. Try again when one finishes.'],
-  chat_full:      ['neutral', 'This chat is full. Start a new chat.'],
-  finished:       ['neutral', 'This chat is finished. Start a new chat.'],
-  budget_reached: ['bad',     "Today's chat budget is used up. It resets at midnight."],
-  too_long:       ['warn',    'Keep it under 4,000 characters.'],
-  act_off:        ['warn',    'Acting is switched off on this Mac. {Agent} can still answer.'],
-  yes_expired:    ['neutral', 'This request expired. Ask again.'],
-  bad_row:        ['bad',     '{Agent} cannot run this from the chat. Ask the coordinator.'],
-  forbidden:      ['bad',     'Not from the chat: merges, production, deletes, money, databases and your exams. Ask the coordinator.'],
-  rate_limited:   ['warn',    '{Agent} is rate limited. Try again in a minute.'],
-  empty:          ['warn',    'Write a message first.'],
-  unknown_session:['warn',    'No such chat. Start a new one.'],
-  unknown_proposal:['warn',   'No such request.'],
-  bad_request:    ['warn',    'The bridge did not understand that. Nothing was sent.'],
-  send_failed:    ['bad',     'Message not sent. Nothing reached {Agent}.'],
-  forbidden_http: ['warn',    'Chat works on this Mac only. Open the dashboard with open.sh.'],
+/* The page's own texts. CTO decision 2cc7efc9 (MIN-4497): the bridge is the one source of words. A refusal shows the bridge's `reason`
+   and a role `error` message shows its `text`, exactly as sent; no text per refusal code lives here. What is here has no bridge answer
+   behind it: a state the page reads (working, acting, acting switched off) or a bridge that is not there. {Agent} is the display name. */
+const PAGE = {
+  working:   "Waiting for {Agent}'s answer. You can write again when it arrives.",
+  acting:    '{Agent} is working on {issue} in its own branch.',
+  not_local: 'Chat works on this Mac only. Open the dashboard with open.sh.',
+  down:      'Chat bridge not reachable. Chat works on this Mac only.',
+  act_off:   'Acting is switched off on this Mac. {Agent} can still answer.',     // state 15: shown for an open proposal when /chat/health says act:false
+  refused:   'This request was not allowed from the chat.',                         // a refused proposal that came with no `reason` (until the bridge sends one)
 };
 const fill = (t, o) => String(t).replace(/\{(\w+)\}/g, (m, k) => o && o[k] != null ? o[k] : m);
-function strip(code, o){ const s = STRIP[code] || STRIP.bad_request; return { tone:s[0], text:fill(s[1], o) }; }
-/* proposal.refused is one of these; the same table. A budget refusal on a proposal reads differently from one on a message. */
-function refusedText(code, o){ return code==='budget_reached' ? fill("This would pass today's chat budget. It resets at midnight.", o) : strip(code, o).text; }
+const text = (key, o) => fill(PAGE[key], o);
+/* Tone and icon per code (Pix's reference frame 12:405 binds these, not the words). Unknown codes are warn. */
+const NEUTRAL = ['busy_session', 'chat_full', 'finished', 'yes_expired', 'declined', 'unknown_session', 'unknown_proposal'];
+const BAD = ['budget_reached', 'forbidden', 'bad_row'];
+const toneOf = code => NEUTRAL.indexOf(code) >= 0 ? 'neutral' : BAD.indexOf(code) >= 0 ? 'bad' : 'warn';
 
 const money = n => { n = +n; if(!isFinite(n)) return ''; if(n > 0 && n < 0.01) return '<$0.01'; return '$' + n.toFixed(2); };
 const pad2 = n => String(n).padStart(2, '0');
@@ -101,7 +87,7 @@ function resultView(r){
   return v;
 }
 
-const M = { STRIP, strip, refusedText, fill, money, elapsed, pad2, kindLabel, issueOk, rowOf, summary, proposalView, resultView };
+const M = { PAGE, text, toneOf, fill, money, elapsed, pad2, kindLabel, issueOk, rowOf, summary, proposalView, resultView };
 root.ChatModel = M;
 if(typeof module !== 'undefined' && module.exports) module.exports = M;
 })(typeof window !== 'undefined' ? window : globalThis);
