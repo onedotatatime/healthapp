@@ -1,0 +1,573 @@
+{
+ "schema": 1,
+ "intervalSec": 180,
+ "generatedAt": "2026-11-14T20:42:47Z",
+ "blocks": {
+  "linear": {
+   "asOf": "2026-11-14T20:42:47Z",
+   "error": null
+  },
+  "usage": {
+   "asOf": "2026-11-14T20:42:47Z",
+   "error": null
+  },
+  "money": {
+   "asOf": "2026-11-14T20:42:47Z",
+   "error": null
+  },
+  "hand": {
+   "asOf": "2026-11-14T20:42:47Z",
+   "error": null
+  },
+  "repo": {
+   "asOf": "2026-11-14T20:42:47Z",
+   "error": null
+  }
+ },
+ "deadline": "2026-11-15T18:00:00+02:00",
+ "buildStart": "2026-11-14T12:00:00+02:00",
+ "freeze": "2026-11-15T13:00:00+02:00",
+ "submitBy": "2026-11-15T17:00:00+02:00",
+ "milestones": [
+  {
+   "id": "M1",
+   "name": "Setup and dashboard pick",
+   "start": "Sat 15:00",
+   "end": "Sat 18:00",
+   "gate": "Both roles can log in as patient and doctor",
+   "done": 0,
+   "total": 7
+  },
+  {
+   "id": "M2",
+   "name": "Digitize and identity",
+   "start": "Sat 18:00",
+   "end": "Sat 22:00",
+   "gate": "A1 at 90% on 5 docs, else cut to English and 2 exam types",
+   "done": 0,
+   "total": 0
+  },
+  {
+   "id": "M3",
+   "name": "Diary and handshake",
+   "start": "Sat 22:00",
+   "end": "Sun 02:00",
+   "gate": "Demo steps 1, 2, 4 run end to end",
+   "done": 0,
+   "total": 0
+  },
+  {
+   "id": "M4",
+   "name": "Doctor's assistant",
+   "start": "Sun 02:00",
+   "end": "Sun 08:00",
+   "gate": "Demo steps 5 and 6 run",
+   "done": 0,
+   "total": 0
+  },
+  {
+   "id": "M5",
+   "name": "P1 if P0 is green",
+   "start": "Sun 08:00",
+   "end": "Sun 13:00",
+   "gate": "All 8 steps run",
+   "done": 0,
+   "total": 0
+  },
+  {
+   "id": "M6",
+   "name": "Freeze, 3 clean runs",
+   "start": "Sun 13:00",
+   "end": "Sun 15:30",
+   "gate": "3 clean runs in a row",
+   "done": 0,
+   "total": 0
+  },
+  {
+   "id": "M7",
+   "name": "Submission and pitch prep",
+   "start": "Sun 15:30",
+   "end": "Sun 18:00",
+   "gate": "Submitted by 17:00",
+   "done": 0,
+   "total": 0
+  }
+ ],
+ "current": "M1",
+ "tasks": {
+  "done": 2,
+  "inProgress": 2,
+  "inReview": 4,
+  "open": 15,
+  "blocked": 13,
+  "total": 36,
+  "byRole": {
+   "Frontend": 4,
+   "Release": 1,
+   "Backend": 6,
+   "CTO": 5,
+   "Founder": 5,
+   "Product": 8,
+   "Design": 3,
+   "Sales": 2,
+   "Marketing": 2
+  }
+ },
+ "agents": [
+  {
+   "n": "Back",
+   "role": "Product",
+   "state": "active",
+   "issue": "MIN-4500",
+   "title": "Working on a story",
+   "last": "3m"
+  },
+  {
+   "n": "Anna",
+   "role": "Marketing",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "10m"
+  },
+  {
+   "n": "Pix",
+   "role": "Design",
+   "state": "active",
+   "issue": "MIN-4502",
+   "title": "Working on a story",
+   "last": "17m"
+  },
+  {
+   "n": "Ren",
+   "role": "Frontend",
+   "state": "active",
+   "issue": "MIN-4503",
+   "title": "Working on a story",
+   "last": "24m"
+  },
+  {
+   "n": "Cron",
+   "role": "Backend",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "31m"
+  },
+  {
+   "n": "CTO",
+   "role": "CTO",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "38m"
+  },
+  {
+   "n": "Spast",
+   "role": "Sales",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "45m"
+  },
+  {
+   "n": "Release",
+   "role": "Release",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "52m"
+  },
+  {
+   "n": "CEO",
+   "role": "CEO",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "59m"
+  },
+  {
+   "n": "E2E",
+   "role": "E2E",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "66m"
+  },
+  {
+   "n": "Scrum",
+   "role": "Scrum Master",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "73m"
+  },
+  {
+   "n": "SEO",
+   "role": "SEO",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "80m"
+  },
+  {
+   "n": "JobScout",
+   "role": "JobScout",
+   "state": "idle",
+   "issue": "-",
+   "title": "-",
+   "last": "87m"
+  }
+ ],
+ "lanes": [
+  {
+   "agent": "Back",
+   "bars": [
+    {
+     "issue": "MIN-4423",
+     "from": "2026-11-14T10:00:00Z",
+     "to": "now",
+     "state": "active"
+    },
+    {
+     "issue": "MIN-4443",
+     "from": "2026-11-14T12:51:52Z",
+     "to": "now",
+     "state": "active"
+    },
+    {
+     "issue": "MIN-4445",
+     "from": "2026-11-14T12:59:15Z",
+     "to": "now",
+     "state": "active"
+    },
+    {
+     "issue": "MIN-4448",
+     "from": "2026-11-14T12:59:54Z",
+     "to": "now",
+     "state": "active"
+    }
+   ]
+  },
+  {
+   "agent": "Anna",
+   "bars": []
+  },
+  {
+   "agent": "Pix",
+   "bars": [
+    {
+     "issue": "MIN-4446",
+     "from": "2026-11-14T13:05:08Z",
+     "to": "now",
+     "state": "active"
+    }
+   ]
+  },
+  {
+   "agent": "Ren",
+   "bars": [
+    {
+     "issue": "MIN-4447",
+     "from": "2026-11-14T13:13:15Z",
+     "to": "now",
+     "state": "active"
+    }
+   ]
+  },
+  {
+   "agent": "Cron",
+   "bars": []
+  },
+  {
+   "agent": "CTO",
+   "bars": []
+  },
+  {
+   "agent": "Spast",
+   "bars": []
+  },
+  {
+   "agent": "Release",
+   "bars": []
+  },
+  {
+   "agent": "CEO",
+   "bars": []
+  },
+  {
+   "agent": "E2E",
+   "bars": []
+  }
+ ],
+ "tokens": {
+  "agentCaps": {
+   "soft": 300000,
+   "hard": 400000
+  },
+  "chatCaps": {
+   "soft": 350000,
+   "hard": 400000
+  },
+  "perAgent": [
+   {
+    "n": "Pix",
+    "v": 9236564
+   },
+   {
+    "n": "Ren",
+    "v": 6033214
+   },
+   {
+    "n": "Back",
+    "v": 5037126
+   },
+   {
+    "n": "Cron",
+    "v": 4522027
+   },
+   {
+    "n": "Anna",
+    "v": 3913157
+   },
+   {
+    "n": "CTO",
+    "v": 2849095
+   },
+   {
+    "n": "Release",
+    "v": 1469576
+   },
+   {
+    "n": "CEO",
+    "v": 969807
+   },
+   {
+    "n": "Spast",
+    "v": 801228
+   }
+  ],
+  "perChat": [
+   {
+    "n": "Business design exercises status",
+    "v": 10889335
+   },
+   {
+    "n": "Deployment and Cloudflare options",
+    "v": 9977658
+   },
+   {
+    "n": "Pix pitching deck draft",
+    "v": 7314766
+   },
+   {
+    "n": "Dashboard drafts: Pix with Mobbin, then Ren",
+    "v": 7207669
+   },
+   {
+    "n": "Real-time project dashboard design",
+    "v": 5802950
+   },
+   {
+    "n": "Remote repo creation",
+    "v": 2253176
+   },
+   {
+    "n": "Treg installation on Chrome",
+    "v": 411004
+   },
+   {
+    "n": "Boxd.sh setup",
+    "v": 287508
+   }
+  ],
+  "series": [
+   0,
+   0,
+   0,
+   2641921,
+   4952403,
+   5895051,
+   5895051,
+   5895051,
+   9358594,
+   15145111,
+   17703829,
+   20229483,
+   27627890,
+   34356000,
+   42228678,
+   44144065
+  ],
+  "seriesFrom": "2026-11-14T10:00:00Z",
+  "seriesStepMin": 15,
+  "projection": {
+   "at": "2026-11-15T16:00:00Z",
+   "v": 543572647.0
+  },
+  "window": {
+   "since": "2026-11-14T10:00:00Z",
+   "until": "2026-11-14T14:00:02Z"
+  },
+  "scope": "projects whose folder name contains 'healthapp'",
+  "totalWeighted": 44144065,
+  "lastSeen": {
+   "Back": "2026-11-14T13:57:32Z",
+   "Release": "2026-11-14T13:56:32Z",
+   "Pix": "2026-11-14T13:55:32Z",
+   "Anna": "2026-11-14T13:54:32Z",
+   "Spast": "2026-11-14T13:53:32Z",
+   "CTO": "2026-11-14T13:52:32Z",
+   "CEO": "2026-11-14T13:51:32Z",
+   "Ren": "2026-11-14T13:50:32Z",
+   "Cron": "2026-11-14T13:49:32Z"
+  }
+ },
+ "money": {
+  "estimate": true,
+  "estimateEUR": 103.52,
+  "estimateSeries": [
+   0.0,
+   0.0,
+   0.0,
+   6.77,
+   10.73,
+   12.49,
+   12.49,
+   12.49,
+   18.94,
+   36.49,
+   42.73,
+   49.02,
+   68.83,
+   84.16,
+   100.33,
+   103.52
+  ],
+  "projection": {
+   "at": "2026-11-15T16:00:00Z",
+   "v": 1292.09
+  },
+  "rateCard": {
+   "source": "conductor public.model_pricing (read-only select, 2026-11-14)",
+   "eurPerUsd": 0.92,
+   "cacheWriteTtl": "5m",
+   "label": "estimate at API list price, not a bill",
+   "usedModels": [
+    "claude-fable-5-1",
+    "claude-opus-5-5",
+    "claude-sonnet-5"
+   ],
+   "aliased": {
+    "claude-fable-5-2": "claude-fable-5-1",
+    "claude-sonnet-5-5": "claude-sonnet-5"
+   },
+   "unpricedTokens": 0
+  },
+  "credits": [
+   {
+    "n": "Google AI (Gemini)",
+    "granted": 300,
+    "used": 0
+   },
+   {
+    "n": "fal",
+    "granted": 50,
+    "used": 0
+   },
+   {
+    "n": "Firecrawl",
+    "granted": 100,
+    "used": 0
+   },
+   {
+    "n": "treg",
+    "granted": 50,
+    "used": 0
+   }
+  ]
+ },
+ "demo": {
+  "build": {
+   "state": "idle",
+   "label": "No build yet",
+   "at": ""
+  },
+  "deploy": {
+   "state": "idle",
+   "label": "Not deployed"
+  },
+  "url": "",
+  "cleanRuns": 0,
+  "cleanTarget": 3,
+  "steps": [
+   {
+    "n": 1,
+    "t": "Photograph a blood test, record appears",
+    "s": "idle"
+   },
+   {
+    "n": 2,
+    "t": "Refuses a document with the wrong name and ID",
+    "s": "idle"
+   },
+   {
+    "n": 3,
+    "t": "Symptom diary records without interpreting",
+    "s": "idle"
+   },
+   {
+    "n": 4,
+    "t": "DNA-shaped QR handshake, countdown starts",
+    "s": "idle"
+   },
+   {
+    "n": 5,
+    "t": "Doctor asks, answer cites the source exam",
+    "s": "idle"
+   },
+   {
+    "n": 6,
+    "t": "Possible causes, for the doctor only",
+    "s": "idle"
+   },
+   {
+    "n": 7,
+    "t": "Possible matches, opt-in",
+    "s": "idle"
+   },
+   {
+    "n": 8,
+    "t": "Access ends, log shows who looked",
+    "s": "idle"
+   }
+  ],
+  "notes": {
+   "1": "Not run yet.",
+   "2": "Not run yet.",
+   "3": "Not run yet.",
+   "4": "Not run yet.",
+   "5": "Not run yet.",
+   "6": "Not run yet.",
+   "7": "Not run yet.",
+   "8": "Not run yet."
+  }
+ },
+ "receivedAt": "2026-11-14T20:42:47Z",
+ "repo": {
+  "branchesOpen": 5,
+  "branchesMerged": 58,
+  "prsOpen": 3,
+  "prsMerged": 60,
+  "prsTotal": 63,
+  "commitsStaging": 96,
+  "commitsStaging24h": 96,
+  "commitsMain": 82,
+  "commitsMain24h": 82,
+  "linesAdded": 35779,
+  "linesRemoved": 682,
+  "filesChanged": 365,
+  "codeLines": 35097,
+  "codeFiles": 321
+ }
+}

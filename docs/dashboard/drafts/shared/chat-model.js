@@ -37,7 +37,7 @@ function pick(sessions, state){ return (sessions || []).find(s => s.state === st
 function rowOf(a, sessions, peek, nowMs){
   const known = Array.isArray(sessions), pk = peek || {};
   const reply = known && sessions.some(s => s.state === 'waiting');
-  const base = { tone:'idle', ring:false, word:'Idle', detail:'', reply, rank:3, sid:null };
+  const base = { tone:'idle', ring:false, word:'Idle', detail:'', reply, rank:4, sid:null };
   let s;
   if((s = pick(sessions, 'needs_yes'))){
     const p = pk[s.id] || {};
@@ -51,7 +51,7 @@ function rowOf(a, sessions, peek, nowMs){
   if((s = pick(sessions, 'working')))
     return Object.assign(base, { tone:'brand', word:'Answering you', detail:s.title || '', rank:2, sid:s.id, kind:'working' });
   const task = a.issue && a.issue !== '-' ? [a.issue, a.title].filter(Boolean).join(' ') : '';
-  if(a.state === 'active') return Object.assign(base, { tone:'ok', ring:true, word:'Active', detail:task, kind:'active' });
+  if(a.state === 'active') return Object.assign(base, { tone:'ok', ring:true, word:'Active', detail:task, rank:3, kind:'active' });
   return Object.assign(base, { word:'Idle', detail:task || (known && !sessions.length ? 'no chat yet' : ''), kind:'idle' });
 }
 
@@ -89,7 +89,12 @@ function resultView(r){
   return v;
 }
 
-const M = { PAGE, text, toneOf, fill, money, elapsed, since, pad2, kindLabel, issueOk, rowOf, summary, proposalView, resultView };
+/* "Who is working" shows EVERY agent of the feed (founder, MIN-4575: "we need to show ALL agents here"): no cap, no "+N more", no "show all".
+   Working agents first, then idle, each group in feed order. `rows` is [{a, r}] with r from rowOf (live chat card); `agents` is the plain feed list (the card without the bridge). */
+function order(rows){ return (Array.isArray(rows) ? rows : []).map((x, i) => ({ x, i })).sort((p, q) => p.x.r.rank - q.x.r.rank || p.i - q.i).map(o => o.x); }
+function orderFeed(agents){ return (Array.isArray(agents) ? agents : []).map((a, i) => ({ a, i })).sort((p, q) => (p.a.state === 'active' ? 0 : 1) - (q.a.state === 'active' ? 0 : 1) || p.i - q.i).map(o => o.a); }
+
+const M = { order, orderFeed, PAGE, text, toneOf, fill, money, elapsed, since, pad2, kindLabel, issueOk, rowOf, summary, proposalView, resultView };
 root.ChatModel = M;
 if(typeof module !== 'undefined' && module.exports) module.exports = M;
 })(typeof window !== 'undefined' ? window : globalThis);

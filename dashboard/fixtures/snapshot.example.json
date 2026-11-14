@@ -22,6 +22,10 @@
     "branches": {
       "asOf": "2026-11-14T13:53:07Z",
       "error": null
+    },
+    "repo": {
+      "asOf": "2026-11-14T13:53:07Z",
+      "error": null
     }
   },
   "deadline": "2026-11-15T18:00:00+02:00",
@@ -288,39 +292,81 @@
     "perAgent": [
       {
         "n": "Pix",
-        "v": 9236564
+        "v": 9236564,
+        "mins": 171.0,
+        "runs": 28
       },
       {
         "n": "Ren",
-        "v": 6033214
+        "v": 6033214,
+        "mins": 143.5,
+        "runs": 22
       },
       {
         "n": "Back",
-        "v": 5037126
+        "v": 5037126,
+        "mins": 60.2,
+        "runs": 25
       },
       {
         "n": "Cron",
-        "v": 4522027
+        "v": 4522027,
+        "mins": 112.8,
+        "runs": 14
       },
       {
         "n": "Anna",
-        "v": 3913157
+        "v": 3913157,
+        "mins": 48.6,
+        "runs": 12
       },
       {
         "n": "CTO",
-        "v": 2849095
+        "v": 2849095,
+        "mins": 37.9,
+        "runs": 19
       },
       {
         "n": "Release",
-        "v": 1469576
+        "v": 1469576,
+        "mins": 41.3,
+        "runs": 20
       },
       {
         "n": "CEO",
-        "v": 969807
+        "v": 969807,
+        "mins": 11.4,
+        "runs": 4
       },
       {
         "n": "Spast",
-        "v": 801228
+        "v": 801228,
+        "mins": 3.2,
+        "runs": 1
+      },
+      {
+        "n": "E2E",
+        "v": 0,
+        "mins": 0.0,
+        "runs": 0
+      },
+      {
+        "n": "Scrum",
+        "v": 0,
+        "mins": 0.0,
+        "runs": 0
+      },
+      {
+        "n": "SEO",
+        "v": 0,
+        "mins": 0.0,
+        "runs": 0
+      },
+      {
+        "n": "JobScout",
+        "v": 0,
+        "mins": 0.0,
+        "runs": 0
       }
     ],
     "perChat": [
@@ -532,7 +578,7 @@
   "directions": [
     {
       "n": 1,
-      "title": "Scan \u2192 AI reads",
+      "title": "Scan → AI reads",
       "status": "on_track",
       "note": "Example: a photo of a blood test becomes a record in the dev project.",
       "updatedAt": "2026-11-14T15:30:00+02:00"
@@ -923,5 +969,21 @@
         "agentFrom": null
       }
     ]
+  },
+  "repo": {
+    "branchesOpen": 6,
+    "branchesMerged": 21,
+    "prsOpen": 3,
+    "prsMerged": 34,
+    "prsTotal": 40,
+    "commitsStaging": 58,
+    "commitsStaging24h": 58,
+    "commitsMain": 31,
+    "commitsMain24h": 31,
+    "linesAdded": 14210,
+    "linesRemoved": 2980,
+    "filesChanged": 231,
+    "codeLines": 23850,
+    "codeFiles": 187
   }
 }
