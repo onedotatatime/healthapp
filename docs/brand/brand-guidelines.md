@@ -104,22 +104,24 @@ Name chosen by the founder, 2026-11-14: Pathien (pathien.health). Trademark clea
 | File | Use |
 |---|---|
 | `pathien-lockup.svg` | Default logo, primary colour version, on light backgrounds (air, white, mist) |
-| `pathien-lockup-mono.svg` | One-colour print, stamps, anything that cannot carry teal and coral: ink letters and p, 70% ink path, ink dot |
+| `pathien-lockup-mono.svg` | One-colour print, stamps, anything that cannot carry teal and coral: all ink, one colour: letters, p and path, dot |
 | `pathien-lockup-white.svg` | For dark grounds: teal-night, teal-600, photos with the teal-night overlay |
 | `pathien-wordmark.svg` | Same artwork as the lockup. The "p" is now part of the word, so wordmark and lockup are one logo; the file is kept only so existing links do not break. Do not use a version without the p |
-| `pathien-symbol.svg` | The p with a short path ending in the dot, alone: ink p, teal path, coral dot (avatars, social profile, small spots below 96px wide) |
+| `pathien-symbol.svg` | The p with a short path ending in the dot, alone: the p and its path as one teal stroke, coral dot (avatars, social profile, small spots below 96px wide) |
 | `pathien-app-icon.svg` | 1024 rounded square, air #F7FAFA ground with a hairline edge, the symbol centred. Round the corners only through the store's mask on iOS (use a square export there; `landing/public/brand/apple-touch-icon.png` is one) |
 | `favicon.svg` | 32 viewBox, same symbol with heavier weights so it holds at 16px |
 | `lockup@2x.png`, `app-icon-512.png`, `favicon-strip.png` | Previews only (white background; the strip shows 16, 32 and 48px at 8x). Use the SVGs |
 
 **Colour versions.**
-| Version | p and letters | Path | Dot |
-|---|---|---|---|
-| Primary (colour) | ink #12201F | teal-600 #0F766E | coral #F4846B |
-| Mono ink | ink #12201F | 70% ink #566463 | ink #12201F |
-| White | white #FFFFFF | mint #7FE3CF | coral #F4846B |
+The p and its path are one stroke in teal (mint on dark): one shape, no seam where the foot becomes the path.
 
-Primary and mono go on light grounds, white on dark. Contrast of the path: teal-600 on air 5.2:1, 70% ink on air 5.9:1, mint on teal-night 8.1:1, mint on teal-600 3.6:1 (graphic only; the letters carry the name). The coral dot is 2.4:1 on air and 4.9:1 on teal-night; it is a decoration, never the only carrier of meaning. The icon ground is air, not teal: every close match found in the logo check is a white mark on a teal or green square.
+| Version | p and path (one stroke) | Letters "athıen" | Dot |
+|---|---|---|---|
+| Primary (colour) | teal-600 #0F766E | ink #12201F | coral #F4846B |
+| Mono ink | ink #12201F | ink #12201F | ink #12201F |
+| White | mint #7FE3CF | white #FFFFFF | coral #F4846B |
+
+Primary and mono go on light grounds, white on dark. Contrast of the p and path: teal-600 on air 5.2:1, ink on air 16.0:1 (mono), mint on teal-night 8.1:1, mint on teal-600 3.6:1 (graphic only; the letters carry the name). The coral dot is 2.4:1 on air and 4.9:1 on teal-night; it is a decoration, never the only carrier of meaning. The icon ground is air, not teal: every close match found in the logo check is a white mark on a teal or green square.
 
 **Clear space.** On all sides at least x, the x-height of the "a" in the wordmark, which is about 57% of the lockup's height. Keep other text, edges and images out of that zone.
 
@@ -128,7 +130,7 @@ Primary and mono go on light grounds, white on dark. Contrast of the path: teal-
 **Don'ts.**
 - Do not add a dot back on the i. The dot under the i is the path's end; a dot above it makes two.
 - Do not separate the p from the word, or use the word without its p. Do not crop the path off.
-- Do not recolour the path outside teal, mint or 70% ink. Coral only for the dot (primary and white versions); the mono version has no coral. No gradients.
+- Do not recolour the p and path outside teal or mint (ink in mono), and do not split them into two colours. Coral only for the dot (primary and white versions); the mono version has no coral. No gradients.
 - Do not stretch, squash, rotate or outline it.
 - No shadows, glows, bevels, blur or other effects.
 - Do not retype the wordmark in a font, change its weight or tracking, or capitalise it ("Pathien" in running text, "pathien" only in the logo).
