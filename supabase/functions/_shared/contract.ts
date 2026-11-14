@@ -164,7 +164,8 @@ export const FINDING_COLUMNS =
 // at most. Everything else is an enum, a boolean or an integer, so there is nothing to word as health advice.
 export const FileDocType = z.enum(["blood_test", "imaging_report", "doctor_letter", "other"]);
 export const FileAnalysisStatus = z.enum(["done", "failed"]);
-export const FileAnalysisError = z.enum(["no_object", "budget", "model_timeout", "model_http", "model_invalid", "config", "error"]);
+export const FileAnalysisError = z.enum(["no_object", "unsupported_type", "budget", "model_timeout", "model_http", "model_invalid", "config", "error"]);
+export type FileAnalysisError = z.infer<typeof FileAnalysisError>;
 export const FILE_ITEMS_MAX = 20;
 export const FILE_ITEM_CHARS = 200;
 export const FileAnalysisItem = z.object({

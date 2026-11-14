@@ -11,6 +11,7 @@ import {
   type Saved,
   type Store,
 } from "./docs.ts";
+import type { AnalysisFields } from "./analysis.ts";
 import type { DraftIn } from "./extract.ts";
 import type { IdentityProfile } from "./identity.ts";
 
@@ -31,12 +32,25 @@ export const fakeAuth: Auth = { verify: (t) => Promise.resolve(TOKENS[t] ?? null
 export function fakeStore() {
   const docs = new Map<string, DocState>();
   const grants = new Map<string, { doctor: string; patient: string; end: string }>();
+  /** file_analysis rows by document id: an upsert, like the table's primary key. */
+  const analyses = new Map<string, AnalysisFields & { patient_id: string }>();
+  let saves = 0;
   let seq = 0;
   const calls: string[] = [];
   const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
   const store: Store = {
     roleOf: (_e, uid) => Promise.resolve(ROLES[uid] ?? null),
     identityOf: (_e, uid) => Promise.resolve(PROFILES[uid] ?? null),
+    objectMeta: (_e, path) => {
+      const d = [...docs.values()].find((x) => x.meta.storage_path === path);
+      return Promise.resolve(d ? { mime: d.meta.content_type, size: null, created_at: "2026-11-14T10:00:30.000+00:00" } : null);
+    },
+    saveAnalysis(_e, patientId, docId, f) {
+      saves++;
+      const d = docs.get(docId);
+      if (d && d.document.patient_id === patientId) analyses.set(docId, { ...f, patient_id: patientId });
+      return Promise.resolve();
+    },
     createDraft(_e, patientId, contentType) {
       const id = uuid(++seq);
       const path = `${patientId}/${id}`;
@@ -96,7 +110,7 @@ export function fakeStore() {
       return { state: cur };
     },
   };
-  return { store, docs, grants, calls };
+  return { store, docs, grants, calls, analyses, saves: () => saves };
 }
 
 export function fakeBlobs() {
