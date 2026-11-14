@@ -1,6 +1,6 @@
 // Live check of healthapp-assistant's logic against the REAL model (MIN-4487), no database and no deploy:
 // the real handler, the real model wrapper, and an in-memory store holding the synthetic Maria record of
-// tests/synthetic/ground-truth.json (documents 1 to 5, the same rows as supabase/sql/010_seed_record.sql).
+// tests/synthetic/ground-truth.json (documents 1 to 5, the same rows as supabase/sql/011_seed_record.sql).
 //   HEALTHAPP_GEMINI_API_KEY=... deno run --allow-env --allow-net --allow-read scripts/assistant-check.ts
 // Prints, per question: milliseconds, model calls, segments, cites, whether each cite resolves to a row of
 // the record, and the text. Synthetic data only. Costs a few model calls.

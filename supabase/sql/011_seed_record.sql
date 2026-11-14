@@ -1,11 +1,14 @@
--- Per env. Rendered by `scripts/hdb render <env> 010_seed_record.sql` (MIN-4487). DEV ONLY, synthetic only.
+-- Per env. Rendered by `scripts/hdb render dev 011_seed_record.sql` (MIN-4487). DEV ONLY, synthetic only.
+-- Numbered 011, not 010: 010 is 010_handshake.sql (MIN-4484) and 005 to 007 are the matching run's.
 -- The confirmed record of the synthetic patient Maria (tests/synthetic/ground-truth.json, documents 1 to 5)
 -- plus three diary entries, so the doctor's overview and the assistant have rows to read. Fixed ids
 -- (5eed...), so it can be run again. It writes nothing for any other persona and no grant (the
--- handshake creates those). Never run it against healthapp_demo: that record is made on stage.
+-- handshake creates those). Never run it against healthapp_demo: that record is made on stage, so the
+-- block refuses there (a loud stop, not a silent skip, so a render-every-file loop sees it).
 do $$
 declare p uuid;
 begin
+  if '__SCHEMA__' <> 'healthapp_dev' then raise exception '011_seed_record is for healthapp_dev only'; end if;
   select id into p from __SCHEMA__.profiles where role = 'patient' and national_id_norm = 'AK123456';
   if p is null then raise exception 'seed the personas first (003)'; end if;
 
@@ -81,4 +84,4 @@ begin
   on conflict (id) do nothing;
 end $$;
 
-insert into __SCHEMA__._applied (file) values ('010_seed_record.sql') on conflict (file) do nothing;
+insert into __SCHEMA__._applied (file) values ('011_seed_record.sql') on conflict (file) do nothing;
