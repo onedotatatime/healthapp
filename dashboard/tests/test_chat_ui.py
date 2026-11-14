@@ -221,6 +221,27 @@ class MockBridge(unittest.TestCase):
         for k in ("id", "kind", "summary", "issue", "taskType", "model", "effort", "lane", "branch", "estMin", "estUsd", "spentTodayUsd", "expiresAt", "status"):
             self.assertIn(k, p)
 
+    def test_the_mock_has_the_real_bridges_fields(self):
+        """The mock is checked against the real bridge (stub claude): same session keys, same proposal keys. If the bridge adds a field, this goes red."""
+        from chat_testkit import Env, block, good_proposal
+        env = Env()
+        try:
+            env.set_behavior(reply="I would do it.\n" + block(good_proposal()))
+            sid = env.start_chat("Pix", "do it")
+            env.wait_idle()
+            _, real = env.get("/chat/sessions/" + sid)[:2]
+            real_prop = [m["proposal"] for m in real["messages"] if m.get("proposal")][0]
+            st, body = self.call("GET", "/chat/sessions?agent=Back")
+            mock_session = body["sessions"][0]
+            _, mb = self.call("GET", "/chat/sessions/" + mock_session["id"])
+            mock_prop = [m["proposal"] for m in mb["messages"] if m.get("proposal")][0]
+            # the real session carries what the mock does; the mock may add `reason` and `acceptedAt` ideas only when the bridge does
+            self.assertEqual(set(real["session"]), set(mock_session))
+            self.assertLessEqual(set(real_prop) - {"branchType"}, set(mock_prop))      # branchType is the bridge's own and unused by the page
+            self.assertLessEqual(set(mock_prop) - {"reason"}, set(real_prop))
+        finally:
+            env.close()
+
     def test_yes_with_act_off_is_act_off_and_runs_nothing(self):
         m = self.srv.mock
         m.flags["act"] = False
