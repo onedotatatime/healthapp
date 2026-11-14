@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { RequireRole } from './auth/RequireRole';
@@ -10,9 +11,11 @@ import { AddSymptom } from './features/diary/AddSymptom';
 import { Kit } from './pages/Kit';
 import { Login } from './pages/Login';
 import { DoctorConnect } from './features/handshake/DoctorConnect';
-import { HandshakePreview } from './features/handshake/Preview';
 import { PatientShare } from './features/handshake/PatientShare';
 import { ClaimLink, EntryBar } from './features/handshake/routes';
+
+// Review fixtures (in-memory server, synthetic record) stay out of the main chunk.
+const HandshakePreview = lazy(() => import('./features/handshake/Preview').then((m) => ({ default: m.HandshakePreview })));
 
 function Root() {
   const { state } = useAuth();
@@ -37,7 +40,7 @@ export function App() {
           <Route path="/doctor" element={<RequireRole role="doctor"><DoctorHome /><EntryBar to="/doctor/connect" label="Connect to a patient" /></RequireRole>} />
           <Route path="/doctor/connect" element={<RequireRole role="doctor"><DoctorConnect /></RequireRole>} />
           <Route path="/s" element={<ClaimLink />} />
-          <Route path="/preview/handshake" element={<HandshakePreview />} />
+          <Route path="/preview/handshake" element={<Suspense fallback={<Spinner label="Loading" />}><HandshakePreview /></Suspense>} />
           <Route path="/health" element={<Health />} />
           <Route path="/kit" element={<Kit />} />
           <Route path="*" element={<Navigate to="/" replace />} />

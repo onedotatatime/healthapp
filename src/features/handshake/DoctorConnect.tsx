@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { AccessTimer } from '../../components/AccessTimer';
-import { EmptyState, ErrorNote, Spinner } from '../../components/Primitives';
+import { ErrorNote, Spinner } from '../../components/Primitives';
 import { claimErrorMessage } from './api';
 import { localDeadlineIso, mmss, secondsLeft } from './clock';
 import { parseShortCode, typedCode } from './codes';
@@ -11,6 +11,9 @@ import { grantSeconds, doctorEnded, whoLine } from './messages';
 import { Scanner } from './Scanner';
 import { useGrantSession } from './useGrantSession';
 import './handshake.css';
+
+/** The doctor's overview and assistant (MIN-4488). Lazy on purpose: the patient bundle must not contain it (PRD 12.6, checked over the build). */
+const AssistantWorkspace = lazy(() => import('../assistant/AssistantWorkspace'));
 
 /** A scanned link (`/s#hs1.<token>`) lands here through sessionStorage: the token never goes in a URL path or query. */
 export const PENDING_TOKEN_KEY = 'healthapp-pending-token';
@@ -134,8 +137,8 @@ function Connect({ busy, error, onToken, onCode, home, preview }: { busy: boolea
 }
 
 /**
- * The workspace shell, open while the grant runs. The overview and the ask box (MIN-4488) go inside it as `children`;
- * until then it is the empty shell the story asks for. Whatever it shows is removed when access ends (the whole
+ * The workspace shell, open while the grant runs. It holds the overview and the ask box (MIN-4488, lazy), or `children`
+ * when a caller passes its own (tests). Whatever it shows is removed when access ends (the whole
  * component unmounts), and a read that comes back empty after data calls `useActiveGrant().onEmptyRead()`.
  */
 export function DoctorWorkspace({ feed, children }: { feed: ReturnType<typeof useGrantSession>; children?: React.ReactNode }) {
@@ -147,7 +150,11 @@ export function DoctorWorkspace({ feed, children }: { feed: ReturnType<typeof us
         <AccessTimer surface="doctor" expiresAt={localDeadlineIso(g.expires_at!, feed.offsetMs)} totalSeconds={grantSeconds(g)} />
         <main className="page doctor">
           <h1>{whoLine(g.patient)}</h1>
-          {children ?? <EmptyState>The record opens here. The overview and the ask box arrive with the next story.</EmptyState>}
+          {children ?? (
+            <Suspense fallback={<Spinner label="Loading the record" />}>
+              <AssistantWorkspace />
+            </Suspense>
+          )}
         </main>
       </div>
     </ActiveGrantContext.Provider>
