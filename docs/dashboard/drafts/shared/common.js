@@ -9,6 +9,7 @@ const esc = H.esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 const pad = n => String(n).padStart(2,'0');
 const lsGet = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
 const lsSet = (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} };
+H.lsGet = lsGet; H.lsSet = lsSet;   // safe storage for the other shared blocks (alert.js)
 
 /* ---------- clock (Europe/Athens, ?now= override) ---------- */
 function parseAthens(s){
@@ -121,11 +122,15 @@ H.credLeft = c => c.granted - S['cr.'+c.n];
 /* derived risk flags (rules of MIN-4445 item 7) */
 H.flags = function(){
   const out = [], now = H.now(), tk = DATA.tokens;
-  if(!tk.noCapFlags) tk.perChat.forEach(c => { const v=S['tc.'+c.n], st=H.meterState(v,tk.chatCaps.soft,tk.chatCaps.hard);
-    if(st!=='ok') out.push({id:'chat-'+c.n, level:st==='hard'?'bad':'warn', text:c.n.replace(' (main)','')+' chat at '+H.k(v)+' of '+H.k(st==='hard'?tk.chatCaps.hard:tk.chatCaps.soft)+(st==='hard'?' hard cap':' soft cap'),
-      plain:'The '+c.n.replace(' (main)','').toLowerCase()+' chat is '+(st==='hard'?'over its limit':'near its limit')+' ('+H.k(v)+' of '+H.k(tk.chatCaps.soft)+').', act:'Start a new chat after this task.'}); });
-  if(!tk.noCapFlags) tk.perAgent.forEach(a => { const v=S['ta.'+a.n], st=H.meterState(v,tk.agentCaps.soft,tk.agentCaps.hard);
-    if(st!=='ok') out.push({id:'agent-'+a.n, level:st==='hard'?'bad':'warn', text:a.n+' agent at '+H.k(v)+' of '+H.k(tk.agentCaps.soft)+' soft cap', plain:a.n+' is near its token limit ('+H.k(v)+' of '+H.k(tk.agentCaps.soft)+').', act:'Hand the next task to a fresh run.'}); });
+  // Cap flags are opt-in: the caps are per run (one chat's memory, one agent run), so a feed raises them only when it
+  // says its numbers are per-run sizes (capScope 'run'). Whole-day totals against per-run caps are always red.
+  const capOn = tk.capScope === 'run' && !tk.noCapFlags;
+  if(capOn) tk.perChat.forEach(c => { const v=S['tc.'+c.n], st=H.meterState(v,tk.chatCaps.soft,tk.chatCaps.hard), cap=H.k(st==='hard'?tk.chatCaps.hard:tk.chatCaps.soft);
+    if(st!=='ok') out.push({id:'chat-'+c.n, level:st==='hard'?'bad':'warn', text:c.n.replace(' (main)','')+' chat at '+H.k(v)+' of '+cap+(st==='hard'?' hard cap':' soft cap'),
+      plain:'The '+c.n.replace(' (main)','').toLowerCase()+' chat is '+(st==='hard'?'over its limit':'near its limit')+' ('+H.k(v)+' of '+cap+').', act:'Start a new chat after this task.'}); });
+  if(capOn) tk.perAgent.forEach(a => { const v=S['ta.'+a.n], st=H.meterState(v,tk.agentCaps.soft,tk.agentCaps.hard), cap=H.k(st==='hard'?tk.agentCaps.hard:tk.agentCaps.soft);
+    if(st!=='ok') out.push({id:'agent-'+a.n, level:st==='hard'?'bad':'warn', text:a.n+' agent at '+H.k(v)+' of '+cap+(st==='hard'?' hard cap':' soft cap'),
+      plain:a.n+' is '+(st==='hard'?'over its token limit':'near its token limit')+' ('+H.k(v)+' of '+cap+').', act:'Hand the next task to a fresh run.'}); });
   DATA.money.credits.forEach(c => { const f=S['cr.'+c.n]/c.granted;
     if(f>0.7) out.push({id:'cr-'+c.n, level:f>0.8?'bad':'warn', text:c.n+' credits at '+Math.round(f*100)+'% used', plain:c.n+' credits are running low ('+S['cr.'+c.n]+' of '+c.granted+' used).', act:'Ask the CTO to top up or switch provider.'}); });
   DATA.flags.filter(f=>f.until && now < parseAthens(f.until)).forEach(f => out.push({id:'static-'+f.text.slice(0,8), level:f.level, text:f.text, plain:f.plain||f.text, act:f.act||''}));
