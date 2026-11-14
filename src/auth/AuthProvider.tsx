@@ -14,9 +14,10 @@ interface Auth {
 
 const Ctx = createContext<Auth | null>(null);
 
-async function readProfile(): Promise<Profile | null> {
+async function readProfile(uid: string): Promise<Profile | null> {
   if (!supabase) return null;
-  const { data, error } = await supabase.from('profiles').select('id, role, display_name').maybeSingle();
+  // Own row only: a doctor with an active grant can also read the patient's profile under RLS.
+  const { data, error } = await supabase.from('profiles').select('id, role, full_name').eq('id', uid).maybeSingle();
   if (error || !data) return null;
   const p = Profile.safeParse(data);
   return p.success ? p.data : null;
@@ -35,10 +36,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!live) return;
       if (!data.session) return setState({ status: 'out' });
-      const p = await readProfile();
+      const p = await readProfile(data.session.user.id);
       if (!live) return;
       if (!p) return setState({ status: 'out' }); // a session with no healthapp profile sees nothing
-      setDisplayName(p.display_name ?? null);
+      setDisplayName(p.full_name);
       setState({ status: 'in', role: p.role });
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
@@ -53,14 +54,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInDemo = useCallback(async (persona: Role, passcode: string): Promise<Role> => {
     if (!supabase || !callFunction) throw new ApiError(0, 'Not configured.');
     const res = await callFunction('demo-login', { persona, passcode }, DemoLoginResponse);
-    const { error } = await supabase.auth.setSession(res.session);
+    const { error } = await supabase.auth.setSession({ access_token: res.access_token, refresh_token: res.refresh_token });
     if (error) throw new ApiError(0, 'The session was not accepted.');
-    const p = await readProfile();
+    const p = await readProfile(res.user_id);
     if (!p) {
       await supabase.auth.signOut();
       throw new ApiError(404, 'This account has no profile in this environment.');
     }
-    setDisplayName(p.display_name ?? null);
+    setDisplayName(p.full_name);
     setState({ status: 'in', role: p.role });
     return p.role;
   }, []);

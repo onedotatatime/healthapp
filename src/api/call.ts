@@ -70,3 +70,4 @@ export function makeCall(env: OkEnv, fetchImpl: typeof fetch = (...a) => fetch(.
     return parsed.data;
   };
 }
+

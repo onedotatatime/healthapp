@@ -23,8 +23,8 @@ describe('callFunction', () => {
     expect((f.mock.calls[0] as unknown as [string, RequestInit])[1].headers).toMatchObject({ authorization: 'Bearer user-jwt' });
   });
   it('turns a non-2xx answer into an ApiError that keeps the status', async () => {
-    const f = reply(403, { error: 'bad passcode' });
-    await expect(makeCall(env, f as unknown as typeof fetch)('demo-login', {}, DemoLoginResponse)).rejects.toMatchObject({ status: 403, message: 'bad passcode' });
+    const f = reply(401, { error: { code: 'bad_passcode', message: 'bad passcode' } });
+    await expect(makeCall(env, f as unknown as typeof fetch)('demo-login', {}, DemoLoginResponse)).rejects.toMatchObject({ status: 401, message: 'bad passcode' });
   });
   it("reads Cron's nested error body and keeps its code", async () => {
     const f = reply(503, { error: { code: 'model_unavailable', message: 'The model call failed.' } });
@@ -35,7 +35,7 @@ describe('callFunction', () => {
     });
   });
   it('rejects an answer that does not match the schema instead of passing it on', async () => {
-    const f = reply(200, { session: {}, role: 'admin' });
+    const f = reply(200, { access_token: 'x', role: 'admin' });
     await expect(makeCall(env, f as unknown as typeof fetch)('demo-login', {}, DemoLoginResponse)).rejects.toBeInstanceOf(ApiError);
   });
   it('reports an unreachable server as status 0', async () => {
@@ -45,7 +45,7 @@ describe('callFunction', () => {
     await expect(makeCall(env, f as unknown as typeof fetch)('hello', undefined, z.unknown())).rejects.toMatchObject({ status: 0 });
   });
   it('accepts a valid demo-login answer', async () => {
-    const f = reply(200, { session: { access_token: 'a', refresh_token: 'b' }, role: 'doctor' });
+    const f = reply(200, { access_token: 'a', refresh_token: 'b', expires_at: 4102444800, user_id: 'u-1', persona: 'doctor', role: 'doctor' });
     await expect(makeCall(env, f as unknown as typeof fetch)('demo-login', {}, DemoLoginResponse)).resolves.toMatchObject({ role: 'doctor' });
   });
 });
