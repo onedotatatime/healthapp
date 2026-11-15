@@ -1,1 +1,2 @@
 - [Dashboard scenario harness](reference_dashboard_scenario_harness.md) — drive docs/dashboard/drafts keyless: git archive + http.server, ?feed routing, pollMs routing, Playwright path
+- [Live spec runs](reference_live_spec_runs.md) — e2e-live via scratch export + git plumbing when the worktree guard blocks edits; export all data/synthetic
