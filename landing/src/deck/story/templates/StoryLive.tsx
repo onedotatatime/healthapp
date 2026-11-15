@@ -7,7 +7,7 @@ import { ri, type FrameCtx } from './shared';
 /** Slides 3 and 5: the app in a browser frame and a phone frame. Beats change the words and who has the mouse; the frames never remount. */
 export function StoryLive({ s, beat, ctx }: { s: StoryLiveSlide; beat: number; ctx: FrameCtx }) {
   const hot = beat >= s.hotFromBeat;
-  const allShown = s.frames.every((f) => ctx.isShown(f.frame));
+  const allShown = s.frames.every((f) => ctx.isLive(f.frame));
   const duo = s.variant === 'duo';
 
   return (
@@ -24,9 +24,9 @@ export function StoryLive({ s, beat, ctx }: { s: StoryLiveSlide; beat: number; c
 
       {s.frames.map((f, i) => {
         const cfg = STORY_FRAMES[f.frame];
-        const label = ctx.isShown(f.frame) ? f.label : f.labelStatic;
+        const label = ctx.isLive(f.frame) ? f.label : f.labelStatic;
         const pos = duo
-          ? (cfg.kind === 'phone' ? { left: 1486, top: 276 } : { left: 120, top: 276 })
+          ? (cfg.kind === 'phone' ? { left: 1464, top: 276 } : { left: 120, top: 276 })
           : { left: 800, top: 150 };
         return (
           <div key={f.frame}>
@@ -34,12 +34,11 @@ export function StoryLive({ s, beat, ctx }: { s: StoryLiveSlide; beat: number; c
             <div className="sl-frame-pos rise rise-frame" style={{ ...pos, ...ri(3 + i) }}>
               <LiveFrame
                 cfg={cfg}
+                armed={ctx.armed}
                 live={ctx.isLive(f.frame)}
                 hot={hot}
-                armed={ctx.armed}
                 onToggle={() => ctx.toggle(f.frame)}
-                onReady={ctx.setReady}
-                badgePlacement={cfg.kind === 'phone' ? 'below' : 'bar'}
+                badgePlacement={cfg.kind === 'phone' ? 'side' : 'bar'}
               />
             </div>
           </div>
