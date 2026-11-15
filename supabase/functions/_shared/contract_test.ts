@@ -118,7 +118,7 @@ Deno.test("ExamListItem is identical in both contract copies", () => {
     return s.slice(s.indexOf("export const ExamListItem = z.object({"), s.indexOf("export type ExamListItem"));
   };
   const server = block("./contract.ts"), web = block("../../../src/api/contract.ts");
-  assertEquals(server.includes("file_kept: z.boolean(),"), true);
+  assertEquals(server.includes("file_kept: z.boolean().default(false),"), true);
   assertEquals(web, server);
 });
 
@@ -126,4 +126,15 @@ Deno.test("the list fixture holds one refused row with its file kept and one wit
   const refused = F.myExams.exams.filter((e) => e.status === "refused");
   assertEquals(refused.map((e) => [e.file_kept, e.can_retry]).sort(), [[false, false], [true, true]]);
   assertEquals(F.myExams.exams.filter((e) => e.status !== "refused").every((e) => e.file_kept === false), true);
+});
+
+// MIN-4637 (CTO must-fix 1): the client parses my-exams strictly, so an answer from a function that does not send file_kept yet
+// must still parse, and as false.
+Deno.test("an exam list item without file_kept parses as false; one with it keeps it", () => {
+  const { file_kept: _drop, ...old } = F.myExams.exams.find((e) => e.status === "refused" && e.file_kept)!;
+  const without = C.ExamListItem.safeParse(old);
+  assertEquals(without.success, true);
+  assertEquals(without.success && without.data.file_kept, false);
+  const full = C.MyExamsResponse.safeParse({ exams: [old, F.myExams.exams.find((e) => e.file_kept)], server_now: F.myExams.server_now });
+  assertEquals(full.success && full.data.exams.map((e) => e.file_kept), [false, true]);
 });

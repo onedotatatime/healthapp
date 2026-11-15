@@ -25,6 +25,8 @@ import { fail, headersFor, json } from "../_shared/http.ts";
 import { matchIdentity } from "../_shared/identity.ts";
 import { type JsonCall, type JsonResult, ModelError } from "../_shared/model.ts";
 
+/** analyse_only takes a draft or a saved row only (MIN-4637); every other status, a kept refused photo included, is "no such document". */
+const ANALYSABLE: readonly string[] = ["draft", "confirmed"];
 /** The analyse_only dev backfill answers in one call, so it keeps the old single budget. */
 export const MODEL_BUDGET_MS = 52_000;
 /** Reading the photo: at most this long, with one retry inside it (the platform's background limit is assumed 150 s). */
@@ -80,7 +82,9 @@ export function makeHandler(deps: Deps) {
     if (parsed.data.analyse_only) {
       // MIN-4549: only the file analysis, for this patient's own saved document (the dev backfill script).
       const cur = await deps.store.getOwn(who.env, who.uid, parsed.data.doc_id);
-      if (!cur) return fail(req, 404, "not_found", "No such document.");
+      // MIN-4637 (CTO): a kept refused photo is read only for its owner's re-run, never here. Only a saved or draft row goes to the
+      // model, the same rule doc-photo uses; any other status is "no such document" and writes no analysis row.
+      if (!cur || !ANALYSABLE.includes(cur.document.status)) return fail(req, 404, "not_found", "No such document.");
       const o = await analyseFile(deps, { env: who.env, patientId: who.uid, state: cur, budgetMs: MODEL_BUDGET_MS });
       const done: AnalyseResponse = { outcome: "analysed", ...o };
       return json(req, 200, done);

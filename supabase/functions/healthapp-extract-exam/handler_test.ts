@@ -482,6 +482,22 @@ Deno.test("analyse_only: twice leaves one row; only the caller's own document; a
   assertEquals(t.s.saves(), 3);
 });
 
+// MIN-4637 (CTO must-fix 2): scripts/analyse-files.ts lists every row with a file, and after 017 that includes kept refused photos
+Deno.test("analyse_only on a refused row with its file kept, or any row that is not draft or confirmed: 404, no model call, no analysis row", async () => {
+  const { t, d } = await refusedOne();
+  assertEquals(t.s.docs.get(d.id)!.meta.storage_path !== null, true); // the file really is kept
+  const before = [t.modelCalls(), t.analysisCalls()];
+  for (const status of ["refused", "failed", "queued", "reading"] as const) {
+    t.s.docs.get(d.id)!.document.status = status;
+    const res = await t.h(call("x", { doc_id: d.id, analyse_only: true }));
+    assertEquals([status, res.status], [status, 404]);
+  }
+  assertEquals([t.modelCalls(), t.analysisCalls(), t.s.analyses.size], [...before, 0]);
+  t.s.docs.get(d.id)!.document.status = "draft"; // the guard is the status, not a stub that always answers 404
+  assertEquals((await t.h(call("x", { doc_id: d.id, analyse_only: true }))).status, 200);
+  assertEquals(t.analysisCalls(), before[1] + 1);
+});
+
 Deno.test("analyse_only on demo is 400: no read of the document, no model call", async () => {
   const t = setup();
   const d = await newDoc(t);
@@ -492,6 +508,7 @@ Deno.test("analyse_only on demo is 400: no read of the document, no model call",
 Deno.test("analyse_only with the stored object gone: a failed no_object row, no model call", async () => {
   const t = setup();
   const d = await newDoc(t, PATIENT, false);
+  t.s.docs.get(d.id)!.document.status = "draft"; // analyse_only takes a draft or confirmed row only (MIN-4637)
   const res = await t.h(call("x", { doc_id: d.id, analyse_only: true }));
   assertEquals((await res.json()).error_code, "no_object");
   assertEquals([t.analysisCalls(), t.s.analyses.get(d.id)?.sha256], [0, null]);

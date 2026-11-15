@@ -254,8 +254,10 @@ export const ExamListItem = z.object({
   /** confirmed only: read and saved automatically, and its owner has not opened it yet. Always false for every other status. */
   unchecked: z.boolean(),
   /** refused only (MIN-4637): the original photo is still stored, for up to 14 days from the refusal, and the owner can
-   *  delete it. False for every other status and for a refused row whose file is gone. It decides the copy, not the button. */
-  file_kept: z.boolean(),
+   *  delete it. False for every other status and for a refused row whose file is gone. It decides the copy, not the button.
+   *  Defaults to false so a client built for this field still parses an answer from a function that does not send it yet
+   *  (the function deploy is then the single switch, and a rollback of the functions does not take the list down). */
+  file_kept: z.boolean().default(false),
 });
 export type ExamListItem = z.infer<typeof ExamListItem>;
 /** No body needed. With { doc_id } the answer is that upload's draft (ExamDraftResponse) instead of the list. */
