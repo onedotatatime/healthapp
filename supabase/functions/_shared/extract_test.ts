@@ -166,7 +166,7 @@ Deno.test("020's seed: every analyte_key is an extraction key or a match_lab_def
   const row = new RegExp(String.raw`^  \('([0-9]{1,7}-[0-9])', ${T}, (?:${T}|null), (?:${T}|null), (?:'([a-z0-9_]+)'|null), '[0-9.]+'\)`, "gm");
   const keys = [...seed.matchAll(row)].map((m) => m[2]).filter((k): k is string => !!k);
   assertEquals([...seed.matchAll(row)].length, 95);
-  const matchKeys = [...(await sql("006_seed_match_cohort.sql")).matchAll(/^  \('([a-z0-9_]+)', '[^']*', [0-9.]+, [0-9.]+,/gm)].map((m) => m[1]);
+  const matchKeys = [...(await sql("006_seed_match_cohort.sql")).matchAll(/^ {2}\('([a-z0-9_]+)', '[^']*', [0-9.]+, [0-9.]+,/gm)].map((m) => m[1]);
   assertEquals(matchKeys.length, 19);
   for (const k of keys) assertEquals(ANALYTE_KEYS.includes(k) || matchKeys.includes(k), true, k);
   for (const k of matchKeys) assertEquals(keys.includes(k), true, `match key ${k} has no code`);
