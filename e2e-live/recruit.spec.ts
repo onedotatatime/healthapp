@@ -16,7 +16,10 @@ type Expected = { shown: true; eligible: number; countries: string[] } | { shown
 const file = JSON.parse(readFileSync(path.resolve('data/synthetic/recruit-50000.json'), 'utf8')) as {
   n: number;
   opted_in: number;
-  records: unknown[];
+  codes: string[];
+  age_bands: string[];
+  conditions: { id: string; must: string[]; some: string[]; min_some: number }[];
+  records: [string, number, number, number[]][];
   expected: Record<string, Expected>;
 };
 const vm = JSON.parse(readFileSync(path.resolve('data/synthetic/recruit-50000.vm.json'), 'utf8')) as {
@@ -33,6 +36,40 @@ const runTime = (iso: string) => {
   const p = (n: number) => String(n).padStart(2, '0');
   return `${d.getUTCDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getUTCMonth()]} ${d.getUTCFullYear()}, ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} UTC`;
 };
+
+/**
+ * The rows the search selects, worked out here from the file by the CTO's rule (MIN-4706): opted in, every must, at least min_some of
+ * the some codes; the first min(asked, eligible) in file order. Never read from the app. Its eligible count is held to `expected`.
+ */
+function selectRows(id: string, asked: number | null) {
+  const c = file.conditions.find((x) => x.id === id)!;
+  const idx = (code: string) => file.codes.indexOf(code);
+  const must = c.must.map(idx);
+  const some = c.some.map(idx);
+  const eligible = file.records
+    .map((r, row) => ({ r, row }))
+    .filter(({ r }) => r[2] === 1 && must.every((m) => r[3].includes(m)) && some.filter((m) => r[3].includes(m)).length >= c.min_some)
+    .map(({ row }) => row);
+  return asked ? eligible.slice(0, asked) : eligible;
+}
+/** What the selected rows share, counted again here: the count of each code, and of each age band. */
+function commonOfRows(rows: number[]) {
+  const count = new Map<string, number>();
+  const bands = new Map<string, number>();
+  for (const row of rows) {
+    const r = file.records[row];
+    bands.set(file.age_bands[r[1]], (bands.get(file.age_bands[r[1]]) ?? 0) + 1);
+    for (const i of r[3]) count.set(file.codes[i], (count.get(file.codes[i]) ?? 0) + 1);
+  }
+  const n = rows.length;
+  return {
+    n,
+    all: [...count].filter(([, c]) => c === n).map(([code]) => code),
+    half: [...count].filter(([, c]) => c < n && c * 2 >= n).map(([code, c]) => ({ code, count: c })),
+    bands: file.age_bands.filter((b) => bands.has(b)).map((b) => `${b}: ${bands.get(b)}`),
+  };
+}
+const ATTRS_ALLOWED = new Set(['class', 'data-testid', 'data-record', 'data-code', 'data-count', 'id', 'aria-labelledby', 'aria-live', 'role', 'tabindex', 'type', 'style']);
 
 async function signInDoctor(page: Page) {
   await page.goto('/health');
@@ -112,6 +149,74 @@ test.describe('one-flow simulate (doctor, staging-dev)', () => {
       await page.waitForTimeout(1500);
       expect(await page.getByTestId('sim-records').innerText(), 'nothing changes after the end state').toBe(before);
       await expect(page.getByTestId('recruit-submit')).toBeEnabled();
+
+      // MIN-4756: the profiles of the 40 selected records and what they have in common, worked out here from the file
+      const rows = selectRows('rheumatoid_arthritis', 40);
+      expect(rows.length, 'this spec picks the same count as the file says is eligible').toBe(40);
+      expect(selectRows('rheumatoid_arthritis', null).length, 'this spec and the file agree on eligible').toBe(e.eligible);
+      const cond = file.conditions.find((c) => c.id === 'rheumatoid_arthritis')!;
+      const profiles = page.getByTestId('recruit-profiles');
+      const cards = page.getByTestId('recruit-profile');
+      await expect(profiles.getByRole('heading')).toHaveText(`The ${rows.length} selected records, one by one`);
+      await expect(page.getByTestId('recruit-profiles-note')).toHaveText('Shown one by one because these records are synthetic. On real records the matching answers in groups, never one record at a time.');
+      await expect(page.getByTestId('recruit-profiles-showing')).toHaveText(`Showing 20 of ${rows.length}`);
+      await expect(cards).toHaveCount(20);
+      const more = page.getByTestId('recruit-profiles-more');
+      await expect(more).toHaveText(`Show ${rows.length - 20} more`);
+      expect((await more.boundingBox())!.height, 'the button is at least 44 px high').toBeGreaterThanOrEqual(44);
+      // order on the page: result line, profiles, then the common block
+      const order = await page.evaluate(() => ['recruit-line', 'recruit-profiles', 'recruit-common'].map((id) => {
+        const el = document.querySelector(`[data-testid="${id}"]`)!;
+        return Array.prototype.indexOf.call(document.querySelectorAll('*'), el);
+      }));
+      expect(order[0] < order[1] && order[1] < order[2], 'the result line, then the profiles, then what they have in common').toBe(true);
+      await more.click();
+      await expect(cards).toHaveCount(rows.length);
+      await expect(more, 'the button is gone when every card is on').toHaveCount(0);
+      await expect(page.getByTestId('recruit-profiles-showing')).toHaveText(`Showing ${rows.length} of ${rows.length}`);
+      // card i is row rows[i]: its position, country, age band and as many codes as the row holds
+      for (let i = 0; i < rows.length; i++) {
+        const r = file.records[rows[i]];
+        const card = cards.nth(i);
+        await expect(card, `card ${i + 1} is the ${i + 1}st selected record`).toHaveAttribute('data-record', String(i + 1));
+        await expect(card).toContainText(`Record ${i + 1}`);
+        await expect(card).toContainText(`Country: ${region.of(r[0])}`);
+        await expect(card).toContainText(`Age band: ${file.age_bands[r[1]]}`);
+        expect((await card.getByTestId('recruit-profile-codes').innerText()).split(', ').length, `card ${i + 1} shows every code of its row`).toBe(r[3].length);
+      }
+      // never the file's row index, never a name, a button or a link on a card, never "Gp" or "VitD"
+      const attrs = await page.evaluate(() => [...document.querySelectorAll('[data-testid="recruit-profiles"], [data-testid="recruit-profiles"] *, [data-testid="recruit-common"], [data-testid="recruit-common"] *')]
+        .flatMap((el) => [...el.attributes].map((a) => [a.name, a.value] as const)));
+      for (const [name, value] of attrs) {
+        expect(ATTRS_ALLOWED.has(name), `attribute ${name} is not one the profiles use`).toBe(true);
+        if (!['data-record', 'data-count'].includes(name)) expect(value, `${name} holds no bare number: a file row index would be one`).not.toMatch(/^\d+$/);
+      }
+      expect(await cards.locator('a, button, img, svg').count(), 'a card has no button, link or picture').toBe(0);
+      const cardText = (await cards.allInnerTexts()).join('\n');
+      expect(cardText, 'no card shows "Gp" or "VitD"').not.toMatch(/\bGp\b|VitD/);
+      expect(cardText).not.toMatch(/Record 0\b|Record 4[1-9]\b|Record \d{3,}/);
+      for (const [code, words] of [['spec_gp', 'General practice'], ['vitD_low', 'Vitamin D low'], ['HLA_B27_positive', 'HLA-B27 positive']] as const) {
+        if (rows.some((row) => file.records[row][3].includes(file.codes.indexOf(code)))) expect(cardText, `${code} reads ${words}`).toContain(words);
+      }
+      await expect(page.getByTestId('sim-page-label')).toBeVisible();
+
+      // what they have in common
+      const common = commonOfRows(rows);
+      const block = page.getByTestId('recruit-common');
+      await expect(block.getByRole('heading')).toHaveText('What they have in common');
+      await expect(page.getByTestId('recruit-common-all-title')).toHaveText(`All ${rows.length} have`);
+      const allCodes = await page.getByTestId('recruit-common-all').locator('li').evaluateAll((els) => els.map((el) => el.getAttribute('data-code')));
+      expect([...allCodes].sort(), 'the codes all 40 hold').toEqual([...common.all].sort());
+      for (const m of cond.must) expect(allCodes, `the must code ${m} is held by all ${rows.length}`).toContain(m);
+      const half = await page.getByTestId('recruit-common-half').locator('li').evaluateAll((els) => els.map((el) => ({ code: el.getAttribute('data-code'), count: Number(el.getAttribute('data-count')), text: (el as HTMLElement).innerText })));
+      expect(half.map((h) => h.code).sort(), 'the codes at least half hold').toEqual(common.half.map((h) => h.code).sort());
+      for (const h of half) {
+        expect(h.count, `${h.code}: the count shown equals the spec's own count`).toBe(common.half.find((x) => x.code === h.code)!.count);
+        expect(h.text).toContain(`${h.count} of ${rows.length}`);
+        expect(h.count, `${h.code} is neither all nor under half`).toBeLessThan(rows.length);
+      }
+      expect(half.map((h) => h.count), 'highest count first').toEqual([...half.map((h) => h.count)].sort((a, b) => b - a));
+      await expect(page.getByTestId('recruit-common-ages')).toHaveText(`Age bands: ${common.bands.join(', ')}.`);
     });
 
     test('R2 fewer found than asked (sarcoid, 40): one sentence with both numbers, funnel still shows', async ({ page }) => {
@@ -120,6 +225,18 @@ test.describe('one-flow simulate (doctor, staging-dev)', () => {
       await expect(page.getByTestId('recruit-line')).toHaveText(`Found ${e.eligible} of the 40 asked. No other record fits these criteria.`);
       expect(await funnel(page)).toEqual([50_000, file.opted_in, e.eligible, e.eligible]);
       await expect(page.getByTestId('recruit-more')).toHaveCount(0);
+      // MIN-4756: 6 profiles, counts "of 6", no Show more
+      await expect(page.getByTestId('recruit-profile')).toHaveCount(e.eligible);
+      await expect(page.getByTestId('recruit-profiles-showing')).toHaveText(`Showing ${e.eligible} of ${e.eligible}`);
+      await expect(page.getByTestId('recruit-profiles-more'), 'six cards fit in the first twenty').toHaveCount(0);
+      const rows = selectRows('rare_sarcoid_like', 40);
+      expect(rows.length).toBe(e.eligible);
+      const common = commonOfRows(rows);
+      await expect(page.getByTestId('recruit-common-all-title')).toHaveText(`All ${e.eligible} have`);
+      const half = await page.getByTestId('recruit-common-half').locator('li').evaluateAll((els) => els.map((el) => ({ code: el.getAttribute('data-code'), count: Number(el.getAttribute('data-count')), text: (el as HTMLElement).innerText })));
+      expect(half.map((h) => h.code).sort()).toEqual(common.half.map((h) => h.code).sort());
+      for (const h of half) expect(h.text).toContain(`${common.half.find((x) => x.code === h.code)!.count} of ${e.eligible}`);
+      expect(await page.getByTestId('recruit-common').innerText(), 'every count is over the six').not.toMatch(/ of (?!6\b)\d+/);
     });
 
     for (const [id, word] of [['rare_copper_metabolism', 'wilson disease'], ['rare_myopathy', 'myopathy']] as const) {
@@ -129,6 +246,9 @@ test.describe('one-flow simulate (doctor, staging-dev)', () => {
         await expect(page.getByTestId('recruit-few')).toHaveText('Fewer than 5 records fit these criteria, so nothing is shown.');
         for (const t of ['recruit-funnel', 'recruit-line', 'recruit-countries', 'recruit-found']) await expect(page.getByTestId(t)).toHaveCount(0);
         await expect(page.getByTestId('sim-canvas'), 'the fit stage is never drawn').not.toHaveAttribute('aria-label', /fit the criteria/);
+        // MIN-4756: nothing of the new sections, no heading, no card, no count
+        for (const t of ['recruit-profiles', 'recruit-profile', 'recruit-profiles-more', 'recruit-common']) await expect(page.getByTestId(t), `${t} is not in the DOM`).toHaveCount(0);
+        expect(await page.locator('body').innerText()).not.toMatch(/Record 1\b|What they have in common|selected records, one by one/);
       });
     }
 
@@ -193,7 +313,7 @@ test.describe('one-flow simulate (doctor, staging-dev)', () => {
 
     // an in-page sampler: every 50 ms the lit funnel rows, the canvas label, whether the result is on screen, the fixed labels' opacity
     await page.evaluate(() => {
-      const log: { t: number; lit: number; label: string; result: boolean; solid: boolean; machineLines: number }[] = [];
+      const log: { t: number; lit: number; label: string; result: boolean; sections: boolean; solid: boolean; machineLines: number }[] = [];
       (window as unknown as { __log: typeof log }).__log = log;
       const t0 = performance.now();
       setInterval(() => {
@@ -207,6 +327,7 @@ test.describe('one-flow simulate (doctor, staging-dev)', () => {
           lit: document.querySelectorAll('[data-testid^="recruit-funnel-"].show').length,
           label: q('sim-canvas')?.getAttribute('aria-label') ?? '',
           result: !!q('recruit-line'),
+          sections: !!q('recruit-profiles') || !!q('recruit-common') || !!q('recruit-profile'),
           solid,
           machineLines: document.querySelectorAll('[data-testid^="sim-machine-line-"]').length,
         });
@@ -218,6 +339,7 @@ test.describe('one-flow simulate (doctor, staging-dev)', () => {
     await expect(page.getByTestId('recruit-submit'), 'one simulation at a time').toBeDisabled();
     await expect(page.getByTestId('recruit-read')).toContainText('40 records, Rheumatoid arthritis'); // what was read shows at once
     await expect(page.getByTestId('recruit-line'), 'the result is not on screen at the click').toHaveCount(0);
+    for (const t of ['recruit-profiles', 'recruit-common']) await expect(page.getByTestId(t), `${t} is not on screen at the click`).toHaveCount(0);
     await expect(page.getByTestId('sim-machine')).toHaveAttribute('data-mode', 'replay');
     await expect(page.getByTestId('sim-machine-label')).toHaveText(`Recorded run on a boxd machine, ${runTime(vm.started_at)}. Replayed here, not live.`);
     for (const p of vm.phases) await expect(page.getByTestId(`sim-machine-line-${p.id}`)).toContainText(p.log);
@@ -236,7 +358,7 @@ test.describe('one-flow simulate (doctor, staging-dev)', () => {
     expect(await funnel(page)).toEqual([50_000, file.opted_in, e.eligible, 40]);
     await expect(page.getByTestId('recruit-submit')).toBeEnabled();
 
-    const log = await page.evaluate(() => (window as unknown as { __log: { t: number; lit: number; label: string; result: boolean; solid: boolean; machineLines: number }[] }).__log);
+    const log = await page.evaluate(() => (window as unknown as { __log: { t: number; lit: number; label: string; result: boolean; sections: boolean; solid: boolean; machineLines: number }[] }).__log);
     const lits = log.map((s) => s.lit);
     expect(lits.every((v, i) => i === 0 || v >= lits[i - 1]), 'lit stages only ever grow').toBe(true);
     for (const n of [1, 2, 3, 4]) expect(lits, `stage ${n} was seen lit`).toContain(n);
@@ -244,6 +366,10 @@ test.describe('one-flow simulate (doctor, staging-dev)', () => {
     expect(firstResult, 'the result appeared').toBeGreaterThan(-1);
     expect(log[firstResult].lit, 'all four stages are lit when the result first shows').toBe(4);
     expect(log.filter((s) => s.lit < 4).every((s) => !s.result), 'the result is never on screen before the last stage').toBe(true);
+    expect(log.filter((s) => s.lit < 4 || !s.result).every((s) => !s.sections), 'profiles and common never show before the last stage or before the result line').toBe(true);
+    expect(log.some((s) => s.sections), 'the sections did appear').toBe(true);
+    await expect(page.getByTestId('recruit-profiles')).toBeVisible();
+    await expect(page.getByTestId('recruit-common')).toBeVisible();
     const stageLabels = log.map((s) => s.label).filter((l, i, a) => l && l !== a[i - 1]);
     expect(stageLabels.length, 'the canvas label changed with every stage (all, opted in, fit, selected)').toBeGreaterThanOrEqual(4);
     expect(log.every((s) => s.solid), 'the page label and the machine label stayed solid').toBe(true);
@@ -255,5 +381,8 @@ test.describe('one-flow simulate (doctor, staging-dev)', () => {
     await expect(page.getByTestId('recruit-result')).toHaveAttribute('data-condition', 'gout');
     await expect(page.getByTestId('recruit-line')).toHaveText('Asked 25. Found 25.');
     expect(await funnel(page)).toEqual([50_000, file.opted_in, exp('gout').eligible, 25]);
+    await expect(page.getByTestId('recruit-profiles'), 'the new run is its own: 25 cards for gout, one list').toHaveCount(1);
+    await expect(page.getByTestId('recruit-profile')).toHaveCount(20);
+    await expect(page.getByTestId('recruit-profiles-showing')).toHaveText('Showing 20 of 25');
   });
 });
