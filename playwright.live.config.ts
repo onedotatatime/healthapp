@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 // Live journey (MIN-4449 step 6): runs against a deployed or local build backed by healthapp_dev, synthetic data only.
+// Default target is the synthetic twin staging-dev (MIN-4658): the staging branch reads healthapp_demo (the founder's real records), so nothing automated signs in there.
 // Not a PR gate and not in the smoke job. Run: HEALTHAPP_LIVE_URL=... HEALTHAPP_DEMO_PASSCODE=... npx playwright test -c playwright.live.config.ts
 export default defineConfig({
   testDir: 'e2e-live',
@@ -11,7 +12,7 @@ export default defineConfig({
   reporter: 'list',
   // No trace, no video: the passcode is typed into a field and must not be recorded.
   use: {
-    baseURL: process.env.HEALTHAPP_LIVE_URL ?? 'https://staging.healthapp-8ui.pages.dev',
+    baseURL: process.env.HEALTHAPP_LIVE_URL ?? 'https://staging-dev.healthapp-8ui.pages.dev',
     viewport: { width: 375, height: 812 },
     trace: 'off',
     video: 'off',
