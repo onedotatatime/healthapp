@@ -66,7 +66,6 @@ export interface StoryNumbersSlide extends StoryBase {
 export interface StoryCloseSlide extends StoryBase {
   template: 'story-close';
   headline: [string, string];
-  support: string;
   name: string;
   email: string;
   /** Tappable link buttons, shown as a column on the right. Each shows the label and the short URL. */

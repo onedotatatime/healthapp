@@ -147,7 +147,7 @@ Source line, small: *OECD, The Economics of Diagnostic Safety, 2025*
 
 **Headline:** Find me for a live demo.
 
-**Support:** I'll show you my record, and what my doctor sees.
+**Support:** none. Removed 2026-11-15, founder on the slide 6 support line "I'll show you my record, and what my doctor sees.": "delete".
 
 **Labels:**
 - **hello@onedotatatime.design**
