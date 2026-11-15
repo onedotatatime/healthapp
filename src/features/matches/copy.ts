@@ -35,86 +35,83 @@ export const COPY = {
   optInError: 'Your choice was not saved. It is unchanged. Try again.',
   optInReadError: 'Could not read your choice just now.',
 
-  // The simulation page: one diagram with a plan-month slider (MIN-4749; spec A15; words: docs/simulation-copy.md section 9, Anna MIN-4723 comment 9e14b7f0).
-  // No number is typed here: years, months, counts, euros, points and the geography come from the data as arguments.
+  // The simulation page: ONE loss card (MIN-4774; spec A16; words: Anna MIN-4723 comment b08a38aa column M, CEO seat MIN-4771 rulings 2 and 3, CTO MIN-4769).
+  // No number is typed here: euros, counts, shares, years and the geography come from the data as arguments. Strings marked "pending Anna" are placeholders for her.
   simLabel: 'Simulation on synthetic data. A model, not a measurement', // fixed by the CTO, never rewritten
   simUnavailable: 'The simulation data could not be read.',
-  // Section 6 of docs/simulation-copy.md (Anna, MIN-4604; approved by the CEO seat on MIN-4605). Every number is filled from the data file.
-  simAssumption: (a: { start: string; ceiling: string }) =>
-    `Assumption, not a finding: each match lowers the chance of a wrong or missed diagnosis by ${a.start}, rising to ${a.ceiling} as matches accumulate.`,
-  gTitle: { drop: 'What matching could change in Greece, year by year', saved: 'What matching could save Greece, year by year' },
-  gCaption: {
-    drop: (a: { first: number; last: number }) =>
-      `Plan years ${a.first} to ${a.last}, on synthetic records and a plan. Move the slider to see, at any month, how many patients have joined, how many records find a match, how many diagnoses go right instead of wrong or missed, what that is worth in Greek health spending in the model, and our planned income.`,
-    saved: (a: { first: number; last: number }) =>
-      `Plan years ${a.first} to ${a.last}, on synthetic records and a plan. Move the slider to see, at any month, how many patients have joined, how many records find a match, how many diagnoses go right instead of wrong or missed, how much money it could have saved in Greek health spending, in the model, and our planned income.`,
+  rTitle: {
+    greece: (a: { amount: string }) => `Greece's health system loses about ${a.amount} a year to wrong or missed diagnoses, in this model`,
+    eu27: (a: { amount: string }) => `Health systems in the EU-27 lose about ${a.amount} a year to wrong or missed diagnoses, in this model`,
+    world: (a: { amount: string }) => `Health systems worldwide lose about ${a.amount} a year to wrong or missed diagnoses, in this model`,
+    other: (a: { name: string; amount: string }) => `${a.name} loses about ${a.amount} a year to wrong or missed diagnoses, in this model`,
   },
-  gSliderLabel: 'Plan year',
-  gSliderValue: (a: { year: number; month: number }) => `Year ${a.year}, month ${a.month}`,
-  gSliderAria: (a: { first: number; last: number }) => `Plan year, from ${a.first} to ${a.last}. The numbers below show that point in the plan.`,
-  gHead: {
-    patients: 'Patients in the network',
-    matches: 'Records with a match',
-    dx: 'Correct diagnoses gained',
-    money: { drop: 'Modelled drop in cost in Greece', saved: 'Money that could be saved in Greece, in the model' },
-    income: 'Our income',
+  rLead: 'Move the slider: the more patients are in the network, the lower the loss.',
+  rSwitchAria: 'Health system',
+  // The words for one geography, keyed by the id in the file; an unknown id falls back to its name. `of`: "40% of Greece"; `adj`: "of Greek health spending".
+  rSubject: {
+    greece: { of: 'Greece', adj: 'Greek' },
+    eu27: { of: 'the EU-27', adj: 'EU-27' },
+    world: { of: 'the world', adj: 'world' },
+  } as Record<string, { of: string; adj: string }>,
+  rSliderLabel: 'Patients in the network',
+  rSliderLabelShort: 'Share in the network', // under 900 px (pending Anna)
+  rSliderValue: (a: { share: string; of: string }) => `${a.share} of ${a.of}`,
+  rSliderAria: 'Share of patients in the network, from 0 to 100 percent. The numbers below show that share.',
+  rSliderText: (a: { share: string; of: string; amount: string }) => `${a.share} of ${a.of}'s patients in the network. The loss falls by ${a.amount} a year.`,
+  // The state line under the slider (pending Anna): a fixed height, so nothing moves.
+  rState: {
+    zero: 'Today: nobody in the network, nothing changes',
+    plan: 'Close to the size our plan reaches by year 10',
+    full: "Every patient in the network, at today's match rate",
   },
-  gTag: { plan: 'Plan', model: 'Model', computed: 'Computed on synthetic records' },
-  // The suffix under a value. "a year" is the yearly basis (a year at that month's network size); the total basis says "in total".
-  gSuffix: {
-    yearly: { money: 'a year', income: 'a year, plan', dx: 'a year, in the model' },
-    total: { money: 'in total since the start', income: 'in total since the start, plan', dx: 'in total since the start, in the model' },
+  rHead: { loss: 'Loss a year to wrong or missed diagnoses', matches: 'Records with a match', dx: 'Correct diagnoses gained' },
+  /** The money label is one constant (CEO seat MIN-4771 ruling 3: "Lower by"; the founder's form stays here, one word to switch, never without the CEO seat). */
+  rMoneyWording: 'lower' as 'lower' | 'saved',
+  rMoneyLabel: { lower: 'Lower by', saved: 'Could be saved, in the model' },
+  rKey: { loss: 'Loss a year, in the model', drop: 'Lowered by' },
+  rUnit: { year: 'a year' },
+  rTag: { model: 'Model', plan: 'Plan' },
+  rHelpLoss: (a: { share: string; adj: string; year: number }) => `The model's loss: ${a.share} of ${a.adj} health spending, ${a.year}.`,
+  rAt100: (a: { value: string }) => `At 100%: ${a.value}`,
+  rPlanName: (a: { year: number }) => `Our plan, year ${a.year}`,
+  rPlanMarker: (a: { year: number; share: string }) => `Our plan, year ${a.year}: ${a.share}`,
+  rPlanRow: (a: { patients: string; share: string; of: string; amount: string }) =>
+    `${a.patients} patients is ${a.share} of ${a.of}. At that size the loss falls by ${a.amount} a year.`,
+  rPlanMarkerAria: (a: { year: number; share: string }) => `Marker: the share of patients our plan reaches in year ${a.year}, ${a.share}.`,
+  rAxisTitle: (a: { of: string }) => `Share of ${a.of}'s patients in the network`,
+  // The notes under the card, in this order (spec A16 section 7).
+  rNoteAxis: 'The axis starts at €0. The drop is small beside the loss, and the drawing keeps it that way.', // pending Anna
+  // The CTO's required line (MIN-4769 section 1), word for word, with the record count from the file.
+  rStraight: (a: { records: string }) =>
+    `A straight line because the match rate and its effect are held at the ${a.records}-record values (synthetic). They are not measured at this size.`,
+  rAssume: (a: { rate: string; effect: string }) =>
+    `Assumption, not a finding: ${a.rate} of opted-in synthetic records found a match, and each match lowers the chance of a wrong or missed diagnosis by ${a.effect}. Both are held at every share.`,
+  rAssumeVisits: 'Assumption: one visit per patient a year.',
+  rAssumeStay: 'Assumption: no patient leaves the network, and the effect applies every year.',
+  rSameRates: 'The same rates are applied in every view, so the loss falls by the same percentage in each. Only the spending differs.', // pending Anna
+  // Anna's gAssumeShare for Greece and the EU-27 as drafted; the world's is the CEO seat's wording (MIN-4771 section 2). {share} is the file's baseline.
+  rAssumeShare: {
+    greece: (a: { share: string }) => `The ${a.share} is an OECD model estimate for a typical OECD country, applied here as an assumption. It is not a Greek measurement.`,
+    eu27: (a: { share: string }) => `The ${a.share} is an OECD model estimate for a typical OECD country, applied here to the EU-27 as an assumption. It is not an EU measurement.`,
+    world: (a: { share: string }) =>
+      `The ${a.share} is an OECD model estimate for a typical OECD country, applied here to the world as an assumption. Low- and middle-income countries differ widely, and the OECD paper gives no estimate for them. Read it as a scale, not a measurement.`,
+    other: (a: { share: string; of: string }) => `The ${a.share} is an OECD model estimate for a typical OECD country, applied here to ${a.of} as an assumption.`,
   },
-  gHelp: {
-    dx: { yearly: 'Fewer wrong or missed diagnoses a year, in the model.', total: 'Fewer wrong or missed diagnoses added up since the start, in the model.' },
-    money: (a: { year: number }) => `Cost of wrong or missed diagnoses that the model removes, on ${a.year} spending.`,
-  },
-  // Pending Anna (MIN-4723 asked for these four, Pix's A15 names them; the growth wording is replaced by the CTO's rule on MIN-4744: income is held flat after the plan).
-  gBandPlan: (a: { planYears: number }) => `Plan: years 1 to ${a.planYears}`,
-  gBandAssumed: (a: { planYears: number }) => `After plan year ${a.planYears}: income held flat, not in the plan`,
-  gStatePlan: 'In the plan',
-  gStateAssumed: 'After the plan: income held flat',
-  gAxisTitle: 'Plan year',
-  // The scale sentences (docs/simulation-copy.md section 8) and, for the euro-only plot, one sentence of its own (pending Anna).
-  gScale: 'Each unit has its own scale: people, euros, diagnoses. Compare heights only inside a unit. Across units, compare how the lines grow.',
-  gScaleMore: 'Patients and records with a match share one scale. Income and the modelled drop share another. Diagnoses have their own. Every scale starts at zero.',
-  gScaleEuro: 'The plot shows euros only, on one scale that starts at zero. Patients, records with a match and diagnoses are in the list.',
-  gScaleTop: 'Top: the largest value in the unit',
-  gFact: (a: { total: string; year: number; perInhabitant: string; geography: string }) =>
-    `For scale: ${a.geography} spent ${a.total} on health in ${a.year}, ${a.perInhabitant} for each inhabitant.`,
-  gAssumeVisits: 'Assumption: one visit per patient a year.',
-  gAssumeShare: (a: { share: string }) =>
-    `The cost share is an OECD model estimate for a typical OECD country, about ${a.share} of health spending. It is not a Greek measurement.`,
-  // The CTO's one line under the diagram (MIN-4744 section 1), word for word, with the numbers from the file.
-  gPlateau: (a: { records: string; month: number; planYears: number }) =>
-    `Past ${a.records} records (month ${a.month}) the matches and their effect are held at the ${a.records}-record values; past year ${a.planYears} the plan's revenue is held flat.`,
-  // The CEO seat's strings (MIN-4746 comment 88b0c07c, conditions 12 and 15), word for word.
-  gIncomePlan: (a: { planYears: number }) => `Income: our plan to year ${a.planYears}, then held flat. Not a forecast.`,
-  gAssumeStay: 'Assumption: no patient leaves the network, and the effect applies every year.',
-  // The running totals under the yearly figures (CEO ruling 4, CTO fix A). Money keeps the drop wording whatever DIAGRAM.money is: "saved" is never put on a total.
-  gTotal: {
-    money: (a: { value: string; first: number }) => `${a.value} added up since month ${a.first}, in the model`,
-    dx: (a: { value: string; first: number }) => `${a.value} added up since month ${a.first}, in the model`,
-    income: (a: { value: string; first: number }) => `${a.value} added up since month ${a.first}, plan`,
-  },
-  gBase: (a: { geography: string; year: number; perInhabitant: string; total: string }) =>
-    `Spending base: ${a.geography}, ${a.year}, ${a.perInhabitant} per inhabitant, ${a.total} a year in all.`,
-  gFormula: (a: { points: string; perInhabitant: string; patients: string; amount: string }) =>
-    `${a.points} points × ${a.perInhabitant} × ${a.patients} patients = ${a.amount} a year`,
-  gSourceLead: 'Health spending:',
-  gBaselines: 'Baselines applied:',
-  gShowValues: 'Show the values',
-  gTableCaption: 'Every plan year, at its last month, the same figures as the diagram.',
-  gColYear: 'Plan year',
-  gColPatients: 'Patients',
-  gColMatches: 'With a match',
-  gColDx: { yearly: 'Diagnoses a year', total: 'Diagnoses in total' },
-  gColMoney: { drop: { yearly: 'Modelled drop a year', total: 'Modelled drop in total' }, saved: { yearly: 'Could be saved a year, in the model', total: 'Modelled drop in total' } },
-  gColIncome: { yearly: 'Income a year', total: 'Income in total' },
-  gColDxTotal: 'Diagnoses added up',
-  gColMoneyTotal: 'Modelled drop added up',
-  gColIncomeTotal: 'Income added up',
-  gTableAfter: '(income held flat)',
-  gDesc: (a: { year: number; month: number; patients: string; matches: string; dx: string; moneyHead: string; money: string; income: string; per: string }) =>
-    `One diagram, plan year ${a.year}, month ${a.month}, synthetic model. Patients: ${a.patients}. Records with a match: ${a.matches}. Correct diagnoses gained: ${a.dx} ${a.per}, in the model. ${a.moneyHead}: ${a.money} ${a.per}. Our income: ${a.income} ${a.per}, plan. A model and a plan, not a measurement.`,
+  rBase: (a: { geography: string; year: number; total: string; perInhabitant: string }) =>
+    `Spending base: ${a.geography}, ${a.year}, ${a.total} a year in all, ${a.perInhabitant} for each inhabitant.`,
+  rFormula: (a: { points: string; total: string; geography: string; year: number; amount: string }) =>
+    `${a.points} points × ${a.total} (${a.geography}, ${a.year}) = ${a.amount} a year`,
+  // Only where the file converts a currency (the world, 2023): the original, the head count and the named rate, visible without a tap (CEO seat conditions 18 and 19).
+  rFx: (a: { total: string; perHead: string; people: string; year: number; rate: string }) =>
+    `Converted from ${a.total} (${a.perHead} a head, ${a.people} people, ${a.year}) at the ECB's ${a.year} average, US$ ${a.rate} per €1.`,
+  rSourceLead: 'Health spending:',
+  rPopulationLead: 'Population:',
+  rBaselines: 'Baselines applied:',
+  rShowValues: 'Show the values',
+  rTableCaption: (a: { name: string }) => `${a.name}: every 10% of the share in the network, the same figures as the card.`,
+  rColShare: 'Share in the network',
+  rColLoss: 'Loss a year',
+  rColDx: 'Correct diagnoses gained',
+  rDesc: (a: { name: string; year: number; share: string; loss: string; drop: string; matches: string; dx: string; dropHead: string }) =>
+    `One card, ${a.name}, ${a.year}. Loss a year to wrong or missed diagnoses with ${a.share} of patients in the network: ${a.loss}. ${a.dropHead} ${a.drop} a year, records with a match ${a.matches}, correct diagnoses gained ${a.dx} a year. A model, not a measurement.`,
 } as const;
