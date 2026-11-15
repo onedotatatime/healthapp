@@ -1,1 +1,3 @@
 - [Scorecard normalisation](feedback_scorecard_normalisation.md) — merge seat scores by mapping each seat's "no evidence" floor to 0, never raw %
+- [Mockup renders and Actuals](reference_mockup_renders_and_actuals.md) — headless Chrome crops 390 px pages (use an iframe); a run's own transcript is under subagents/
+- [Dashboard mockup method](reference_dashboard_mockup_method.md) — MIN-4661 files, audit-by-text, Figma render upload, open CTO points
