@@ -66,11 +66,20 @@ Empty state must never show a count, "fewer than 5", or "too few": it has to rea
 
 Second language, alternative headlines, a USD figure for the US, per-condition baselines, the AHRQ "USD 100 billion" brief, chart colour and layout (Ren/Pix), deck slides, F3 contact copy, analytics wording.
 
+## 5b. The record field (spec A12, MIN-4680; words by Anna, MIN-4683)
+
+The caption rule changes from "a cell is not a record" to: a dot counts as one record, but where a dot sits and which dots turn teal are not identity. Wording: no "anonymous", no "person" claim, no exclamation mark.
+
+| Element | Text | `copy.ts` key |
+|---|---|---|
+| Canvas `aria-label`, built from the data | Match field: {matched} of {visible} synthetic records have a match (thousands comma, e.g. "Match field: 2,071 of 5,000 synthetic records have a match") | `simFieldLabel({ matched, visible })` |
+| Caption under the field, static from frame 0 | One dot is one synthetic record in the network. Dots turn teal, row by row from the left, as matches accumulate. Where a dot sits, and which dots turn teal, says nothing about who a record is. | `simFieldCaption` |
+
 ## 6. The euro outcome and the match-by-match wording (MIN-4604, decided on MIN-4605)
 
 Owner: Marketing (Anna). Candidates checked 15 Nov 2026. Status: **approved by the CEO seat on the founder's behalf, 15 Nov 2026 (MIN-4605), with conditions 1 to 8**.
 
-Source of this section: Anna's MIN-4604 comment 61ae9259 (her sections 1, 4 and 5, as written) and the CEO seat's fills in MIN-4605 comment de26aa96 (section 3). Her comment names the block under "Paste-ready"; that heading is not in the posted text, so Ren assembled this section from those sections (MIN-4608). Anna checked it against her comment on 15 Nov: it matches what she meant. The filled last-frame figures were refreshed from the 1,200-record file on 15 Nov (MIN-4604); the earlier 400-record values (€13.6 billion, 0.74 points, €30) no longer apply.
+Source of this section: Anna's MIN-4604 comment 61ae9259 (her sections 1, 4 and 5, as written) and the CEO seat's fills in MIN-4605 comment de26aa96 (section 3). Her comment names the block under "Paste-ready"; that heading is not in the posted text, so Ren assembled this section from those sections (MIN-4608). Anna checked it against her comment on 15 Nov: it matches what she meant. The filled last-frame figures were refreshed from the 5,000-record file on 15 Nov (MIN-4683). History: the 1,200-record file gave €17.6 billion, 0.96 points, €39 (473 records with a match); the 400-record file gave €13.6 billion, 0.74 points, €30. Neither applies now.
 
 ### 6.1 The total the euro figure uses (CEO seat: option A, with C as the second line; Eurostat dataset hlth_sha11_hf, total, updated 4 Nov 2026)
 
@@ -95,9 +104,9 @@ Source URL (A): https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/d
 | Counter value | {amount} a year |
 | Second line (CEO seat) | {per_inhabitant} per inhabitant a year |
 
-Amount writing: billions with one decimal ("€17.6 billion"), millions with none ("€147 million"), per inhabitant with none ("€39"); the total in the formula with a thousands comma ("€1,834 billion"); "EU-27" as geography; year as four digits; "a year" always present. The word "saved" is deliberately not used: the counter says "drop", not "saved".
+Amount writing: billions with one decimal ("€18.5 billion"), millions with none ("€147 million"), per inhabitant with none ("€41"); the total in the formula with a thousands comma ("€1,834 billion"); "EU-27" as geography; year as four digits; "a year" always present. The word "saved" is deliberately not used: the counter says "drop", not "saved".
 
-Filled for the last frame, on the 1,200-record file `data/synthetic/simulation.json` (founder: "lets go to 1200"; the values are read from its `euro` block): "In this model, the cost of wrong or missed diagnoses is €17.6 billion a year lower for EU-27, on 2024 spending." Formula: "0.96 points of health spending × €1,834 billion (EU-27, 2024) = €17.6 billion a year". Second line: "€39 per inhabitant a year". Source line: "Health spending total: Eurostat, current health expenditure, EU-27, 2024." with Anna's link.
+Filled for the last frame, on the 5,000-record file `data/synthetic/simulation.json` (founder, 15 Nov: "can we increase the https://healthapp-8ui.pages.dev/simulation to 5000?"; the values are read from its `euro` block, last row): "In this model, the cost of wrong or missed diagnoses is €18.5 billion a year lower for EU-27, on 2024 spending." Formula: "1.01 points of health spending × €1,834 billion (EU-27, 2024) = €18.5 billion a year" (check: 1.01 / 100 × 1,834 = 18.52). Second line: "€41 per inhabitant a year" (check: 1.01 / 100 × 4,074.88 = 41.16). Last row of the file: 5,000 records, 2,071 with a match (46.0%), 4.54 wrong or missed diagnoses per 100 visits, 9.99% of health spending. Source line: "Health spending total: Eurostat, current health expenditure, EU-27, 2024." with Anna's link.
 
 ### 6.3 Match by match
 
@@ -113,12 +122,14 @@ Filled for the last frame, on the 1,200-record file `data/synthetic/simulation.j
 
 The four step captions are not built in this story (CTO, MIN-4610). They stay here as approved wording.
 
+Shape of the run at 5,000 (checked against `simulation.json`, MIN-4683): the first step (417 records) already has 107 matches (28.5%), so the run does not start at zero. The match rate rises from 28.5% to 40.9% in the second step, then flattens at 44 to 46% and dips once at the last step (46.2 to 46.0). Series 2 and 3 start at 4.85 and 10.67, not at their baselines (5 and 11). What does still hold at every step: the match count rises (107 to 2,071), the assumed effect rises (10.5% to 20%), and the cost falls. No on-screen sentence claims more than that: the caption says "Watch matches grow as the network grows" (the count of matches does grow at every step), and the cost caption says "the cost falls further as matches accumulate" (true at every step). No sentence says the rate climbs on every step or that the run opens empty. The late step caption ("the assumed effect is at its ceiling") is true only at the last step, as before; it is not built, so nothing to change now.
+
 Notes (Anna): the "Modelled drop so far" counter shows the drop at the current network size as a yearly figure, so it grows as matches accumulate; it is not money adding up over several years, and the screen must not suggest so ("a year" stays next to it). The assumption line contains "assumption"; the permanent label stays visible, and the 20% appears as the ceiling, always with "assumption" in the same sentence. No study is attached to the start or the ceiling. Never "anonymous"; none of the strings uses it. No exclamation mark.
 
 ### 6.4 Conditions (CEO seat; 1 to 3 are the MIN-4506 ones)
 
 4. The euro figure is on screen only together with series 3's chart (axis from zero), the formula line, the source line and the permanent label.
 5. The euro sentence has "model" or "assumption" in it. Never "saved", "saves", "savings" or "will". The 10% follows the same rule as the 20%: never without "assume", "assumed" or "assumption" in the same sentence, and no study attached.
-6. The arithmetic on screen checks out at the precision shown: the euro values come from the published two-decimal cost (0.96 × €1,834 billion = €17.6 billion).
+6. The arithmetic on screen checks out at the precision shown: the euro values come from the published two-decimal cost (1.01 × €1,834 billion = €18.5 billion).
 7. Nothing says the matching software learns today. Asked "does it learn?": "Not in this prototype. The curve is our assumption of what a learning matcher would do. A pilot with doctors would measure it."
 8. The cost caption "In the model, each step lowers the cost more than the one before." is false on the data and is not shown.
