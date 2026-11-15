@@ -10,7 +10,7 @@ import { detailSlides } from './appendix';
 const QR = '/deck-qr.svg';
 const A7_NOTES = [
   'Appendix slide. Shown when asked, or when a main slide\'s "Details" link is clicked. Not in the 3-minute script. The "Back" link returns to the main slide.',
-  'Speaker notes (about 30 s): "We size the paying side only: doctors. The US alone has about 905,000 physicians in direct care. At an assumed fifty dollars a seat a month, which sits under paid AI scribes and above the free tools, the US, the EU and India are about a 1.9 billion dollar a year market. That is the ceiling, not our plan. Our plan is on slide 10: two thousand seats at most by year three, plus per-case fees. These are our assumptions, and the pilots exist to test the price."',
+  'Speaker notes (about 30 s): "We size the paying side only: doctors. The US alone has about 905,000 physicians in direct care. At an assumed fifty euros a seat a month, which sits under paid AI scribes and above the free tools, the US, the EU and India are about a 1.9 billion euro a year market. That is the ceiling, not our plan. Our plan is on slide 10: two thousand seats at most by year three, plus per-case fees. These are our assumptions, and the pilots exist to test the price."',
 ];
 
 const mainSlides: Slide[] = [
@@ -48,7 +48,7 @@ const mainSlides: Slide[] = [
     pointStyle: 'plain',
     points: [
       { text: "**AI alone:** right condition **94.9%** of the time. In people's hands: under **34.5%**.", source: 'Nature Medicine, 2026 · S14' },
-      { text: 'Since November 2026, Greece caps repeat tests. Doctors need the earlier result.', source: 'S16' },
+      { text: 'Greek press reports that since November 2026, Greece caps repeat tests. Doctors need the earlier result.', source: 'Greek press · S16' },
       { text: "Since 2025, Europe's EHDS lets patients add to and control their own record.", source: 'S4' },
     ],
     side: {
@@ -141,21 +141,21 @@ const mainSlides: Slide[] = [
     cards: [
       { title: 'Today, what a day of delay costs', figure: { value: '€36,000', mark: '*', unit: 'What one day of delay costs one trial to run.' } },
       { title: 'With Pathien, what one trial saves', figure: { value: '€180,000', mark: '*', unit: 'Saved per trial if enrolment ends 5 days sooner: 5 × €36,000.' } },
-      { title: 'How we charge, and what the sponsor keeps', accent: true, figure: { value: '€24,000', mark: '*', unit: 'Our fee per trial, out of that saving. The sponsor keeps €156,000.' } },
+      { title: 'How we charge, and what the sponsor keeps', accent: true, figure: { value: '€24,000', mark: '*', unit: 'Our fee per trial, about 13% of that saving. The sponsor keeps €156,000.' } },
     ],
     note: '* Our estimate for one trial in one country, in euros at $1.10 to €1. Days saved and prices are assumptions. Not a result.',
     links: [{ to: 'A3', label: 'Details → A3' }],
   },
   {
     id: '7', template: 'funnel', theme: 'night', no: '07', kicker: 'Impact, what better decisions save', notes: N['7'],
-    headline: 'Wrong diagnoses cost 17.5% of health spending. Better first decisions are the biggest saving in healthcare.',
+    headline: 'Diagnostic error costs 17.5% of health spending. Better first decisions are the biggest saving in healthcare.',
     big: { number: '17.5%', label: 'of health spending' },
     points: ['goes on the harm of diagnostic error. (OECD, S10)'],
     funnelTitle: 'Greece, a year',
     steps: [
       { value: '€19.9bn', text: "Greece's health spending a year", tone: 'deep' },
       { value: '€3.5bn*', text: 'a year: what diagnostic error costs Greece.', tone: 'mint' },
-      { value: '€4M to €75M*', text: 'a year: our first slice, repeated and unnecessary tests in Greece.', tone: 'coral' },
+      { value: '€4M to €30M*', text: 'a year: our first slice, repeated and unnecessary tests in Greece.', tone: 'coral' },
     ],
     note: '* Our estimate on sourced inputs; the share we prevent and adoption are assumptions. Not a forecast.',
     links: [{ to: 'A4', label: 'Details → A4' }],
@@ -212,7 +212,7 @@ const mainSlides: Slide[] = [
         { number: '€4.85M*', label: 'upside' },
       ],
     },
-    strip: { value: 'About 6 to 14%*', text: 'that revenue as a share of what better records save on tests, in Greece alone.' },
+    strip: { value: 'About 12 hospitals*', text: 'at €40k a year each cover our running costs.' },
     note: '* Our estimate. Every price, customer count and volume is an assumption for the pilots to test. Not a forecast.',
     links: [{ to: 'A6', label: 'Details → A6' }, { to: 'A7', label: 'Market size → A7' }],
   },
@@ -253,12 +253,12 @@ const mainSlides: Slide[] = [
       label: 'Team today', name: 'Lefteris Georgaras', role: 'Founder, onedotatatime.design, with AI agents', agents: 'AI agents',
       partner: { title: 'Research partner · target', text: 'A university hospital and an AI research centre (targets, not contacted).' },
     },
-    ask: { label: 'What I ask', amount: '€1M', mark: '*', line: 'over 24 months, in two gated tranches' },
+    ask: { label: 'What I ask', amount: '€1M', mark: '*', line: 'over 24 months, committed at signing, released in two gated tranches' },
     gates: {
       head: ['Gate', 'Tranche'],
       rows: [
-        { gate: 'A hospital signs a pilot', amount: '€300k' },
-        { gate: 'The pilot proves price, volume and cost per case', amount: '€700k' },
+        { gate: 'A hospital signs a pilot', amount: '€400k' },
+        { gate: 'The hospital commits to 1,000+ paid cases a year at €40+; a case costs us €5 or less', amount: '€600k' },
       ],
     },
     note: '* Our plan, not a raise in progress; costs are assumptions. Nobody is hired before a hospital signs a pilot. Certification is the next round.',
@@ -266,16 +266,16 @@ const mainSlides: Slide[] = [
   },
   {
     id: '14', template: 'spend', theme: 'air', no: '14', kicker: 'Why the money', notes: N['14'],
-    headline: 'Why €1M: six people, 29% to sell, break-even at month 29*.',
+    headline: 'Why €1M: six people, 30% to sell, break-even at month 31*.',
     line: '6 people: 3 build, 2 sell, 1 clinical and regulatory lead.',
     parts: [
-      { pct: 29, value: '€285k · 29%', label: 'Sell', accent: true },
+      { pct: 30, value: '€297k · 30%', label: 'Sell', accent: true },
       { pct: 36, value: '€361k · 36%', label: 'Build' },
-      { pct: 24, value: '€242k · 24%', label: 'Prove' },
-      { pct: 11, value: '€112k · 11%', label: 'Buffer' },
+      { pct: 24, value: '€245k · 24%', label: 'Prove' },
+      { pct: 10, value: '€97k · 10%', label: 'Buffer' },
     ],
     contact: { label: 'Scan or visit', link: 'healthapp-landing.pages.dev', email: 'hello@onedotatatime.design', qr: QR },
-    note: '* Our plan; costs are assumptions. Break-even on our conservative revenue line (slide 10).',
+    note: '* Our plan; costs are assumptions. Break-even: when gross profit covers running costs, on our conservative revenue line (slide 10).',
     links: [{ to: 'A9', label: 'Details → A9' }],
   },
 ];
@@ -285,18 +285,19 @@ const a7: Slide = {
   id: 'A7', counter: 'A7', template: 'appendix', theme: 'air', no: 'Appendix A7', kicker: 'Market sizing', notes: A7_NOTES,
   back: [{ to: '9', label: 'Back to slide 9' }, { to: '10', label: 'Back to slide 10' }],
   footer: 'The seat price is an assumption to be tested in pilots. A ceiling, not a forecast.',
-  headline: 'Every doctor who sees a new patient is a seat: about $1.9B a year in the US, EU and India, on our assumptions.',
-  tam: { label: 'TAM', value: 'about $8.5B', tag: 'assumption · a ceiling' },
-  sam: { label: 'SAM', value: 'about $1.9B', tag: 'assumption' },
+  headline: 'Every doctor who sees a new patient is a seat: about €1.9bn a year in the US, EU and India, on our assumptions.',
+  tam: { label: 'TAM', value: 'about €8.5bn', tag: 'assumption · a ceiling' },
+  sam: { label: 'SAM', value: 'about €1.9bn', tag: 'assumption' },
   head: ['', 'Doctors', 'At an assumed price', 'Per year'],
   rows: [
-    { cells: ['United States', '**905,452** direct-care physicians (AAMC 2025, S6, verified)', '$600 per seat (assumption)', '$543M'] },
-    { cells: ['European Union', 'about 1.98M practising physicians (Eurostat 2023, S7, secondary)', '$600 per seat (assumption)', '$1,188M'] },
-    { cells: ['India', '1,386,157 registered doctors (NMC via Parliament, S7, secondary)', '$120 per seat (assumption)', '$166M'] },
-    { cells: ['SAM', '', '', 'about $1.9B'], total: true },
+    { cells: ['United States', '**905,452** direct-care physicians (AAMC 2025, S6, verified)', '€600 per seat (assumption)', '€543M'] },
+    { cells: ['European Union', 'about 1.98M practising physicians (Eurostat 2023, S7, secondary)', '€600 per seat (assumption)', '€1,188M'] },
+    { cells: ['India', '1,386,157 registered doctors (NMC via Parliament, S7, secondary)', '€120 per seat (assumption)', '€166M'] },
+    { cells: ['SAM', '', '', 'about €1.9bn'], total: true },
   ],
   lines: [
-    '**TAM about $8.5B a year:** about 14.1M doctors worldwide at $600. (Derived from a secondary density figure, S7; a ceiling, not a forecast.)',
+    '**TAM about €8.5bn a year:** about 14.1M doctors worldwide at €600. (Derived from a secondary density figure, S7; a ceiling, not a forecast.)',
+    "**The per-case line is not sized here.** This ceiling counts doctor seats only; slide 10's per-case line (hospitals, €40 to €80 a case) has no market size on this slide.",
     "**SOM retired in v3.** The old line (about $19M a year by year 3, 1% of SAM seats, about 42,700 paying doctors, assumption) is replaced by slide 10's bottom-up line: **€0.56M to €4.85M in year 3** (our estimate), with 400 to 2,000 paying seats plus 8,000 to 45,000 paid cases. One revenue story: slide 10. This slide only says how big the ceiling is.",
     '**Sources:** S6 (verified), S7 (secondary; derived and assumption labels per the market-and-competitors research, §1.2).',
   ],
