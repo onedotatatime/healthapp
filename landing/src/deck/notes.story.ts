@@ -8,7 +8,7 @@ export const N: Record<string, string[]> = {
     "And that's me, back in 2019, in hospital. I saw doctors, I did test after test, and no doctor could give me an answer. So I did what I know. I opened a spreadsheet and put every result in it, date by date. I was trying to figure out what my body was telling me.",
   ],
   '3': [
-    "And that's me today, still trying to figure this out. But not alone in a spreadsheet any more. I'm helping doctors find the answer. On the left, my record: my own exams, the real ones, going back to 2019. On the right, what my doctor sees.",
+    "And that's me today, still trying to figure this out. But not alone in a spreadsheet any more. I'm helping doctors find the answer. On the left, what my doctor sees. On the right, my record: my own exams, the real ones, going back to 2019.",
   ],
   '3b': [
     "Let me show you. Here I add an exam to my record. Over here, my doctor sees it arrive, next to every exam before it, over time. And when my doctor asks a question, the answer points to the exam it came from. That's the part I never had in 2019. Now, by giving doctors the tool to analyse all my medical exams, we can finally make the difference.",

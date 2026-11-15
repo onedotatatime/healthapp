@@ -17,6 +17,9 @@ export interface LiveFrameProps {
   badgePlacement: 'bar' | 'below';
 }
 
+const SETTLE_MS = 1200;
+const LOAD_TIMEOUT_MS = 8000;
+
 const hostOf = (url: string) => {
   try { return new URL(url).hostname; } catch { return url; }
 };
@@ -37,7 +40,7 @@ const useOnline = () => {
  * One frame of the app: a screenshot under an optional iframe.
  * - The screenshot is always in the DOM and is what shows until the iframe reports it is ready.
  * - The iframe is mounted only when `live` is true. With ?static or without the presenter key there is NO iframe in the DOM.
- * - Ready = the app posts {type:'pathien:ready'} OR the iframe's load event fires (the best signal a cross-origin frame gives).
+ * - Ready = the iframe's load event plus 1.2 s; no load within 8 s keeps the screenshot.
  *   A frame the host refuses to embed cannot be detected from here, so the presenter has the L key and this badge to switch back.
  */
 export function LiveFrame({ cfg, live, hot, armed, onToggle, onReady, style, className = '', badgePlacement }: LiveFrameProps) {
@@ -45,23 +48,26 @@ export function LiveFrame({ cfg, live, hot, armed, onToggle, onReady, style, cla
   const mount = live && online;
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [ready, setReady] = useState(false);
-  const shown = mount && ready;
+  const [failed, setFailed] = useState(false);
+  const shown = mount && ready && !failed;
   const interactive = shown && hot;
 
   useEffect(() => { onReady(cfg.id, shown); }, [shown, onReady, cfg.id]);
-  useEffect(() => { if (!mount) setReady(false); }, [mount]);
+  useEffect(() => { if (!mount) { setReady(false); setFailed(false); setLoaded(false); } }, [mount]);
 
+  // Ready = the iframe's load event plus SETTLE_MS (the app paints after load). No load within LOAD_TIMEOUT_MS: stay on the screenshot.
   useEffect(() => {
     if (!mount) return;
-    const origin = new URL(cfg.url).origin;
-    const onMsg = (e: MessageEvent) => {
-      if (e.origin !== origin || e.source !== iframeRef.current?.contentWindow) return;
-      const d = e.data as { type?: string } | null;
-      if (d && d.type === 'pathien:ready') setReady(true);
-    };
-    window.addEventListener('message', onMsg);
-    return () => window.removeEventListener('message', onMsg);
-  }, [mount, cfg.url]);
+    const t = window.setTimeout(() => setFailed(true), LOAD_TIMEOUT_MS);
+    return () => window.clearTimeout(t);
+  }, [mount]);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (!loaded || failed) return;
+    const t = window.setTimeout(() => setReady(true), SETTLE_MS);
+    return () => window.clearTimeout(t);
+  }, [loaded, failed]);
+
 
   const scale = cfg.viewW / cfg.iframeW;
   const state: 'live' | 'ready' | 'shot' = shown ? (hot ? 'live' : 'ready') : 'shot';
@@ -95,7 +101,7 @@ export function LiveFrame({ cfg, live, hot, armed, onToggle, onReady, style, cla
           allow={cfg.allowCamera ? 'camera' : undefined}
           referrerPolicy="no-referrer"
           tabIndex={interactive ? 0 : -1}
-          onLoad={() => setReady(true)}
+          onLoad={() => setLoaded(true)}
         />
       )}
     </div>

@@ -5,7 +5,10 @@
 // only when the address carries the presenter key (?live=<PRESENTER_KEY>). The key is not a secret: it only keeps casual visitors on
 // screenshots. ?static forces screenshots even with the key (a bad venue network).
 
+// Two origins, one database (healthapp_demo). The founder signs in on each frame as himself (staging, patient) and as the doctor (production).
+// No passcode, token or auto-login lives in this file, in the deck URLs or in the bundle.
 export const STORY_APP = 'https://healthapp-8ui.pages.dev';
+export const STORY_APP_STAGING = 'https://staging.healthapp-8ui.pages.dev';
 
 /** The presenter key. Open /story?live=<this> to turn the live frames on. */
 export const PRESENTER_KEY = 'live-athens-2026';
@@ -15,7 +18,7 @@ export type FrameId = 'doctor' | 'patient' | 'simulate';
 export interface FrameConfig {
   id: FrameId;
   kind: 'browser' | 'phone';
-  /** What the iframe loads. Placeholder addresses until the CTO's decision lands. */
+  /** What the iframe loads (CTO decision, MIN-4729). */
   url: string;
   /** The iframe title (accessible name). */
   title: string;
@@ -37,7 +40,7 @@ export const STORY_FRAMES: Record<FrameId, FrameConfig> = {
   doctor: {
     id: 'doctor',
     kind: 'browser',
-    url: `${STORY_APP}/`,
+    url: `${STORY_APP}/doctor`,
     title: 'Doctor view, live',
     viewW: 1280, viewH: 604, iframeW: 1280, iframeH: 604,
     fallback: '/story/fallback-doctor.webp',
@@ -47,7 +50,7 @@ export const STORY_FRAMES: Record<FrameId, FrameConfig> = {
   patient: {
     id: 'patient',
     kind: 'phone',
-    url: `${STORY_APP}/`,
+    url: `${STORY_APP_STAGING}/patient`,
     title: 'Patient view, live',
     viewW: 294, viewH: 636, iframeW: 390, iframeH: 844,
     fallback: '/story/fallback-patient.webp',

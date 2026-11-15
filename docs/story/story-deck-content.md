@@ -76,7 +76,7 @@
 
 **Visual note for Pix and Ren:** Two live app frames side by side, the patient view on the left (`/patient`, "Your record"), the doctor view on the right (`/doctor`). The founder showcases them live. Use the build that holds his own records (`https://staging.healthapp-8ui.pages.dev`, or production once it carries them; `docs/deploy.md` §2), never the synthetic twin.
 
-**Speaker notes (~20 s):** "And that's me today, still trying to figure this out. But not alone in a spreadsheet any more. I'm helping doctors find the answer. On the left, my record: my own exams, the real ones, going back to 2019. On the right, what my doctor sees."
+**Speaker notes (~20 s):** "And that's me today, still trying to figure this out. But not alone in a spreadsheet any more. I'm helping doctors find the answer. On the left, what my doctor sees. On the right, my record: my own exams, the real ones, going back to 2019."
 
 ---
 
