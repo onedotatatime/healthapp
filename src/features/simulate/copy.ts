@@ -21,14 +21,14 @@ export const COPY = {
   machineBody: 'One short-lived machine makes the 5,000 test records, then goes away.',
   machineWaiting: 'Replaying the recorded run',
   // MIN-4675, words by Anna on MIN-4672. "live" appears only in strings about the live run; "recorded" and "replayed" only in the replay ones.
-  machineStarting: 'Starting a boxd machine now to make the 5,000 synthetic records.',
+  machineStarting: 'Asking for a live run on a boxd machine to make the 5,000 synthetic records.',
   liveLabel: (when: string) => `Live run on a boxd machine, started ${when}. Not a replay. Synthetic data.`,
   /** Shown above `machineLabel` when the recorded run is played because the live one did not happen. One per reason. */
   fallback: {
     off: 'Live runs are switched off right now. Showing the recorded run instead.',
     busy: 'Another live run is in progress. Showing the recorded run instead.',
-    cap: "Today's limit of live runs is reached. Showing the recorded run instead.",
-    timeout: 'The live run did not finish in 20 seconds. Showing the recorded run instead.',
+    cap: 'The 24-hour limit of live runs is reached. Showing the recorded run instead.',
+    timeout: 'The live run did not finish in time. Showing the recorded run instead.',
     error: 'The live run failed. Showing the recorded run instead.',
   },
   /** The log line of each live state: what the machine does at that step, the same words the recorded run logged. */

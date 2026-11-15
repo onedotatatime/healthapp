@@ -57,14 +57,14 @@ describe('a card that waits for the live call', () => {
   const pending: MachineView = { mode: 'pending', notice: null, startedAt: null, states: true, lines: [], footer: null };
   it('says it is starting, claims neither live nor recorded, and lights nothing', () => {
     const m = html(pending);
-    expect(m).toContain('Starting a boxd machine now to make the 5,000 synthetic records.');
+    expect(m).toContain('Asking for a live run on a boxd machine to make the 5,000 synthetic records.');
     expect(label(m)).toBeNull();
     expect(m).not.toMatch(/Live run|Recorded run|Replayed/);
     expect(m).not.toContain('class="now"');
     expect(m).toContain('data-mode="pending"');
   });
   it('a live card between the start line and the first state still says it is starting', () => {
-    expect(html({ ...live(0) })).toContain('Starting a boxd machine now');
+    expect(html({ ...live(0) })).toContain('Asking for a live run on a boxd machine');
   });
 });
 
