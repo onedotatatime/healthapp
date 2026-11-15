@@ -13,3 +13,5 @@ Any new number or claim on the two simulation screens is bound by rules that are
 - Figures and wording of record: `docs/simulation-copy.md` (Anna, MIN-4506).
 
 First applied on MIN-4603 (motion and the euro figure, 2026-11-15). Check the comment still stands before relying on it.
+
+Applied again on MIN-4706 (trial recruitment search on `/doctor/simulate`, 2026-11-15), with three Product rulings that are on that issue and not in the code: "opted in" means opted in to matching, never agreed to a trial; a response or agree rate is a new assumption and goes to the CEO seat first; a search by condition reads codes, never the generator's group index.
