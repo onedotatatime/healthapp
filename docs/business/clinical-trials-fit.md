@@ -6,7 +6,7 @@
 | **Date** | 15 Nov 2026 |
 | **For** | The founder, who asked, verbatim: "Create a summary for me to explain if we can fit to find patients eligible to a clinical trial when we have their concent to process their data" |
 | **Challenge** | Athens LifeHack, The Clinical Trials Challenge (Athens LifeTech Park). Text as the founder shared it: `clinical-trials-challenge.md` in the coordinator's scratchpad (Google Doc "ALTP_Clinical_Trials_Challenge_draft (3)") |
-| **Status** | Draft for the founder. Nothing sent. Trial matching is not built (the record, the diary and values over time are, on synthetic data). Section 8 added 15 Nov 2026 for deck v3.9. Legal points are flagged for a lawyer or regulator; none of them is legal advice. |
+| **Status** | Draft for the founder. Nothing sent. Trial matching is not built (the record, the diary and values over time are, on synthetic data). Section 8 added 15 Nov 2026 for deck v3.9; its prices and who is billed decided for deck v4.8 (Q38, CFO on the founder's behalf: "CFO you make the call"). Legal points are flagged for a lawyer or regulator; none of them is legal advice. |
 
 ## Bottom line
 
@@ -126,7 +126,7 @@ The founder, verbatim: *"Pricing -> show different in 3 cards / * The current si
 
 ### Pricing model
 
-**Who pays.** Sponsors and CROs fund recruitment and pay sites per patient. We bill the sponsor or CRO, or the site where the sponsor's recruitment budget runs through it (open question Q38 in the deck). **Never the patient.** The fee is for a recruitment service, never for data: rule 2 holds.
+**Who pays (Q38, decided by the CFO on the founder's behalf, 15 Nov 2026).** Sponsors and CROs fund recruitment and pay sites per patient. We bill **the sponsor or CRO only**, never the site: one payer and one contract per trial, faster cash, and no per-patient money passing through a site that may also be our hospital customer (a cleaner ethics file). **Never the patient.** The fee is for a recruitment service, never for data: rule 2 holds.
 
 **The unit: a set-up fee per trial, plus a success fee per randomised patient.**
 - *Per randomised patient* is the unit sponsors already compare vendors on (row 8), and it pays us only when the site has accepted the patient and they are randomised.
@@ -136,8 +136,8 @@ The founder, verbatim: *"Pricing -> show different in 3 cards / * The current si
 
 | Input | Value | Label |
 |---|---|---|
-| Set-up fee, per trial and country | €5,000 | assumption |
-| Success fee, per randomised patient | **€1,000** (range €750 to €1,500; v3.9 had €1,500) | assumption. Lowered in v4.0: rows 11 and 12 put the recruitment line at about $500 to $700 per participant and row 8's vendor average is $1,379, so €1,500 (about $1,650) sat above both. €1,000 (about $1,100) stays under the vendor average and is about 2.7% of the median $41,117 per patient (row 7). The value case rests on days saved, not on the fee |
+| Set-up fee, per trial and country | €5,000, paid at signing, not refundable | assumption; decided for the deck (Q38, v4.8) |
+| Success fee, per randomised patient | **€1,000** (range €750 to €1,500; v3.9 had €1,500) | assumption; decided for the deck (Q38, v4.8): €1,500 is reconsidered only after a sponsor pilot measures 5 or more days saved. Lowered in v4.0: rows 11 and 12 put the recruitment line at about $500 to $700 per participant and row 8's vendor average is $1,379, so €1,500 (about $1,650) sat above both. €1,000 (about $1,100) stays under the vendor average and is about 2.7% of the median $41,117 per patient (row 7). The value case rests on days saved, not on the fee |
 | Referrals the site accepts, per trial | 50 | assumption |
 | Screen failure at the site | 36.3% | secondary (row 5). The revenue keeps today's rate; slide 6c's "a third fewer" is an assumption shown as people screened, not as money |
 | Share of patients who pass screening and are randomised | 60% | assumption |
