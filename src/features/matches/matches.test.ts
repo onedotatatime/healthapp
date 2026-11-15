@@ -263,6 +263,16 @@ describe('the clock: one linear clock, every number derived from it', () => {
       expect(mid).toBeCloseTo(k - 0.5);
     }
   });
+  it('read pause: from the end of the match window to the end of the step nothing moves', () => {
+    for (let k = 1; k < n; k++) {
+      for (const tau of [to, to + 1, SIM_STEP_MS - 1]) {
+        const f = at(k, tau);
+        expect(f.idx, `step ${k} tau ${tau}`).toBe(k);
+        expect(matchesAt(f, counts)).toBe(counts[k]);
+        expect(shownDrop(euro.drop_pts, f.idx)).toBe(euro.drop_pts[k]);
+      }
+    }
+  });
   it('the euro figure, the per-inhabitant line and the matches equal the file at every step boundary', () => {
     for (let k = 1; k < n; k++) {
       const f = at(k, to);
