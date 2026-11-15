@@ -13,10 +13,11 @@ const T = (page: Page, id: string) => page.getByTestId(id);
 
 const overflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
-// The /simulation scenarios of this file (P1 to P4, W1, T1, T2) tested the animated page of MIN-4608 to MIN-4724 (hero card, dot field, 30 s clock, three charts,
-// timeline card, Replay). MIN-4749 replaced that page with ONE diagram and a plan-month slider, so those tests and their test ids are removed here and the file
-// stays green. The new /simulation scenarios (slider at three months against ten_years, keyboard, 390 px, nothing moves) are E2E's, written against staging
-// after the merge. Test ids on the new page: sim-diagram, sim-slider, sim-year, sim-value-{money,income,patients,matches,dx}, sim-formula, sim-plateau, sim-label.
+// The /simulation scenarios of this file (P1 to P4, W1, T1, T2) tested the animated page of MIN-4608 to MIN-4724; MIN-4749 replaced it with a plan-month slider
+// diagram, and MIN-4774 replaced that with ONE loss card (Greece / Europe (EU-27) / Global switch, a 0 to 100% share slider in 0.1% steps, data: the `reach` block).
+// None of those tests remains here, so the file stays green. The new /simulation scenarios (switch, slider at a few shares against `reach`, keyboard, 390 px, nothing moves)
+// are E2E's, written against staging after the merge (MIN-4776). Test ids on the card: sim-loss-card, sim-switch, sim-geo-{greece,eu27,world}, sim-slider, sim-share,
+// sim-value-{loss,drop,matches,dx,plan}, sim-drop-pct, sim-state, sim-plan-line, sim-straight, sim-assumption, sim-fx, sim-formula, sim-label.
 
 async function signIn(page: Page) {
   await page.goto('/health');
