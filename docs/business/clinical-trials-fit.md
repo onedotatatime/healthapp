@@ -80,7 +80,7 @@ This is direction 5's most concrete use. "Possible matches" (slide 7) connects a
 - **False hope.** "You may be eligible" can read as a promise of treatment. Route it through the doctor, and say plainly that most people pre-screened are not enrolled.
 - **Crowded market.** Hospital-network players already sell this to sponsors. We must show what the patient-held record adds, not claim to be first.
 
-## 8. Recruitment economics and pricing (added 15 Nov 2026, deck v3.9; updated in v4.0 for slide 7c)
+## 8. Recruitment economics and pricing (added 15 Nov 2026, deck v3.9; updated in v4.0 for slide 7c, now 6c; cards rebuilt in deck v4.5)
 
 The founder, verbatim: *"Connect with revenue from trial clinics (find data from treg to see how difficult and expensive is recruitment and calculate how we can charge)"*. Researched with treg (three cited web answers, $0.0053 in total) and direct reads of the sources below. Labels: **verified** (primary source read), **secondary** (a reputable report of a primary source, or a trade article by the study's author), **vendor claim** (a company's own figures), **unverified, do not use**.
 
@@ -105,16 +105,24 @@ The founder, verbatim: *"Connect with revenue from trial clinics (find data from
 
 **The gap is closed, with a caveat (v4.0).** Recruiting one participant costs about **$500 to $700** in the recruitment line: $161,140 ÷ 235 ≈ $690 (phase 2), $308,672 ÷ 630 ≈ $490 (phase 3). **Our estimate**: rows 11 and 12 are two ASPE reports ten years apart, and 2014 dollars are not inflated. It is the recruitment line only (adverts, outreach); staff time for screening sits in other lines, so the true cost is higher. Row 8's vendor figures ($577 to $2,000, average $1,379) are digital campaigns and sit above it.
 
-### The three cards on slide 7c (v4.0)
+### The three cards on slide 6c (v4.0, rebuilt in deck v4.5)
+
+**v4.5 (15 Nov 2026).** The founder, verbatim, asked of the v4.4 cards ($360M and $200,000): *"does 360m is the whole and the 200000 is per trial?"*, then: *"You need to be clear with the numbers and compare the same thing"*. The v4.4 cards mixed a market total over the life of 1,497 trials (a recruitment budget, in dollars), a per-trial running-cost saving (in dollars) and our per-trial fee (in euros). The cards now compare one quantity, the cost of recruitment time, for one trial in one country, in euros at $1.10 to €1 (assumption), and chain: €36,000 a day → 5 × €36,000 = €180,000 saved → our €24,000 fee, the sponsor keeps €156,000.
+
+**Why not the recruitment budget per trial.** $357M ÷ 1,497 ≈ $240,000 is the whole trial's recruitment line, worldwide. ASPE's 35.9% lower cost per patient (row 11) on about 19 patients in one country saves under €5,000 (about $690 or $490 per patient × 35.9% × 19; our estimate), less than our fee. The value to a sponsor is the days, so the cards use the cost of a day.
+
+**Market context, not on the slide (deck A3):** 1,497 trials, 776,650 participants (row 13). Their recruitment budget: 710 × $161,140 + 787 × $308,672 ≈ $357M ≈ €325M over the life of those trials, not per year (rows 11, 13). If each finished 5 days sooner: 1,497 × €180,000 ≈ €270M of running cost, a different budget line. Our estimates.
+
+The v4.0 cards, as first written (kept for the record; replaced in v4.5 above): card 1 about $360M, card 2 about $200,000 saved per trial, card 3 about €24,000 per trial, sponsor keeps about €158,000.
 
 The founder, verbatim: *"Pricing -> show different in 3 cards / * The current situation, the cost of one hire, number of trials and the participants, total cost / * How cheaper could be from our patient match and selection and how many money we can save them / * How we can charge and the revenue"*. Pre-screening is not running today: every saving below is our estimate on sourced inputs, never a result.
 
-| Card | Big number | Arithmetic | Label |
+| Card (v4.5) | Big number | Arithmetic | Label |
 |---|---|---|---|
-| 1. Today | **about $360M** recruitment budget of the trials recruiting in the EU today | 710 × $161,140 + 787 × $308,672 ≈ $357M (rows 11, 13); over the life of those trials, not per year | our estimate |
-| 2. With Pathien | **about $200,000 saved per trial** | 5 days sooner to full enrolment (assumption; about 1.4% of ASPE's year of recruitment) × $40,000 a day (row 1). Below ASPE's lowest modelled phase 3 saving from EHR-based recruitment, $0.46M (row 11). Across 1,497 trials, if each saved 5 days: about $300M | our estimate |
+| 1. Today | **about €36,000**: what one day of delay costs one trial to run | $40,000 a day (row 1) ÷ 1.10 = €36,364, rounded down | our estimate |
+| 2. With Pathien | **about €180,000 saved per trial** | 5 days sooner to full enrolment (assumption; about 1.4% of ASPE's year of recruitment) × €36,000 = €180,000. Below ASPE's lowest modelled phase 3 saving from EHR-based recruitment, $0.46M ≈ €418,000 (row 11) | our estimate |
 | 2, second line | about 6 fewer failed screenings per trial | 50 referrals × (36.3% − 24.2%), if a third fewer of our referrals fail screening (assumption; row 5) | assumption |
-| 3. How we charge | **about €24,000 per trial** | €5,000 + 19 × €1,000 (both assumptions). Sponsor keeps $200,000 ≈ €181,800 (at $1.10 to €1, assumption) − €24,000 ≈ **€158,000**. 10 trials a year: about €240,000 (assumption, not in slide 11) | our estimate |
+| 3. How we charge | **about €24,000 per trial** | €5,000 + 19 × €1,000 (both assumptions). Sponsor keeps €180,000 − €24,000 = **€156,000**. 10 trials a year: about €240,000 (assumption, not in slide 11) | our estimate |
 
 ### Pricing model
 
@@ -133,7 +141,7 @@ The founder, verbatim: *"Pricing -> show different in 3 cards / * The current si
 | Referrals the site accepts, per trial | 50 | assumption |
 | Screen failure at the site | 36.3% | secondary (row 5). The revenue keeps today's rate; slide 7c's "a third fewer" is an assumption shown as people screened, not as money |
 | Share of patients who pass screening and are randomised | 60% | assumption |
-| Cost of one day of delay to the sponsor | about $40,000 | verified (row 1) |
+| Cost of one day of delay to the sponsor | about $40,000 (≈ €36,000 at $1.10 to €1, rounded down; deck v4.5) | verified (row 1); the euro figure is our estimate |
 | Days sooner to full enrolment, per trial | 5 | assumption (v4.0) |
 | Exchange rate | $1.10 to €1 | assumption (v4.0) |
 

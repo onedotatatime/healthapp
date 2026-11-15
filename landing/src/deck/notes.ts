@@ -31,7 +31,7 @@ export const N: Record<string, string[]> = {
     "Clinical trials. With a separate yes, we pre-screen the patient's record against a trial's criteria. The site confirms, the patient chooses. Between visits, the trial team sees her diary in her own words and her values over time. Here is what that is worth."
   ],
   "6c": [
-    "Today, the trials recruiting in Europe carry about three hundred and sixty million dollars of recruitment budget, and a day of delay costs a sponsor about forty thousand dollars. If our pre-screen brings a trial to full enrolment five days sooner, that is about two hundred thousand dollars saved. We charge five thousand euros to set a trial up and a thousand per randomised patient. The sponsor keeps most of the saving. The patient never pays."
+    "Every day a trial waits for patients costs its sponsor about thirty-six thousand euros to run. If our pre-screen brings one trial to full enrolment five days sooner, that is about one hundred and eighty thousand euros saved. Our fee is about twenty-four thousand: five thousand to set the trial up, and a thousand per randomised patient. The sponsor keeps about one hundred and fifty-six thousand. The patient never pays."
   ],
   "7": [
     "The OECD put a price on it last year: diagnostic error eats 17.5 percent of health spending, almost 2 percent of GDP. Halving it would free 8 percent. Take Greece, where we are standing: that is about three and a half billion euros a year. We start with the smallest, most measurable slice, unnecessary and repeated tests. On tests alone, between 4 and 75 million euros a year in Greece, depending on adoption. The bigger prize is the diagnosis itself."
