@@ -14,6 +14,7 @@ import { COPY } from './copy';
 import { DotCanvas, colorOfGroup, type Stage } from './DotCanvas';
 import { createLiveRunner, type FallbackReason, type LiveResult, type LiveSend } from './live';
 import { MachineCard, type MachineView } from './MachineCard';
+import RecruitSearch from './RecruitSearch';
 import { findMatches, parseRun, type MatchOutcome, type RecordDetail, type RunFile } from './matcher';
 import { codeLabel, countryName, formatValue, groupName, offsetMs, vmOffsets } from './format';
 import { SM_CARD_AT, SM_CONTACT_STEP_MS, SM_RINGS_AT, barFraction, stepAt } from './motion';
@@ -176,6 +177,7 @@ export function SimulateView({ run, send }: { run: RunFile; send?: LiveSend }) {
   return (
     <main ref={main} className="page doctor sm" data-testid="doctor-simulate">
       <p ref={labelRef} className="sm-label" data-testid="sim-page-label"><Flask size={18} aria-hidden="true" />{COPY.pageLabel}</p>
+      <RecruitSearch />
       <h1>{COPY.title}</h1>
       <p className="sm-intro">{COPY.intro}</p>
       <p>
