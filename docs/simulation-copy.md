@@ -95,7 +95,7 @@ Source URL (A): https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/d
 | Counter value | {amount} a year |
 | Second line (CEO seat) | {per_inhabitant} per inhabitant a year |
 
-Amount writing: billions with one decimal ("€13.6 billion"), millions with none ("€147 million"), per inhabitant with none ("€30"); the total in the formula with a thousands comma ("€1,834 billion"); "EU-27" as geography; year as four digits; "a year" always present. The word "saved" is deliberately not used: the counter says "drop", not "saved".
+Amount writing: billions with one decimal ("€17.6 billion"), millions with none ("€147 million"), per inhabitant with none ("€39"); the total in the formula with a thousands comma ("€1,834 billion"); "EU-27" as geography; year as four digits; "a year" always present. The word "saved" is deliberately not used: the counter says "drop", not "saved".
 
 Filled for the last frame, on the 1,200-record file `data/synthetic/simulation.json` (founder: "lets go to 1200"; the values are read from its `euro` block): "In this model, the cost of wrong or missed diagnoses is €17.6 billion a year lower for EU-27, on 2024 spending." Formula: "0.96 points of health spending × €1,834 billion (EU-27, 2024) = €17.6 billion a year". Second line: "€39 per inhabitant a year". Source line: "Health spending total: Eurostat, current health expenditure, EU-27, 2024." with Anna's link.
 
