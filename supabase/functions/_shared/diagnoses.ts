@@ -80,8 +80,12 @@ const NAME_RANK = /\b(likely|unlikely|probabl[ey]|most|least|leading|definite(?:
 const ADVICE = /\b(should|recommend\w*|advis\w*|advice|must|urgent\w*|immediate\w*|emergenc\w*|prescrib\w*)\b/i;
 /** A word of likelihood in a statement (a card may not say how likely anything is). */
 const LIKELIHOOD = /\b(likely|unlikely|probabl[ey]|suspected|definite(?:ly)?)\b/i;
-/** An id the model left in its own text. */
-const BARE_ID = /\b[rfd]\d+\b/i;
+/** A token shaped like a line id. It only counts when it IS one of this record's ids (see leftAnId): "vitamin D3" is not. */
+const BARE_ID = /(?<!vitamin\s)\b[rfd]\d+\b/g;
+/** The wire allows at most this many cites per statement (contract.ts DiagnosisStatement). */
+const MAX_CITES = 6;
+/** An id of this record the model left in its own text. Lowercase only: the ids are shown lowercase, a vitamin is "D3". */
+const leftAnId = (text: string, facts: Map<string, Fact>) => (text.match(BARE_ID) ?? []).some((t) => facts.has(t));
 
 /** A direction word needs a cited result that carries the matching flag (CTO §3 point 2). */
 const DIRECTION: { re: RegExp; flag: string; word: string }[] = [
@@ -110,12 +114,13 @@ function verifyStatement(
 ): { ok: true; value: Statement } | { ok: false; reason: string } {
   const bad = (reason: string) => ({ ok: false as const, reason: `${label}: ${reason}` });
   // The same check an ask record_fact gets: every cited id exists, every number and date is on a cited line.
-  const r = check({ not_in_record: false, segments: [{ kind: "record_fact", text: tidy(s.text), cites: s.cites }] }, facts);
+  // More than the wire allows: keep the first MAX_CITES, which must then carry every number and date by themselves.
+  const r = check({ not_in_record: false, segments: [{ kind: "record_fact", text: tidy(s.text), cites: s.cites.slice(0, MAX_CITES) }] }, facts);
   if (r.segments.length === 0) return bad(r.failures[0].replace(/^segment 1: /, ""));
   const text = r.segments[0].text;
   const cites = r.segments[0].cites;
   if (text.length === 0 || text.length > MAX_STATEMENT) return bad(`the text must be 1 to ${MAX_STATEMENT} characters`);
-  if (BARE_ID.test(text)) return bad("the text contains a line id; do not put ids in the text");
+  if (leftAnId(text, facts)) return bad("the text contains a line id; do not put ids in the text");
   if (ADVICE.test(text)) return bad("it contains a word of advice or urgency");
   if (LIKELIHOOD.test(text)) return bad("it contains a word of likelihood");
   if (cites.every((c) => flags.has(c))) {

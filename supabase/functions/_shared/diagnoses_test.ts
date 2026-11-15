@@ -214,3 +214,23 @@ Deno.test("better: more verified items wins, then fewer removals, else the first
   assertEquals(better(clean, dirty), clean);
   assertEquals(better(clean, run(answerOf(item()))), clean);
 });
+
+Deno.test("M1: more cites than the wire allows never reaches the client: trimmed to 6 when the first 6 carry the numbers, dropped when they do not", () => {
+  const all = ["r1", "r2", "r3", "r4", "f1", "f2", "d1"]; // seven distinct, valid ids
+  const kept = run(answerOf(item({ fits: [stmt("CRP was 18.4 mg/L on 2025-05-14, above the printed range 0 - 5.", ...all)] })));
+  assertEquals(kept.items[0].fits[0].cites.length, 6);
+  assertEquals(kept.items[0].fits[0].cites[0], `r:${U(1)}`);
+  // the number sits on the line the trim removes: the statement no longer verifies
+  const lost = run(answerOf(item({ fits: [stmt("The diary says severity 6.", "r1", "r2", "r3", "r4", "f1", "f2", "d1")] })));
+  assertEquals(lost.items.length, 0);
+  // whatever is kept parses on the wire
+  assertEquals(DiagnosisItem.safeParse(kept.items[0]).success, true);
+});
+
+Deno.test("M2: the bare-id rule drops a record id in the text, not an ordinary term such as vitamin D3", () => {
+  const ok = (text: string, ...c: string[]) => run(answerOf(item({ fits: [stmt(text, ...c)] }))).items.length;
+  assertEquals(ok("CRP was 7.9 mg/L on 2025-12-09 (see r2).", "r2"), 0); // r2 is this record's id
+  assertEquals(ok("CRP was 7.9 mg/L on 2025-12-09, see d1.", "r2"), 0);
+  assertEquals(ok("CRP was 7.9 mg/L on 2025-12-09; vitamin D3 and f8 were not measured.", "r2"), 1); // d3, f8 are not ids here
+  assertEquals(ok("CRP was 7.9 mg/L on 2025-12-09; vitamin d3 is not on any line.", "r2"), 1); // even lowercase after "vitamin"
+});
