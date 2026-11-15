@@ -10,6 +10,7 @@
 - [Matches RPC review](project_matches_rpc_review.md) — MIN-4505 PR #25 pass; PR #51 coding pass with 3 fixes (glycated regex, ANA titre, 014); local PG18 replay recipe
 - [Simulation euro contract](project_simulation_euro_contract.md) — MIN-4610: part 1 contract; part 2 pass at 291fedf after founder 1,200 change; cond 6 over all drops
 - [Doctor simulate page](project_doctor_simulate.md) — MIN-4504: no live boxd VM, recorded run replayed, browser matching on 5,000 synthetic, persona-rare, S from 6, consent before data
+- [Simulation timeline](project_simulation_timeline.md) — MIN-4699: part 2 PASS 37bff7e (2,806/1,137, €88k vs €229k a year); merge-tree vs new staging, golden vs v5
 - [Simulation at 5,000](project_simulation_5000.md) — MIN-4684: part 1 GO, part 2 PASS (spec line 233 + Ren actuals); load long task is app boot; generator tests are scripts
 - [Clean replay](reference_clean_replay.md) — git archive + cp -c node_modules for Lane B jobs; check:static needs git, run it in the worktree
 - [Doctor dashboard decision](project_doctor_dashboard_decision.md) — MIN-4660/4666: diagnoses fn off per env; 2a M1/M2; 2b approved (rebase, drop pending skip); demo yes on 4 conditions
