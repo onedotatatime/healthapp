@@ -127,11 +127,14 @@ test('G3 handshake: doctor connects with the patient share code, patient approve
     await expect(doctor.getByTestId('overview')).toBeVisible();
     await expect(doctor.getByTestId('over-time')).toBeVisible({ timeout: 30_000 });
     await expect(doctor.getByTestId('matches-panel')).toBeVisible();
+    // From 900 px the dashboard shows one view at a time (MIN-4664): Ask is behind its nav item, the overview is behind the other.
+    await doctor.getByTestId('nav-ask').click();
     await expect(doctor.getByTestId('ask-input')).toBeVisible();
     await doctor.getByTestId('ask-input').fill('What is in this record?');
     await doctor.getByTestId('ask-submit').click();
     await expect(doctor.getByTestId('turn').first()).toBeVisible({ timeout: 90_000 });
     await shot(doctor, 'g3-workspace', ti);
+    await doctor.getByTestId('nav-overview').click();
 
     // the sheet: open a source from the timeline, see the "About this file" block, close it
     const open = doctor.getByTestId('overview').getByRole('button', { name: /^Source \d+: Blood test/ }).first(); // a document source (a diary entry has no file block)

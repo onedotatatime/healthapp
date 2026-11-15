@@ -56,6 +56,10 @@ verify_jwt = false
 [functions.healthapp-over-time]
 verify_jwt = false
 
+# MIN-4662: possible diagnoses for the doctor (a model call on one patient's record, off by default per environment). Called from the browser; the function verifies the session, the doctor role and a live grant itself.
+[functions.healthapp-diagnoses]
+verify_jwt = false
+
 # MIN-4556: the patient's upload list and delete, called from the browser (the function verifies the session itself).
 [functions.healthapp-my-exams]
 verify_jwt = false

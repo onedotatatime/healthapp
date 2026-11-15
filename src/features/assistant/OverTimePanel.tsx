@@ -1,19 +1,9 @@
-/** The container for the "Over time" panel (MIN-4552): one call to `healthapp-over-time` when the workspace opens. The answer lives in this component's state only: when access ends the shell unmounts and it goes with it. */
+/** The one call to `healthapp-over-time` per workspace open (MIN-4552, MIN-4664). The answer lives in this hook's state only: the cards, the flag chips and the footer read the same answer, and when access ends the shell unmounts and it goes with it. */
 import { useEffect, useState } from 'react';
 import { isGrantGone, type AssistantApi } from './api';
-import { OverTimeView, type OverTimeState } from './OverTime';
-import type { RecordIndex } from './record';
+import type { OverTimeState } from './OverTime';
 
-interface Props {
-  api: AssistantApi;
-  grantId: string;
-  index: RecordIndex;
-  openCite: string | null;
-  onOpenCite(cite: string): void;
-  onGone(): void;
-}
-
-export function OverTimePanel({ api, grantId, index, openCite, onOpenCite, onGone }: Props) {
+export function useOverTime(api: AssistantApi, grantId: string, onGone: () => void): [OverTimeState, () => void] {
   const [state, setState] = useState<OverTimeState>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -31,5 +21,5 @@ export function OverTimePanel({ api, grantId, index, openCite, onOpenCite, onGon
       alive = false;
     };
   }, [api, grantId, attempt, onGone]);
-  return <OverTimeView state={state} index={index} openCite={openCite} onOpenCite={onOpenCite} onRetry={() => setAttempt((n) => n + 1)} />;
+  return [state, () => setAttempt((n) => n + 1)];
 }

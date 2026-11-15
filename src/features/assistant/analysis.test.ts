@@ -79,10 +79,11 @@ describe('Over time: what is on screen equals the response', () => {
   });
   it('marks a result outside its range with a word and a diamond, not by colour alone', () => {
     const m = view(ready([SERIES]));
-    expect(m.match(/outside the printed range/g)?.length).toBe(3);
-    expect(m.match(/data-outside="true"/g)?.length).toBeGreaterThanOrEqual(3);
-    expect(m.match(/ot-pt-out/g)?.length).toBe(3);
-    expect(m.match(/<circle class="ot-pt"/g)?.length).toBe(1);
+    expect(m.match(/<g class="ot-point"[^>]*data-outside="true"/g)?.length).toBe(3); // the three results outside, as points
+    expect(m.match(/<polygon class="ot-pt ot-pt-out"/g)?.length).toBe(3); // drawn as a diamond
+    expect(m.match(/<circle class="ot-pt"/g)?.length).toBe(1); // the one within the range is a circle
+    expect(m.match(/<tr data-outside="true"/g)?.length).toBe(3); // and the table row carries it in words
+    expect(m.match(/ outside the printed range<\/span>/g)?.length).toBe(3);
   });
   it('gives every point its source chip, named with the source and its mark', () => {
     const m = view(ready([SERIES]));
