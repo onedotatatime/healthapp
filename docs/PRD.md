@@ -534,7 +534,7 @@ All tables have RLS on. "Patient reads own" means `patient_id = auth.uid()`. "Do
 The diary is a plain insert: text, severity 1 to 10, `recorded_at` set by the server, `occurred_at` editable and marked `time_edited` when it differs. It calls no model. The function answers `{id, saved: true}` and nothing else.
 
 **N1 is enforced in six places, so one mistake in the app cannot break it:**
-1. The only server functions that call a model are `extract-exam` and `assistant`. `extract-exam` has an output schema with no free-text opinion field. `assistant` requires a doctor.
+1. The only server functions that call a model are `extract-exam`, `assistant` and `diagnoses` (MIN-4662, CTO decision on MIN-4660). `extract-exam` has an output schema with no free-text opinion field. `assistant` and `diagnoses` require a doctor, and `diagnoses` is off unless its environment is named in the function secret `HEALTHAPP_DIAGNOSES_ENVS`.
 2. `assistant` reads the caller's role **from `profiles` in the database**, not from a claim the client can send. A patient token gets 403.
 3. `assistant` also requires an active grant for that doctor and that patient, checked by RLS under the doctor's own token.
 4. `assistant_turns` has a select policy for the doctor of the grant and **no policy for the patient**. A patient query returns zero rows.
