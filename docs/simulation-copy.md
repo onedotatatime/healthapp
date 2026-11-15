@@ -73,7 +73,7 @@ The caption rule changes from "a cell is not a record" to: a dot counts as one r
 | Element | Text | `copy.ts` key |
 |---|---|---|
 | Canvas `aria-label`, built from the data | Match field: {matched} of {visible} synthetic records have a match (thousands comma, e.g. "Match field: 2,071 of 5,000 synthetic records have a match") | `simFieldLabel({ matched, visible })` |
-| Caption under the field, static from frame 0 | One dot is one synthetic record in the network. Dots turn teal, row by row from the left, as matches accumulate. Where a dot sits, and which dots turn teal, says nothing about who a record is. | `simFieldCaption` |
+| Caption under the field, static from frame 0 | One dot, one synthetic record. Teal is a match; position says nothing about who it is. | `simFieldCaption` |
 
 ## 6. The euro outcome and the match-by-match wording (MIN-4604, decided on MIN-4605)
 

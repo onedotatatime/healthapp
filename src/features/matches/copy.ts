@@ -61,5 +61,5 @@ export const COPY = {
   simFieldLabel: (a: { matched: number; visible: number }) =>
     `Match field: ${a.matched.toLocaleString('en-US')} of ${a.visible.toLocaleString('en-US')} synthetic records have a match`,
   simFieldCaption:
-    'One dot is one synthetic record in the network. Dots turn teal, row by row from the left, as matches accumulate. Where a dot sits, and which dots turn teal, says nothing about who a record is.',
+    'One dot, one synthetic record. Teal is a match; position says nothing about who it is.',
 } as const;
