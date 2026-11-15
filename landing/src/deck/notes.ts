@@ -22,7 +22,7 @@ export const N: Record<string, string[]> = {
     "We designed privacy in from the first line. The key lives on the patient's device. A doctor gets in only face to face, only with a yes, and only for a set time. Every access goes into a log the patient can read and nobody can edit; the log holds fingerprints, never health data. Those are product rules, not settings."
   ],
   "5b": [
-    "Pathien Vault keeps the whole record on a device the patient owns, under our own encryption, not in the cloud. Here is how it's used. The patient is abroad, or at a hospital, and not in a serious condition. The doctor scans the code on the Vault, and it opens our doctor page. One of our support team calls the hospital to verify the situation, then gives the doctor access for a set time."
+    "Pathien Vault keeps the whole record on a device the patient owns, under our own encryption, not in the cloud. Here is how it's used. The patient is abroad, or at a hospital, possibly in a serious condition and unable to open the phone. The doctor scans the code on the Vault, and it opens our doctor page. One of our support team calls the hospital to verify the situation, then gives the doctor access for a set time."
   ],
   "6": [
     "The founder's question was simple: somewhere in the world, someone has Maria's pattern. If she says yes, her doctor can see that similar unnamed cases exist and ask to talk to the doctor treating one of them. Not to sell data. To shorten the years patients spend going from doctor to doctor. Opt-in only, and she can withdraw at any time."

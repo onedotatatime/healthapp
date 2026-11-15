@@ -108,10 +108,10 @@ The two points:
 Footer: An option for privacy-first patients. The core business is unchanged.
 
 **For questions: the support call.**
-1. **The patient can't take the call.** Access falls back to a contact the patient named at setup. If that contact can't be reached either, there is no access. The Vault never opens by default.
+1. **The hospital can't confirm.** The support person verifies the situation with the hospital, not with the patient. If the hospital can't be reached or the details don't match, there is no access. The Vault never opens by default.
 2. **Someone tries to talk their way in.** The support person calls the hospital to verify the situation before anything: the doctor's and the hospital's details, and the request from the doctor page, must match the call. Every call and every grant is written to the patient's signed log (slide 5), so the patient sees who asked, who approved and for how long.
 3. **The support person never reads the record.** They approve or refuse a time-limited grant. The record stays encrypted on the Vault, and access ends by itself when the time runs out.
-4. **A serious condition or an emergency.** The flow is for a patient who can take part. Emergencies follow the hospital's own procedures; the Vault is not an emergency service.
+4. **A serious condition.** This is the case the Vault is for: a patient who may not be able to open the phone or the app. It is still not an emergency service. Support verifies with the hospital, not the patient, and the grant is time-limited and logged. Life-threatening emergencies follow the hospital's own procedures.
 5. **Is it built?** No. It is designed, on the same rules as the working app. Say so plainly if asked (rule 8 is waived for the slide, not for the answer).
 
 **Sources:** PRD.md sections 4, 6 and 7; S20; S3; founder's words on slide 5b.`,
