@@ -11,7 +11,7 @@ This repo is private. Rules for agents and contributors: [`CLAUDE.md`](CLAUDE.md
 | DO NOT OPEN IF YOU ARE NOT AN INVESTOR | [Full pitch](https://healthapp-landing.pages.dev/deck/) |
 | DECK IN A HURRY | https://healthapp-landing.pages.dev/story/?live=live-athens-2026 |
 | LOOKING AROUND | https://healthapp-landing.pages.dev/ |
-| DEMO | [Demo](https://healthapp-8ui.pages.dev) (DM for details) |
+| DEMO | [Demo](https://healthapp-8ui.pages.dev) (DM for the password) |
 
 ## Project in one minute
 
