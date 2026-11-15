@@ -10,7 +10,6 @@ export function StoryClose({ s }: { s: StoryCloseSlide }) {
         <span className="rise" style={ri(1)}>{s.headline[0]}</span>{' '}
         <span className="rise" style={ri(2)}>{s.headline[1]}</span>
       </h1>
-      <p className="sc-support rise" style={ri(3)}>{typo(s.support)}</p>
       <div className="sc-contact rise" style={ri(4)}>
         <img className="sc-photo" src={s.photo.src} alt={s.photo.alt} />
         <div>

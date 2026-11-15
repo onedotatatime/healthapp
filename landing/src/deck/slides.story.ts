@@ -80,7 +80,6 @@ export const storySlides: StorySlide[] = [
   {
     id: '6', template: 'story-close', theme: 'night', notes: N['6'],
     headline: ['Find me for', 'a live demo.'],
-    support: "I'll show you my record, and what my doctor sees.",
     name: 'Lefteris Georgaras',
     email: 'hello@onedotatatime.design',
     links: [

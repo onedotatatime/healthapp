@@ -131,8 +131,7 @@
 /* ---- 6: close ---- */
 .sc-h{position:absolute;left:120px;top:270px;width:1000px;margin:0;font-size:132px;line-height:130px;font-weight:700;letter-spacing:-.04em;color:#fff}
 .sc-h span{display:block}
-.sc-support{position:absolute;left:120px;top:566px;width:960px;margin:0;font-size:32px;line-height:40px;font-weight:500;color:#D5E7E5}
-.sc-contact{position:absolute;left:120px;top:664px;display:flex;align-items:center;gap:28px}
+.sc-contact{position:absolute;left:120px;top:610px;display:flex;align-items:center;gap:28px}
 .sc-photo{display:block;width:112px;height:112px;border-radius:50%;object-fit:cover;object-position:50% 30%}
 .sc-name{margin:0;font-size:36px;line-height:44px;font-weight:700;color:#fff}
 .sc-line{margin:0;font-size:28px;line-height:36px;color:var(--faint)}
