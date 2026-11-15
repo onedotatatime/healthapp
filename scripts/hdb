@@ -6,6 +6,7 @@
 #                                     runs it when HDB_DATABASE_URL is set
 #   hdb files  <dev|demo>             print the counts-only file analysis check (six values, no row content)
 #   hdb scan   <dev|demo>             print the counts-only scan check (uploads, per status, refused per reason, stuck...)
+#   hdb kept   <dev|demo>             print the 017 check (refused rows keep a file only with its 14-day end; reads no row)
 set -euo pipefail
 cmd="${1:-}"; env="${2:-}"
 case "$env" in dev|demo) ;; *) echo "usage: hdb render|check dev|demo [file]" >&2; exit 2;; esac
@@ -44,5 +45,7 @@ SQL
     sed -e "s/__SCHEMA__/${schema}/g" "$dir/checks/file_analysis_counts.sql" | run ;;
   scan)
     sed -e "s/__SCHEMA__/${schema}/g" -e "s/__BUCKET__/${bucket}/g" "$dir/checks/scan_counts.sql" | run ;;
-  *) echo "usage: hdb render|check|files|scan dev|demo [file]" >&2; exit 2;;
+  kept)
+    sed -e "s/__SCHEMA__/${schema}/g" "$dir/checks/refused_keeps_file_check.sql" | run ;;
+  *) echo "usage: hdb render|check|files|scan|kept dev|demo [file]" >&2; exit 2;;
 esac

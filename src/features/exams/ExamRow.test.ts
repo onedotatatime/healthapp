@@ -11,7 +11,7 @@ const text = (m: string) => m.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").r
 const U = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const base: ExamListItem = {
   id: U(1), status: 'queued', reason: null, uploaded_at: '2026-11-14T09:30:00.000+00:00', status_at: '2026-11-14T09:30:00.000+00:00',
-  kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false,
+  kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false, file_kept: false,
 };
 const render = (o: Partial<ExamListItem>, extra: Record<string, unknown> = {}) =>
   renderToStaticMarkup(h(MemoryRouter, null, h('ul', null, h(ExamRow, { item: { ...base, ...o }, base: '/patient/exams', onDelete: () => {}, onRetry: () => {}, ...extra }))));
@@ -63,6 +63,34 @@ describe('ExamRow renders the six statuses (MIN-4557)', () => {
     expect(m).toContain('data-testid="row-retry"');
     expect(m).toContain('data-testid="row-delete"');
     expect(render({ status: 'failed', reason: 'too_many_attempts' })).not.toContain('data-testid="row-retry"');
+  });
+  it('refused, photo kept (MIN-4639): the kept sentence, Try again when can_retry, always Delete', () => {
+    const m = render({ status: 'refused', reason: 'unreadable', file_kept: true, can_retry: true });
+    expect(text(m)).toContain('Nothing was saved, and the photo is kept for 14 days so it can be checked again; you can delete it.');
+    expect(m).toContain('data-testid="row-retry"');
+    expect(text(m)).toContain('Try again');
+    expect(m).toContain('data-testid="row-delete"');
+    const spent = render({ status: 'refused', reason: 'name_mismatch', file_kept: true, can_retry: false });
+    expect(text(spent)).toContain("We didn't save it, and the photo is kept for 14 days so it can be checked again; you can delete it.");
+    expect(spent).not.toContain('data-testid="row-retry"');
+    expect(spent).toContain('data-testid="row-delete"');
+    expect(text(render({ status: 'refused', reason: 'unreadable', file_kept: true, can_retry: true }, { busy: 'retrying' }))).toContain('Trying again');
+  });
+  it('Try again on a kept refused row calls the existing retry path with the row id', () => {
+    const calls: string[] = [];
+    const tree = ExamRow({ item: { ...base, status: 'refused', reason: 'unreadable', file_kept: true, can_retry: true }, base: '/patient/exams', onDelete: () => {}, onRetry: (id: string) => calls.push(id) } as never);
+    const find = (n: any): any => (n && typeof n === 'object' ? (n.props?.['data-testid'] === 'row-retry' ? n : [].concat(n.props?.children ?? []).flat(5).map(find).find(Boolean)) : undefined);
+    const btn = find(tree);
+    expect(btn).toBeTruthy();
+    btn.props.onClick();
+    expect(calls).toEqual([base.id]);
+  });
+  it('refused, photo not kept: exactly as before, no Try again', () => {
+    const m = render({ status: 'refused', reason: 'unreadable', file_kept: false });
+    expect(text(m)).toMatch(/Nothing was saved\./);
+    expect(text(m)).not.toContain('14 days');
+    expect(m).not.toContain('data-testid="row-retry"');
+    expect(m).toContain('data-testid="row-delete"');
   });
   it('an unknown reason shows the fallback sentence', () => {
     expect(text(render({ status: 'failed', reason: 'brand_new_code' as never }))).toContain('We could not read this file.');

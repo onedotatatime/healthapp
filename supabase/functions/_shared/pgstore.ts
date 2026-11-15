@@ -11,6 +11,7 @@ import {
   type DocState,
   type ConfirmPlan,
   type ExamRow,
+  KEEP_REFUSED_DAYS,
   MAX_READS,
   type PlanOutcome,
   QUEUED_STUCK_MINUTES,
@@ -175,11 +176,13 @@ export const pgStore: Store = {
 
   async claimForReading(env, patientId, docId) {
     const S = schema(env);
-    // One statement is the lock: two kicks cannot both take the row, so nothing is read twice.
+    // One statement is the lock: two kicks cannot both take the row, so nothing is read twice. A refused row is taken only
+    // with its kept file (MIN-4637), and no row is taken once its 14-day end has passed: the sweep is about to delete it.
     const up = await db().unsafe(
       `update ${S}.documents set status = 'reading', status_reason = null, status_at = now(), read_attempts = read_attempts + 1
         where id = $1::uuid and patient_id = $2::uuid and read_attempts < $3::int
-          and (status in ('queued', 'failed') or (status = 'draft' and kind is null)) returning id`,
+          and (status in ('queued', 'failed') or (status = 'draft' and kind is null) or (status = 'refused' and storage_path is not null))
+          and (file_kept_until is null or file_kept_until > now()) returning id`,
       [docId, patientId, MAX_READS],
     );
     return up.length === 0 ? null : await load(db(), S, "d.id = $1 and d.patient_id = $2", [docId, patientId]);
@@ -188,13 +191,18 @@ export const pgStore: Store = {
   async markRefused(env, patientId, docId, reason) {
     const S = schema(env);
     return await db().begin(async (tx) => {
-      // The row keeps the code and the times. Everything the file or the reading put on it is cleared in this statement.
+      // The row keeps the code, the times and the original (MIN-4637: storage_path, content_type and sha256_file are not
+      // touched). Everything the reading put on it is cleared in this statement. The file's end starts at the first
+      // refusal and a refused re-run keeps it (coalesce): a re-run never extends the 14 days. 017 refuses a refused row
+      // that keeps a file with no end, or anything of the reading.
       const up = await tx.unsafe(
         `update ${S}.documents set status = 'refused', status_reason = $3, status_at = now(),
-                storage_path = null, content_type = null, sha256_file = null, sha256_record = null, kind = null, language = null,
+                file_kept_until = case when storage_path is null then null
+                                       else coalesce(file_kept_until, now() + make_interval(days => $4::int)) end,
+                sha256_record = null, kind = null, language = null,
                 exam_date = null, issuer = null, printed_name = null, printed_id = null, identity_status = null, extract_confidence = null
           where id = $1::uuid and patient_id = $2::uuid and status = 'reading' returning id`,
-        [docId, patientId, reason],
+        [docId, patientId, reason, KEEP_REFUSED_DAYS],
       );
       if (up.length === 0) return false;
       await tx.unsafe(`delete from ${S}.results where document_id = $1::uuid`, [docId]);
@@ -235,11 +243,34 @@ export const pgStore: Store = {
       `select d.id::text as id, d.status, d.status_reason, to_json(d.created_at) #>> '{}' as created_at,
               to_json(d.status_at) #>> '{}' as status_at, d.kind, to_char(d.exam_date, 'YYYY-MM-DD') as exam_date,
               d.read_attempts::int as read_attempts, (d.storage_path is not null) as has_file, d.unchecked,
+              coalesce(d.file_kept_until <= now(), false) as kept_expired,
               (select count(*)::int from ${S}.results r where r.document_id = d.id) as values_read
          from ${S}.documents d where d.patient_id = $1::uuid order by d.created_at desc, d.id`,
       [patientId],
     );
     return rows as unknown as ExamRow[];
+  },
+
+  // MIN-4637, the lazy retention sweep. The object itself is deleted by the storage API in the handler, between these two
+  // statements; nothing here touches storage's own tables.
+  async expiredKeptFiles(env, patientId) {
+    const rows = await db().unsafe(
+      `select d.id::text as id, d.storage_path from ${schema(env)}.documents d
+        where d.patient_id = $1::uuid and d.status in ('refused', 'failed') and d.storage_path is not null
+          and d.file_kept_until <= now() order by d.file_kept_until, d.id`,
+      [patientId],
+    );
+    return rows as unknown as { id: string; storage_path: string }[];
+  },
+
+  async dropKeptFile(env, patientId, docId, path) {
+    const r = await db().unsafe(
+      `update ${schema(env)}.documents set storage_path = null, content_type = null, sha256_file = null, file_kept_until = null
+        where id = $1::uuid and patient_id = $2::uuid and status in ('refused', 'failed') and storage_path = $3
+          and file_kept_until <= now() returning id`,
+      [docId, patientId, path],
+    );
+    return r.length > 0;
   },
 
   async saveExtraction(env, patientId, docId, draft: DraftIn, sha256File, identity, auto): Promise<Saved | null> {
@@ -248,7 +279,7 @@ export const pgStore: Store = {
       const up = await tx.unsafe(
         `update ${S}.documents set kind = $3, language = $4, exam_date = $5, issuer = $6, printed_name = $7,
                 printed_id = $8, extract_confidence = $9::jsonb, sha256_file = $10, identity_status = $11,
-                status = 'draft', status_reason = null, status_at = now()
+                status = 'draft', status_reason = null, status_at = now(), file_kept_until = null
           where id = $1 and patient_id = $2 and status = 'reading' returning id`,
         [docId, patientId, draft.kind, draft.language, draft.exam_date, draft.issuer, draft.printed_name,
           draft.printed_id, jsonb(draft.header_confidence), sha256File, identity],

@@ -144,6 +144,22 @@ describe('the status table of "My exams" (MIN-4555 and its addendum)', () => {
     expect(row('refused', { reason: 'unsupported_kind' }).chip).toBe('Not an exam');
     expect(row('refused', { reason: 'unreadable' }).chip).toBe('Could not read');
   });
+  it('refused with the photo kept (MIN-4639): the kept sentence; Try again exactly when can_retry', () => {
+    const kept = (reason: NonNullable<Parameters<typeof rowView>[0]['reason']>, can_retry: boolean) => row('refused', { reason, can_retry, file_kept: true });
+    expect(kept('unreadable', true)).toMatchObject({ retry: true, del: true });
+    expect(kept('unreadable', true).reason).toBe("We couldn't read this photo. Fit the whole page in the frame, flat and in good light, then try again. Nothing was saved, and the photo is kept for 14 days so it can be checked again; you can delete it.");
+    expect(kept('name_mismatch', true).reason).toBe("This exam isn't yours. The name on it doesn't match your profile. We didn't save it, and the photo is kept for 14 days so it can be checked again; you can delete it.");
+    for (const r of ['unreadable', 'unsupported_kind', 'incomplete', 'name_missing'] as const) expect(kept(r, false).reason).toMatch(/Nothing was saved, and the photo is kept for 14 days so it can be checked again; you can delete it\.$/);
+    expect(kept('id_mismatch', false).reason).toMatch(/We didn't save it, and the photo is kept for 14 days so it can be checked again; you can delete it\.$/);
+    // read 3 times: sentence stays, button goes
+    expect(kept('incomplete', false)).toMatchObject({ retry: false, del: true });
+  });
+  it('refused without a kept photo: the old sentence, no Try again', () => {
+    const v = row('refused', { reason: 'unreadable', file_kept: false });
+    expect(v.retry).toBe(false);
+    expect(v.reason).toMatch(/Nothing was saved\.$/);
+    expect(v.reason).not.toContain('14 days');
+  });
   it('failed: the reason, Try again only when the server says so, Delete', () => {
     expect(row('failed', { reason: 'model_timeout', can_retry: true })).toMatchObject({ chip: 'Could not read', retry: true, del: true });
     expect(row('failed', { reason: 'too_many_attempts', can_retry: false })).toMatchObject({ retry: false, del: true });

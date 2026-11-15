@@ -50,24 +50,57 @@ Deno.test("the kick answers before it reads: the response is built from the clai
   assertEquals(handle.includes("claimForReading("), true);
 });
 
-Deno.test("a refusal deletes the file first and writes the row second; a failed delete is failed, never refused", () => {
+Deno.test("MIN-4637: a refusal keeps the original: extract-exam deletes no file at all, and the refusal is one store write", () => {
   const src = code("healthapp-extract-exam/handler.ts");
   const refused = src.slice(src.indexOf("const refused = async"), src.indexOf("try {", src.indexOf("const refused = async")));
-  const at = (s: string) => refused.indexOf(s);
-  assertEquals(at("deps.blobs.remove(") > 0 && at("deps.blobs.remove(") < at("deps.store.markRefused("), true);
-  assertEquals(refused.includes('failed("delete_failed"'), true);
+  assertEquals(refused.includes("deps.store.markRefused("), true);
+  assertEquals(/blobs\.remove|delete_failed/.test(src), false); // not in the refusal, not anywhere in the function
+  assertEquals(src.includes('blobs: Pick<Blobs, "download">;'), true); // and its deps cannot delete
 });
 
-Deno.test("the store clears the whole row on a refusal in one statement, and the table refuses a refused row that keeps anything", () => {
+const READING_COLS = ["sha256_record", "kind", "language", "exam_date", "issuer", "printed_name", "printed_id", "identity_status", "extract_confidence"];
+const FILE_COLS = ["storage_path", "content_type", "sha256_file"];
+
+Deno.test("MIN-4637: a refusal clears the whole reading in one statement and keeps the original with its end; 017 refuses anything more", () => {
   const pg = code("_shared/pgstore.ts");
   const stmt = pg.slice(pg.indexOf("async markRefused"), pg.indexOf("async markFailed"));
-  for (const col of ["storage_path", "content_type", "sha256_file", "sha256_record", "kind", "language", "exam_date", "issuer", "printed_name", "printed_id", "identity_status", "extract_confidence"]) {
-    assertEquals(new RegExp(`${col} = null`).test(stmt), true, col);
+  for (const col of READING_COLS) assertEquals(new RegExp(`${col} = null`).test(stmt), true, col);
+  for (const col of FILE_COLS) assertEquals(new RegExp(`${col} = `).test(stmt), false, col); // the file is not touched
+  assertEquals(stmt.includes("coalesce(file_kept_until, now() + make_interval(days => $4::int))"), true); // first refusal starts it, a re-run keeps it
+  assertEquals(stmt.includes("[docId, patientId, reason, KEEP_REFUSED_DAYS]"), true);
+  const sql = sqlText("017_refused_keeps_file.sql");
+  const check = sql.slice(sql.indexOf("add constraint documents_refused_empty"), sql.indexOf("documents_file_kept_until_status"));
+  for (const col of READING_COLS) assertEquals(new RegExp(`${col} is null`).test(check), true, col);
+  assertEquals(check.includes("(storage_path is null) = (file_kept_until is null)"), true);
+  assertEquals(check.includes("(storage_path is not null or (content_type is null and sha256_file is null))"), true);
+  assertEquals(/file_kept_until is null or status in \('refused', 'reading', 'failed'\)/.test(sql), true);
+  // a save clears the end in the same statement that moves the row out of `reading`
+  assertEquals(pg.slice(pg.indexOf("async saveExtraction"), pg.indexOf("async deleteUnsaved")).includes("status_at = now(), file_kept_until = null"), true);
+});
+
+Deno.test("MIN-4637: 017 is DDL only, idempotent in form, and touches no policy, grant or row", () => {
+  const sql = sqlText("017_refused_keeps_file.sql");
+  assertEquals(/policy|grant |revoke |enable row level security|\bupdate\b|\bdelete\b|\bselect\b/i.test(sql), false);
+  assertEquals(sql.includes("add column if not exists file_kept_until timestamptz"), true);
+  for (const c of ["documents_refused_empty", "documents_file_kept_until_status"]) {
+    assertEquals(sql.indexOf(`drop constraint if exists ${c}`) >= 0 && sql.indexOf(`drop constraint if exists ${c}`) < sql.indexOf(`add constraint ${c}`), true, c);
   }
-  const sql = Deno.readTextFileSync(new URL("../../sql/015_scan_next.sql", import.meta.url));
-  for (const col of ["storage_path", "content_type", "sha256_file", "sha256_record", "kind", "language", "exam_date", "issuer", "printed_name", "printed_id", "identity_status", "extract_confidence"]) {
-    assertEquals(new RegExp(`${col} is null`).test(sql.slice(sql.indexOf("documents_refused_empty"))), true, col);
-  }
+  assertEquals(sql.includes("on conflict (file) do nothing"), true);
+});
+
+Deno.test("MIN-4637 criterion 11: the retention sweep deletes through the storage API, file before row, and never names storage's tables", () => {
+  const h = code("healthapp-my-exams/handler.ts");
+  const sweep = h.slice(h.indexOf("async function sweepKeptFiles"));
+  assertEquals(sweep.length > 0 && h.includes("const kept = await sweepKeptFiles(deps, who.env, who.uid);"), true);
+  assertEquals(sweep.indexOf("deps.blobs.remove(") > 0 && sweep.indexOf("deps.blobs.remove(") < sweep.indexOf("deps.store.dropKeptFile("), true);
+  assertEquals(h.includes("storage.objects"), false);
+  const pg = code("_shared/pgstore.ts");
+  const part = pg.slice(pg.indexOf("async expiredKeptFiles"), pg.indexOf("async saveExtraction"));
+  assertEquals(part.includes("async dropKeptFile"), true);
+  assertEquals(/storage\.|delete from/.test(part), false);
+  assertEquals(part.includes("d.patient_id = $1::uuid and d.status in ('refused', 'failed') and d.storage_path is not null"), true);
+  assertEquals(part.includes("where id = $1::uuid and patient_id = $2::uuid and status in ('refused', 'failed') and storage_path = $3"), true);
+  assertEquals((part.match(/file_kept_until <= now\(\)/g) ?? []).length, 2); // both statements re-check the end
 });
 
 Deno.test("the claim and the sweep are single statements, and the migration leaves every policy alone", () => {
@@ -85,7 +118,8 @@ Deno.test("the store's statements carry their rule: who, which statuses, and the
   const pg = code("_shared/pgstore.ts");
   const part = (from: string, to: string) => pg.slice(pg.indexOf(from), pg.indexOf(to, pg.indexOf(from) + 1));
   const claim = part("async claimForReading", "async markRefused");
-  assertEquals(claim.includes("(status in ('queued', 'failed') or (status = 'draft' and kind is null))"), true);
+  assertEquals(claim.includes("(status in ('queued', 'failed') or (status = 'draft' and kind is null) or (status = 'refused' and storage_path is not null))"), true);
+  assertEquals(claim.includes("and (file_kept_until is null or file_kept_until > now()) returning id"), true);
   assertEquals(claim.includes("patient_id = $2::uuid"), true);
   assertEquals(part("async saveExtraction", "async deleteUnsaved").includes("where id = $1 and patient_id = $2 and status = 'reading' returning id"), true);
   assertEquals(part("async deleteUnsaved", "async confirm").includes("patient_id = $2::uuid and status <> 'confirmed' returning id"), true);

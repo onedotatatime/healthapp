@@ -223,7 +223,7 @@ export const FailReason = z.enum([
   "too_many_attempts", // read three times and still failed: Delete only
   "stuck", // waiting or reading for too long
   "no_file", // the photo never arrived (the upload did not finish)
-  "delete_failed", // refused, but the file could not be deleted: the row stays failed, never refused with a file
+  "delete_failed", // old rows only: before MIN-4637 a refusal deleted the file, and this was a refusal whose delete failed
   "unsupported_type", // not a photo
   "error", // anything else
 ]);
@@ -246,12 +246,18 @@ export const ExamListItem = z.object({
   exam_date: IsoDate.nullable(),
   /** draft and confirmed only: how many values were read. No value, no flag. */
   values_read: z.number().int().min(0).nullable(),
-  /** failed only, and only while it has been read fewer than three times and the file exists. The retry is a new call to extract-exam. */
+  /** The one "Try again" signal. failed, or refused with its original kept (MIN-4637), and only while the file exists, its
+   *  14 days have not passed and it has been read fewer than three times. The retry is a new call to extract-exam. */
   can_retry: z.boolean(),
   /** Every row that is not saved. */
   can_delete: z.boolean(),
   /** confirmed only: read and saved automatically, and its owner has not opened it yet. Always false for every other status. */
   unchecked: z.boolean(),
+  /** refused only (MIN-4637): the original photo is still stored, for up to 14 days from the refusal, and the owner can
+   *  delete it. False for every other status and for a refused row whose file is gone. It decides the copy, not the button.
+   *  Defaults to false so a client built for this field still parses an answer from a function that does not send it yet
+   *  (the function deploy is then the single switch, and a rollback of the functions does not take the list down). */
+  file_kept: z.boolean().default(false),
 });
 export type ExamListItem = z.infer<typeof ExamListItem>;
 /** No body needed. With { doc_id } the answer is that upload's draft (ExamDraftResponse) instead of the list. */

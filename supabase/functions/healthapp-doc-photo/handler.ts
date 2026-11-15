@@ -1,5 +1,5 @@
 // healthapp-doc-photo (MIN-4475): a signed link to the original photo, valid 60 seconds. The patient
-// opens their own (draft or confirmed); a doctor opens a confirmed one only inside a live grant on
+// opens their own (draft or confirmed, nothing else; MIN-4637); a doctor opens a confirmed one only inside a live grant on
 // that patient, and the link never outlives the grant. The fingerprint check is out of scope (unchecked).
 import { bucketFor, DocPhotoRequest, type DocPhotoResponse, UploadMime } from "../_shared/contract.ts";
 import { type Auth, authenticate, type Blobs, readJson, type Store } from "../_shared/docs.ts";
@@ -29,7 +29,9 @@ export function makeHandler(deps: Deps) {
     let st;
     if (who.role === "patient") {
       st = await deps.store.getOwn(who.env, who.uid, parsed.data.doc_id);
-      if (!st) return fail(req, 404, "not_found", "No such document.");
+      // The owner sees the photo of a draft or a saved exam only. A refused row keeps its original for 14 days so it can
+      // be read again (MIN-4637), and that photo is never shown, to the owner or anyone: it may be someone else's paper.
+      if (!st || !(st.document.status === "draft" || st.document.status === "confirmed")) return fail(req, 404, "not_found", "No such document.");
     } else {
       st = await deps.store.getAny(who.env, parsed.data.doc_id);
       if (!st || st.document.status !== "confirmed") return fail(req, 404, "not_found", "No such document.");
