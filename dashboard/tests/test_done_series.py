@@ -196,5 +196,20 @@ class InBuild(unittest.TestCase):
         self.assertIn('tasks', again)                                                          # the rest of the linear block is not blanked
 
 
+class Fixture(unittest.TestCase):
+    """docs/dashboard/drafts/dev/done-series.json is a synthetic sample for the replay page; it must obey the same contract as the real block."""
+    def test_the_dev_sample_follows_the_contract(self):
+        d = json.load(open(os.path.join(os.path.dirname(os.path.dirname(HERE)), 'docs', 'dashboard', 'drafts', 'dev', 'done-series.json')))
+        ds = d['doneSeries']
+        self.assertEqual(set(ds), {'seriesFrom', 'stepMin', 'total', 'byMilestone', 'byDirection'})
+        self.assertIn('synthetic', d['_synthetic'])
+        every = [ds['total']] + list(ds['byMilestone'].values()) + list(ds['byDirection'].values())
+        self.assertTrue(all(len(s) == len(d['tokens']['series']) and s == sorted(s) and all(type(x) is int for x in s) for s in every))
+        self.assertEqual(ds['total'][-1], d['tasks']['done'])
+        self.assertEqual({k: v[-1] for k, v in ds['byMilestone'].items()}, {m['id']: m['done'] for m in d['milestones']})
+        self.assertEqual(ds['seriesFrom'], d['tokens']['seriesFrom'])
+        self.assertEqual(sorted(ds['byDirection']), ['1', '2', '3', '4', '5'])
+
+
 if __name__ == '__main__':
     unittest.main()
