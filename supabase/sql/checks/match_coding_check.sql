@@ -12,7 +12,8 @@
 -- match_coding_check(n) codes only the first n cohort rows (0 = cases only); the full run takes about a minute.
 -- LOINC step 1 (020_lab_loinc.sql, MIN-4689; needs 020 from here on): a lab row may carry a code (`l`). The cases
 -- below the "LOINC" line check that a code decides the test, that a code not on the list or no code keeps 014's
--- keyword path, and that a code which disagrees with the printed name decides nothing.
+-- keyword path, and that a code 014's answer (alias, then key) contradicts, or a listed code with no key, decides
+-- nothing (MIN-4690 §3: a newer MCH or MCHC row must not hide a coded low Hb).
 -- match_coding_check(n, coded_pct): coded_pct (0, 50 or 100) is the share of the cohort's lab rows that carry their
 -- code from lab_loinc (100 = every row, 50 = every other row, 0 = none: 014's path); each run must still give
 -- match.py's codes. All 5,000 rows take about 40 s on a laptop Postgres, several minutes on the hosted one.
@@ -98,14 +99,17 @@ with c (name, labs, texts, specs, want) as (values
   ('LOINC: the HbA1c % code', '[{"o":1,"a":"Δείκτης γλυκαιμικού ελέγχου","l":"4548-4","n":5.2,"u":"%","f":"normal"}]', '[]', '[]', '{}'),
   ('LOINC: a qualitative code read as text (HLA-B27)', '[{"o":1,"a":"Γονότυπος B (PCR)","l":"26043-0","x":"Θετικό"}]', '[]', '[]', '{HLA_B27_positive}'),
   ('LOINC: an ANA titre code', '[{"o":1,"a":"Ανοσοφθορισμός Hep-2","l":"5048-4","x":"1:320"}]', '[]', '[]', '{ANA_positive}'),
-  ('LOINC: the code wins over the extraction''s key (only 014''s alias names guard)', '[{"o":1,"a":"Ουρικό οξύ","k":"uric_acid","l":"2160-0","n":2.1,"u":"mg/dL","f":"high"}]', '[]', '[]', '{creatinine_high}'),
+  ('LOINC: a code the extraction''s key contradicts decides nothing (uric acid printed, creatinine code)', '[{"o":1,"a":"Ουρικό οξύ","k":"uric_acid","l":"2160-0","n":2.1,"u":"mg/dL","f":"high"}]', '[]', '[]', '{}'),
   ('LOINC: a code not on the list keeps the keyword path', '[{"o":1,"a":"C-reactive protein (CRP)","k":"crp","l":"99999-9","n":12,"u":"mg/L","f":"high"}]', '[]', '[]', '{CRP_high}'),
   ('LOINC: a code not on the list and no keyword decides nothing', '[{"o":1,"a":"Πρωτεΐνη φλεγμονής","l":"99999-9","n":12,"u":"mg/L","f":"high"}]', '[]', '[]', '{}'),
   ('LOINC: a code that disagrees with the printed name decides nothing (HbA1c printed, Hb code)', '[{"o":1,"a":"Glycated haemoglobin (HbA1c)","k":"hemoglobin","l":"718-7","n":6.8,"u":"%","f":"high"}]', '[]', '[]', '{}'),
   ('LOINC: a disagreeing newer row decides nothing, the older row stands', '[{"o":1,"a":"Glycated haemoglobin (HbA1c)","k":"hemoglobin","l":"718-7","n":5.0,"u":"%","f":"normal"},{"o":2,"a":"HbA1c","n":7.4,"u":"%","f":"high"}]', '[]', '[]', '{HbA1c_high}'),
   ('LOINC: a code that agrees with the printed name decides (CK)', '[{"o":1,"a":"Creatine kinase (CK)","l":"2157-6","n":640,"u":"U/L","f":"high"}]', '[]', '[]', '{CK_high}'),
   ('LOINC: a code whose key matching does not use decides nothing (glucose)', '[{"o":1,"a":"Σάκχαρο","k":"glucose","l":"2345-7","n":250,"u":"mg/dL","f":"high"}]', '[]', '[]', '{}'),
-  ('LOINC: a listed code with no key keeps 014''s answer (CTO §4 as written: MCH keyed as haemoglobin)', '[{"o":1,"a":"Mean corpuscular haemoglobin (MCH)","k":"hemoglobin","l":"785-6","n":10,"u":"pg","f":"low"}]', '[]', '[]', '{Hb_low}'),
+  ('LOINC: a listed code with no key decides nothing (MCH keyed as haemoglobin; MIN-4690 §3)', '[{"o":1,"a":"Mean corpuscular haemoglobin (MCH)","k":"hemoglobin","l":"785-6","n":10,"u":"pg","f":"low"}]', '[]', '[]', '{}'),
+  ('LOINC: a newer MCH row does not hide a coded low Hb (MIN-4690 §3)', '[{"o":1,"a":"Μέση περιεκτικότητα αιμοσφαιρίνης (MCH)","k":"hemoglobin","l":"785-6","n":29,"u":"pg","f":"normal"},{"o":2,"a":"Αιμοσφαιρίνη (HGB)","k":"hemoglobin","l":"718-7","n":10.5,"u":"g/dL","f":"low"}]', '[]', '[]', '{Hb_low}'),
+  ('LOINC: a newer MCHC row does not hide a coded low Hb (MIN-4690 §3)', '[{"o":1,"a":"Μέση πυκνότητα αιμοσφαιρίνης (MCHC)","k":"hemoglobin","l":"786-4","n":33,"u":"g/dL","f":"normal"},{"o":2,"a":"Αιμοσφαιρίνη (HGB)","k":"hemoglobin","l":"718-7","n":10.5,"u":"g/dL","f":"low"}]', '[]', '[]', '{Hb_low}'),
+  ('LOINC: 014''s alias still wins over the extraction''s key (HbA1c printed, keyed haemoglobin, HbA1c code)', '[{"o":1,"a":"Γλυκοζυλιωμένη αιμοσφαιρίνη HbA1c","k":"hemoglobin","l":"4548-4","n":6.8,"u":"%","f":"high"}]', '[]', '[]', '{HbA1c_high}'),
   ('LOINC: no code keeps 014 (the same row without l)', '[{"o":1,"a":"Glycated haemoglobin (HbA1c)","k":"hemoglobin","n":6.8,"u":"%","f":"high"}]', '[]', '[]', '{HbA1c_high}')
 ), cases as (
   select c.name, c.want::text[] as want,

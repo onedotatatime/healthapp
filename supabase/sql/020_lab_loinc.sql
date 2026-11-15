@@ -9,9 +9,10 @@
 --     (count and md5 below; `supabase/sql/checks/lab_loinc_check.sql` prints the same fingerprint).
 --  2. results.loinc: the code the reading chose from that list (healthapp-extract-exam validates it against this
 --     table; a code that is not on the list is never stored). Null on every row read before the deploy: no backfill.
---  3. Matching: match_marker(analyte, analyte_key, loinc) is new. A code in lab_loinc with a key decides the marker;
---     a code whose test 014's alias table names differently from the printed name decides nothing (never a wrong
---     code); no code, or a code not on the list, keeps 014's answer (the alias, then the extraction's key).
+--  3. Matching: match_marker(analyte, analyte_key, loinc) is new. A code in lab_loinc decides the marker only when it
+--     has a key and 014's whole answer (the alias, then the extraction's key) is empty or that same key; a listed code
+--     with no key, or one 014 contradicts, decides nothing (never a wrong marker; CTO amendment, MIN-4690 §3); no
+--     code, or a code not on the list, keeps 014's answer.
 --     match_codes_from reads a new `l` field; match_patient_codes passes the row's code. Thresholds, codes, k,
 --     min_shared, the cohort, 018's RPC and the one empty answer do not change. match_marker(text, text) stays.
 -- Rollback: supabase/sql/rollback/020_down.sql (`scripts/hdb down <env> 020_down.sql`): 014's two functions come back;
@@ -175,15 +176,18 @@ begin
 end $$;
 create index if not exists results_patient_loinc_idx on __SCHEMA__.results (patient_id, loinc);
 
--- 3. Which marker a result row is, by its code first.
+-- 3. Which marker a result row is, by its code first. A listed code decides only when it has a key and 014's whole
+--    answer (alias, then key) is empty or the same key; a listed code with no key, or that disagrees, decides nothing.
 create or replace function __SCHEMA__.match_marker(analyte text, analyte_key text, loinc text) returns text
 language sql stable set search_path = ''
 as $$
   select case
-    when c.key is null then __SCHEMA__.match_marker(match_marker.analyte, match_marker.analyte_key)
-    when coalesce(__SCHEMA__.match_marker(match_marker.analyte, null::text), c.key) = c.key then c.key
+    when not c.listed then c.kw
+    when c.key is not null and coalesce(c.kw, c.key) = c.key then c.key
   end
-  from (select (select x.analyte_key from __SCHEMA__.lab_loinc x where x.loinc = match_marker.loinc) as key) c
+  from (select __SCHEMA__.match_marker(match_marker.analyte, match_marker.analyte_key) as kw,
+               exists (select 1 from __SCHEMA__.lab_loinc x where x.loinc = match_marker.loinc) as listed,
+               (select x.analyte_key from __SCHEMA__.lab_loinc x where x.loinc = match_marker.loinc) as key) c
 $$;
 
 -- 014's coding, with the code read from each lab row (l). Everything else is 014's, unchanged:

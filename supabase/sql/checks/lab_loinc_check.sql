@@ -3,9 +3,13 @@
 -- table: never a value of a patient, so it is safe on healthapp_demo (MIN-4526).
 -- Want after 020: rows 95 (between 60 and 100), distinct_codes = rows, bad_format 0, match_keys_covered 19,
 --   match_keys_missing 0, unknown_keys 0, lab_loinc_md5 d991c4e5dc77e8dca62f6e3895a6b516 (020's own check),
---   no_client_grant true, results_loinc_column true, results_loinc_bad 0, applied_020 true.
--- results_with_code / results_without_code count result rows; decided_by_code, decided_by_keyword and
--- decided_nothing_disagree say how match_marker(analyte, analyte_key, loinc) decides each row (counts only).
+--   no_client_grant true, results_loinc_column true, results_loinc_bad 0, applied_020 true, and
+--   decided_by_code + decided_by_keyword + decided_nothing_no_key + decided_nothing_disagree = results_with_code +
+--   results_without_code (before the deploy every row has no code: all of them are decided_by_keyword).
+-- results_with_code / results_without_code count result rows; decided_by_code, decided_by_keyword (no code, or a code
+-- not on the list), decided_nothing_no_key (a listed code with no key) and decided_nothing_disagree (014's answer, the
+-- alias then the key, names another test) say how match_marker(analyte, analyte_key, loinc) decides each row (counts
+-- only; the four add up to every result row).
 -- "Known keys" are the 19 match_lab_defs keys and the extraction's own keys (_shared/extract.ts ANALYTE_KEYS;
 -- extract_test.ts fails if this list and that one disagree).
 with known (k) as (
@@ -16,8 +20,9 @@ with known (k) as (
                       'ferritin','iron','tsh','vitamin_d','sodium','potassium'])
 ), res as (
   select r.loinc,
+         exists (select 1 from __SCHEMA__.lab_loinc x where x.loinc = r.loinc) as listed,
          (select x.analyte_key from __SCHEMA__.lab_loinc x where x.loinc = r.loinc) as code_key,
-         __SCHEMA__.match_marker(r.analyte, null::text) as alias_key
+         __SCHEMA__.match_marker(r.analyte, r.analyte_key) as alias_key
   from __SCHEMA__.results r
 )
 select
@@ -42,6 +47,7 @@ select
   (select count(*) from res where loinc is null)                                                   as results_without_code,
   (select count(*) from res where code_key is not null
      and coalesce(alias_key, code_key) = code_key)                                                 as decided_by_code,
-  (select count(*) from res where code_key is null)                                                as decided_by_keyword,
+  (select count(*) from res where not listed)                                                      as decided_by_keyword,
+  (select count(*) from res where listed and code_key is null)                                     as decided_nothing_no_key,
   (select count(*) from res where code_key is not null and alias_key <> code_key)                  as decided_nothing_disagree,
   exists (select 1 from __SCHEMA__._applied where file = '020_lab_loinc.sql')                      as applied_020;
