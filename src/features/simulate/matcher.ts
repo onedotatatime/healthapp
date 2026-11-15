@@ -9,7 +9,9 @@ export type RunRecord = [country: string, ageBand: number, optIn: 0 | 1, groupId
 
 export interface LabRow { marker: string; value: number; unit: string; ref_low: number; ref_high: number; date: string }
 export interface RecordDetail { country: string; age_band: string; labs: LabRow[]; imaging: { code: string; date: string }[]; symptoms: string[]; specialties: string[] }
-export interface VmPhase { id: 'created' | 'running' | 'done' | 'deleted'; at: string; log: string; seconds: number }
+export const PHASE_IDS = ['created', 'running', 'done', 'deleted'] as const;
+export type PhaseId = (typeof PHASE_IDS)[number];
+export interface VmPhase { id: PhaseId; at: string; log: string; seconds: number }
 export interface VmBlock { provider: string; started_at: string; phases: VmPhase[]; seconds: number; deleted: boolean; size?: string }
 export interface ShownGroup { n: number; pattern: string[]; countries: string[]; label: string }
 
