@@ -166,13 +166,13 @@ test.describe('/simulation (public)', () => {
   });
 });
 
-// The timeline card under the hero (MIN-4696, scenarios on MIN-4704). MIN-4724 made it ONE animated plot (500 ms a month, started when 40% of the
-// card is in view); the three lanes and their per-lane y axes are gone, so those assertions are deleted here. The end values are asserted only
-// where the chart is finished at once (reduced motion). E2E writes the new scenarios against staging-dev after the merge.
-// Expected values come from the file's `timeline` block, formatted here by the written rule (counts with the comma,
-// euros rounded to thousands in the keys and whole in the table, the data's own decimals), never from the app's formatter.
+// The timeline card under the hero (MIN-4696). MIN-4724 made it ONE animated plot, five lines (scenarios and Test result on MIN-4726; spec A14,
+// copy section 8, contract MIN-4720). Its own clock: 500 ms a month, started once when 40% of the card is in view (or it fills 60% of the screen),
+// with a Replay. Expected values come from the file's `timeline` block, formatted here by the written rule (counts with the comma, euros rounded to
+// thousands in the heads and whole in the table, the data's own decimals), never from the app's formatter.
 const TL = SIM.timeline;
 const TL_MONTHS: number[] = TL.x.values;
+const TL_LAST = last(TL_MONTHS);
 const TL_SERIES: Record<string, number[]> = {
   patients: TL.patients.values,
   matches: TL.matches.count,
@@ -180,18 +180,107 @@ const TL_SERIES: Record<string, number[]> = {
   drop: TL.drop_eur.values,
   dx: TL.diagnoses.values,
 };
+const TL_IDS = Object.keys(TL_SERIES);
 const dxDecimals = Math.min(2, Math.max(0, ...TL_SERIES.dx.map((v) => (String(v).split('.')[1] ?? '').length)));
 const euroK = (v: number) => (Math.round(v) >= 1000 ? `€${commas(Math.round(v) / 1000)}k` : `€${Math.round(v)}`);
 const tlKey = (id: string, v: number) => (id === 'income' || id === 'drop' ? euroK(v) : id === 'dx' ? v.toFixed(dxDecimals) : commas(v));
 const tlExact = (id: string, v: number) => (id === 'income' || id === 'drop' ? `€${commas(v)}` : id === 'dx' ? v.toFixed(dxDecimals) : commas(v));
 const TL_YEAR_ENDS = TL_MONTHS.filter((m) => m % 12 === 0);
+/** What each line is: patients and income are the plan, matches are computed on the synthetic records, the drop and the diagnoses are the model. */
+const TL_KIND: Record<string, string> = { patients: 'plan', income: 'plan', matches: 'computed', drop: 'model', dx: 'model' };
+const TL_TAG: Record<string, string> = { plan: 'Plan', computed: 'Computed on synthetic records', model: 'Model' };
+/** The free pilot: from the file's plan.pilot_from to the month before the first month with a patient. */
+const TL_FIRST_PAID = TL_MONTHS[TL_SERIES.patients.findIndex((v) => v > 0)];
+const TL_PILOT_FROM: number = TL.plan.pilot_from;
+const TL_RUN_MS = TL_MONTHS.length * 500;
 
-/** Card position, the five end values (finished chart only), the values table, the label, the assumption lines, no "saved", no overflow. */
-async function expectTimeline(page: Page, finished: boolean) {
+/** One read of the card: the month, the readout, the done flag, the five head values, the playhead and the leaders. */
+const tlRead = (page: Page) =>
+  T(page, 'sim-timeline').evaluate((card) => {
+    const shown = (el: Element) => getComputedStyle(el).display !== 'none';
+    const values: Record<string, string> = {};
+    card.querySelectorAll('[data-testid^="sim-tl-value-"]').forEach((el) => { values[el.getAttribute('data-testid')!.slice('sim-tl-value-'.length)] = el.textContent ?? ''; });
+    const replay = card.querySelector('[data-testid="sim-tl-replay"]') as HTMLButtonElement | null;
+    return {
+      month: Number(card.getAttribute('data-month')),
+      done: card.getAttribute('data-done') === 'true',
+      wide: card.getAttribute('data-wide') === 'true',
+      readout: card.querySelector('[data-testid="sim-tl-month"]')?.textContent ?? '',
+      values,
+      play: [...card.querySelectorAll('line.play')].map(shown),
+      leaders: [...card.querySelectorAll('path.lead')].map(shown),
+      replay: replay ? (replay.disabled ? 'disabled' : 'enabled') : 'absent',
+    };
+  });
+
+/** The numbers on screen are always the file's value for the month on screen (no tween), and the readout names that month. */
+function expectMonthConsistent(r: Awaited<ReturnType<typeof tlRead>>) {
+  expect(r.readout).toBe(`Month ${r.month} of ${TL_LAST}`);
+  const i = TL_MONTHS.indexOf(r.month);
+  expect(i, `data-month ${r.month} is a month of the file`).toBeGreaterThanOrEqual(0);
+  expect(r.values).toEqual(Object.fromEntries(TL_IDS.map((id) => [id, tlKey(id, TL_SERIES[id][i])])));
+}
+
+/** The finished chart: month 24, the five month-24 values of the file, no playhead, every leader drawn (wide). */
+async function expectTimelineEnd(page: Page) {
+  const card = T(page, 'sim-timeline');
+  await expect(card).toHaveAttribute('data-done', 'true');
+  await expect(card).toHaveAttribute('data-month', String(TL_LAST));
+  await expect(T(page, 'sim-tl-month')).toHaveText(`Month ${TL_LAST} of ${TL_LAST}`);
+  for (const id of TL_IDS) await expect(T(page, `sim-tl-value-${id}`), `head ${id}`).toHaveText(tlKey(id, last(TL_SERIES[id])));
+  const r = await tlRead(page);
+  expectMonthConsistent(r);
+  expect(r.play, 'the playhead is hidden on the finished chart').toEqual([false]);
+  expect(r.leaders, 'every leader is drawn on the finished chart (wide only)').toEqual(r.wide ? [true, true, true, true, true] : []);
+}
+
+/** One plot, five lines, no lanes; the five heads and their labels; each line's tag; the pilot band from plan.pilot_from. */
+async function expectOnePlot(page: Page) {
+  const card = T(page, 'sim-timeline');
+  await expect(card.getByTestId('sim-tl-plot')).toHaveCount(1);
+  await expect(card.locator('svg:not(.tl-glyph)'), 'one chart svg in the card').toHaveCount(1);
+  for (const gone of ['sim-tl-lane-', 'sim-tl-plot-', 'sim-tl-unit-', 'sim-tl-ytick', 'sim-tl-key-']) {
+    await expect(card.locator(`[data-testid^="${gone}"]`), `no ${gone}* (the three-lane card)`).toHaveCount(0);
+  }
+  const lines = card.getByTestId('sim-tl-plot').locator('[data-testid="sim-tl-lines"] polyline[data-line]');
+  await expect(lines).toHaveCount(TL_IDS.length);
+  expect((await lines.evaluateAll((els) => els.map((e) => e.getAttribute('data-line')!))).sort()).toEqual([...TL_IDS].sort());
+  // each line has all 24 monthly points, inside the same plot
+  for (const n of await lines.evaluateAll((els) => els.map((e) => (e.getAttribute('points') ?? '').trim().split(/\s+/).length))) expect(n).toBe(TL_MONTHS.length);
+  await expect(card.getByTestId('sim-tl-plot').locator('g[data-head]')).toHaveCount(TL_IDS.length);
+  const wide = (await card.getAttribute('data-wide')) === 'true';
+  expect(wide, 'wide layout at 1280, phone rows at 390').toBe((page.viewportSize()?.width ?? 0) >= 900);
+  if (wide) await expect(card.locator('[data-testid^="sim-tl-head-"]')).toHaveCount(TL_IDS.length);
+  else await expect(T(page, 'sim-tl-rows').locator('li')).toHaveCount(TL_IDS.length);
+  for (const id of TL_IDS) {
+    await expect(T(page, `sim-tl-tag-${id}`), `tag of ${id}`).toHaveText(TL_TAG[TL_KIND[id]]);
+    await expect(card.locator(`[data-measure="${id}"][data-kind]`).first(), `kind of ${id}`).toHaveAttribute('data-kind', TL_KIND[id]);
+  }
+
+  // The free-pilot band runs from plan.pilot_from to the month before the first paid case; the first-paid line sits on that month.
+  expect(TL_PILOT_FROM, 'the file names the pilot start').toBeGreaterThan(0);
+  expect(TL_FIRST_PAID).toBeGreaterThan(TL_PILOT_FROM);
+  await expect(T(page, 'sim-tl-ramp')).toContainText(`Months ${TL_PILOT_FROM} to ${TL_FIRST_PAID - 1} are a free pilot`);
+  const geo = await card.evaluate((el) => {
+    const labels = [...el.querySelectorAll('[data-testid="sim-tl-month-label"]')].map((t) => ({ m: Number(t.textContent), x: Number(t.getAttribute('x')) }));
+    const band = el.querySelector('[data-testid="sim-tl-band-rect"]')!;
+    const first = el.querySelector('[data-testid="sim-tl-first-line"]')!;
+    return { labels, bx: Number(band.getAttribute('x')), bw: Number(band.getAttribute('width')), fx: Number(first.getAttribute('x1')) };
+  });
+  const [a, b] = geo.labels;
+  const perMonth = (b.x - a.x) / (b.m - a.m);
+  const xOf = (m: number) => a.x + (m - a.m) * perMonth;
+  expect(Math.abs(geo.bx - xOf(TL_PILOT_FROM - 0.5)), 'band starts at plan.pilot_from').toBeLessThan(1);
+  expect(Math.abs(geo.bw - (TL_FIRST_PAID - TL_PILOT_FROM) * perMonth), 'band ends before the first paid month').toBeLessThan(1);
+  expect(Math.abs(geo.fx - xOf(TL_FIRST_PAID)), 'first-paid line on the first paid month').toBeLessThan(1);
+}
+
+/** Card position, the values table, the label, the assumption lines, no "saved", no overflow. Opens "Show the values": call once per page. */
+async function expectTimeline(page: Page) {
   const card = T(page, 'sim-timeline');
   await expect(card).toBeVisible();
 
-  // 1-2: directly under the hero, directly above the three small charts.
+  // directly under the hero, directly above the three small charts.
   const place = await card.evaluate((el) => ({
     prev: el.previousElementSibling?.getAttribute('data-testid') ?? null,
     next: el.nextElementSibling?.className ?? null,
@@ -199,14 +288,7 @@ async function expectTimeline(page: Page, finished: boolean) {
   expect(place.prev, 'the element right above the card').toBe('sim-hero');
   expect(place.next, 'the element right below the card').toContain('sim-grid');
 
-  // 3: the five head values (the phone rows at 390) equal the file's last month, once the chart is finished.
-  if (finished) {
-    for (const [id, values] of Object.entries(TL_SERIES)) {
-      await expect(T(page, `sim-tl-value-${id}`), `head ${id}`).toHaveText(tlKey(id, last(values)));
-    }
-  }
-
-  // 4: "Show the values": months 12 and 24, each cell equals the file at that month.
+  // "Show the values": months 12 and 24, each cell equals the file at that month.
   await card.getByText('Show the values').click();
   const table = T(page, 'sim-tl-values').locator('table');
   await expect(table).toBeVisible();
@@ -217,9 +299,10 @@ async function expectTimeline(page: Page, finished: boolean) {
     );
   }
 
-  // 5: the permanent label is on screen and solid while the card is; the assumption lines are in the card.
+  // the permanent "model, not a measurement" label is on screen and solid while the card is; the assumption lines are in the card.
   await card.scrollIntoViewIfNeeded();
   await expect(T(page, 'sim-label')).toHaveText(SIM.label);
+  expect(SIM.label).toMatch(/a model, not a measurement/i);
   await expect(T(page, 'sim-label')).toBeInViewport();
   const faded = await T(page, 'sim-label').evaluate((el) => {
     const bad: string[] = [];
@@ -233,28 +316,154 @@ async function expectTimeline(page: Page, finished: boolean) {
   await expect(card.getByTestId('sim-tl-curve').first()).toHaveText(ASSUMPTION);
   await expect(card.getByTestId('sim-tl-dx-assumption')).toBeVisible();
 
-  // 6: never "saved" (CTO banned list, MIN-4699), in the visible text or the screen-reader description.
+  // never "saved" (CTO banned list, MIN-4699), in the visible text or the screen-reader description.
   expect(await card.textContent()).not.toMatch(/\bsav(ed|es|ings?)\b/i);
 
-  // 7: no sideways scroll, for the page or inside the card.
-  expect(await overflow(page), 'px of sideways scroll on the page').toBeLessThanOrEqual(0);
-  expect(await card.evaluate((el) => el.scrollWidth - el.clientWidth), 'px of sideways scroll in the card').toBeLessThanOrEqual(0);
+  await expectNoOverflow(page);
 }
 
-test.describe('/simulation timeline card (MIN-4704)', () => {
-  test('T1 the card is under the hero from first paint, its table equals the file, label and assumption on screen, no overflow', async ({ page }) => {
+async function expectNoOverflow(page: Page) {
+  expect(await overflow(page), 'px of sideways scroll on the page').toBeLessThanOrEqual(0);
+  expect(await T(page, 'sim-timeline').evaluate((el) => el.scrollWidth - el.clientWidth), 'px of sideways scroll in the card').toBeLessThanOrEqual(0);
+}
+
+/**
+ * A recorder in the page, on its own 20 ms timer (not requestAnimationFrame, which is the clock under test): each change of the card's month or
+ * done flag, and the first moment the card meets the start rule (40% of it in view, or it fills 60% of the screen), with performance.now().
+ */
+const RECORDER = () => {
+  const w = window as unknown as { __tl: { inView: number | null; events: { t: number; month: number; done: boolean; readout: string }[] } };
+  w.__tl = { inView: null, events: [] };
+  let key = '';
+  setInterval(() => {
+    const el = document.querySelector('[data-testid="sim-timeline"]');
+    if (!el) return;
+    const t = performance.now();
+    const r = el.getBoundingClientRect();
+    const visible = Math.max(0, Math.min(r.bottom, innerHeight) - Math.max(r.top, 0));
+    if (w.__tl.inView === null && r.height > 0 && (visible / r.height >= 0.4 || visible >= 0.6 * innerHeight)) w.__tl.inView = t;
+    const month = Number(el.getAttribute('data-month'));
+    const done = el.getAttribute('data-done') === 'true';
+    const readout = el.querySelector('[data-testid="sim-tl-month"]')?.textContent ?? '';
+    if (`${month}|${done}|${readout}` !== key) { key = `${month}|${done}|${readout}`; w.__tl.events.push({ t, month, done, readout }); }
+  }, 20);
+};
+type Rec = { inView: number | null; events: { t: number; month: number; done: boolean; readout: string }[] };
+const recorded = (page: Page) => page.evaluate(() => (window as unknown as { __tl: Rec }).__tl);
+
+/** The months the readout passed through, in order, start to done; and how long it took. */
+function checkRun(rec: Rec, from: number) {
+  const evs = rec.events.filter((e) => e.t >= from);
+  const months = evs.map((e) => e.month);
+  for (const e of evs) expect(e.readout, 'readout names the month in data-month').toBe(`Month ${e.month} of ${TL_LAST}`);
+  for (let i = 1; i < months.length; i++) expect(months[i], `month went back at sample ${i}: ${months.join(',')}`).toBeGreaterThanOrEqual(months[i - 1]);
+  expect(months[0], 'the run starts at the first month').toBe(TL_MONTHS[0]);
+  expect(last(months)).toBe(TL_LAST);
+  const seen = new Set(months);
+  const missing = TL_MONTHS.filter((m) => !seen.has(m));
+  expect(missing.length, `months the readout skipped: ${missing.join(',')}`).toBeLessThanOrEqual(2);
+  const doneAt = evs.find((e) => e.done)?.t;
+  expect(doneAt, 'the run reached its end').toBeDefined();
+  return { months: [...seen], doneAt: doneAt! };
+}
+
+test.describe('/simulation timeline card, one animated plot (MIN-4726)', () => {
+  test('T1 first paint: one plot with five lines and no lanes, tags, the pilot band from plan.pilot_from, the table, label, no overflow', async ({ page }) => {
     await page.goto('/health');
     await expect(page.getByTestId('env'), 'target is not the dev environment').toHaveText('dev', { timeout: 15_000 });
     await page.goto('/simulation');
     await expect(T(page, 'simulation')).toHaveAttribute('data-state', 'playing');
-    await expectTimeline(page, false);
+    await expectOnePlot(page);
+    expectMonthConsistent(await tlRead(page));
+    await expectTimeline(page);
   });
 
-  test('T2 reduced motion: the run is finished at once and the card is the same', async ({ page }) => {
+  test('T2 the run: waits for the card, then month 1 to 24 in about 12 s through the months between; leaders hidden mid-run, shown at the end', async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.addInitScript(RECORDER);
+    await page.goto('/health');
+    await expect(page.getByTestId('env'), 'target is not the dev environment').toHaveText('dev', { timeout: 15_000 });
+    await page.goto('/simulation');
+    const card = T(page, 'sim-timeline');
+    await expect(card).toBeVisible();
+
+    // Before the card is in view it holds month 1 (the hero plays above it).
+    await page.waitForTimeout(2_500);
+    const early = await recorded(page);
+    test.info().annotations.push({ type: 'load', description: early.inView === null ? 'card below the 40% rule at load: held month 1 for 2.5 s' : 'card met the start rule at load' });
+    if (early.inView === null) {
+      const r = await tlRead(page);
+      expect(r.month, 'month before the card is in view').toBe(TL_MONTHS[0]);
+      expect(r.done).toBe(false);
+      expect(r.replay, 'Replay waits for the end').toBe('disabled');
+    }
+    await card.scrollIntoViewIfNeeded();
+
+    // Mid-run: a month between, its numbers are the file's for that month, the playhead moves, no leader, Replay off, no overflow.
+    await expect.poll(async () => (await tlRead(page)).month, { timeout: 10_000 }).toBeGreaterThanOrEqual(6);
+    const mid = await tlRead(page);
+    expect(mid.month, `mid-run month ${mid.month}`).toBeLessThan(TL_LAST);
+    expect(mid.done).toBe(false);
+    expectMonthConsistent(mid);
+    expect(mid.play, 'the playhead is drawn mid-run').toEqual([true]);
+    expect(mid.leaders, 'no leader while the run plays').toEqual(mid.wide ? [false, false, false, false, false] : []);
+    expect(mid.replay).toBe('disabled');
+    await expectNoOverflow(page);
+
+    await expect(card).toHaveAttribute('data-done', 'true', { timeout: 20_000 });
+    const rec = await recorded(page);
+    expect(rec.inView, 'the card met the start rule').not.toBeNull();
+    const run = checkRun(rec, 0);
+    const took = run.doneAt - rec.inView!;
+    test.info().annotations.push({ type: 'run', description: `${took.toFixed(0)} ms from 40% in view to done; months seen ${run.months.length}/${TL_MONTHS.length}` });
+    expect(took, 'ms from the card in view to the end of the run').toBeGreaterThanOrEqual(TL_RUN_MS - 600);
+    expect(took).toBeLessThanOrEqual(TL_RUN_MS + 2_000);
+
+    await expectTimelineEnd(page);
+    expect((await tlRead(page)).replay).toBe('enabled');
+    await page.waitForTimeout(1_500);
+    await expectTimelineEnd(page);
+    await expectNoOverflow(page);
+  });
+
+  test('T3 Replay starts the run again from month 1 and lands on the same month-24 values', async ({ page }, info) => {
+    test.skip(info.project.name !== 'desktop-1280', 'one viewport is enough for the replay');
+    test.setTimeout(90_000);
+    await page.addInitScript(RECORDER);
+    await page.goto('/simulation');
+    const card = T(page, 'sim-timeline');
+    await card.scrollIntoViewIfNeeded();
+    await expect(card).toHaveAttribute('data-done', 'true', { timeout: 25_000 });
+    await expectTimelineEnd(page);
+
+    const clickedAt = await page.evaluate(() => performance.now());
+    await T(page, 'sim-tl-replay').click();
+    await expect(card).toHaveAttribute('data-done', 'false');
+    const r = await tlRead(page);
+    expect(r.month, 'Replay goes back to the start').toBeLessThanOrEqual(TL_MONTHS[1]);
+    expect(r.replay).toBe('disabled');
+    expect(r.leaders).toEqual([false, false, false, false, false]);
+    await expect(card).toHaveAttribute('data-done', 'true', { timeout: 20_000 });
+    const run = checkRun(await recorded(page), clickedAt);
+    const took = run.doneAt - clickedAt;
+    test.info().annotations.push({ type: 'replay', description: `${took.toFixed(0)} ms from the Replay click to done; months seen ${run.months.length}/${TL_MONTHS.length}` });
+    expect(took).toBeGreaterThanOrEqual(TL_RUN_MS - 600);
+    expect(took).toBeLessThanOrEqual(TL_RUN_MS + 2_000);
+    await expectTimelineEnd(page);
+  });
+
+  test('T4 reduced motion: the finished chart at once, no Replay, nothing moves; the hero is finished too', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/simulation');
     await expect(T(page, 'simulation')).toHaveAttribute('data-state', 'done', { timeout: 3_000 });
-    await expectTimeline(page, true);
+    await expect(T(page, 'sim-timeline')).toHaveAttribute('data-done', 'true', { timeout: 3_000 });
+    await expect(T(page, 'sim-tl-replay')).toHaveCount(0);
+    await expectTimelineEnd(page);
+    const before = await tlRead(page);
+    await page.waitForTimeout(3_000);
+    expect(await tlRead(page)).toEqual(before);
+    await expectOnePlot(page);
+    await expectTimeline(page);
     await expectEnd(page);
   });
 });
