@@ -9,6 +9,8 @@ with the money? maybe to have one diagram with all the numbers inside showing ho
 correct diagnoses how the money saved and our income grow". Patients and income come from the funding model's own code (docs/business/funding_plan.py), never typed.
 Round 2 (CEO seat, MIN-4698, 2026-11-15): the ramp is per_case_only (doctor-seat fees are income, not patients); the money and the diagnoses on screen are YEARLY figures
 at that month's network size, never running totals (patients and records with a match stay running totals); income is shown as the plan's yearly run rate.
+The ten_years block (MIN-4748, CTO decision MIN-4744 comment fee57739) runs the same plan to month 120 for Greece, additive: plan months 1 to 120, the real matching while the network fits the 5,000 records and a held plateau after,
+Greece's Eurostat spending base, and both bases (a year at that month's network size, and a running total since month 1) for diagnoses, money and income.
 Usage: python3 simulate.py <out_dir> [--ramp per_case_only|all_revenue]     (writes <out_dir>/simulation.json; the default is what is committed)"""
 import argparse, json, math, os, random, sys, time
 from match import find_matches, features, K, MIN_SHARED
@@ -149,6 +151,120 @@ timeline["drop_eur"] = {
                % (EU27_HEALTH_SPEND_EUR_HAB, SPEND_GEO, SPEND_YEAR, BASE_COST_PCT),
     "drop_pts": tl_drop_pts, "values": drop_eur}
 
+# ---- ten_years: the same plan and the same matching on plan months 1 to 120, for Greece (MIN-4748, CTO decision MIN-4744 comment fee57739) ----
+# Founder, 2026-11-15, verbatim: "We just need one fucking diagram with all the numbers not animated but with a slider showing in 10 years the money can be saved in greece
+# while we grow the correct diagnoses". Additive: no other block changes. Three things are held, and the block says so (plan.after_year_3, plateau):
+#   - past plan year 3 the plan's revenue is held flat at month 38 (funding_plan.revenue, h = 120): no growth is assumed;
+#   - the matching runs for real while the network is at most the synthetic records we have (SIM_N); from the first month past that the match share, the effect and the drops are
+#     held at their SIM_N-record values, matches = half-up(patients x matched / records), a model;
+#   - the Greek spending base replaces the EU-27 one (Eurostat hlth_sha11_hf, EUR per inhabitant, EL, 2024; Marketing, MIN-4723 comment 9e14b7f0); the 11% and the 5 per 100 are not Greek rates.
+# Both bases are written for diagnoses, money and income (the CEO seat, MIN-4746, picks one; the page uses one for all three and never mixes):
+#   yearly : a year at that month's network size (the timeline's method);  total : running total since month 1 = half-up(sum over months 1..m of the published yearly values / 12).
+TY_N = 120
+GR_GEO = "Greece"
+GR_YEAR = 2024
+GR_EUR_HAB = 1915.30                      # unit EUR_HAB, exactly as Eurostat returns it (the one named constant of the Greek base)
+GR_TOTAL_MIO_EUR = 19869.37               # unit MIO_EUR, same dataset, EL, 2024
+GR_POPULATION = 10375764                  # Eurostat demo_pjan, EL, 1 January 2024
+GR_SOURCE_NAME = "Eurostat, current health expenditure (hlth_sha11_hf, all financing schemes), Greece, 2024"
+GR_SOURCE_URL = SPEND_SOURCE_URL
+GR_QUERY_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/hlth_sha11_hf?format=JSON&unit=EUR_HAB&icha11_hf=TOT_HF&geo=EL&geo=EU27_2020&time=2024"
+GR_TOTAL_QUERY_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/hlth_sha11_hf?format=JSON&unit=MIO_EUR&icha11_hf=TOT_HF&geo=EL&time=2024"
+GR_POPULATION_QUERY_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_pjan?format=JSON&geo=EL&time=2024&time=2025&age=TOTAL&sex=T&unit=NR"
+GR_OPENED = "2026-11-15"
+cons10 = funding_plan.revenue(*funding_plan.CONSERVATIVE, h=TY_N)      # EUR thousands a month, held flat from month 38
+cum_all10 = cum_case10 = 0.0
+patients10, income_total10, income_year10 = [], [], []
+for m in range(1, TY_N + 1):
+    cum_all10 += cons10[m]
+    cum_case10 += cons10[m] * funding_plan.per_case_share(m)       # per_case_share keeps the plan-year-3 share after month 26
+    income_total10.append(half_up(cum_all10 * 1000))
+    income_year10.append(half_up(cons10[m] * 12 * 1000))
+    patients10.append(half_up((cum_all10 if args.ramp == "all_revenue" else cum_case10) * 1000 / PRICE))
+MEASURED_UNTIL = max(m for m in range(1, TY_N + 1) if patients10[m - 1] <= len(cohort))      # computed, never typed: the last month the network fits in the synthetic records
+t1 = time.time()
+counts10, rates10 = list(tl_counts), list(tl_rates)                # months 1 to TL_N are the timeline's own runs: same records, same shuffle, same loop
+for m in range(TL_N + 1, MEASURED_UNTIL + 1):
+    sample = order[:patients10[m - 1]]
+    pool = [r for r in sample if r["matching_opt_in"]]
+    found = sum(1 for r in pool if find_matches(r, sample, feats=feats)["match_count"] > 0)
+    counts10.append(found)
+    rates10.append(found / len(pool) if pool else 0.0)
+ty_seconds = time.time() - t1
+counts10 = counts10[:MEASURED_UNTIL]
+rates10 = rates10[:MEASURED_UNTIL]
+PLATEAU_RECORDS = len(cohort)                                      # the 12-step run's last step is the whole cohort, so its values are the SIM_N-record values
+PLATEAU_MATCHED = founds[-1]
+PLATEAU_EFFECT = effects[-1]
+PLATEAU_DROP_PTS = drop_pts[-1]
+PLATEAU_DX_PTS = round(BASE_WRONG_PER_100 - round(BASE_WRONG_PER_100 * (1 - PLATEAU_EFFECT * rates[-1]), 2), 2)
+eff10 = [EFFECT_START + (EFFECT_CEILING - EFFECT_START) * (f / C if C else 0.0) for f in counts10]
+drop_pts10 = [round(BASE_COST_PCT - round(BASE_COST_PCT * (1 - e * r), 2), 2) for e, r in zip(eff10, rates10)]
+dx_pts10 = [round(BASE_WRONG_PER_100 - round(BASE_WRONG_PER_100 * (1 - e * r), 2), 2) for e, r in zip(eff10, rates10)]
+matches10 = counts10 + [half_up(patients10[m - 1] * PLATEAU_MATCHED / PLATEAU_RECORDS) for m in range(MEASURED_UNTIL + 1, TY_N + 1)]
+drop_pts10 += [PLATEAU_DROP_PTS] * (TY_N - MEASURED_UNTIL)
+dx_pts10 += [PLATEAU_DX_PTS] * (TY_N - MEASURED_UNTIL)
+dx_year10 = [half_up_dec(n * dp / 100, 1) for n, dp in zip(patients10, dx_pts10)]
+saved_year10 = [half_up(n * dp / 100 * GR_EUR_HAB) for n, dp in zip(patients10, drop_pts10)]
+
+
+def running_total_over_12(yearly, scale):
+    """half-up(sum over months 1..m of the published yearly values / 12), in integers (yearly values are given in 1/scale units): no float rounding at a .5."""
+    out, acc = [], 0
+    for v in yearly:
+        acc += v
+        out.append((2 * acc + 12 * scale) // (24 * scale))
+    return out
+
+
+dx_total10 = running_total_over_12([half_up(v * 10) for v in dx_year10], 10)
+saved_total10 = running_total_over_12(saved_year10, 1)
+ty_plan = dict(timeline["plan"])
+ty_plan["horizon_months"] = TY_N
+ty_plan["after_year_3"] = "held flat at month 38 (funding_plan.revenue); no growth is assumed past plan year 3, a growth rate is the CEO seat's call and is not in this block"
+PLATEAU_TEXT = ("Past %s records (month %s) the matches and their effect are held at the %s-record values: %s of %s records matched, effect %s, a drop of %s points of health spending "
+                "and %s fewer wrong or missed diagnoses per 100 visits. Past plan year 3 (month 38) the plan's revenue is held flat. Both are held for want of data, not measured."
+                % tuple(("{:,}".format(v) if isinstance(v, int) else v) for v in (PLATEAU_RECORDS, MEASURED_UNTIL + 1, PLATEAU_RECORDS, PLATEAU_MATCHED, PLATEAU_RECORDS, PLATEAU_EFFECT, PLATEAU_DROP_PTS, PLATEAU_DX_PTS)))
+TY_MEASURE_STATUS = ("a model on synthetic records and a plan, not a measurement; held at the %d-record values from month %d (CTO, MIN-4744); "
+                     "the 11%% (OECD) and the 5 per 100 (WHO) are applied to Greek spending, they are not Greek rates" % (PLATEAU_RECORDS, MEASURED_UNTIL + 1))
+ten_years = {
+    "label": TIMELINE_LABEL,
+    "geography": GR_GEO,
+    "x": {"unit": "plan month", "values": list(range(1, TY_N + 1))},
+    "plan": ty_plan,
+    "measured_until_month": MEASURED_UNTIL,
+    "plateau": {"from_month": MEASURED_UNTIL + 1, "records": PLATEAU_RECORDS, "matched": PLATEAU_MATCHED, "effect": PLATEAU_EFFECT,
+                "drop_pts": PLATEAU_DROP_PTS, "drop_per_100": PLATEAU_DX_PTS, "text": PLATEAU_TEXT},
+    "patients": {"kind": "plan", "unit": "patients in the network, running total", "ramp": args.ramp,
+                 "formula": ramp_text + "; past plan year 3 the plan's revenue is held flat and the per-case share stays at plan year 3's, so the network keeps growing in a straight line (no churn, as in the timeline)",
+                 "values": patients10},
+    "matches": {"definition": MATCH_DEF, "kind_until": {"computed": MEASURED_UNTIL, "model": TY_N},
+                "formula": "months 1 to %d: the real matching on the first patients[m] records of the same shuffle; months %d to %d: half-up(patients[m] x %d / %d), the %d-record share, a model"
+                           % (MEASURED_UNTIL, MEASURED_UNTIL + 1, TY_N, PLATEAU_MATCHED, PLATEAU_RECORDS, PLATEAU_RECORDS),
+                "values": matches10},
+    "diagnoses": {"unit": "fewer wrong or missed diagnoses, in the model", "status": TY_MEASURE_STATUS,
+                  "assumption": "one visit per patient a year",
+                  "formula": "yearly[m] = half-up to 1 decimal of patients[m] x drop_per_100[m] / 100 (a year at that month's network size); drop_per_100 = %d - wrong_or_missed_per_100, at 2 decimals, as published; "
+                             "one visit per patient a year (an assumption). total[m] = half-up(sum of yearly[1..m] / 12), a running total since month 1" % BASE_WRONG_PER_100,
+                  "drop_per_100": dx_pts10,
+                  "yearly": {"unit": "a year at that month's network size", "values": dx_year10},
+                  "total": {"unit": "running total since month 1", "values": dx_total10}},
+    "saved_eur": {"unit": "EUR, modelled drop in the cost of wrong or missed diagnoses for the patients in the network, in Greece", "status": TY_MEASURE_STATUS,
+                  "per_inhabitant_eur": GR_EUR_HAB, "total_mio_eur": GR_TOTAL_MIO_EUR, "population": GR_POPULATION,
+                  "source": {"name": GR_SOURCE_NAME, "url": GR_SOURCE_URL, "query_url": GR_QUERY_URL, "year": GR_YEAR, "opened": GR_OPENED,
+                             "total_query_url": GR_TOTAL_QUERY_URL, "population_query_url": GR_POPULATION_QUERY_URL},
+                  "formula": "yearly[m] = half-up to the euro of patients[m] x drop_pts[m] / 100 x %s (EUR per inhabitant a year, %s %d); drop_pts = %d - cost (series 3), at 2 decimals, as the euro block; "
+                             "total[m] = half-up(sum of yearly[1..m] / 12), a running total since month 1" % ("%.2f" % GR_EUR_HAB, GR_GEO, GR_YEAR, BASE_COST_PCT),
+                  "drop_pts": drop_pts10,
+                  "yearly": {"unit": "EUR a year at that month's network size", "values": saved_year10},
+                  "total": {"unit": "EUR, running total since month 1", "values": saved_total10}},
+    "income_eur": {"unit": "EUR, plan", "status": TIMELINE_PLAN_STATUS,
+                   "formula": "yearly[m] = half-up(the plan's revenue in month m, in euros x 12); total[m] = half-up(sum of the plan's revenue in months 1 to m, in euros); the plan's conservative line "
+                              "(EUR %dk, %dk, %dk a plan year), held flat after month 38" % funding_plan.CONSERVATIVE,
+                   "yearly": {"unit": "EUR a year, the plan's run rate at that month", "values": income_year10},
+                   "total": {"unit": "EUR, running total since month 1", "values": income_total10}},
+}
+
 sim = {
     "synthetic": True,
     "label": "Simulation on synthetic data. A model, not a measurement",
@@ -189,6 +305,7 @@ sim = {
              "formula": "drop_pts / 100 x %s EUR million (%s current health expenditure, %d); drop_pts = %d - cost, cost at 2 decimals"
                         % (EU27_HEALTH_SPEND_MIO_EUR, SPEND_GEO, SPEND_YEAR, BASE_COST_PCT),
              "source": {"name": SPEND_SOURCE_NAME, "url": SPEND_SOURCE_URL, "query_url": SPEND_QUERY_URL, "opened": SPEND_OPENED}},
+    "ten_years": ten_years,
 }
 open(os.path.join(d, "simulation.json"), "w").write(json.dumps(sim, indent=1) + "\n")
 print("Series 1: matches growing as the network grows")
@@ -204,3 +321,7 @@ print("Timeline (%s ramp, plan months 1 to %d; the %d matching runs took %.1fs):
 for m in (9, 12, 18, 24):
     print("  month %2d | patients %5d | matches %5d | effect %.3f | drop EUR %6d a year | income EUR %6d a year | fewer diagnoses %.1f a year | (income so far EUR %d)" % (
         m, patients[m - 1], tl_counts[m - 1], timeline["effect"][m - 1], drop_eur[m - 1], income_year_eur[m - 1], diagnoses[m - 1], income_eur[m - 1]))
+print("Ten years (Greece, plan months 1 to %d; the real matching to month %d took %.1fs more, then the %d-record values are held):" % (TY_N, MEASURED_UNTIL, ty_seconds, PLATEAU_RECORDS))
+for m in (12, 24, 36, 60, 120):
+    print("  month %3d | patients %6d | matches %6d | diagnoses %7.1f a year, %5d so far | saved EUR %9d a year, %9d so far | income EUR %7d a year, %8d so far" % (
+        m, patients10[m - 1], matches10[m - 1], dx_year10[m - 1], dx_total10[m - 1], saved_year10[m - 1], saved_total10[m - 1], income_year10[m - 1], income_total10[m - 1]))
