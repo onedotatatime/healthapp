@@ -4,7 +4,6 @@
 - [healthapp Gemini model ids](project_healthapp_gemini_model_ids.md) — gemini-2.5-flash 404s for this key; 3.8/3.5-flash work; zsh `$m:g` URL trap
 - [healthapp edge DB direct](project_healthapp_edge_db_direct.md) — functions use SUPABASE_DB_URL, not PostgREST; jsonb/uuid param traps; deploy and SQL rules
 - [healthapp extraction measured](project_healthapp_extraction_measured.md) — Greek lookalike IDs, finding granularity, timings, M2 harness
-- [healthapp matches RPC](project_healthapp_matches_rpc.md) — 005-007, RPC shapes, profiles column-grant trap, hash-proved applies, raise-to-rollback tests
 - [healthapp assistant checks](project_healthapp_assistant_checks.md) — short-id citation check, measured 3 to 10 s, seed 011, short test grant then revoke
 - [healthapp handshake build lessons](project_healthapp_handshake_build_lessons.md) — policy subqueries obey RLS, RETURNING hides a missing insert policy, mutant functions, SQL check harness
 - [healthapp demo passcode](project_healthapp_demo_passcode.md) — passcode file ~/.config/healthapp/demo-login.env (600); rls-check tokens via demo-login
@@ -13,3 +12,4 @@
 - [Chat act path (MIN-4497)](project_healthapp_chat_act_path.md) — measured rg glob override, CI key-grep trap, what the act-path sweep found
 - [healthapp scan-next](project_healthapp_scan_next.md) — MIN-4556 background reading: claim + 202 + waitUntil, measured times, test-named deploys, deno flags
 - [healthapp matches RPC](project_healthapp_matches_rpc.md) — 005-007 + 013 coding, check file, hash-verified applies, execute_sql limits
+- [healthapp matches replay](project_healthapp_matches_replay.md) — MIN-4649 CTE-folding timeout, 018/019, throwaway PG18 recipe, calls-count proof

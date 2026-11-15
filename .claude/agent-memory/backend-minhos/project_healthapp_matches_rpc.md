@@ -15,7 +15,8 @@ Possible matches live in `supabase/sql/005_matches.sql` (RPCs), `006_seed_match_
 - `profiles` is column-granted since 010 (MIN-4484): `matching_opt_in` is readable by no client role, on purpose
   (a doctor in a grant must not learn the flag). Anything the patient needs from a hidden column goes through a
   security-definer getter (`healthapp_get_matches_opt_in`), never a wider column grant.
-- No psql and no DB URL on this Mac: SQL reaches conductor only through the Supabase connector's `execute_sql`.
+- No DB URL on this Mac: SQL reaches dev/demo only through the Supabase connector's `execute_sql` (psql exists at
+  /opt/homebrew/opt/postgresql@18/bin, for throwaway replays: see [[project-healthapp-matches-replay]]).
   Prove a transcribed apply with hashes, not by eye: `md5(prosrc)` per function vs the file's `$$` bodies, and
   `md5(string_agg(...))` over a seeded table vs the same serialisation computed in Python from the source JSON.
 - To test a path and leave nothing behind, run it in a `do` block that ends with `raise exception '<result>'`:
