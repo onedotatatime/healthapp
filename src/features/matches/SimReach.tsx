@@ -8,7 +8,7 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { COPY } from './copy';
 import {
-  DEFAULT_SHARE, MINUS, TENTHS_MAX, dropShare, formatCount, formatEuro, formatEuroShort, formatLossPct, formatPlain, formatRate, formatSmallShare, formatStep, formatUsd, formatWhole,
+  DEFAULT_SHARE, TENTHS_MAX, dropShare, formatCount, formatEuro, formatEuroShort, formatLossPct, formatPlain, formatRate, formatSmallShare, formatStep, formatUsd, formatWhole,
   niceMax, originalPerInhabitant, pctOfTenths, plotGeometry, pointAt, startTenths, tenthsOfPct, type Geo, type Geometry, type Reach,
 } from './reach';
 
@@ -108,8 +108,8 @@ export function SimReach({ model, initialGeo, initialShare }: SimReachProps) {
   const planStop = Math.round(geo.planSharePct * 10) === tenths && tenths > 0;
   const cx = g.x(share);
   const cy = g.y(p.loss);
-  const lowered = share === 0 ? '€0' : `${MINUS}${formatEuro(p.drop)}`;
-  const loweredPct = share === 0 ? '' : `(${MINUS}${formatLossPct(dropShare(geo) * (share / 100))})`;
+  const lowered = share === 0 ? '€0' : formatEuro(p.drop);
+  const loweredPct = share === 0 ? '' : `(${formatLossPct(dropShare(geo) * (share / 100))})`;
   const state = tenths === 0 ? COPY.rState.zero : tenths === TENTHS_MAX ? COPY.rState.full : planStop ? COPY.rState.plan : '';
   const shareText = formatStep(share);
   const valueText = COPY.rSliderValue({ share: shareText, of: sub.of });
@@ -253,7 +253,7 @@ export function SimReach({ model, initialGeo, initialShare }: SimReachProps) {
                 const t = pointAt(model, geo, s);
                 return (
                   <tr key={s} data-testid={`sim-values-row-${s}`}>
-                    <td>{s}%</td><td>{formatEuro(t.loss)}</td><td>{s === 0 ? '€0' : `${MINUS}${formatEuro(t.drop)}`}</td><td>{formatCount(t.matched)}</td><td>{formatCount(t.fewerDx)}</td>
+                    <td>{s}%</td><td>{formatEuro(t.loss)}</td><td>{s === 0 ? '€0' : formatEuro(t.drop)}</td><td>{formatCount(t.matched)}</td><td>{formatCount(t.fewerDx)}</td>
                   </tr>
                 );
               })}
