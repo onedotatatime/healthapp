@@ -55,7 +55,6 @@
 .sim-stat-net .sim-stat-n{font:var(--text-timer)}
 @media (min-width:900px){.sim-stat-net{display:none}}
 .sim-field{--cols:48;display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:2px;max-width:calc(var(--cols) * 10px + (var(--cols) - 1) * 2px)}
-@media (max-width:639px){.sim-field{--cols:27}}
 .sim-field i{display:block;aspect-ratio:1;border-radius:2px;background:color-mix(in srgb,var(--field-border) 40%,transparent);opacity:0;transition:opacity var(--dur-land) var(--ease-out),background-color var(--dur-land) var(--ease-out)}
 .sim-field i.on{opacity:1}
 .sim-field i.m{background:var(--color-link);animation:sim-land var(--dur-land) var(--ease-out)}
