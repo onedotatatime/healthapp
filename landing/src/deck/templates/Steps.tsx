@@ -16,16 +16,16 @@ function Path({ s }: { s: StepsSlide }) {
         ))}
       </div>
       <div className="sp-map" aria-label="Pilot cities">
-        <svg viewBox="0 0 1200 250" className="sp-svg">
+        <svg viewBox="0 0 1680 250" className="sp-svg">
           <defs>
             <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2" fill="#DCE8E7" /></pattern>
           </defs>
-          <rect width="1200" height="250" fill="url(#dots)" />
+          <rect width="1680" height="250" fill="url(#dots)" />
           {s.places?.map((p) => (
             <g key={p.name}>
               <line x1={p.x} y1={p.y} x2={p.cx} y2={p.cy - 24} stroke="#C3CDCC" strokeWidth="2" />
               <circle cx={p.x} cy={p.y} r="9" fill="#F4846B" />
-              <rect x={p.cx - 64} y={p.cy - 24} width="128" height="48" rx="24" fill="#0B3B3D" />
+              <rect x={p.cx - 80} y={p.cy - 24} width="160" height="48" rx="24" fill="#0B3B3D" />
               <text x={p.cx} y={p.cy + 8} textAnchor="middle" className="sp-city">{p.name}</text>
             </g>
           ))}
@@ -48,10 +48,15 @@ function Ascend({ s }: { s: StepsSlide }) {
       {s.steps.map((st, i) => (
         <article key={st.title} className={`sa-card i${i}`}>
           <h3>{rich(st.title)}</h3>
-          <h4 className="caps">Ships</h4>
+          <h4 className="caps">What ships</h4>
           <p className="sa-ships">{rich(st.ships ?? '')}</p>
-          <h4 className="caps">What applies</h4>
-          <p className="sa-applies">{rich(st.applies ?? '')}</p>
+          {st.applies && (
+            <>
+              <h4 className="caps">What applies</h4>
+              <p className="sa-applies">{rich(st.applies)}</p>
+            </>
+          )}
+          {st.badges && <h4 className="caps sa-law">Law</h4>}
           <footer>
             {st.badges?.map((b) => <b key={b}>{b}</b>)}
             {st.seal && <span className="sa-seal">{st.seal}</span>}
