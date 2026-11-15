@@ -36,6 +36,9 @@ const cases: [string, { safeParse(x: unknown): { success: boolean; error?: unkno
   ["assistantAsk", C.AssistantResponse, F.assistantAsk],
   ["assistantNotInRecord", C.AssistantResponse, F.assistantNotInRecord],
   ["assistantCauses", C.AssistantResponse, F.assistantCauses],
+  ["diagnosesOk", C.DiagnosesResponse, F.diagnosesOk],
+  ["diagnosesNone", C.DiagnosesResponse, F.diagnosesNone],
+  ["diagnosesOff", C.DiagnosesResponse, F.diagnosesOff],
   ["errorGrantExpired", C.ErrorBody, F.errorGrantExpired],
   ["errorTokenExpired", C.ErrorBody, F.errorTokenExpired],
   ["errorBadPasscode", C.ErrorBody, F.errorBadPasscode],
@@ -66,6 +69,20 @@ Deno.test("every cite id in the assistant fixtures resolves to a fixture row", (
   }
 });
 
+Deno.test("every cite id in the diagnoses fixtures resolves to a fixture row, and the list is sorted by name", () => {
+  const rows = new Set([
+    ...F.results.map((r) => `r:${r.id}`),
+    ...F.findings.map((r) => `f:${r.id}`),
+    ...F.diary.map((r) => `d:${r.id}`),
+  ]);
+  const cites = F.diagnosesOk.items.flatMap((i) => [...i.fits, ...i.does_not_explain]).flatMap((s) => s.cites);
+  assert(cites.length > 0 && cites.every((c) => rows.has(c)));
+  const names = F.diagnosesOk.items.map((i) => i.name);
+  assertEquals(names, [...names].sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" })));
+  assertEquals(F.diagnosesOk.counts.citations, cites.length);
+  assertEquals(F.diagnosesOk.counts.items, F.diagnosesOk.items.length);
+});
+
 Deno.test("the contract refuses what the settlements forbid", () => {
   // settlement 3: short cite ids are mapped by the server, never sent
   assertEquals(C.CiteId.safeParse("r:7f3a").success, false);
@@ -91,7 +108,7 @@ Deno.test("the contract refuses what the settlements forbid", () => {
 
 Deno.test("the function table names every P0 function with the healthapp- prefix", () => {
   for (const name of Object.keys(C.FUNCTIONS)) assert(name.startsWith("healthapp-"), name);
-  assertEquals(Object.keys(C.FUNCTIONS).length, 13);
+  assertEquals(Object.keys(C.FUNCTIONS).length, 14);
 });
 
 Deno.test("possible matches: one empty answer, nothing below country, nothing below k", () => {

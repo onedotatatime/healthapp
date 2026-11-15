@@ -17,7 +17,7 @@ Deno.test("N1 control 1: the list, the delete and the unconfirm import nothing t
   }
 });
 
-Deno.test("N1 control 1: of every function, only extract-exam and assistant import the model module", () => {
+Deno.test("N1 control 1: of every function, only extract-exam, assistant and diagnoses import the model module", () => {
   const callers: string[] = [];
   for (const e of Deno.readDirSync(ROOT)) {
     if (!e.isDirectory || !e.name.startsWith("healthapp-")) continue;
@@ -26,7 +26,7 @@ Deno.test("N1 control 1: of every function, only extract-exam and assistant impo
       if (/model\.ts|generateJson/.test(code(`${e.name}/${f.name}`))) { callers.push(e.name); break; }
     }
   }
-  assertEquals(callers.sort(), ["healthapp-assistant", "healthapp-extract-exam"]);
+  assertEquals(callers.sort(), ["healthapp-assistant", "healthapp-diagnoses", "healthapp-extract-exam"]);
 });
 
 Deno.test("env reads in the two new functions: SUPABASE_* names only, by literal", () => {
