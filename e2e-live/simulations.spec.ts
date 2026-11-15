@@ -47,9 +47,15 @@ async function expectEnd(page: Page) {
   await expect(T(page, 'sim-euro-figure')).toHaveText(amountLast);
   await expect(T(page, 'sim-euro-hab')).toHaveText(END.perHab);
   await expect(T(page, 'sim-euro-formula')).toHaveText(END.formula);
-  await expect(T(page, 'sim-matches')).toContainText(String(END.matches));
-  await expect(T(page, 'sim-x-hero')).toContainText(String(END.records));
-  await expect(T(page, 'sim-field').locator('i')).toHaveCount(END.records);
+  await expect(T(page, 'sim-matches')).toContainText(commas(END.matches));
+  await expect(T(page, 'sim-x-hero')).toContainText(commas(END.records));
+  // One canvas, no cell per dot (MIN-4682): the counts live in data-* and the aria-label, written at step edges.
+  await expect(T(page, 'sim-field')).toHaveAttribute('data-visible', String(END.records));
+  await expect(T(page, 'sim-field')).toHaveAttribute('data-matched', String(END.matches));
+  await expect(T(page, 'sim-field').locator('canvas')).toHaveCount(1);
+  await expect(T(page, 'sim-field').locator('i')).toHaveCount(0);
+  const fieldLabel = T(page, 'sim-field').getByRole('img');
+  await expect(fieldLabel).toHaveAttribute('aria-label', new RegExp(commas(END.matches) + ' of ' + commas(END.records)));
   await expect(T(page, 'sim-effect')).toContainText(END.effect);
   await expect(T(page, 'sim-value-1')).toHaveText(END.rate);
   await expect(T(page, 'sim-value-2')).toHaveText(END.wrong);
@@ -106,13 +112,16 @@ test.describe('/simulation (public)', () => {
     expect(bad, 'requests beyond the app GET assets').toEqual([]);
   });
 
-  test('P2 the last frame equals the data file (1,200 records, 473 matches, the three end values, the euro figure)', async ({ page }) => {
+  test('P2 the last frame equals the data file (its record count, its match count, the three end values, the euro figure)', async ({ page }) => {
     // Reduced motion reaches the finished state at once, so this check does not wait 30 s.
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/simulation');
     await expectEnd(page);
-    expect(END.records).toBe(1200);
-    expect(END.matches).toBe(473);
+    // The file itself is the source: a stale or truncated file fails here, not a number typed in this spec.
+    expect(SIM.x.values.length).toBe(SIM.matches.count.length);
+    expect(END.records).toBeGreaterThanOrEqual(5000);
+    expect(END.matches).toBeGreaterThan(0);
+    expect(END.matches).toBeLessThan(END.records);
   });
 
   test('P3 reduced motion: finished state at once, no replay, nothing moves on', async ({ page }) => {
