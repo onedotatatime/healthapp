@@ -21,12 +21,14 @@ Every address is in one constant: **`STORY_FRAMES` in `config.ts`**. The CTO's d
 | `/story?live=<PRESENTER_KEY>` | Live frames load (the key is `PRESENTER_KEY` in `config.ts`). Not a secret: it only keeps casual visitors on screenshots. |
 | `/story?live=<PRESENTER_KEY>&static` or `/story?static` | Every frame is a screenshot, nothing is loaded (a bad venue network). `static` wins over the key. |
 
-With the key in the address: **`L`** switches both frames of the current slide between live and screenshot; clicking a frame's badge switches that one frame. `L` does nothing without the key.
+With the key in the address, the three iframes mount when the deck starts and are never unmounted, so a sign-in survives slide changes. On slides 3, 3b and 5 they are visible and interactive by default, on top of the screenshot. There is **no ready logic and no timeout** (MIN-4733: an 8 s timer that was never cleared on `load` marked every frame failed and hid a working app). A slow app is a white frame for a second.
 
-A frame shows its iframe only after it is ready: the app posts `{type:'pathien:ready'}` to the deck, or the iframe's `load` event fires. A cross-origin frame cannot tell the page that it was refused, so `L` is the way back to the screenshot. A frame that is live is also labelled `Live` (slide 3 from its second beat, slide 5 from the start), `Ready` or `Screenshot`: never `Live` over a picture.
+**`L`** switches both frames of the current slide between live and screenshot (the first press goes to the screenshot); clicking a frame's badge switches that one frame. The iframes stay mounted, so switching back keeps the sign-in. `L` does nothing without the key.
 
-After a click inside a frame the arrow keys go to the app. A visible **Next** pill appears while a frame has the mouse, and a mouse move outside the frame hands the keyboard back to the deck.
+Each iframe renders at its logical size (phone 390 x 844, desktop views 1280 wide) and is scaled to the frame with a CSS transform, so the app lays out at phone or desktop width. Sizes are in `STORY_FRAMES`.
+
+Keys: while the mouse is over a live frame the keys go to the app (the frame takes focus on enter). When the mouse leaves, the keys go back to the deck, and a visible **Next** pill is always there as a way forward.
 
 ## Fallback pictures
 
-`public/story/fallback-doctor.webp`, `fallback-patient.webp`, `fallback-simulate.webp`: synthetic captures (the doctor view of a synthetic patient, the patient home, the "Simulate matching" page on 5,000 synthetic records). They are what the deck shows by default. Replace a file, keep its name.
+`public/story/fallback-doctor.webp`, `fallback-patient.webp`, `fallback-simulate.webp`: synthetic captures (the doctor view of a synthetic patient, the patient home, the "Simulate matching" page on 5,000 synthetic records). They are what the deck shows by default, and when the presenter presses `L`. Replace a file, keep its name.

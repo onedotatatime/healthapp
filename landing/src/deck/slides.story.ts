@@ -32,7 +32,7 @@ export const storySlides: StorySlide[] = [
     footer: 'My own photo and my own records, shared by my choice.',
   },
   {
-    id: '3', template: 'story-live', variant: 'duo', theme: 'air', notes: N['3'], hotFromBeat: 1,
+    id: '3', template: 'story-live', variant: 'duo', theme: 'air', notes: N['3'], hotFromBeat: 0,
     headline: "And that's me today, still trying to figure this out.",
     beats: [
       { support: 'And helping doctors find the answer.', notes: N['3'] },

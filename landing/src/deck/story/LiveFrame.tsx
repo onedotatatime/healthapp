@@ -1,77 +1,42 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import type { FrameConfig, FrameId } from './config';
+import { useRef, type CSSProperties } from 'react';
+import type { FrameConfig } from './config';
 
 export interface LiveFrameProps {
   cfg: FrameConfig;
-  /** Live frames may load (the presenter key is in the address, ?static is not, and the frame was not switched off). */
-  live: boolean;
-  /** The frame takes clicks and keys (slide 3 from its second beat, slide 5 from the start). */
-  hot: boolean;
-  /** The address was opened with the presenter key: the badge becomes a button that switches this frame. */
+  /** The presenter key is in the address and ?static is not: the iframe is mounted (from deck start, never unmounted) and sits on top of the screenshot. */
   armed: boolean;
+  /** The frame shows the app. false = the presenter switched this frame to its screenshot (L or the badge); the iframe stays mounted, so a sign-in survives. */
+  live: boolean;
+  /** The frame takes clicks and keys. With the key it is hot on every beat of its slide. */
+  hot: boolean;
   onToggle: () => void;
-  onReady: (id: FrameId, ready: boolean) => void;
   style?: CSSProperties;
   className?: string;
-  /** Slide 3's phone sits on its own, the badge goes under it. */
-  badgePlacement: 'bar' | 'below';
+  /** Slide 3's phone sits on its own: the badge goes beside it (below it would run into the path rail). */
+  badgePlacement: 'bar' | 'side';
 }
-
-const SETTLE_MS = 1200;
-const LOAD_TIMEOUT_MS = 8000;
 
 const hostOf = (url: string) => {
   try { return new URL(url).hostname; } catch { return url; }
 };
 
-const useOnline = () => {
-  const [on, setOn] = useState(() => navigator.onLine !== false);
-  useEffect(() => {
-    const up = () => setOn(true);
-    const down = () => setOn(false);
-    window.addEventListener('online', up);
-    window.addEventListener('offline', down);
-    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down); };
-  }, []);
-  return on;
-};
-
 /**
- * One frame of the app: a screenshot under an optional iframe.
- * - The screenshot is always in the DOM and is what shows until the iframe reports it is ready.
- * - The iframe is mounted only when `live` is true. With ?static or without the presenter key there is NO iframe in the DOM.
- * - Ready = the iframe's load event plus 1.2 s; no load within 8 s keeps the screenshot.
- *   A frame the host refuses to embed cannot be detected from here, so the presenter has the L key and this badge to switch back.
+ * One frame of the app: a screenshot with an optional iframe on top.
+ * - The screenshot is always in the DOM. It shows only when there is no iframe (no presenter key, or ?static) or when the presenter pressed L.
+ * - The iframe exists only with the presenter key. With ?static or without the key there is NO iframe in the DOM.
+ * - There is no ready logic and no timeout. A live frame is visible and interactive as soon as its slide is showing; a slow app is a
+ *   white frame for a second, never a frame that hides itself (MIN-4733: an 8 s timer that load never cleared marked every frame failed).
+ * - The iframe renders at its logical size (iframeW x iframeH: 390 x 844 for the phone, 1280 wide for the desktop views) and is scaled
+ *   to the frame with a CSS transform, so the app lays out at phone or desktop width whatever size the deck is shown at.
  */
-export function LiveFrame({ cfg, live, hot, armed, onToggle, onReady, style, className = '', badgePlacement }: LiveFrameProps) {
-  const online = useOnline();
-  const mount = live && online;
+export function LiveFrame({ cfg, armed, live, hot, onToggle, style, className = '', badgePlacement }: LiveFrameProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const shown = mount && ready && !failed;
+  const shown = armed && live;
   const interactive = shown && hot;
 
-  useEffect(() => { onReady(cfg.id, shown); }, [shown, onReady, cfg.id]);
-  useEffect(() => { if (!mount) { setReady(false); setFailed(false); setLoaded(false); } }, [mount]);
-
-  // Ready = the iframe's load event plus SETTLE_MS (the app paints after load). No load within LOAD_TIMEOUT_MS: stay on the screenshot.
-  useEffect(() => {
-    if (!mount) return;
-    const t = window.setTimeout(() => setFailed(true), LOAD_TIMEOUT_MS);
-    return () => window.clearTimeout(t);
-  }, [mount]);
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    if (!loaded || failed) return;
-    const t = window.setTimeout(() => setReady(true), SETTLE_MS);
-    return () => window.clearTimeout(t);
-  }, [loaded, failed]);
-
-
   const scale = cfg.viewW / cfg.iframeW;
-  const state: 'live' | 'ready' | 'shot' = shown ? (hot ? 'live' : 'ready') : 'shot';
-  const word = state === 'live' ? 'Live' : state === 'ready' ? 'Ready' : 'Screenshot';
+  const state: 'live' | 'shot' = shown ? 'live' : 'shot';
+  const word = shown ? 'Live' : 'Screenshot';
 
   const badge = armed ? (
     <button
@@ -89,7 +54,7 @@ export function LiveFrame({ cfg, live, hot, armed, onToggle, onReady, style, cla
   const viewport = (
     <div className="lf-viewport" style={{ width: cfg.viewW, height: cfg.viewH }}>
       <img className="lf-shot" src={cfg.fallback} alt={cfg.fallbackAlt} draggable={false} />
-      {mount && (
+      {armed && (
         <iframe
           ref={iframeRef}
           className={`lf-iframe ${shown ? 'is-shown' : ''}`}
@@ -101,32 +66,34 @@ export function LiveFrame({ cfg, live, hot, armed, onToggle, onReady, style, cla
           allow={cfg.allowCamera ? 'camera' : undefined}
           referrerPolicy="no-referrer"
           tabIndex={interactive ? 0 : -1}
-          onLoad={() => setLoaded(true)}
         />
       )}
     </div>
   );
 
   const hotClass = interactive ? 'is-hot' : '';
-  const stop = () => {
-    // After a click inside the app the arrow keys go to the app. When the pointer leaves, hand the keyboard back to the deck.
+  // While the mouse is over a live frame the keys go to the app; when it leaves they go back to the deck.
+  const enter = () => { if (interactive) iframeRef.current?.focus({ preventScroll: true }); };
+  const leave = () => {
     if (document.activeElement === iframeRef.current) iframeRef.current?.blur();
     window.focus();
   };
 
   if (cfg.kind === 'phone') {
+    const bodyW = cfg.viewW + 20;
+    const bodyH = cfg.viewH + 20;
     return (
-      <div className={`live-frame lf-phone ${hotClass} ${className}`} style={style} onMouseLeave={stop} data-frame={cfg.id}>
-        <div className="lf-phone-body">
+      <div className={`live-frame lf-phone ${hotClass} ${className}`} style={{ width: bodyW, height: bodyH, ...style }} onMouseEnter={enter} onMouseLeave={leave} data-frame={cfg.id}>
+        <div className="lf-phone-body" style={{ width: bodyW, height: bodyH }}>
           <span className="lf-notch" aria-hidden="true" />
           {viewport}
         </div>
-        {badgePlacement === 'below' && <div className="lf-badge-row">{badge}</div>}
+        {badgePlacement === 'side' && <div className="lf-badge-row">{badge}</div>}
       </div>
     );
   }
   return (
-    <div className={`live-frame lf-browser ${hotClass} ${className}`} style={style} onMouseLeave={stop} data-frame={cfg.id}>
+    <div className={`live-frame lf-browser ${hotClass} ${className}`} style={style} onMouseEnter={enter} onMouseLeave={leave} data-frame={cfg.id}>
       <div className="lf-bar">
         <span className="lf-dots" aria-hidden="true"><i /><i /><i /></span>
         <span className="lf-address">{hostOf(cfg.url)}</span>

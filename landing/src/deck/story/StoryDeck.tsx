@@ -45,7 +45,6 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
   const [hud, setHud] = useState(true);
   const hudTimer = useRef<number>(0);
   const [off, setOff] = useState<Set<FrameId>>(() => new Set());
-  const [ready, setReadyState] = useState<Partial<Record<FrameId, boolean>>>({});
   const [pulse, setPulse] = useState(1);
 
   const cur = slides[index];
@@ -96,14 +95,13 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
   }, []);
 
   // ---- frames ----
+  // With the key every frame is live by default; `off` holds the frames the presenter switched to their screenshot. The iframes stay mounted either way.
   const isLive = useCallback((id: FrameId) => mode.armed && !off.has(id), [mode.armed, off]);
-  const isShown = useCallback((id: FrameId) => isLive(id) && !!ready[id], [isLive, ready]);
   const toggle = useCallback((id: FrameId) => {
     if (!mode.armed) return;
     setOff((prev) => { const next = new Set(prev); if (next.has(id)) next.delete(id); else next.add(id); return next; });
   }, [mode.armed]);
-  const setReady = useCallback((id: FrameId, r: boolean) => setReadyState((prev) => (prev[id] === r ? prev : { ...prev, [id]: r })), []);
-  const ctx: FrameCtx = useMemo(() => ({ armed: mode.armed, isLive, isShown, toggle, setReady }), [mode.armed, isLive, isShown, toggle, setReady]);
+  const ctx: FrameCtx = useMemo(() => ({ armed: mode.armed, isLive, toggle }), [mode.armed, isLive, toggle]);
 
   // L: switch every frame of the current slide between live and screenshot (presenter key only)
   const toggleSlideFrames = useCallback(() => {
@@ -154,8 +152,8 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
     return () => { window.removeEventListener('mousemove', show); window.clearTimeout(hudTimer.current); };
   }, []);
 
-  // After a click inside an app frame the arrow keys go to the app. The parent only sees the mouse once it is OUTSIDE the frame,
-  // so a mouse move anywhere else hands the keyboard back to the deck.
+  // While the mouse is over a live frame the keys go to the app (LiveFrame focuses it on enter). The parent only sees the mouse once it is
+  // OUTSIDE the frame, so a mouse move anywhere else hands the keyboard back to the deck.
   useEffect(() => {
     const handBack = (e: MouseEvent) => {
       const a = document.activeElement;
@@ -178,7 +176,7 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
   const counterFor = (s: StorySlide) => (s.counter ? s.counter : `${numbered.indexOf(s) + 1} / ${total}`);
 
   // a frame has the mouse and keys: show the "Next" pill, because after a click inside the app the arrow keys go to the app
-  const hotNow = cur.template === 'story-live' && beat >= cur.hotFromBeat && framesOf(cur).some((id) => isShown(id));
+  const hotNow = cur.template === 'story-live' && beat >= cur.hotFromBeat && framesOf(cur).some((id) => isLive(id));
 
   return (
     <div className="stage story" onClick={onStageClick}>

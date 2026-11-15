@@ -50,7 +50,7 @@ export interface StoryLiveSlide extends StoryBase {
   /** The peach pill under the frames: when live, and when the frames are pictures. */
   tag: string;
   tagStatic: string;
-  /** Slide 3's frames take clicks only from the second beat; slide 5's from the start. */
+  /** The beat from which the frames take clicks and keys. 0 on both live slides: with the presenter key the founder acts in the app from the start. */
   hotFromBeat: number;
 }
 
