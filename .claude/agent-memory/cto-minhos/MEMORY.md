@@ -8,4 +8,5 @@
 - [Dashboard browser checks](reference_dashboard_browser_checks.md) — Playwright route interception (no background servers), fixtures for late milestones, error.json is not "feed down"
 - [healthapp function deploys](project_healthapp_function_deploys.md) — no CI deploys functions; one function serves dev+demo; diff deployed copy before deploy
 - [Matches RPC review](project_matches_rpc_review.md) — MIN-4505 PR #25 pass; PR #51 coding pass with 3 fixes (glycated regex, ANA titre, 014); local PG18 replay recipe
+- [Simulation euro contract](project_simulation_euro_contract.md) — MIN-4610: part 1 contract; part 2 pass at 291fedf after founder 1,200 change; cond 6 over all drops
 - [Doctor simulate page](project_doctor_simulate.md) — MIN-4504: no live boxd VM, recorded run replayed, browser matching on 5,000 synthetic, persona-rare, S from 6, consent before data
