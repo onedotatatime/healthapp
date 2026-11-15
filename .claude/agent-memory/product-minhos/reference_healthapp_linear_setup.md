@@ -7,7 +7,7 @@ metadata:
 
 Healthapp issues: Linear team minhOS (`MIN`), project "Health app — hackathon prototype". A search for "healthapp" finds no project; search "Health app".
 
-Seats with no Linear user of their own are assigned to Cron Jobbidis with these Role labels: CTO = `System Architect`, Release = `Repository Architect` (title prefix `R ·`), E2E = `Quality Engineer`. Product = `Product Manager` (Back), Backend = `Backend Engineer` (Cron), Frontend = `Frontend Engineer` (Ren), Design = `Product Designer` (Pix; the plain `Design` label is not the Role label). There is no Lane label in Linear: the lane is the `Lane:` line under the estimate block; Release puts it on the PR.
+Seats with no Linear user of their own are assigned to Cron Jobbidis with these Role labels: CTO = `System Architect`, Release = `Repository Architect` (title prefix `R ·`), E2E = `Quality Engineer`. Product = `Product Manager` (Back), Backend = `Backend Engineer` (Cron), Frontend = `Frontend Engineer` (Ren), Design = `Product Designer` (Pix; the plain `Design` label is not the Role label), Marketing = `Marketing Lead` (Anna). There is no Lane label in Linear: the lane is the `Lane:` line under the estimate block; Release puts it on the PR.
 
 Milestones carry the hackathon clock (M6 freeze Sun 2026-11-15 13:00, M7 submit by 18:00): check them before ranking supporting work. Example of a supporting-work story with a "locally first" founder gate: MIN-4585.
 
