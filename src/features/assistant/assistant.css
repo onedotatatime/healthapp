@@ -171,7 +171,7 @@ button.flag-chip,.flag-more{cursor:pointer;min-height:44px}
 .exam .chev{grid-column:2;grid-row:1 / span 2;color:var(--color-link)}
 .ask-main .as-quick .btn{min-width:0;min-height:44px;padding:0 20px}
 
-/* MIN-4665 Possible diagnoses (Pix, docs/design/min-4659/dashboard.css, section 7). Cards are solid white (long reading): no number, rank or colour difference between them. */
+/* MIN-4665 Related diagnoses (Pix, docs/design/min-4659/dashboard.css, section 7). Cards are solid white (long reading): no number, rank or colour difference between them. */
 .dx-view{display:grid;gap:var(--space-4);align-content:start;min-width:0}
 .dx-view>h2{margin:0}
 .dx-banner{display:flex;gap:var(--space-3);align-items:flex-start;padding:var(--space-4);border-radius:var(--radius-sm);background:var(--color-caution-bg);border:1px solid var(--color-flag-text);color:var(--color-text);font:600 16px/1.5 var(--font)}

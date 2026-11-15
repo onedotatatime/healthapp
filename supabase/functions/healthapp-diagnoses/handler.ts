@@ -1,4 +1,4 @@
-// healthapp-diagnoses (MIN-4662; CTO decision on MIN-4660 §3): possible diagnoses for the doctor to evaluate.
+// healthapp-diagnoses (MIN-4662; CTO decision on MIN-4660 §3): related diagnoses for the doctor to evaluate.
 // One JSON answer, on request only, never stored. A doctor with a live grant only: a patient gets 403 wrong_role,
 // an ended, refused, revoked or somebody else's grant gets 403 grant_expired. Off by default per environment
 // (secret HEALTHAPP_DIAGNOSES_ENVS): an environment that is not listed gets 200 status "off", with no grant read,
@@ -75,7 +75,7 @@ export function makeHandler(deps: Deps) {
       rec = await deps.store.record(who.env, grant_id, who.uid);
     } catch {
       log("error", { ...ZERO, errors: 1 }, 0, null);
-      return fail(req, 500, "internal", "Possible diagnoses could not be loaded.");
+      return fail(req, 500, "internal", "Related diagnoses could not be loaded.");
     }
     if (!rec) {
       log("ended", ZERO, 0, null); // the grant ended between the two reads
@@ -117,7 +117,7 @@ export function makeHandler(deps: Deps) {
         });
         if (!best) {
           return kind === "config"
-            ? fail(req, 500, "internal", "Possible diagnoses is not configured.")
+            ? fail(req, 500, "internal", "Related diagnoses is not configured.")
             : fail(req, 503, "model_unavailable", "The list could not be made in time. Try again.");
         }
         // the retry failed but a first, checked list exists: show that one

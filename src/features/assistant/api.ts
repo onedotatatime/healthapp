@@ -19,7 +19,7 @@ export interface AssistantApi {
   fileAnalysis(docId: string): Promise<FileAnalysisRow | null>;
   /** MIN-4552: the series, the out-of-range history and the straight-line projection, calculated in code. Doctor only. */
   overTime(grantId: string): Promise<OverTimeResponse>;
-  /** MIN-4665: the possible diagnoses for the record in the grant, on request only (one call per press). Doctor only. Throws ApiError: 503 `model_unavailable`, 500, 403 `grant_expired`. */
+  /** MIN-4665: the related diagnoses for the record in the grant, on request only (one call per press). Doctor only. Throws ApiError: 503 `model_unavailable`, 500, 403 `grant_expired`. */
   diagnoses(grantId: string): Promise<DiagnosesResponse>;
 }
 

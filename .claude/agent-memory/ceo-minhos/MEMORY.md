@@ -1,5 +1,0 @@
-- [Health app: the bet and open decisions](project_healthapp_bet_and_open_decisions.md) — weekend decided, product not; gates G0/G1/G2; six founder decisions open on 13 Nov 2026; insurer edges not to be extended.
-- [Founder wants results, not wording questions](feedback_founder_wants_results_not_wording_questions.md) — hackathon demo: small reversible copy calls get delegated; decide, log, report in one line
-- [Measuring Actuals as a subagent](reference_actuals_measurement.md) — extract-runs.py with --transcript + --window; Opus 5.5 rate card in conductor migration 0057
-- [Simulation model decisions](project_simulation_model_decisions.md) — /simulation: 20% ceiling, euro figure, month timeline, 15 conditions; rerun the generator first
-- [Logging a founder decision](reference_logging_a_founder_decision.md) — conductor PR without a worktree (temp index), zsh `${C}:refs`; "logged" only after the merge

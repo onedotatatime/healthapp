@@ -1,4 +1,4 @@
-// Possible diagnoses (MIN-4662; CTO decision on MIN-4660 §3). Pure logic, no I/O. The model reads ONE patient's
+// Related diagnoses (MIN-4662; CTO decision on MIN-4660 §3). Pure logic, no I/O. The model reads ONE patient's
 // record lines (the same numbered lines the assistant sends, from buildFacts) and lists conditions a doctor may
 // want to consider. It answers against a forced schema that has no number, rank or probability field. The SERVER
 // then decides what the doctor sees: every statement is checked against the lines it cites, a direction word needs a

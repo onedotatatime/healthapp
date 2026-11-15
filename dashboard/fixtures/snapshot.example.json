@@ -26,6 +26,10 @@
     "repo": {
       "asOf": "2026-11-14T13:53:07Z",
       "error": null
+    },
+    "founder_time": {
+      "asOf": "2026-11-14T20:00:00Z",
+      "error": null
     }
   },
   "deadline": "2026-11-15T18:00:00+02:00",
@@ -985,5 +989,86 @@
     "filesChanged": 231,
     "codeLines": 23850,
     "codeFiles": 187
+  },
+  "founder_time": {
+    "window": {
+      "since": "2026-11-14T10:00:00Z",
+      "until": "2026-11-14T20:00:00Z"
+    },
+    "method": "Only the timestamps of your own messages in the Claude chats on this Mac. Each message counts the minutes until your next message anywhere, at most 10; the last one counts 2. Chats are tagged by the issue in the chat title or git branch, never by message text. GitHub and Linear actions are not counted.",
+    "total_minutes": 120.0,
+    "toward_goal_minutes": 30.0,
+    "share_toward_goal": 0.25,
+    "messages": 60,
+    "per_day": [
+      {
+        "date": "2026-11-14",
+        "minutes": 120.0
+      }
+    ],
+    "per_direction": [
+      {
+        "key": "1",
+        "title": "Scan → AI reads",
+        "minutes": 10.0
+      },
+      {
+        "key": "2",
+        "title": "Store extracted data",
+        "minutes": 0.0
+      },
+      {
+        "key": "3",
+        "title": "Store + analyse original files (staging and main)",
+        "minutes": 20.0
+      },
+      {
+        "key": "4",
+        "title": "Real analysis + projection",
+        "minutes": 0.0
+      },
+      {
+        "key": "5",
+        "title": "Real matching",
+        "minutes": 0.0
+      },
+      {
+        "key": "none",
+        "title": "Not toward the goal (an issue under no direction)",
+        "minutes": 40.0
+      },
+      {
+        "key": "untagged",
+        "title": "Not toward the goal (no issue in the chat title or branch)",
+        "minutes": 50.0
+      }
+    ],
+    "per_chat": [
+      {
+        "chat": "Example chat",
+        "issues": [
+          "MIN-4546"
+        ],
+        "directions": [
+          3
+        ],
+        "minutes": 45.0,
+        "messages": 20,
+        "toward_goal_minutes": 45.0
+      },
+      {
+        "chat": "Another chat",
+        "issues": [],
+        "directions": [],
+        "minutes": 60.0,
+        "messages": 30,
+        "toward_goal_minutes": 0.0
+      }
+    ],
+    "biggest_drain": {
+      "chat": "Another chat",
+      "issues": [],
+      "off_goal_minutes": 60.0
+    }
   }
 }

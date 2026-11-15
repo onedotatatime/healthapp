@@ -6,7 +6,9 @@
 // the founder's choice), then runs the file analysis on what is left of the budget. A refusal keeps the reason code and
 // the original photo for 14 days (MIN-4637), nothing of the reading; the photo can be read again ("Try again") or deleted
 // by its owner, and my-exams deletes it once the 14 days have passed. Logs carry a status, a reason code and timings,
-// never a word of the document.
+// never a word of the document. MIN-4689: the model also gets our LOINC list (lab_loinc) as one more text part and picks
+// a code per result from it; build keeps only a code that is on the list, and the code is stored in results.loinc. A list
+// that cannot be read never stops a reading: it goes on without one and every code is null.
 import { analyseFile } from "../_shared/analysis.ts";
 import { bytesToBase64 } from "../_shared/b64.ts";
 import {
@@ -20,7 +22,7 @@ import {
   type RefusalReason,
 } from "../_shared/contract.ts";
 import { type Auth, authenticate, autoConfirmable, type Blobs, type DocState, planConfirm, readJson, type Store } from "../_shared/docs.ts";
-import { build, EXTRACT_SYSTEM, ModelExtract } from "../_shared/extract.ts";
+import { build, EXTRACT_SYSTEM, type LoincRow, loincListText, ModelExtract } from "../_shared/extract.ts";
 import { fail, headersFor, json } from "../_shared/http.ts";
 import { matchIdentity } from "../_shared/identity.ts";
 import { type JsonCall, type JsonResult, ModelError } from "../_shared/model.ts";
@@ -50,6 +52,7 @@ export interface Deps {
     | "markFailed"
     | "objectMeta"
     | "saveAnalysis"
+    | "loincCodes"
   >;
   /** Read only (MIN-4637): a refusal keeps the original, so this function deletes no file. */
   blobs: Pick<Blobs, "download">;
@@ -141,11 +144,26 @@ async function readInBackground(
     if (!bytes || bytes.length === 0) return await failed("no_file");
     const sha = await sha256Bytes(bytes);
 
+    // The LOINC list (MIN-4689). Missing, empty or unreadable: the reading goes on without it, one log line says so.
+    let list: LoincRow[] | null = null;
+    let why = "empty";
+    try {
+      const rows = await deps.store.loincCodes(env);
+      list = rows.length ? rows : null;
+    } catch (e) {
+      why = (e as { code?: string })?.code ?? (e as Error)?.name ?? "error"; // a Postgres code (42P01) or an error name, never a message
+    }
+    if (!list) deps.log({ fn: "extract-exam", loinc: "unavailable", why });
+
     let result: JsonResult<ModelExtract>;
     try {
       result = await deps.generate({
         system: EXTRACT_SYSTEM,
-        parts: [{ inline_data: { mime_type: mime, data: bytesToBase64(bytes) } }, { text: "Read this document." }],
+        parts: [
+          { inline_data: { mime_type: mime, data: bytesToBase64(bytes) } },
+          { text: "Read this document." },
+          ...(list ? [{ text: loincListText(list) }] : []),
+        ],
         schema: ModelExtract,
         timeoutMs: READ_BUDGET_MS,
         maxAttempts: 2, // the one automatic retry; then failed (CTO, MIN-4555 §3)
@@ -156,7 +174,7 @@ async function readInBackground(
     }
     const info = { model: result.model, attempts: result.attempts };
 
-    const built = build(result.data);
+    const built = build(result.data, list ? new Set(list.map((r) => r.loinc)) : null);
     if (!built.ok) return await refused(built.reason, info);
 
     // B1 (MIN-4478): whose document is it? Decided here, on the model's output and the caller's own profile row.
@@ -184,7 +202,7 @@ async function readInBackground(
     if (!kept) deps.log({ fn: "extract-exam", pass: "auto_confirm", status: "skipped", why: auto ? "plan_refused" : "conditions" });
     deps.log({
       fn: "extract-exam", status: kept ? "confirmed" : "draft", ...info, results: saved.results.length,
-      findings: saved.findings.length, ms: deps.now() - started,
+      findings: saved.findings.length, loinc_coded: built.loinc.coded, loinc_dropped: built.loinc.dropped, ms: deps.now() - started,
     });
     // Direction 3: the second pass over the same stored file, in the same background run, on what is left of the
     // budget. Under MIN_ANALYSIS_MS left its row says failed / budget (a budget of 0 is the code's own signal).

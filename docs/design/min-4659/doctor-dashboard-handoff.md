@@ -116,9 +116,9 @@ The live `MatchesView` and its words stay; "run the matching" is the new part. *
 
 `<ul class="exams">` under "Exams" (h2) with "5 confirmed exams, newest first. A row opens its source." Card glass radius 32, rows min 72 with a hairline. A row is one link (the whole row, 44 or more): title 20/600 and the exam date 16/500 muted; below, the provenance marks (`ProvenanceMark`, unchanged), the value count, and the existing `oor-count` chip when the exam has values outside the range; a teal-600 CaretRight 22 at the end. It opens the source viewer on that exam. Newest first by exam date. The row text is whatever the record gives today; the sentences in the mockup are placeholders, the app's own stay.
 
-## 7. Possible diagnoses view (MIN-4665)
+## 7. Related diagnoses view (MIN-4665)
 
-**Page.** The h2 "Possible diagnoses", then **the fixed banner**, then the cards. The banner is rendered in every state and cannot be closed.
+**Page.** The h2 "Related diagnoses", then **the fixed banner**, then the cards. The banner is rendered in every state and cannot be closed.
 
 - **Banner** (`.dx-banner`): peach fill (`--color-caution-bg`), 1px coral-900 edge, ink 16/600, an Info icon. Default words are the prototype's: "For the doctor to evaluate. Not a diagnosis. Based on this patient's symptoms and exams only. Listed in alphabetical order; no ranking." (PRD 13.4's heading is the alternative; Anna decides if the CTO asks.) It is the surface's own tone: peach, not mist, so it is never read as part of the data.
 - **Card** (`.dx-card`): **solid white** (long reading), radius 24, padding 24 20, `--shadow-soft`, a 1px ink 8% edge. Title 24/600 (the possibility). Rows, each a 14/600 muted label over 16/400 ink text: **Fits**, **Does not fully explain** (omitted when empty), **Not in this record** (omitted when empty), then **Based on** with one source chip per citation (white, 1px teal-600 edge, teal-600 14/600, "Blood test · 30 Oct 2026", hit area 48 x 48 as the shipped chip). A chip opens the record in the source viewer. **A card with no citation is never rendered.**
@@ -126,11 +126,11 @@ The live `MatchesView` and its words stay; "run the matching" is the new part. *
 
 | State | What |
 |---|---|
-| Before the request | A card glass block: h2 "Possible diagnoses are made only when you ask", one sentence, the mint button "Show possible diagnoses". Nothing is generated on open |
+| Before the request | A card glass block: h2 "Related diagnoses are made only when you ask", one sentence, the mint button "Show related diagnoses". Nothing is generated on open |
 | Generating | The spinner "Reading the record" (the ask panel's words) above two skeleton cards (`--color-skeleton` bars, `aria-hidden`, never real data). Button gone |
 | The cards | As above |
 | Nothing to list | The dashed empty card: "No possibility could be listed from this record." |
-| Error | White note, 1.5px coral-900 edge and icon, `role="alert"`, "Could not list possible diagnoses just now.", "Try again" |
+| Error | White note, 1.5px coral-900 edge and icon, `role="alert"`, "Could not list related diagnoses just now.", "Try again" |
 
 Fields the card needs from the function (MIN-4662 and the CTO's decision on MIN-4660 decide the shape): title, `fits` text, `does_not_fully_explain` text or null, `not_in_record` text or null, `cites[]` (at least one, resolved by the same `RecordIndex.resolve`). If the CTO changes a field name or adds a guard state, the layout does not move: a row is a label over text, and a new row follows the same pattern.
 
@@ -149,19 +149,19 @@ Placement only. The shipped `AskPanel` (info strip, field and Ask, quick questio
 
 **New classes** (all in `dashboard.css`): `.dash-shell`, `.dash-main`, `.dnav`, `.legend`, `.cc-*` (card, head, latest, sub, plot, proj, out, table), `.show-all`, `.footer-counts`, `.cc-pop`, `.flags`, `.flag-info`, `.mx-run`, `.mx-total`, `.mx-foot`, `.exams`, `.exam*`, `.also`, `.dx-*`, `.src-chip`, `.skel`, `.ask-grid`, `.src-panel`, `.flagword`. Everything else is a shipped class from `reference.css`.
 
-**New sentences, proposals for Anna** (through Back; MIN-4663 opens only if the CTO asks for new copy): "Run the matching", "Run again", "Compare the pattern in this record with the seeded records.", "14 seeded synthetic records in 2 groups share a pattern with this record.", "This patient has not turned on matching. Nothing was compared.", "Show all 11 values", "Show fewer", "Showing 6 of 11 values with two or more dated results.", "Results as a table", "Flags", "Exams", "5 confirmed exams, newest first. A row opens its source.", the flag chip words in section 4, "Possible diagnoses are made only when you ask", "Show possible diagnoses", "No possibility could be listed from this record.", "Could not list possible diagnoses just now.", "Sources used", the key labels in section 3. The matches, ask and projection sentences that already exist are reused word for word.
+**New sentences, proposals for Anna** (through Back; MIN-4663 opens only if the CTO asks for new copy): "Run the matching", "Run again", "Compare the pattern in this record with the seeded records.", "14 seeded synthetic records in 2 groups share a pattern with this record.", "This patient has not turned on matching. Nothing was compared.", "Show all 11 values", "Show fewer", "Showing 6 of 11 values with two or more dated results.", "Results as a table", "Flags", "Exams", "5 confirmed exams, newest first. A row opens its source.", the flag chip words in section 4, "Related diagnoses are made only when you ask", "Show related diagnoses", "No possibility could be listed from this record.", "Could not list related diagnoses just now.", "Sources used", the key labels in section 3. The matches, ask and projection sentences that already exist are reused word for word.
 
-**Not for Ren to decide:** what "run the matching" calls, how Possible diagnoses is generated, guarded or worded (MIN-4660).
+**Not for Ren to decide:** what "run the matching" calls, how Related diagnoses is generated, guarded or worded (MIN-4660).
 
 ## 10. Checked, not checked, skipped
 
-Renders (2x not made; 1x, headless Chrome 1280 x full height; the 390 ones in a 390 wide iframe because headless Chrome will not lay out under about 500): `shots/01-overview-1280`, `02-chart-states-1280`, `03-matches-states-1280`, `04-possible-diagnoses-1280`, `05-diagnoses-states-1280`, `06-ask-1280`, `07-overview-390`, `08-diagnoses-390`, `09-ask-390`, `10-matches-states-390` (all `.webp`).
+Renders (2x not made; 1x, headless Chrome 1280 x full height; the 390 ones in a 390 wide iframe because headless Chrome will not lay out under about 500): `shots/01-overview-1280`, `02-chart-states-1280`, `03-matches-states-1280`, `04-related-diagnoses-1280`, `05-diagnoses-states-1280`, `06-ask-1280`, `07-overview-390`, `08-diagnoses-390`, `09-ask-390`, `10-matches-states-390` (all `.webp`).
 
 **Checked** (in text first, from computed styles and measurements in the rendered mockups, then by eye on the renders): no horizontal overflow at 1280 or 390 on overview, diagnoses, ask and matches-states; no interactive element under 44 x 44 except the citation and source chips (28 high to the eye, 48 x 48 to the finger, as shipped); no text under 14, and under 16 only the label style (chips, marks, kickers, the key, tab-style labels) and chart ticks at 12; one blurred surface per screen (the timer); the contrast pairs listed in section 3 against the brand page's measured table; no red anywhere; no number, rank or colour on a possibility card; the label "Seeded synthetic data. Not real patients." in six of six matches states.
 
 **Not checked:** the real components (these are mockups, not the built app); hover and focus by eye on every point (drawn once: state A); touch behaviour of the chart on a real phone (the 44 px hit circles are geometry, not a touch test); the 1440 render (the same rules, a wider card: the chart is computed from the measured width); the chart with 11 real series or with a very long analyte name (a long name wraps in the header; check once with a real record); dark mode (not defined); the real prefers-reduced-transparency query (the toggle `?rt=1` of the 4586 mockups works here too); Manrope's tabular figures in the `@fontsource` build (open point from MIN-4586).
 
-**Skipped (lean):** a popover is optional; "Sources used" is optional; no animation beyond the shipped 0.2 s colour and 1px lift (a card needs none); no new phone design (the three-cell strip is the only addition, and it is the minimum that keeps Possible diagnoses reachable); "Suggested next exams", the contact flow and new header fields are out of scope (Back).
+**Skipped (lean):** a popover is optional; "Sources used" is optional; no animation beyond the shipped 0.2 s colour and 1px lift (a card needs none); no new phone design (the three-cell strip is the only addition, and it is the minimum that keeps Related diagnoses reachable); "Suggested next exams", the contact flow and new header fields are out of scope (Back).
 
 ## 11. Ask me when
 

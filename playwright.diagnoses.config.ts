@@ -1,8 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// Live doctor dashboard, slice 2: Possible diagnoses (MIN-4668) on staging-dev (env dev, schema healthapp_dev, synthetic personas only).
+// Live doctor dashboard, slice 2: Related diagnoses (MIN-4668) on staging-dev (env dev, schema healthapp_dev, synthetic personas only).
 // NEVER staging or production: since MIN-4658 those read healthapp_demo, the founder's real record. The spec aborts before sign-in unless /health says dev.
-// Each press of "List possible diagnoses" is a paid Gemini call (about 30-40 s): the spec makes 2 at 1280 and 1 at 390, and no more.
+// Each press of "List related diagnoses" is a paid Gemini call (about 30-40 s): the spec makes 2 at 1280 and 1 at 390, and no more.
 // Not a PR gate and not in the smoke job. Run: HEALTHAPP_DEMO_PASSCODE=... npx playwright test -c playwright.diagnoses.config.ts
 export default defineConfig({
   testDir: 'e2e-live',

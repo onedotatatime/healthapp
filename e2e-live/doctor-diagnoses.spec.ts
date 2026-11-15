@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type BrowserContext, type Page, type Response } from '@playwright/test';
 
-// MIN-4668, slice 2 of the live doctor dashboard (MIN-4659): Possible diagnoses on staging-dev. Env dev, schema healthapp_dev, synthetic personas only.
+// MIN-4668, slice 2 of the live doctor dashboard (MIN-4659): Related diagnoses on staging-dev. Env dev, schema healthapp_dev, synthetic personas only.
 // The passcode comes from the environment, is cleared from the field right after submit, and is never logged or screenshotted.
 // Paid calls: 1 press at 390, 2 presses at 1280 (the second is "List again"). The "access ended" press is refused by the server before the model (no paid call).
 // Strings are checked word for word here only for the banner and the AI line (a safety rule); other copy and layout are unit tests.
@@ -63,7 +63,7 @@ async function settle(t0: number) {
   return Date.now() - t0;
 }
 
-test.describe.serial('doctor dashboard, slice 2: Possible diagnoses (staging-dev)', () => {
+test.describe.serial('doctor dashboard, slice 2: Related diagnoses (staging-dev)', () => {
   test.beforeAll(async ({ browser }: { browser: Browser }, ti) => {
     test.skip(!PASSCODE, 'HEALTHAPP_DEMO_PASSCODE not set');
     wide = (ti.project.use.viewport?.width ?? 0) >= 900;
@@ -113,13 +113,13 @@ test.describe.serial('doctor dashboard, slice 2: Possible diagnoses (staging-dev
   test('X1 opening the workspace: third nav item, the view is idle with banner and AI line, and NO diagnoses call is made on open', async () => {
     const nav = doctor.getByTestId('doctor-nav');
     await expect(nav.getByRole('button')).toHaveCount(3);
-    await expect(nav.getByRole('button').nth(1), 'Possible diagnoses is the third item in the order Overview, Possible diagnoses, Ask').toContainText('Possible diagnoses');
+    await expect(nav.getByRole('button').nth(1), 'Related diagnoses is the third item in the order Overview, Related diagnoses, Ask').toContainText('Related diagnoses');
     await expect(nav.getByRole('button', { name: 'Overview' })).toBeVisible();
     await expect(nav.getByRole('button', { name: 'Ask the assistant' })).toBeVisible();
     await expect(doctor.getByTestId('diagnoses')).toHaveAttribute('data-state', 'idle');
     await expect(doctor.getByTestId('dx-banner')).toContainText(BANNER);
     await expect(doctor.getByTestId('dx-ai-line')).toHaveText(AI_LINE);
-    await expect(doctor.getByTestId('dx-run')).toHaveText(/List possible diagnoses/);
+    await expect(doctor.getByTestId('dx-run')).toHaveText(/List related diagnoses/);
     await expect(doctor.getByTestId('dx-card')).toHaveCount(0);
     await doctor.waitForTimeout(3_000); // a late call on open (an effect, a mount at 390) would land here
     expect(calls.overTime, 'one over-time call per open').toBe(1);
@@ -238,7 +238,7 @@ test.describe.serial('doctor dashboard, slice 2: Possible diagnoses (staging-dev
   test('X4 a patient session never reaches the view, and the function refuses a patient token before the model', async () => {
     await patient.goto('/patient');
     await expect(patient.getByTestId('matches-switch')).toBeVisible({ timeout: 20_000 });
-    await expect(patient.getByText(/possible diagnoses/i)).toHaveCount(0);
+    await expect(patient.getByText(/related diagnoses/i)).toHaveCount(0);
     await expect(patient.getByTestId('diagnoses')).toHaveCount(0);
     for (const path of ['/doctor', '/doctor/connect', '/doctor/simulate']) {
       await patient.goto(path);
