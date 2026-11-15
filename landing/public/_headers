@@ -1,0 +1,5 @@
+# Cloudflare Pages response headers. /story is the founder's own story deck: not for search engines (the page also carries <meta name="robots">).
+/story
+  X-Robots-Tag: noindex, nofollow
+/story/*
+  X-Robots-Tag: noindex, nofollow
