@@ -59,7 +59,7 @@ export const storySlides: StorySlide[] = [
       { text: 'The team coming to rescue me can open my history.' },
     ],
     badge: 'Soon on the App Store',
-    background: { src: '/story/emergency-rainforest.webp' },
+    background: { src: '/story/emergency-motocross.webp' },
     phone: {
       callTitle: 'Emergency call', callStatus: 'In progress · 00:42', app: 'Pathien',
       title: 'Sharing my folder with emergency services', link: 'pathien.app/e/7K2Q…',
