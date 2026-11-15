@@ -166,7 +166,9 @@ test.describe('/simulation (public)', () => {
   });
 });
 
-// The timeline card under the hero (MIN-4696, scenarios on MIN-4704). Static, painted finished from first paint.
+// The timeline card under the hero (MIN-4696, scenarios on MIN-4704). MIN-4724 made it ONE animated plot (500 ms a month, started when 40% of the
+// card is in view); the three lanes and their per-lane y axes are gone, so those assertions are deleted here. The end values are asserted only
+// where the chart is finished at once (reduced motion). E2E writes the new scenarios against staging-dev after the merge.
 // Expected values come from the file's `timeline` block, formatted here by the written rule (counts with the comma,
 // euros rounded to thousands in the keys and whole in the table, the data's own decimals), never from the app's formatter.
 const TL = SIM.timeline;
@@ -178,31 +180,30 @@ const TL_SERIES: Record<string, number[]> = {
   drop: TL.drop_eur.values,
   dx: TL.diagnoses.values,
 };
-const TL_LANES: Record<string, string[]> = { people: ['patients', 'matches'], euro: ['income', 'drop'], dx: ['dx'] };
 const dxDecimals = Math.min(2, Math.max(0, ...TL_SERIES.dx.map((v) => (String(v).split('.')[1] ?? '').length)));
 const euroK = (v: number) => (Math.round(v) >= 1000 ? `€${commas(Math.round(v) / 1000)}k` : `€${Math.round(v)}`);
 const tlKey = (id: string, v: number) => (id === 'income' || id === 'drop' ? euroK(v) : id === 'dx' ? v.toFixed(dxDecimals) : commas(v));
 const tlExact = (id: string, v: number) => (id === 'income' || id === 'drop' ? `€${commas(v)}` : id === 'dx' ? v.toFixed(dxDecimals) : commas(v));
 const TL_YEAR_ENDS = TL_MONTHS.filter((m) => m % 12 === 0);
 
-/** Card position, five key values, the values table, a zero-based linear y axis per lane, the label, the assumption lines, no "saved", no overflow. */
-async function expectTimeline(page: Page) {
+/** Card position, the five end values (finished chart only), the values table, the label, the assumption lines, no "saved", no overflow. */
+async function expectTimeline(page: Page, finished: boolean) {
   const card = T(page, 'sim-timeline');
   await expect(card).toBeVisible();
 
-  // 1-2: directly under the hero, directly above the three small charts; lanes in the fixed order.
+  // 1-2: directly under the hero, directly above the three small charts.
   const place = await card.evaluate((el) => ({
     prev: el.previousElementSibling?.getAttribute('data-testid') ?? null,
     next: el.nextElementSibling?.className ?? null,
-    lanes: [...el.querySelectorAll('[data-lane]')].map((n) => n.getAttribute('data-lane')),
   }));
   expect(place.prev, 'the element right above the card').toBe('sim-hero');
   expect(place.next, 'the element right below the card').toContain('sim-grid');
-  expect(place.lanes).toEqual(Object.keys(TL_LANES));
 
-  // 3: the five keys equal the file's last month.
-  for (const [id, values] of Object.entries(TL_SERIES)) {
-    await expect(T(page, `sim-tl-value-${id}`), `key ${id}`).toHaveText(tlKey(id, last(values)));
+  // 3: the five head values (the phone rows at 390) equal the file's last month, once the chart is finished.
+  if (finished) {
+    for (const [id, values] of Object.entries(TL_SERIES)) {
+      await expect(T(page, `sim-tl-value-${id}`), `head ${id}`).toHaveText(tlKey(id, last(values)));
+    }
   }
 
   // 4: "Show the values": months 12 and 24, each cell equals the file at that month.
@@ -216,36 +217,7 @@ async function expectTimeline(page: Page) {
     );
   }
 
-  // 5: each lane's y axis starts at 0 and is linear in the value: the zero line is the plot's bottom, and every line's
-  // first and last points sit where a zero-based axis puts the file's values.
-  for (const [lane, ids] of Object.entries(TL_LANES)) {
-    const geo = await T(page, `sim-tl-plot-${lane}`).evaluate((svg) => {
-      const ticks = [...svg.querySelectorAll('line[data-tick]')].map((l) => ({ v: Number(l.getAttribute('data-tick')), y: Number(l.getAttribute('y1')) }));
-      const labels = [...svg.querySelectorAll('[data-testid="sim-tl-ytick"]')].map((t) => t.textContent);
-      const paths = Object.fromEntries([...svg.querySelectorAll('path[data-line]')].map((p) => {
-        const pts = [...(p.getAttribute('d') ?? '').matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map((m) => Number(m[2]));
-        return [p.getAttribute('data-line'), pts];
-      }));
-      return { ticks, labels, paths };
-    });
-    const zero = geo.ticks.find((t) => t.v === 0);
-    expect(zero, `${lane}: a tick at 0`).toBeDefined();
-    expect(geo.labels[0], `${lane}: lowest tick label`).toBe(lane === 'euro' ? '€0' : '0');
-    expect(zero!.y, `${lane}: the zero line is the lowest line`).toBe(Math.max(...geo.ticks.map((t) => t.y)));
-    const top = geo.ticks.reduce((a, b) => (b.v > a.v ? b : a));
-    expect(Object.keys(geo.paths).sort(), `${lane}: its lines`).toEqual([...ids].sort());
-    for (const id of ids) {
-      const values = TL_SERIES[id];
-      expect(top.v, `${lane}: the axis top covers ${id}`).toBeGreaterThanOrEqual(Math.max(...values));
-      const yOf = (v: number) => zero!.y + ((top.y - zero!.y) * v) / top.v;
-      const ys = geo.paths[id];
-      expect(ys.length, `${id}: one point a month`).toBe(TL_MONTHS.length);
-      expect(Math.abs(ys[0] - yOf(values[0])), `${id}: month ${TL_MONTHS[0]} y`).toBeLessThanOrEqual(0.15);
-      expect(Math.abs(ys[ys.length - 1] - yOf(last(values))), `${id}: month ${last(TL_MONTHS)} y`).toBeLessThanOrEqual(0.15);
-    }
-  }
-
-  // 6: the permanent label is on screen and solid while the card is; the assumption lines are in the card.
+  // 5: the permanent label is on screen and solid while the card is; the assumption lines are in the card.
   await card.scrollIntoViewIfNeeded();
   await expect(T(page, 'sim-label')).toHaveText(SIM.label);
   await expect(T(page, 'sim-label')).toBeInViewport();
@@ -261,29 +233,28 @@ async function expectTimeline(page: Page) {
   await expect(card.getByTestId('sim-tl-curve').first()).toHaveText(ASSUMPTION);
   await expect(card.getByTestId('sim-tl-dx-assumption')).toBeVisible();
 
-  // 7: never "saved" (CTO banned list, MIN-4699), in the visible text or the screen-reader description.
+  // 6: never "saved" (CTO banned list, MIN-4699), in the visible text or the screen-reader description.
   expect(await card.textContent()).not.toMatch(/\bsav(ed|es|ings?)\b/i);
 
-  // 8: no sideways scroll, for the page or inside the card.
+  // 7: no sideways scroll, for the page or inside the card.
   expect(await overflow(page), 'px of sideways scroll on the page').toBeLessThanOrEqual(0);
   expect(await card.evaluate((el) => el.scrollWidth - el.clientWidth), 'px of sideways scroll in the card').toBeLessThanOrEqual(0);
 }
 
 test.describe('/simulation timeline card (MIN-4704)', () => {
-  test('T1 the card is under the hero from first paint, its values, table and zero axes equal the file, label and assumption on screen, no overflow', async ({ page }) => {
+  test('T1 the card is under the hero from first paint, its table equals the file, label and assumption on screen, no overflow', async ({ page }) => {
     await page.goto('/health');
     await expect(page.getByTestId('env'), 'target is not the dev environment').toHaveText('dev', { timeout: 15_000 });
     await page.goto('/simulation');
-    // Static: the card is complete while the 30-second run is still playing.
     await expect(T(page, 'simulation')).toHaveAttribute('data-state', 'playing');
-    await expectTimeline(page);
+    await expectTimeline(page, false);
   });
 
   test('T2 reduced motion: the run is finished at once and the card is the same', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/simulation');
     await expect(T(page, 'simulation')).toHaveAttribute('data-state', 'done', { timeout: 3_000 });
-    await expectTimeline(page);
+    await expectTimeline(page, true);
     await expectEnd(page);
   });
 });

@@ -134,6 +134,10 @@ export const TL_MONTHS = 24;
 export const TL_PILOT_FROM = 3;
 /** The x axis is labelled at every third month, ending on the last (spec A13 section 1). */
 export const TL_LABEL_EVERY = 3;
+/** The card's own clock (CTO, MIN-4720 section 2; spec A14 section 6): one month takes this long, linear in time. Time, not data. */
+export const TL_MS_PER_MONTH = 500;
+/** The card starts its run when this share of it is in view (CTO, MIN-4720 section 2). */
+export const TL_VIEW_START = 0.4;
 
 /**
  * The free pilot band and the first-paid marker, derived from the data and never typed: the first paid month is the first month with a
@@ -348,14 +352,6 @@ export function formatEuroK(eur: number): string {
   if (r >= 999_500) return `€${(r / 1e6).toFixed(1).replace(/\.0$/, '')}m`;
   return r >= 1000 ? `€${grouped.format(Math.round(r / 1000))}k` : `€${r}`;
 }
-/** A euro axis tick: thousands with at most one decimal, so 2,500 reads €2.5k and never a rounded €3k. */
-export function formatEuroTick(eur: number): string {
-  if (eur < 1000) return `€${+eur.toFixed(2)}`;
-  const k = Math.round((eur / 1000) * 10) / 10;
-  return `€${k}k`;
-}
-/** A tick of a unit-less axis (people, diagnoses): the value with at most two decimals, thousands comma. */
-export const formatTick = (v: number) => (Number.isInteger(v) ? grouped.format(v) : String(+v.toFixed(2)));
 
 /** Axis from zero to a round top at or above the data: 4 or 5 ticks. Never rescaled to make a curve steeper. */
 export function niceAxis(max: number): { top: number; ticks: number[] } {
