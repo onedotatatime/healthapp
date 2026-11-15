@@ -2,8 +2,8 @@
  * The loss card (MIN-4774). The expected values are the block's own check points (written by the generator with Decimal, half-up to the euro) and the
  * written format rule of spec A16 section 3, restated here, not the app's formatter: a wrong formula, a wrong formatter or a typed number goes red.
  * There is no jsdom in this repo: the screen is checked as server markup at a chosen geography and share, the slider's arithmetic as pure functions.
- * Data: `RAW` below is the block under test. Until Cron's `reach` block (MIN-4773) is in data/synthetic/simulation.json it is the local fixture of the
- * CTO's contract (reach.fixture.json, built independently in Python with Decimal); when the real block is there the fixture is deleted and RAW is the file.
+ * Data: the `reach` block of data/synthetic/simulation.json (Cron, MIN-4773; built with Decimal in scripts/synthetic/reach.py, so the check points it carries
+ * are independent of the TypeScript formulas here). The page was first built on a local fixture of the CTO's contract; the block matched it and the fixture is gone.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,7 +11,6 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import simulationJson from '../../../data/synthetic/simulation.json';
-import fixture from './reach.fixture.json';
 import { COPY } from './copy';
 import { SimulationUnavailable, SimulationView } from './Simulation';
 import {
@@ -19,7 +18,7 @@ import {
   plotGeometry, pointAt, startTenths, tenthsOfPct, type Geo, type Reach,
 } from './reach';
 
-const RAW: unknown = { series: (simulationJson as { series: unknown }).series, reach: fixture };
+const RAW: unknown = simulationJson;
 const model = (): Reach => {
   const p = parseReach(RAW);
   if (!p.ok) throw new Error('the reach block did not parse');
@@ -124,8 +123,6 @@ describe('the reach block parses and the model reproduces its own check points',
     const broken = clone(); broken.reach.geographies[2].loss_at_100_eur += 1000; // the three euro figures disagree
     const p = parseReach(broken);
     expect(p.ok && p.data.geos.map((g) => g.id)).toEqual(['greece', 'eu27']);
-    const real = parseReach(simulationJson);
-    expect(real.ok).toBe(Boolean((simulationJson as { reach?: unknown }).reach)); // the committed file: today without the block the page says so
   });
 });
 
