@@ -20,7 +20,6 @@ export function StoryMemoir({ s }: { s: StoryMemoirSlide }) {
           <figcaption className="chip">{p.chip}</figcaption>
         </figure>
       ))}
-      <p className="sm-foot rise" style={ri(7)}>{typo(s.footer)}</p>
     </div>
   );
 }
