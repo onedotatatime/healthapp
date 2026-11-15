@@ -33,4 +33,19 @@
   --tap-input:56px;                                 /* inputs */
   --tap-doctor:var(--target-min);
 }
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* Motion (MIN-4606). The first four and --ease-out are the brand values (docs/brand/tokens.css), repeated here so the app's role tokens name every motion value it uses; the rest are new. Linear is the CSS keyword, used only for the /simulation clock. */
+:root{
+  --dur-fast:200ms;
+  --dur-step:400ms;
+  --dur-reveal:800ms;
+  --dur-land:160ms;                                 /* one match cell landing */
+  --dur-fade:600ms;                                 /* the narrowing fade of dots, the fraction bar */
+  --ease-out:cubic-bezier(.22,1,.36,1);
+  --ease-inout:cubic-bezier(.4,0,.2,1);             /* anything that changes value in place */
+  --text-outcome:700 40px/1.1 var(--font);          /* the euro figure; type size only, no colour */
+}
+@media (min-width:900px){:root{--text-outcome:700 48px/1.08 var(--font)}}
+@media (prefers-reduced-motion:reduce){
+  :root{--dur-fast:.01s;--dur-step:.01s;--dur-reveal:.01s;--dur-land:.01s;--dur-fade:.01s}
+  *{animation:none!important;transition:none!important}
+}
