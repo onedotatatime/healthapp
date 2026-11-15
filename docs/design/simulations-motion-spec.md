@@ -527,7 +527,7 @@ Every axis from zero and the three gridlines at `y(0)`, `y(.5)`, `y(1)`; every p
 3. **A zero money value reads "€0"** (not "€0k"); the one formatter for the page covers it. Anna: confirm "€0 a year" at the flat months.
 4. **Left out:** a legend, hover or tap values, a label on the half gridline, any second axis, an area fill, a count-up between months, a dark view (the app has no dark theme).
 
-## A15. Addendum: one diagram, a plan-year slider, nothing moves (MIN-4747, parent MIN-4696). Supersedes A14.
+## A15. Addendum: one diagram, a plan-year slider, nothing moves (MIN-4747, parent MIN-4696). Supersedes A14. **Superseded by A16 (MIN-4772) on 2026-11-15.**
 
 Founder, 2026-11-15, verbatim: "We just need one fucking diagram with all the numbers not animated but with a slider showing in 10 years the money can be saved in greece while we grow the correct diagnoses". About the EU hero: "wtf is this number? asking again." Back's acceptance: one diagram, one card, nothing moves unless the viewer drags the slider. The hero card (dot field and the EU-27 figure), the three small charts and the animated card (A14) are all replaced by this one card; the permanent label "Simulation on synthetic data. A model, not a measurement" stays. Words: Anna, MIN-4723 comment 9e14b7f0. Rules: the CTO's one-scale-per-unit contract (MIN-4720 comment 6fba2571), still in force until the CTO's MIN-4744 ruling says otherwise. Goal: supports directions 4 and 5 (a doctor or investor sees what real matching and the patient analysis could change in Greece over ten years, as a model and not a promise).
 
@@ -644,6 +644,100 @@ Every axis from zero and the three gridlines at `yy(0)`, `yy(.5)`, `yy(1)`; ever
 5. **A running total is not drawn.** The founder's "in 10 years the money can be saved" can mean a total over ten years. Section 7 shows where it would go; it needs the CEO seat's yes and Anna's wording first.
 6. **The 390 fit is close.** The money number, the plot and the thumb need 587 px of card plus the label bar (72 px on the page, 65 in the mock) against a 664 px screen: 652 to 659 px. It fits only with the card scrolled to its title; if Ren's measurement on the real page is over, the first thing to give is the money helper line (`gHelp.money`) at 390, which moves under the rows.
 7. **Left out:** a legend (the readout is the legend), hover or tap values on the plot (the slider is the one input), a second axis, an area fill, a count-up, a dark view (the app has none), the EU-27 figure anywhere.
+
+## A16. Addendum: one card, the loss first, Greece / Europe / Global, one share slider (MIN-4772, parent MIN-4696). Supersedes A15.
+
+Founder, 2026-11-15 about 11:30 EET, verbatim: "nope something is not so good / We need to start by showing the money Greek health system is losing and how this is decreased as we do best matches and we decrease the wrong diagnoses", then "Can we have 3 In greece, in europe, Global?". Back's ruling (MIN-4772): one card, one plot, no animation; it opens on Greece's yearly loss; a three-way switch; one slider over the share of that geography's patients in the network, 0% to 100%; a marker for where our plan reaches by year 10 (91,205 patients, 0.9% of Greece); the loss falls while records with a match and correct diagnoses gained rise. Goal: supports directions 4 and 5 (the money a health system loses to wrong or missed diagnoses is the argument for the doctors and hospitals those two serve; synthetic model, labelled). Brand: checked against `docs/brand/brand-guidelines.md` (lean v0.1, MIN-4462) and the repo tokens; no new token, no new colour.
+
+**What survives from A15:** the card surface, the permanent "Simulation on synthetic data. A model, not a measurement" bar, the native range input (44 px band, 32 px thumb, same focus ring), the kind tags and the pattern-is-kind rule (Model dashed, Plan dash-dot), the notes under the card, "Show the values", the number-format idea. **What dies:** the plan-year slider, the five lines, the assumed-growth band and its labels, the patients and income lines, the hatched band, the year ticks. Nothing animates: no transition, easing, timer or `requestAnimationFrame`; everything changes in the frame of the input or change event. **Reduced motion: n/a, there is no motion.**
+
+**Verified** (mock `docs/design/min-4772/loss-card-mock.html`, headless Chrome, 390 through an iframe so the phone layout is real): no horizontal overflow at 390 and 1280 (`scrollWidth` equals the viewport); slider 44 px, switch buttons 44 px, readout rows at least 44 px; at 1280 the thumb's centre equals `x(share)` (815 against 815 at 100%); at 390 the card's top to the slider's bottom is 477 px, so the loss number, "lowered by" and the thumb share one 664 px screen (it was 817 px when the slider sat under the plot, which is why it moved, section 1). Renders: `docs/design/min-4772/shots/` `1280-` and `390-` `greece-0`, `greece-0.9pct`, `greece-100`, `europe-50`, `global-50`, plus `1280-greece-50-ceiling` (the variant). **Not verified:** a real phone and touch, keyboard in Safari and Firefox (Chrome only rendered), a screen reader on `aria-valuetext`, every number (all placeholders, section 9), contrast computed again (the colours are A15's pairs: ink on surface-quiet 14.86, flag-text on white about 6, link on white 5.47, track on white 4.38, white on link 5.47), the card on the real page. Figma: no file touched; mock and renders are the record, as A14 and A15. Not run: `design-critique` as a second reader; the side-by-side with A15 is in section 8.
+
+### 1. The card, top to bottom
+
+| # | Block | 1280 | 390 |
+|---|---|---|---|
+| 1 | Title (`--text-lead`) "The money a health system loses to wrong or missed diagnoses" (placeholder) | full width | full width |
+| 2 | The switch: Greece / Europe / Global | under the title, 480 max width, left | full width |
+| 3 | The loss block: "Greece loses" + the loss, large; then "Lowered by" + the amount and the percent | right column, top | first block under the switch |
+| 4 | The slider: label, the share as text ("40% of Greece"), the track, the state line | under the plot, thumb aligned to the plot's x axis | **directly under the loss block, above the plot** (full width, no axis alignment) |
+| 5 | The key, then the plot | left column | under the slider |
+| 6 | Rows: records with a match, correct diagnoses gained, our plan | right column under the loss block | under the plot |
+| 7 | Notes and "Show the values" | full width | full width |
+
+Why the slider moves up at 390: with the slider under the plot, the loss number, the plot and the thumb needed 817 px, three screens' worth of scrolling to see one number change; above the plot it is 477. The plot still shows the current share (a vertical line and a diamond), so nothing is lost. Grid: wide two columns `minmax(0,1fr)` and 320 px, gap 24, areas `plot money` / `plot list`; narrow one column, areas `money`, `ctlbox`, `key`, `box`, `list` (the plot's three children are grid items through `display: contents`, one DOM order for both widths).
+
+### 2. The switch
+
+A radio group (native `<input type="radio">` with a visually hidden input and a styled `<label>`, legend "Where" visually hidden): three segments, each flex 1, 44 px high, 16 px 600 text, 1 px `--color-border-strong`, `--radius-sm` on the outer corners. Selected: `--color-link` fill, white text (5.47:1), the border the same colour. Focus: `--focus-ring` on the label of the focused input, `:focus-visible` only. Keyboard: the browser's own (Tab to the group, arrows move and select, so the card changes as it does for a click). **Changing geography keeps the slider's share** (40% of Greece becomes 40% of Europe): the viewer compares the three at one share. Default: Greece, share 0%. Greece is first because the founder said "the money Greek health system is losing".
+
+### 3. The loss block (the headline)
+
+`--color-surface-quiet`, 1 px `--color-border-strong`, `--radius-sm`, padding 8/16/12. Top part: the kind glyph (dashed, 30 x 14) and "{Geography} loses" (16 px, `--color-text`), the loss (600, **40 px at 1280, 36 px at 390**, tabular numerals) with "a year" (16 px, `--color-muted`) beside it, tag "Model". Under a 1 px rule: "Lowered by", the amount with a true minus ("−€201 million", 600, **32 px at 1280, 28 px at 390**), the percent in 16 px `--color-muted` ("(−9.2%)"), tag "Model". At 0% it reads "€0" with no percent. A helper line ("What Greece would lose a year if 40% of its patients were in the network") shows from 900 px only (at 390 it repeats the slider's own text). The loss is the largest number on the card; "lowered by" is the second. This is the second readout for the gentle line (section 4): the drop is 9% of the loss, so it is said in words and numbers large instead of being drawn larger.
+
+**Number format (one formatter, Anna to confirm):** euros under €1,000 whole; under €1 million in thousands ("€121k"); from €1 million three significant figures with the unit word ("€201 million", "€1.8 million", "€2.19 billion", "€1.04 trillion"); counts under a million with separators, from a million three significant figures with the word ("4.15 million"); percentages below 10 to one decimal, whole from 10; a share below 1% to one significant figure ("0.9%", "0.02%", "0.001%"). Axis ticks use the short form ("€2.19 bn", "€93.5 bn", "€1.04 tn", "k", "m").
+
+### 4. The plot (one SVG, built at its measured width, 1 unit = 1 CSS px)
+
+| | 1280 (left column 726) | 390 (card 358, SVG 324) |
+|---|---|---|
+| Insets `L`, `R`, `T`, `B` | 64, 16, 34, 58 | 68, 16, 34, 58 |
+| Plot height `H` | 320 | 200 |
+
+`x(p) = L + p/100 * (W - L - R)`, `y(f) = T + H*(1 - f)`, `f` = the loss at share `p` divided by **the loss today** (share 0%). **The y axis runs from €0 and its top is today's loss; the line starts on the top gridline and ends at 90.8% of it (Greece, placeholder).** It is not cropped and not rescaled; at 1280 the whole drop is 29 px, at 390 it is 18 px. That is the truth of the model and the spec says so on the card (the first note, section 7). This is one unit (euros), so, unlike A15, the axis carries tick values: `€0`, half and the top, short form, 12 px, `--color-muted`, at `L - 6` (`L - 14` at 390 so the plan marker does not touch them). The CTO's one-scale-per-unit contract is met because there is exactly one unit in the plot; records with a match and correct diagnoses gained are readout rows with their own bar from zero (section 6) and are never drawn on this plot.
+
+Layers, bottom to top: the **lowered area** (the polygon between the top gridline and the loss line, from 0% to the current share, `--color-caution-bg`; it grows with the slider); gridlines at 0, 25, 50, 75, 100% (`--color-border`); gridlines at 1 (dotted `2 3`, `--color-border-strong`, today's loss), 0.5 and 0 (the axis); ticks and "0%" to "100%" on the x axis (12 px `--color-muted`, the ends anchored inward) and the axis title "Share of Greece's patients in the network" (follows the switch); the **loss line** (a polyline through the file's points, dashed `6 4`, `--color-flag-text`, 4 px, round joins, butt caps; Model kind); the **plan marker** (below); the **current share** (a 1.5 px `--color-text` vertical line from the top gridline to the axis at `x(share)` and a diamond r 9.5 on the loss line, 2 px `--color-surface` edge). The key (above the plot, HTML, 14 px): dashed glyph "Loss a year, in the model", a swatch "Lowered by", a dash-dot glyph "Our plan, year 10" (and "Model ceiling" in the variant). No value is printed on the plot except the axis ticks and the plan marker's label; every value is in the readout.
+
+**The plan marker.** A 2 px dash-dot (`12 4 2 4`) `--color-info` vertical line from 6 px above the top gridline to the axis, a 12 px square (Plan kind) on the axis, and the label "Our plan, year 10: 0.9%" (12 px 600 `--color-text`) in the top strip, anchored to the right of the line (to the left when it would not fit). It is drawn at the **true** share: 0.9% for Greece (6.5 px from the axis at 1280), 0.02% for Europe and 0.001% for Global, where it sits on the y axis itself (the line and square on the axis, the label starting 8 px right of it). Near zero it is deliberately not moved or enlarged: that it cannot be told from the axis is the finding. What it means in numbers is in the plan row (section 6), always visible, whatever the slider says: 91,205 patients, its share, and "At that size the loss falls by €X a year" (Greece €1.81 million, Europe €3.49 million, Global €1.08 million, placeholders).
+
+**Optional line, the model ceiling (CEO seat rules, MIN-4771).** A 1.5 px dotted `2 3` `--color-flag-text` line from the top-left to the model's ceiling at 100% (Greece −20%, −€437 million), key entry "Model ceiling"; no value on the plot, its amount goes in the notes ("With perfect matching the model's ceiling is −€437 million"). Off by default; `?ceiling=1` renders it (`shots/1280-greece-50-ceiling.png`).
+
+### 5. The slider
+
+Native `<input type="range">`, `min` 0, `max` 100, `step` 1, 44 px high (the whole band is the target), 8 px track `--color-border-strong`, 32 px thumb `--color-link` with a 3 px `--color-surface` ring; no filled progress track. Label "Share of patients in the network" (16 px 600; "Share in the network" at 390) at the left, the share as text at the right ("40% of Greece", 600 16 px, tabular numerals). At 1280 the input's left margin is `L - 16` and its width `(W - L - R) + 32` so the thumb's centre is `x(share)` (Firefox's 26 px thumb needs `L - 13` and `+ 26`; Ren sets both from one constant); at 390 it is full width (it is not under the plot).
+
+**The plan stop.** Integer steps cannot land on 0.9%. Rule: **when the plan share is 0.5% or more (Greece only), the integer stop nearest it (1) means the plan share** (0.9%), so the viewer can stand exactly on the marker; below 0.5% (Europe, Global) stop 0 stays 0 and the plan is read in its row. The thumb then sits 0.7 px from the marker at 1280, inside the 1 px tolerance. Greece's stop 1 reads "0.9%" everywhere (text, hero, rows, `aria-valuetext`).
+
+**The state line** (a fixed 26 px so nothing moves): at 0% "Today: nobody in the network, nothing changes"; at the plan stop "The size our plan reaches by year 10"; at 100% "Every patient in the network, at today's match rate"; empty otherwise. **Keyboard and assistive technology:** arrows move one step, Home and End the ends, Page keys the browser's; `aria-valuetext` "40% of Greece's patients in the network. The loss falls by €88 million a year." on every input; the SVG is `aria-hidden`; no `aria-live`; the card's description (`aria-describedby`) is rewritten on every change and read when the card is read. Touch: the 44 px band; no drag-only action (a tap on the track moves the thumb natively).
+
+### 6. The rows
+
+In this order: **Records with a match**, **Correct diagnoses gained**, **Our plan, year 10**. Each: name over the kind tag at the left (16 px, tag `--color-muted`), the value at the right (`--text-h2`, tabular numerals, nowrap), then for the first two a thin 8 px bar from zero (`--color-border` track, `--color-flag-text` fill, `--radius-pill`, `aria-hidden`; the fill is the value as a fraction of **the same row's value at 100%**, so each bar has its own honest scale from zero) and the line "At 100%: 4.15 million" (14 px `--color-muted`). Minimum 44 px, a 1 px `--color-border` rule between. The plan row has the dash-dot glyph, tag "Plan", value 91,205 and one sentence (section 4). **Our income** is not on the card; if the CEO seat keeps it (MIN-4771) it is one more row under the plan row, tag "Plan", no plot line (`?income=1`).
+
+### 7. Notes under the card (placeholders for Anna, MIN-4770), in this order
+
+1. "The axis starts at €0 and its top is today's loss. The drop is small beside the loss, and the drawing keeps it that way." (muted; says plainly why the line is gentle)
+2. The method sentence: why a wrong or missed diagnosis costs money, the 11% (OECD estimate), the geography's health spending and its source ("Greece spent €19.9 billion on health (Eurostat 2024)").
+3. **Global only:** "health systems, records and prices differ widely; the same 11% and the same match effect are applied to all; read the figure as the order of magnitude, not a forecast." (Europe gets no caveat of its own beyond the method sentence unless Anna asks.)
+4. The source line (muted). Then "Show the values": a table of 0 to 100% in tens, every column the readout's, its caption following the switch.
+
+The permanent label stays sticky at the top of the page. Nothing in the notes is cut at 390.
+
+### 8. States and the side-by-side with A15
+
+| State | What shows |
+|---|---|
+| First paint | Greece, share 0%: "Greece loses €2.19 billion a year", "Lowered by €0", the line, the plan marker, nothing shaded |
+| Slider at the plan stop (Greece 0.9%) | the thumb on the marker; "Lowered by −€1.81 million (−0.1%)"; the lowered area is a hairline; the state line names it |
+| Slider at 100% | Greece €1.98 billion, "Lowered by −€201 million (−9.2%)", the area at full width, records 4.15 million, diagnoses 243,120, bars full |
+| Europe or Global at 50% | the same card; the plan marker on the y axis; figures in billions and trillions; the Global note shows |
+| Switch changes | geography words, axis ticks and title, all values and the notes change; the share stays |
+| `simulation.json` missing a geography | its segment is not drawn; if none, no card (A13 section 5 rule) |
+| Reduced motion | n/a, no motion |
+
+Against A15 (one card, five lines, plan years): the loss comes first and is the biggest number; the page has one unit on its plot instead of five lines in three; the slider changes the viewer's own question (how many patients) instead of time; the 0.9% plan marker answers "how big is our plan" at the true scale. What A15 did better and was kept: the 44 px slider with its aligned thumb, the readout as the legend, the permanent label.
+
+### 9. Placeholders, open questions
+
+**Every number in the mock is a placeholder:** Greece uses the coordinator's figures (spend €19.87 bn, 11%, −9.2% at 100%, ceiling −20%, 91,205 patients), its patient count (10.13 million) is 91,205 / 0.9%; Europe (spend €1.7 trillion, 449 million patients) and Global (€9.5 trillion, 8.1 billion) are typed; the match rate (41%) and the diagnoses rate (2.4% of patients) are typed and linear in the share. The app reads every value from the generator output (MIN-4769) and types none; if the model's curve is not a straight line, the polyline follows the file's points (the mock draws 101).
+
+1. **The line is gentle, by design.** Axis from €0, drop 9%: the card says so in the first note and the "lowered by" readout carries it large. A second plot with a cropped axis is the thing to refuse; if the founder wants the drop to look bigger, the only honest lever is the CEO seat's ceiling line (variant), not the axis.
+2. **Plan stop and Europe or Global.** Plan share is 0.02% and 0.001% there; the marker sits on the axis and the plan row says what it is worth. Decision for the CEO seat if he wants it on the slider too: a stop below 1% (a non-linear scale or a fixed jump), which I recommend against.
+3. **Model ceiling and income:** both off by default, variants rendered or specified; the CEO seat rules (MIN-4771).
+4. **Kind tag on "records with a match":** A15 tagged it "Computed on synthetic records"; scaled to Europe and Global it is a model, so I tag all four values "Model". The CTO (MIN-4769) confirms.
+5. **Words:** every string is a placeholder for Anna (MIN-4770), including the title, "loses", the three notes and the state lines; the world's wording ("The world loses") is hers.
+6. **Share kept across the switch** is my choice; the alternative (reset to 0%) is one line.
+7. **Left out:** a second chart, a cropped axis, hover or tap values on the plot, an animation, a dark view, a running total, income on the plot.
 
 ---
 
