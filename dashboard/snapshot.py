@@ -331,6 +331,17 @@ def role_label_name(n, role_labels):
                  if (l.get('parent') or {}).get('name') == 'Role' and l['name'] in role_labels), None)
 
 
+def is_done(n):
+    """The one test for "done" (MIN-4765): tasks.done, the milestone counts, the direction counts and doneSeries all use it."""
+    return (n.get('state') or {}).get('type') == 'completed'
+
+
+def milestone_id(n):
+    """"M2 \u00b7 Digitize" -> "M2"; '' when the issue has no milestone."""
+    mname = (n.get('projectMilestone') or {}).get('name') or ''
+    return mname.split(' ')[0] if mname else ''
+
+
 def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
     role_labels = cfg['roleLabels']
     agents_cfg = cfg['agents']
@@ -343,7 +354,7 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
         st, name = n['state']['type'], n['state']['name']
         blocked = any(r['type'] == 'blocks' and r['issue']['state']['type'] not in ('completed', 'canceled')
                       for r in n['inverseRelations']['nodes'])
-        if st == 'completed':
+        if is_done(n):
             t['done'] += 1
         elif name == 'In Review':
             t['inReview'] += 1
@@ -358,11 +369,10 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
         if role is None and founder.get('linear') and (n.get('assignee') or {}).get('name') == founder['linear']:
             role = founder.get('role', 'Founder')   # the founder's own issues (his Q issues) are not an agent's work
         by_role[role or 'Other'] += 1
-        mname = (n.get('projectMilestone') or {}).get('name') or ''
-        mid = mname.split(' ')[0] if mname else ''
+        mid = milestone_id(n)
         if mid:
             ms[mid][1] += 1
-            if st == 'completed':
+            if is_done(n):
                 ms[mid][0] += 1
     tasks = {k: t[k] for k in ('done', 'inProgress', 'inReview', 'open', 'blocked')}
     tasks['total'] = len(live)
@@ -514,26 +524,56 @@ def direction_roots(cfg):
     return sorted(items, key=lambda d: d['n'])
 
 
+def direction_leaves(nodes, d):
+    """Identifiers counted for one direction entry (a direction_roots item): every issue under its roots (root included), canceled, duplicate and
+    backlog left out, leaves only (an issue that is the parent of another counted issue is an umbrella, not one more item). The one place this is
+    decided: build_directions and build_done_series both call it, so the live counts and the series cannot drift (MIN-4765)."""
+    parent = parent_map(nodes)
+    by_id = {n['identifier']: n for n in nodes}
+    under = set()
+    for r in d['roots']:
+        under |= under_root(nodes, r)
+    counted = {i for i in under if (by_id[i].get('state') or {}).get('type') not in ('canceled', 'duplicate', 'backlog')}
+    parents = {parent[i] for i in counted if i in parent}
+    return counted - parents
+
+
+def build_done_series(nodes, cfg, hand_milestones, now, since):
+    """doneSeries (MIN-4765, CTO call on MIN-4764): cumulative done counts per 15-minute bucket, same buckets as tokens.series, for the replay page.
+    Counts only: whole numbers, no issue id and no title leave this function. Built with bucketize from completedAt (startedAt, then the window
+    start, when Linear sent none, so the last value still equals the live count), over the same filters as tasks.done (is_done), the milestone
+    counts (milestone_id) and build_directions (direction_leaves). completedAt after `now` counts at `now`; before `since` counts in bucket 1."""
+    def series(items):
+        pts = []
+        for n in items:
+            stamp = n.get('completedAt') or n.get('startedAt')
+            pts.append((min(parse(stamp), now) if stamp else since, 1))
+        pts.sort(key=lambda x: x[0])
+        return [int(x) for x in bucketize(pts, since, now, SERIES_STEP_MIN)]
+    done = [n for n in nodes if is_done(n)]
+    by_id = {n['identifier']: n for n in nodes}
+    return {
+        'seriesFrom': iso(since), 'stepMin': SERIES_STEP_MIN,
+        'total': series(done),
+        'byMilestone': {m['id']: series([n for n in done if milestone_id(n) == m['id']]) for m in hand_milestones},
+        'byDirection': {str(d['n']): series([by_id[i] for i in direction_leaves(nodes, d) if is_done(by_id[i])]) for d in direction_roots(cfg)},
+    }
+
+
 def build_directions(nodes, cfg, now, freeze):
     """[{n, title, status, note, updatedAt}] for the five directions (CTO decision, MIN-4561). Every issue under a direction's roots (root included),
     leaves only (an umbrella parent is not one more open item), canceled, duplicate and backlog left out. Each counted issue is exactly one of
     done, blocked, in progress (state type started, In Review included) or open. Numbers only: no issue id and no title leaves this function."""
-    parent = parent_map(nodes)
     by_id = {n['identifier']: n for n in nodes}
     out = []
     for d in direction_roots(cfg):
-        under = set()
-        for r in d['roots']:
-            under |= under_root(nodes, r)
-        counted = {i for i in under if (by_id[i].get('state') or {}).get('type') not in ('canceled', 'duplicate', 'backlog')}
-        parents = {parent[i] for i in counted if i in parent}
         done = blocked = prog = 0
         total = 0
-        for i in counted - parents:                                   # leaves
+        for i in direction_leaves(nodes, d):                          # leaves
             n = by_id[i]
             stype = (n.get('state') or {}).get('type')
             total += 1
-            if stype == 'completed':
+            if is_done(n):
                 done += 1
             elif blockers_of(n):
                 blocked += 1
@@ -1167,6 +1207,13 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
             last = ((state.get('linear') or {}).get('data') or {}).get('directions')
             if last:
                 data['directions'] = last
+        try:                                           # doneSeries (MIN-4765): same rule, the last good value stays when this pass cannot compute it
+            data['doneSeries'] = build_done_series(nodes, cfg, meta.get('milestonesMeta', hand['milestones']), now, since)
+        except Exception as ex:
+            data['_warning'] = '; '.join(w for w in (data.get('_warning'), 'doneSeries not computed: %s' % ex) if w)
+            last = ((state.get('linear') or {}).get('data') or {}).get('doneSeries')
+            if last:
+                data['doneSeries'] = last
         return data
     run_block(state, 'linear', linear, now)
 
@@ -1195,6 +1242,8 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
             snap['forecast'] = lin['forecast']
         if lin.get('directions'):
             snap['directions'] = lin['directions']
+        if lin.get('doneSeries'):
+            snap['doneSeries'] = lin['doneSeries']
     elif h:
         snap['milestones'] = h.get('milestonesMeta', [])
     if h.get('current'):

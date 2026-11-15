@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the exact folder that is uploaded to the Cloudflare Pages project `healthapp-dashboard`
-# (MIN-4459). Only Direction A (the dashboard base since MIN-4530) and what it loads. Never the dev
+# (MIN-4459). Only Direction A (the dashboard base since MIN-4530), the replay page (MIN-4766) and what they load. Never the dev
 # fixtures (they hold real Linear titles and spend), never Directions B and C or the picker page.
 #
 #   dashboard/pages-bundle.sh <out-dir>
@@ -20,7 +20,7 @@ esac
 
 rm -rf "$OUT"
 mkdir -p "$OUT"
-cp -R "$SRC/direction-A" "$SRC/shared" "$SRC/fonts" "$OUT/"
+cp -R "$SRC/direction-A" "$SRC/replay" "$SRC/shared" "$SRC/fonts" "$OUT/"
 cp "$SRC/_headers" "$SRC/robots.txt" "$OUT/"
 
 # Public bundle, view key as the only gate (CTO decisions on MIN-4458, 14 and 15 Nov 2026): the sample data, the deck text and every
@@ -96,9 +96,23 @@ cat > "$OUT/index.html" <<'HTML'
 HTML
 
 fail=0
-# The bundle ships Direction A and nothing else (MIN-4530): B, C and the picker stay in the repo, not on Pages.
-[ -f "$OUT/direction-A/index.html" ] || { echo "direction-A is missing from the upload set" >&2; fail=1; }
-if [ -e "$OUT/direction-B" ] || [ -e "$OUT/direction-C" ]; then echo "a direction other than A is in the upload set" >&2; fail=1; fi
+# The top level of the upload folder is an allow-list (MIN-4766, CTO call on MIN-4764): Direction A, the replay page and what they load.
+# B, C, the picker page and every dev file stay in the repo, not on Pages. Anything else, hidden files included, fails.
+ALLOWED=" direction-A replay shared fonts _headers robots.txt index.html sample-data.js "
+for e in "$OUT"/* "$OUT"/.[!.]*; do
+  [ -e "$e" ] || continue
+  n="$(basename "$e")"
+  case "$ALLOWED" in *" $n "*) ;; *) echo "$n is not in the allow-list of the upload folder's top level" >&2; fail=1 ;; esac
+done
+for n in $ALLOWED; do [ -e "$OUT/$n" ] || { echo "$n is missing from the upload set" >&2; fail=1; }; done
+[ -f "$OUT/direction-A/index.html" ] || { echo "direction-A/index.html is missing from the upload set" >&2; fail=1; }
+# No issue id in the replay page (the dashboard pages carry none).
+if [ -d "$OUT/replay" ] && grep -rnE 'MIN-[0-9]' "$OUT/replay" >&2; then echo "issue id in replay/" >&2; fail=1; fi
+# The replay page loads Direction A's script and styles as they are, so it holds three files and no copy of a.js or a.css.
+[ -f "$OUT/replay/index.html" ] || { echo "replay/index.html is missing from the upload set" >&2; fail=1; }
+if [ -d "$OUT/replay" ] && [ "$(find "$OUT/replay" -type f | sed "s#^$OUT/replay/##" | sort | grep -vxE 'index\.html|replay\.js|replay\.css' | wc -l | tr -d ' ')" != 0 ]; then
+  echo "replay/ holds more than index.html, replay.js and replay.css" >&2; fail=1
+fi
 if find "$OUT" \( -name 'dev-snapshot.json' -o -path '*/dev/*' -o -name 'snapshot.example.json' \) | grep -q .; then
   echo "dev fixture in the upload set" >&2; fail=1
 fi
@@ -147,7 +161,9 @@ if [ ! -f "$f" ]; then echo "shared/sim-data.js is missing" >&2; fail=1; else
 fi
 # The deck link is one constant, and the Demo tab is gone.
 if ! grep -qF 'https://healthapp-landing.pages.dev/deck/' "$OUT/shared/common.js"; then echo "deck URL missing from shared/common.js" >&2; fail=1; fi
-if grep -qF '#/demo' "$OUT/direction-A/index.html"; then echo "the Demo tab is still in direction-A/index.html" >&2; fail=1; fi
+for f in "$OUT/direction-A/index.html" "$OUT/replay/index.html"; do
+  if grep -qF '#/demo' "$f"; then echo "the Demo tab is still in $f" >&2; fail=1; fi
+done
 # No issue id in common.js outside comments (stricter than "in a string literal": code counts too).
 if perl -0777 -pe 's{/\*.*?\*/}{}gs; s{^\s*//[^\n]*}{}gm' "$OUT/shared/common.js" | grep -nE 'MIN-[0-9]' >&2; then
   echo "issue id in shared/common.js outside a comment" >&2; fail=1
