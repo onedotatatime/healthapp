@@ -110,7 +110,7 @@ Linear (sign-in needed): [MIN-4445](https://linear.app/minhos/issue/MIN-4445) (b
 | `e2e/` | Smoke spec, the PR gate. |
 | `e2e-live/` | Specs against a deployed URL (default: the synthetic `staging-dev` twin). |
 | `scripts/` | Static checks, nightly guard and reporter, live function checks, seeds. |
-| `docs/` | PRD, deploy (`docs/deploy.md`), nightly (`docs/nightly.md`), design, deck, lean room, submission. |
+| `docs/` | PRD, deploy (`docs/deploy.md`), nightly (`docs/nightly.md`), design, deck, lean room. |
 | `data/` | Synthetic cohorts and simulation outputs. Synthetic only. |
 | `visuals/` | Standalone HTML visual studies. |
 | `tests/` | Synthetic-data tests. |
