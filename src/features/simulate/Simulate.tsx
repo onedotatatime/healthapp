@@ -5,23 +5,34 @@
  * No Supabase, no Edge Function, no RPC, no Gemini, no network call: the data is one file in this chunk.
  */
 import { Flask } from '@phosphor-icons/react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router';
 import runJson from '../../../data/synthetic/run-5000.json';
+import { COPY as MATCHES_COPY } from '../matches/copy';
 import { COPY } from './copy';
 import { DotCanvas, colorOfGroup, type Stage } from './DotCanvas';
 import { findMatches, parseRun, type MatchOutcome, type RecordDetail, type RunFile, type VmBlock } from './matcher';
 import { codeLabel, countryName, formatRunTime, formatValue, groupName, vmOffsets } from './format';
+import { SM_CARD_AT, SM_CONTACT_STEP_MS, SM_RINGS_AT, barFraction, stepAt } from './motion';
 import './simulate.css';
 
 type Phase = 'idle' | 'machine' | 'dots' | 'matching' | 'done';
-const STEP_MS = 900;
-const STAGES: Stage[] = ['all', 'all', 'opted', 'share', 'exact', 'shown']; // index = steps revealed
+const STAGES: Stage[] = ['all', 'all', 'opted', 'share', 'exact', 'exact']; // index = steps revealed; the rings (stage 'shown') come after step 5
 const nf = (n: number) => n.toLocaleString('en-US');
 const prefersReduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export default function Simulate() {
-  const run = useMemo(() => parseRun(runJson), []);
+  const run = useMemo(() => { try { return parseRun(runJson); } catch { return null; } }, []);
+  if (!run) {
+    // Data error: the page label stays, one card says it. The sentence is the existing one from the matches panel (no new copy until Anna's runError).
+    return (
+      <main className="page doctor sm" data-testid="doctor-simulate">
+        <p className="sm-label" data-testid="sim-page-label"><Flask size={18} aria-hidden="true" />{COPY.pageLabel}</p>
+        <h1>{COPY.title}</h1>
+        <section className="sm-card"><p role="alert" data-testid="sim-run-error">{MATCHES_COPY.panelError}</p></section>
+      </main>
+    );
+  }
   return <SimulateView run={run} />;
 }
 
@@ -32,10 +43,37 @@ export function SimulateView({ run }: { run: RunFile }) {
   const [outcome, setOutcome] = useState<MatchOutcome | null>(null);
   const [runId, setRunId] = useState(0);
   const [reduced, setReduced] = useState(false);
+  const [rings, setRings] = useState(false);
+  const main = useRef<HTMLElement>(null);
+  const labelRef = useRef<HTMLParagraphElement>(null);
+  const recordsRef = useRef<HTMLElement>(null);
+  const clickScroll = useRef(0);
   const timers = useRef<number[]>([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); };
   useEffect(() => clear, []);
+
+  // The strip sticks under the page label, which wraps to one or two lines: its height is measured, not guessed.
+  useEffect(() => {
+    const el = labelRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const set = () => main.current?.style.setProperty('--label-h', `${el.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Spec B3 step 2: on the dots phase the records come to just under the label, only if the page was not scrolled since the click.
+  useEffect(() => {
+    if (phase !== 'dots' || reduced || Math.abs(window.scrollY - clickScroll.current) > 2) return;
+    const el = recordsRef.current;
+    if (!el || typeof window.scrollTo !== 'function') return;
+    // The strip is the anchor, not the card top: with it just under the label, the strip and the whole canvas are in one viewport.
+    const anchor = el.querySelector('.sm-strip') ?? el;
+    const top = anchor.getBoundingClientRect().top + window.scrollY - (labelRef.current?.offsetHeight ?? 0);
+    window.scrollTo({ top, behavior: 'smooth' });
+  }, [phase, reduced]);
 
   const start = () => {
     clear();
@@ -44,6 +82,8 @@ export function SimulateView({ run }: { run: RunFile }) {
     setOutcome(findMatches(run)); // the matching runs here, at the click
     setRunId((n) => n + 1);
     setStep(0);
+    setRings(false);
+    clickScroll.current = window.scrollY;
     const vm = run.vm;
     if (vm && !red) {
       setVmIdx(-1);
@@ -61,19 +101,23 @@ export function SimulateView({ run }: { run: RunFile }) {
     setPhase('matching');
     if (prefersReduced()) {
       setStep(5);
+      setRings(true);
       setPhase('done');
       return;
     }
-    for (let s = 1; s <= 5; s++) later(() => { setStep(s); if (s === 5) setPhase('done'); }, s * STEP_MS);
+    // Spec B3 steps 4 to 10, ms after the dots finished filling in: five narrowings 1,500 apart, then the rings, then the matches card.
+    for (let s = 1; s <= 5; s++) later(() => setStep(s), stepAt(s));
+    later(() => setRings(true), SM_RINGS_AT);
+    later(() => setPhase('done'), SM_CARD_AT);
   }, []);
 
-  const stage = STAGES[step];
+  const stage: Stage = rings ? 'shown' : STAGES[step];
   const started = phase !== 'idle';
   const showDots = phase === 'dots' || phase === 'matching' || phase === 'done';
 
   return (
-    <main className="page doctor sm" data-testid="doctor-simulate">
-      <p className="sm-label" data-testid="sim-page-label"><Flask size={18} aria-hidden="true" />{COPY.pageLabel}</p>
+    <main ref={main} className="page doctor sm" data-testid="doctor-simulate">
+      <p ref={labelRef} className="sm-label" data-testid="sim-page-label"><Flask size={18} aria-hidden="true" />{COPY.pageLabel}</p>
       <h1>{COPY.title}</h1>
       <p className="sm-intro">{COPY.intro}</p>
       <p>
@@ -85,9 +129,10 @@ export function SimulateView({ run }: { run: RunFile }) {
       {started && <MachineCard vm={run.vm} vmIdx={vmIdx} />}
 
       {showDots && outcome && (
-        <section className="sm-card" aria-labelledby="sm-h2" data-testid="sim-records">
+        <section ref={recordsRef} className="sm-card" aria-labelledby="sm-h2" data-testid="sim-records">
           <h2 id="sm-h2"><b>2</b> {COPY.recordsTitle}</h2>
           <p className="muted">{COPY.recordsBody}</p>
+          <Strip run={run} outcome={outcome} step={step} />
           <DotCanvas key={runId} run={run} stage={stage} reveal={showDots} reduced={reduced} shareRows={outcome.shareRows} matched={outcome.matched} onRevealed={revealed} />
           <ul className="sm-legend" aria-label="Seeded groups">
             {run.groups.map((g) => (
@@ -133,15 +178,32 @@ function MachineCard({ vm, vmIdx }: { vm: VmBlock | null; vmIdx: number }) {
   );
 }
 
-function MatchingCard({ run, outcome, step }: { run: RunFile; outcome: MatchOutcome; step: number }) {
+function matchingSteps(run: RunFile, outcome: MatchOutcome): [string, string][] {
   const f = outcome.funnel;
-  const steps: [string, string][] = [
+  return [
     [COPY.stepFeatures, run.persona.codes.map(codeLabel).join(', ')],
     [COPY.stepOptIn, COPY.optedIn(nf(f.opted_in), nf(run.n))],
     [COPY.stepShared, COPY.shared(f.share_min, run.persona.codes.length)],
     [COPY.stepExact, COPY.exact(f.exact)],
     [COPY.stepK, f.exact >= run.k ? COPY.kShown(f.exact) : COPY.kHidden(f.exact)],
   ];
+}
+
+/** Under the records card's text: the sentence of the step that just ran and a bar of how many records are still bright. A mirror of the matching card, so aria-hidden. */
+function Strip({ run, outcome, step }: { run: RunFile; outcome: MatchOutcome; step: number }) {
+  const steps = matchingSteps(run, outcome);
+  const [title, text] = steps[Math.max(step, 1) - 1];
+  const pct = barFraction(step, run.n, outcome.funnel) * 100;
+  return (
+    <div className="sm-strip" data-on={step >= 1} aria-hidden="true" data-testid="sim-strip">
+      <p key={step} className="sm-strip-text" data-testid="sim-strip-text">{step <= 1 ? `${title}: ${text}` : text}</p>
+      <div className="sm-bar"><i style={{ width: `${pct}%` }} data-testid="sim-strip-bar" /></div>
+    </div>
+  );
+}
+
+function MatchingCard({ run, outcome, step }: { run: RunFile; outcome: MatchOutcome; step: number }) {
+  const steps = matchingSteps(run, outcome);
   return (
     <section className="sm-card" aria-labelledby="sm-h3" data-testid="sim-matching">
       <h2 id="sm-h3"><b>3</b> {COPY.matchingTitle}</h2>
@@ -165,14 +227,14 @@ function Matches({ run, outcome }: { run: RunFile; outcome: MatchOutcome }) {
     <section className="sm-card" aria-labelledby="sm-h4" data-testid="sim-matches">
       <h2 id="sm-h4"><b>4</b> {COPY.matchesTitle}</h2>
       {outcome.match_count === 0 ? (
-        <p className="sm-big" data-testid="sim-empty">{COPY.empty}</p>
+        <p className="sm-big sm-enter" data-testid="sim-empty">{COPY.empty}</p>
       ) : (
         <>
-          <p className="sm-big" data-testid="sim-count-line">{COPY.matchLine(outcome.match_count)}</p>
+          <p className="sm-big sm-enter" data-testid="sim-count-line">{COPY.matchLine(outcome.match_count)}</p>
           {outcome.groups.map((g) => (
             <div key={g.pattern.join()} className="sm-group">
               <p className="sm-kicker">{COPY.patternLabel}</p>
-              <ul className="sm-chips">{g.pattern.map((c) => <li key={c} className="sm-chip">{codeLabel(c)}</li>)}</ul>
+              <ul className="sm-chips">{g.pattern.map((c) => <li key={c} className="sm-chip sm-enter" style={{ '--i': g.pattern.indexOf(c) } as CSSProperties}>{codeLabel(c)}</li>)}</ul>
               <p className="sm-kicker">{COPY.countriesLabel}</p>
               <ul className="sm-chips">{g.countries.map((c) => <li key={c} className="sm-chip plain">{countryName(c)}</li>)}</ul>
             </div>
@@ -183,7 +245,7 @@ function Matches({ run, outcome }: { run: RunFile; outcome: MatchOutcome }) {
           <p className="muted sm-small">{COPY.contactNote}</p>
           <ul className="sm-cards">
             {outcome.matched.map((row, k) => (
-              <MatchCard key={row} n={k + 1} country={run.records[row][0]} detail={run.detail[String(row)]} />
+              <MatchCard key={row} i={k} n={k + 1} country={run.records[row][0]} detail={run.detail[String(row)]} />
             ))}
           </ul>
         </>
@@ -196,18 +258,18 @@ function Matches({ run, outcome }: { run: RunFile; outcome: MatchOutcome }) {
 }
 
 /** Before consent: pattern (above) and country only. The four simulated steps run on timers; nothing is stored or sent. */
-function MatchCard({ n, country, detail }: { n: number; country: string; detail?: RecordDetail }) {
+function MatchCard({ i, n, country, detail }: { i: number; n: number; country: string; detail?: RecordDetail }) {
   const [at, setAt] = useState(0); // 0 not asked, 1..4 = the step reached
   const timers = useRef<number[]>([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const ask = () => {
     if (prefersReduced()) return setAt(4);
     setAt(1);
-    [2, 3, 4].forEach((s, i) => timers.current.push(window.setTimeout(() => setAt(s), (i + 1) * STEP_MS)));
+    [2, 3, 4].forEach((s, i) => timers.current.push(window.setTimeout(() => setAt(s), (i + 1) * SM_CONTACT_STEP_MS)));
   };
   const name = countryName(country);
   return (
-    <li className="sm-match" data-testid={`sim-card-${n}`} data-unlocked={at === 4}>
+    <li className="sm-match sm-enter" style={{ '--i': Math.min(i, 3) } as CSSProperties} data-testid={`sim-card-${n}`} data-unlocked={at === 4}>
       <h4>{COPY.cardTitle(n)}</h4>
       <p><span className="muted">{COPY.cardCountry}</span> <strong>{name}</strong></p>
       {at === 0 && (
