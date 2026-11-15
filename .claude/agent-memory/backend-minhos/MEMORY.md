@@ -15,3 +15,7 @@
 - [healthapp matches replay](project_healthapp_matches_replay.md) — MIN-4649 CTE-folding timeout, 018/019, throwaway PG18 recipe, calls-count proof
 - [Seeds through the connector](feedback_seed_through_connector.md) — one execute_sql call, compact DO block, self-check fingerprint, live-body guard, rollback file, replay via psql -c
 - [Diagnoses function (MIN-4662)](project_healthapp_diagnoses_fn.md) — guard design, choices beyond spec, deno scratch-copy and Write-block traps, vacuous contract test
+- [healthapp matches RPC](project_healthapp_matches_rpc.md) — 005-007, RPC shapes, profiles column-grant trap, hash-proved applies, raise-to-rollback tests
+- [healthapp one-off deletes](project_healthapp_oneoff_deletes.md) — MIN-4629 two gate stops (scope mismatch; whole-account gates race a live user), FK/trigger pre-flight
+- [healthapp identity name-only A](project_healthapp_identity_name_only_a.md) — MIN-4630 A branch pushed; local deno/check:static traps
+- [healthapp local migration job](project_healthapp_local_migration_job.md) — PGlite + socket for 017-style checks and real pgstore SQL, no docker; one-connection trap

@@ -15,8 +15,7 @@ Possible matches live in `supabase/sql/005_matches.sql` (RPCs), `006_seed_match_
 - `profiles` is column-granted since 010 (MIN-4484): `matching_opt_in` is readable by no client role, on purpose
   (a doctor in a grant must not learn the flag). Anything the patient needs from a hidden column goes through a
   security-definer getter (`healthapp_get_matches_opt_in`), never a wider column grant.
-- No DB URL on this Mac: SQL reaches dev/demo only through the Supabase connector's `execute_sql` (psql exists at
-  /opt/homebrew/opt/postgresql@18/bin, for throwaway replays: see [[project-healthapp-matches-replay]]).
+- No psql and no DB URL on this Mac: SQL reaches conductor only through the Supabase connector's `execute_sql`.
   Prove a transcribed apply with hashes, not by eye: `md5(prosrc)` per function vs the file's `$$` bodies, and
   `md5(string_agg(...))` over a seeded table vs the same serialisation computed in Python from the source JSON.
 - To test a path and leave nothing behind, run it in a `do` block that ends with `raise exception '<result>'`:
@@ -33,3 +32,14 @@ Possible matches live in `supabase/sql/005_matches.sql` (RPCs), `006_seed_match_
   from a plpgsql loop with a variable argument, or the timing reads 0 ms.
 - Dev is shared: another chat may hold an active doctor/Maria grant (unique grants_open_pair_idx); test grants go in
   with `on conflict do nothing` inside a block that ends in raise exception.
+- 017 apply (MIN-4640, 2026-11-15): hosted conductor is Postgres 17.6 (local replays ran 18.3). For a DROP+ADD of a CHECK
+  through execute_sql, first count the rows the new check would refuse (counts only, demo included) and re-count on demo
+  just before its apply; then read back `md5(pg_get_constraintdef)` per schema, dev and demo must match. Source the files
+  with `git archive <sha> scripts/hdb supabase/sql | tar -x` into the scratchpad, never the shared worktree.
+- 019 apply (MIN-4649, 2026-11-15): a 49 KB one-statement DO block (base-62 payload) goes through ONE execute_sql call;
+  dev and demo both passed the in-block fingerprint first try. Read the render in three `sed -n` chunks (<30k chars each,
+  Bash truncates above that) and copy verbatim; the self-check makes a slip harmless. ~13 min, ~85k output tokens for two
+  sends. Dev smoke at 5,000: synthetic Maria 267 records in 7 groups, 92 ms. SQL trap: `like '01[89]%'` is literal (no
+  character classes), it matched nothing; use `in (...)` or `~`.
+- A `linear-as` call with its output sent to /dev/null and `; true` hides a failed write: never silence it, check exit,
+  and read the issue back (a typo'd variable wrote nothing and looked like success).
