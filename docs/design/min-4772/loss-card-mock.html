@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MIN-4772 /simulation loss card: mock</title>
+<!-- MOCK ONLY (spec A16 in docs/design/simulations-motion-spec.md). EVERY NUMBER IS A PLACEHOLDER: Greece uses the coordinator's figures (spend EUR 19.87 bn, 11%, -9.2% at 100%, ceiling -20%); Europe and Global spend and patient counts, the match rate (41%) and the diagnoses rate (2.4% of patients) are typed here to show the shape. The app reads every value from the generator output (MIN-4769) and types none. Strings are placeholders for Anna (MIN-4770).
+     Query: ?g=greece|europe|global (default greece) ; ?s=<0..100> share in the network (default 0) ; ?ceiling=1 shows the model-ceiling line (CEO seat rules, MIN-4771) ; ?income=1 shows the optional income row (CEO seat). Nothing animates. -->
+<link rel="stylesheet" href="../../brand/tokens.css">
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<style>
+html,body{margin:0}body{font:var(--text-doctor-body);color:var(--color-text);background:var(--color-bg)}
+.mock-banner{margin:0;padding:8px 16px;background:var(--peach);color:#12201F;font:600 14px/1.3 var(--font)}
+.sim-label{position:sticky;top:0;z-index:5;margin:0;padding:10px 16px;background:var(--color-info);color:#fff;font:600 16px/1.4 var(--font);text-align:center}
+.wrap{max-width:1120px;margin:var(--space-4) auto;padding:0 var(--space-4)}
+.hero-stub{margin:0 0 var(--space-4);height:56px;border:1px dashed var(--color-border-strong);border-radius:var(--radius-card);display:flex;align-items:center;justify-content:center;color:var(--color-muted);font:var(--text-label);text-align:center;padding:0 var(--space-3)}
+.lc{margin:0;padding:var(--space-3) var(--space-4) var(--space-4);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft)}
+@media (min-width:900px){.lc{padding:var(--space-4) var(--space-5) var(--space-5)}}
+.lc h2{margin:0 0 var(--space-3);font:var(--text-lead);color:var(--color-text)}
+/* the switch */
+.sw{margin:0 0 var(--space-3);padding:0;border:0;min-width:0}.sw legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.sw .seg{display:flex;max-width:480px}
+.sw input{position:absolute;opacity:0;width:1px;height:1px}
+.sw label{flex:1 1 0;display:flex;align-items:center;justify-content:center;min-height:var(--target-min);padding:0 var(--space-3);box-sizing:border-box;border:1px solid var(--color-border-strong);margin-left:-1px;background:var(--color-surface);color:var(--color-text);font:var(--text-label);font-size:16px;font-weight:600;cursor:pointer;text-align:center}
+.sw label:first-of-type{margin-left:0;border-radius:var(--radius-sm) 0 0 var(--radius-sm)}.sw label:last-of-type{border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.sw input:checked+label{background:var(--color-link);border-color:var(--color-link);color:#fff;position:relative;z-index:1}
+.sw input:focus-visible+label{outline:var(--focus-ring);outline-offset:var(--focus-offset);position:relative;z-index:2}
+/* grid */
+.main{display:grid;gap:var(--space-2);grid-template-areas:"money" "ctlbox" "key" "box" "list"}
+.a-plot{display:contents}.key{grid-area:key}.svgbox{grid-area:box}.ctlbox{grid-area:ctlbox}
+@media (min-width:900px){.a-plot{display:block}.main{grid-template-columns:minmax(0,1fr) 320px;column-gap:var(--space-5);row-gap:var(--space-3);grid-template-areas:"plot money" "plot list";grid-template-rows:auto 1fr}}
+.a-plot{grid-area:plot;min-width:0}.a-money{grid-area:money}.a-list{grid-area:list}
+/* the loss block */
+.hero{margin:0;padding:var(--space-2) var(--space-4) var(--space-3);background:var(--color-surface-quiet);border-radius:var(--radius-sm);border:1px solid var(--color-border-strong)}
+.hero .hn{display:flex;align-items:center;gap:var(--space-2);font:var(--text-label);font-size:16px;color:var(--color-text)}
+.hero .hv{margin:var(--space-1) 0 0;font:600 36px/1.15 var(--font);color:var(--color-text);font-variant-numeric:tabular-nums}
+@media (min-width:900px){.hero .hv{font-size:40px}.hero .hh{display:block}}
+.hero .hv small,.hero .lw small{font:var(--text-label);font-size:16px;color:var(--color-muted);font-weight:400}
+.hero .hk{margin:0;font:var(--text-label);color:var(--color-muted)}
+.hero .low{margin:var(--space-2) 0 0;padding-top:var(--space-2);border-top:1px solid var(--color-border-strong)}
+.hero .lw{margin:0;font:600 28px/1.2 var(--font);color:var(--color-text);font-variant-numeric:tabular-nums}
+@media (min-width:900px){.hero .lw{font-size:32px}}
+.hero .hh{display:none;margin:var(--space-1) 0 0;font:400 14px/1.35 var(--font);color:var(--color-muted)}
+.ro-list{margin:var(--space-2) 0 0;padding:0;list-style:none;border-top:1px solid var(--color-border)}
+@media (min-width:900px){.ro-list{margin-top:0}}
+.ro{padding:var(--space-2) 0;border-bottom:1px solid var(--color-border)}
+.ro .t{display:flex;justify-content:space-between;align-items:center;gap:var(--space-2);min-height:44px}
+.ro .n{font:var(--text-label);color:var(--color-text)}.ro .k{display:block;font:var(--text-label);color:var(--color-muted)}
+.ro .v{font:var(--text-h2);color:var(--color-text);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+.ro .bar{height:8px;border-radius:var(--radius-pill);background:var(--color-border);overflow:hidden;margin-top:2px}.ro .bar i{display:block;height:100%;background:var(--color-flag-text)}
+.ro .h{margin:4px 0 0;font:400 14px/1.4 var(--font);color:var(--color-muted)}
+.ro.plan .n{display:flex;align-items:center;gap:var(--space-2)}
+/* plot */
+.key{display:flex;flex-wrap:wrap;gap:4px var(--space-4);margin:0 0 var(--space-2);padding:0;list-style:none;font:400 14px/1.3 var(--font);color:var(--color-text)}
+.key li{display:flex;align-items:center;gap:var(--space-2)}
+.svgbox{position:relative}.svgbox svg{display:block;overflow:visible}
+.svgbox svg text{font:400 12px var(--font);fill:var(--color-muted)}.svgbox svg text.pl{font-weight:600;fill:var(--color-text)}
+.svgbox .axis,.svgbox .tick{stroke:var(--color-border-strong);stroke-width:1}
+.svgbox .grid{stroke:var(--color-border);stroke-width:1}.svgbox .gridtop{stroke:var(--color-border-strong);stroke-width:1;stroke-dasharray:2 3}
+.svgbox .line{fill:none;stroke-linejoin:round;stroke-linecap:butt}
+.svgbox .cur{stroke:var(--color-text);stroke-width:1.5}
+.svgbox .shape{stroke:var(--color-surface);stroke-width:2}
+.ctl{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin:var(--space-1) 0 0;min-height:28px}
+.ctl label{font:var(--text-label);font-size:16px;color:var(--color-text)}
+.pc{font:600 16px/1.2 var(--font);color:var(--color-text);font-variant-numeric:tabular-nums;white-space:nowrap}
+.state{margin:var(--space-1) 0 0;min-height:26px;display:flex;align-items:center;font:var(--text-label);color:var(--color-muted)}
+input[type=range]{display:block;height:44px;margin:0;padding:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:var(--radius-pill);background:var(--color-border-strong)}
+input[type=range]::-moz-range-track{height:8px;border-radius:var(--radius-pill);background:var(--color-border-strong)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;margin-top:-12px;border-radius:50%;background:var(--color-link);border:3px solid var(--color-surface);box-shadow:0 0 0 1.5px var(--color-link)}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--color-link);border:3px solid var(--color-surface);box-shadow:0 0 0 1.5px var(--color-link)}
+input[type=range]:focus-visible{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{outline:var(--focus-ring);outline-offset:var(--focus-offset)}
+input[type=range]:focus-visible::-moz-range-thumb{outline:var(--focus-ring);outline-offset:var(--focus-offset)}
+.notes{margin:var(--space-3) 0 0}
+.notes p{margin:var(--space-2) 0 0;max-width:70ch;font:var(--text-doctor-body);color:var(--color-text)}.notes p.m{color:var(--color-muted)}
+.lc details{margin-top:var(--space-3)}.lc summary{min-height:var(--target-min);display:flex;align-items:center;font:var(--text-label);font-size:16px;color:var(--color-link);cursor:pointer}
+.tw{overflow-x:auto}.lc table{width:100%;border-collapse:collapse;font:var(--text-doctor-body)}.lc th,.lc td{padding:var(--space-2);text-align:right;border-top:1px solid var(--color-border);font-weight:400;white-space:nowrap}.lc th:first-child,.lc td:first-child{text-align:left}.lc thead th,.lc caption{font:var(--text-label);color:var(--color-muted)}.lc caption{text-align:left;padding:0 0 var(--space-1)}
+@media (max-width:480px){.lc table{font-size:14px}.lc th,.lc td{padding:var(--space-2) 4px}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style></head><body>
+<p class="mock-banner">MOCK (MIN-4772). PLACEHOLDER NUMBERS AND WORDS: Greece follows the coordinator's figures; Europe and Global spend and patients, the match rate and the diagnoses rate are typed. Not a result.</p>
+<p class="sim-label">Simulation on synthetic data. A model, not a measurement</p>
+<div class="wrap">
+<p class="hero-stub">Page head and the rest of /simulation stay as they are; the plan-month slider card is gone</p>
+<section class="lc" id="lc" aria-labelledby="lc-h" aria-describedby="lc-desc" data-testid="sim-loss-card">
+<h2 id="lc-h">The money a health system loses to wrong or missed diagnoses</h2>
+<fieldset class="sw"><legend>Where</legend><div class="seg" id="sw"></div></fieldset>
+<p class="sr" id="lc-desc"></p>
+<div class="main">
+ <div class="a-money"><div class="hero" id="hero"></div></div>
+ <div class="a-plot"><ul class="key" id="key"></ul><div class="svgbox" id="box"><svg id="svg" aria-hidden="true" focusable="false"></svg></div>
+  <div class="ctlbox"><div class="ctl"><label for="sh" id="shl">Share of patients in the network</label><span class="pc" id="pct"></span></div>
+  <input type="range" id="sh" min="0" max="100" step="1" value="0">
+  <p class="state" id="state"></p></div></div>
+ <div class="a-list"><ul class="ro-list" id="list"></ul></div>
+</div>
+<div class="notes" id="notes"></div>
+<details><summary>Show the values</summary><div class="tw" tabindex="0" role="region" aria-label="Values by share"><table><caption id="tcap"></caption><thead><tr><th>Share in the network</th><th>Loss a year</th><th>Lowered by</th><th>Records with a match</th><th>Correct diagnoses gained</th></tr></thead><tbody id="tb"></tbody></table></div></details>
+</section></div>
+<script>
+/* PLACEHOLDER DATA (see the comment at the top). */
+const Q=new URLSearchParams(location.search),CEIL=Q.get('ceiling')==='1',INC=Q.get('income')==='1';
+const PLAN_PATIENTS=91205,SHARE_LOSS=.11,DROP100=.092,CEIL100=.20,MATCH=.41,DXR=.024;
+const GEO={
+ greece:{sw:'Greece',who:'Greece',loses:'Greece loses',of:'Greece',spend:19.87e9,patients:10.13e6,spendSrc:'Eurostat 2024'},
+ europe:{sw:'Europe',who:'Europe (EU-27)',loses:'Europe (EU-27) loses',of:'Europe',spend:1.7e12,patients:449e6,spendSrc:'placeholder'},
+ global:{sw:'Global',who:'the world',loses:'The world loses',of:'the world',spend:9.5e12,patients:8.1e9,spendSrc:'placeholder'}};
+let gk=GEO[Q.get('g')]?Q.get('g'):'greece';
+const $=id=>document.getElementById(id);
+const sig=v=>String(Number(v.toPrecision(3)));
+const eur=v=>v<1e3?'€'+Math.round(v):v<1e6?'€'+Math.round(v/1e3)+'k':v<1e9?'€'+sig(v/1e6)+' million':v<1e12?'€'+sig(v/1e9)+' billion':'€'+sig(v/1e12)+' trillion';
+const eurS=v=>v===0?'€0':v<1e6?'€'+Math.round(v/1e3)+'k':v<1e9?'€'+sig(v/1e6)+' m':v<1e12?'€'+sig(v/1e9)+' bn':'€'+sig(v/1e12)+' tn';
+const cnt=v=>v<1e6?Math.round(v).toLocaleString('en'):v<1e9?sig(v/1e6)+' million':sig(v/1e9)+' billion';
+const pct=p=>p===0?'0%':(p<10?Number(p.toPrecision(1)):Math.round(p))+'%';
+const M='−';
+function geo(){const g=GEO[gk];g.loss0=g.spend*SHARE_LOSS;g.planShare=PLAN_PATIENTS/g.patients*100;return g}
+const lossAt=(g,s)=>g.loss0*(1-DROP100*s/100), ceilAt=(g,s)=>g.loss0*(1-CEIL100*s/100);
+const matchAt=(g,s)=>g.patients*s/100*MATCH, dxAt=(g,s)=>g.patients*s/100*DXR;
+const rng=$('sh'),svg=$('svg'),box=$('box');
+rng.value=Math.min(100,Math.max(0,Math.round(+Q.get('s')||0)));
+/* switch */
+$('sw').innerHTML=Object.keys(GEO).map(k=>`<input type="radio" name="geo" id="g-${k}" value="${k}"${k===gk?' checked':''}><label for="g-${k}">${GEO[k].sw}</label>`).join('');
+$('sw').addEventListener('change',e=>{gk=e.target.value;render()});
+const gl=(kind,w)=>{const c={model:'var(--color-flag-text)',plan:'var(--color-info)'}[kind],d={model:'6 4',plan:'12 4 2 4'}[kind];return `<svg width="30" height="14" viewBox="0 0 30 14" aria-hidden="true" focusable="false"><line x1="0" y1="7" x2="30" y2="7" stroke="${c}" stroke-width="${w||3}" stroke-dasharray="${d}"/></svg>`};
+const swatch=`<svg width="24" height="14" viewBox="0 0 24 14" aria-hidden="true" focusable="false"><rect x="0.5" y="0.5" width="23" height="13" rx="2" style="fill:var(--color-caution-bg);stroke:var(--color-flag-text)"/></svg>`;
+function render(){
+ const g=geo(),stop=+rng.value,s=(g.planShare>=.5&&stop===Math.round(g.planShare))?g.planShare:stop,W=box.clientWidth||334,wide=innerWidth>=900;
+ const T=34,H=wide?320:200,B=58,Lx=wide?64:68,R=16,Ht=T+H+B,pw=W-Lx-R;
+ const x=p=>Lx+p/100*pw,yy=f=>T+H*(1-f);
+ const loss=lossAt(g,s),lowered=g.loss0-loss,fr=l=>l/g.loss0;
+ /* key */
+ $('key').innerHTML=`<li>${gl('model',4)}<span>Loss a year, in the model</span></li><li>${swatch}<span>Lowered by</span></li><li>${gl('plan')}<span>Our plan, year 10</span></li>`+(CEIL?`<li><svg width="30" height="14" aria-hidden="true"><line x1="0" y1="7" x2="30" y2="7" stroke="var(--color-flag-text)" stroke-width="1.5" stroke-dasharray="2 3"/></svg><span>Model ceiling</span></li>`:'');
+ /* plot */
+ let o='';const pts=[];for(let i=0;i<=100;i+=1)pts.push([x(i),yy(fr(lossAt(g,i)))]);
+ const cur=[x(s),yy(fr(loss))];
+ o+=`<polygon points="${pts.slice(0,Math.floor(s)+1).map(p=>p.join(',')).join(' ')} ${cur[0]},${cur[1]} ${x(s)},${yy(1)} ${x(0)},${yy(1)}" fill="var(--color-caution-bg)"/>`;
+ for(const p of [0,25,50,75,100])o+=`<line class="grid" x1="${x(p)}" x2="${x(p)}" y1="${T}" y2="${T+H}"/>`;
+ o+=`<line class="gridtop" x1="${Lx}" x2="${W-R}" y1="${yy(1)}" y2="${yy(1)}"/><line class="grid" x1="${Lx}" x2="${W-R}" y1="${yy(.5)}" y2="${yy(.5)}"/><line class="axis" x1="${Lx}" x2="${W-R}" y1="${yy(0)}" y2="${yy(0)}"/>`;
+ o+=`<text x="${Lx-(wide?6:14)}" y="${yy(0)+4}" text-anchor="end">€0</text><text x="${Lx-(wide?6:14)}" y="${yy(.5)+4}" text-anchor="end">${eurS(g.loss0/2)}</text><text x="${Lx-(wide?6:14)}" y="${yy(1)+4}" text-anchor="end">${eurS(g.loss0)}</text>`;
+ for(const p of [0,25,50,75,100])o+=`<line class="tick" x1="${x(p)}" x2="${x(p)}" y1="${yy(0)}" y2="${yy(0)+4}"/><text x="${x(p)}" y="${yy(0)+19}" text-anchor="${p===0?'start':p===100?'end':'middle'}">${p}%</text>`;
+ o+=`<text x="${(Lx+W-R)/2}" y="${yy(0)+40}" text-anchor="middle">Share of ${g.of}'s patients in the network</text>`;
+ if(CEIL)o+=`<line x1="${x(0)}" y1="${yy(1)}" x2="${x(100)}" y2="${yy(fr(ceilAt(g,100)))}" stroke="var(--color-flag-text)" stroke-width="1.5" stroke-dasharray="2 3"/>`;
+ o+=`<polyline class="line" points="${pts.map(p=>p.join(',')).join(' ')}" stroke="var(--color-flag-text)" stroke-width="4" stroke-dasharray="6 4"/>`;
+ /* plan marker, on the axis, label in the top strip; x is the true share (near 0 on Europe and Global) */
+ const xp=x(g.planShare),right=xp+170>W;
+ o+=`<line x1="${xp}" x2="${xp}" y1="${T-6}" y2="${yy(0)}" stroke="var(--color-info)" stroke-width="2" stroke-dasharray="12 4 2 4"/>`;
+ o+=`<rect class="shape" x="${xp-6}" y="${yy(0)-6}" width="12" height="12" fill="var(--color-info)"/>`;
+ o+=`<text class="pl" x="${xp+(right?-8:8)}" y="${T-12}" text-anchor="${right?'end':'start'}">Our plan, year 10: ${pct(g.planShare)}</text>`;
+ /* current share */
+ o+=`<line class="cur" x1="${x(s)}" x2="${x(s)}" y1="${yy(1)}" y2="${yy(0)}"/><path class="shape" d="M${cur[0]} ${cur[1]-9.5}L${cur[0]+9.5} ${cur[1]}L${cur[0]} ${cur[1]+9.5}L${cur[0]-9.5} ${cur[1]}Z" fill="var(--color-flag-text)"/>`;
+ svg.setAttribute('width',W);svg.setAttribute('height',Ht);svg.setAttribute('viewBox',`0 0 ${W} ${Ht}`);svg.innerHTML=o;
+ if(wide){rng.style.marginLeft=(Lx-16)+'px';rng.style.width=(pw+32)+'px'}else{rng.style.marginLeft='';rng.style.width='100%'}
+ $('pct').textContent=pct(s)+' of '+g.of;
+ $('shl').textContent=wide?'Share of patients in the network':'Share in the network';
+ /* hero */
+ const lowPct=(lowered/g.loss0*100);
+ $('hero').innerHTML=`<p class="hn">${gl('model',4)}<span>${g.loses}</span></p><p class="hv">${eur(loss)} <small>a year</small></p><p class="hk">Model</p>`
+  +`<div class="low"><p class="hn">Lowered by</p><p class="lw">${s===0?'€0':M+eur(lowered)} <small>${s===0?'':'('+M+Number(lowPct.toFixed(lowPct<10?1:0))+'%)'}</small></p><p class="hk">Model</p></div>`
+  +`<p class="hh">What ${g.who==='the world'?'the world':g.who} would lose a year if ${pct(s)} of its patients were in the network.</p>`;
+ /* rows */
+ const m=matchAt(g,s),d=dxAt(g,s),m1=matchAt(g,100),d1=dxAt(g,100);
+ const row=(n,v,frac,top)=>`<li class="ro"><div class="t"><span><span class="n">${n}</span><span class="k">Model</span></span><span class="v">${v}</span></div><div class="bar" aria-hidden="true"><i style="width:${frac*100}%"></i></div><p class="h">${top}</p></li>`;
+ const pd=g.loss0*DROP100*g.planShare/100;
+ $('list').innerHTML=row('Records with a match',cnt(m),m/m1,'At 100%: '+cnt(m1))+row('Correct diagnoses gained',cnt(d),d/d1,'At 100%: '+cnt(d1))
+  +`<li class="ro plan"><div class="t"><span><span class="n">${gl('plan')}Our plan, year 10</span><span class="k">Plan</span></span><span class="v">${cnt(PLAN_PATIENTS)}</span></div><p class="h">${cnt(PLAN_PATIENTS)} patients is ${pct(g.planShare)} of ${g.of}. At that size the loss falls by ${eur(pd)} a year.</p></li>`
+  +(INC?`<li class="ro"><div class="t"><span><span class="n">Our income, year 10</span><span class="k">Plan</span></span><span class="v">€4.2 million</span></div></li>`:'');
+ /* state line */
+ $('state').textContent=s===0?'Today: nobody in the network, nothing changes':s===g.planShare&&s>=.5?'The size our plan reaches by year 10':s===100?'Every patient in the network, at today’s match rate':'';
+ rng.setAttribute('aria-valuetext',`${pct(s)} of ${g.of}'s patients in the network. The loss falls by ${eur(lowered)} a year.`);
+ $('lc-desc').textContent=`${g.loses} ${eur(loss)} a year with ${pct(s)} of its patients in the network, ${eur(lowered)} less than today. Records with a match ${cnt(m)}, correct diagnoses gained ${cnt(d)}.`;
+ /* notes */
+ $('notes').innerHTML=`<p class="m">The axis starts at €0 and its top is today's loss. The drop is small beside the loss, and the drawing keeps it that way.</p><p>Each wrong or missed diagnosis costs money in repeat tests, wrong treatment and longer stays. We take ${Math.round(SHARE_LOSS*100)}% of health spending as the part lost this way, the OECD's estimate for its countries (placeholder). ${g.who==='Greece'?'Greece':g.who[0].toUpperCase()+g.who.slice(1)} spent ${eur(g.spend)} on health (${g.spendSrc}).</p>`
+  +(gk==='global'?`<p class="m">Global: health systems, records and prices differ widely. We apply the same ${Math.round(SHARE_LOSS*100)}% and the same match effect to all of them, so read the figure as the order of magnitude, not a forecast (placeholder).</p>`:'')
+  +`<p class="m">Source: health spending, ${g.spendSrc}; the rest is our model on synthetic records.</p>`;
+ /* table */
+ $('tcap').textContent=`Every 10% of ${g.of}'s patients, the same figures as the diagram.`;
+ $('tb').innerHTML=[0,10,20,30,40,50,60,70,80,90,100].map(p=>`<tr><td>${p}%</td><td>${eur(lossAt(g,p))}</td><td>${p?M+eur(g.loss0-lossAt(g,p)):'€0'}</td><td>${cnt(matchAt(g,p))}</td><td>${cnt(dxAt(g,p))}</td></tr>`).join('');
+}
+rng.addEventListener('input',render);addEventListener('resize',render);render();
+</script></body></html>
