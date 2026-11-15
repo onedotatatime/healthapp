@@ -1,4 +1,4 @@
-// The /story deck: the founder's own story in six slides, plus beat 4 of slide 3 (#4), the "Did you know" slide 5b and the live simulation slide 5c.
+// The /story deck: the founder's own story in six slides, plus beat 4 of slide 3 (#4), the emergency slide 4b, the "Did you know" slide 5b and the live simulation slide 5c.
 // The words are copied from docs/story/story-deck-content.md (v1, Marketing); the layout is docs/story/layout-spec.md (Design).
 // Frames and their addresses: ./story/config.ts (STORY_FRAMES). Templates: ./story/templates.
 import type { StorySlide } from './story/types';
@@ -48,6 +48,27 @@ export const storySlides: StorySlide[] = [
       { frame: 'doctor' },
       { frame: 'patient' },
     ],
+  },
+  {
+    // After the Brazil "what if" (#4, the second beat of slide 3): the emergency "what if". Its own slide, no iframe, so the frames of 3 and 4 stay mounted untouched.
+    id: '4b', template: 'story-emergency', theme: 'night', notes: N['4b'],
+    headline: "And what if I'm in a jungle in Brazil, and I have a serious accident?",
+    steps: [
+      { text: 'I make the emergency call from my phone.' },
+      { text: 'Alongside it, Pathien sends the rescue team a link to my folder.', small: 'For a set time, and logged.' },
+      { text: 'The team coming to rescue me can open my history.' },
+    ],
+    badge: 'Soon on the App Store',
+    background: { src: '/story/emergency-rainforest.webp' },
+    phone: {
+      callTitle: 'Emergency call', callStatus: 'In progress · 00:42', app: 'Pathien',
+      title: 'Sharing my folder with emergency services', link: 'pathien.app/e/7K2Q…',
+      active: 'Link active', expires: 'Expires in 59:12', logged: 'Access logged',
+    },
+    tablet: {
+      top: 'Emergency services', live: 'Live', title: "Lefteris's folder: opened by emergency services",
+      folder: 'Blood tests', folderMeta: '2018-2026 · 14 exams', opened: 'Opened 00:51 · logged',
+    },
   },
   {
     id: '5', template: 'story-live', variant: 'solo', theme: 'air', notes: N['5'], hotFromBeat: 0,

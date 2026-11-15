@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Lockup, typo } from '../util';
 import { readMode, type FrameId } from './config';
 import type { StorySlide } from './types';
+import { StoryEmergency } from './templates/StoryEmergency';
 import { StoryClose } from './templates/StoryClose';
 import { StoryIntro } from './templates/StoryIntro';
 import { StoryLive } from './templates/StoryLive';
@@ -16,7 +17,7 @@ const beatsOf = (s: StorySlide) => (s.template === 'story-live' ? s.beats.length
 const notesOf = (s: StorySlide, beat: number) => (s.template === 'story-live' ? s.beats[beat].notes : s.notes);
 const framesOf = (s: StorySlide): FrameId[] => (s.template === 'story-live' ? s.frames.map((f) => f.frame) : []);
 
-// Every stop of the deck is a slide or a beat of a slide, and has a hash id: #1 #2 #3 #4 #5 #5b #5c #6.
+// Every stop of the deck is a slide or a beat of a slide, and has a hash id: #1 #2 #3 #4 #4b #5 #5b #5c #6.
 // #3 and #4 are the two beats of slide 3 (same frames, so the iframes never remount); a beat with no id of its own is the slide id + "b".
 // #3b was a beat of its own until it merged into #3; old links to it still land on #3.
 const HASH_ALIAS: Record<string, string> = { '3b': '3' };
@@ -35,7 +36,7 @@ const hashOf = (s: StorySlide, beat: number) => `#${beatId(s, beat)}`;
 
 export function StoryDeck({ slides }: { slides: StorySlide[] }) {
   const n = slides.length;
-  // "n / 6" counts the numbered stops (1 2 3 4 5 6); 5b and 5c show their own id.
+  // "n / 6" counts the numbered stops (1 2 3 4 5 6); 4b, 5b and 5c show their own id.
   const total = useMemo(() => slides.reduce((c, s) => c + Array.from({ length: beatsOf(s) }, (_, b) => beatId(s, b)).filter((id) => /^\d+$/.test(id)).length, 0), [slides]);
   const mode = useMemo(() => readMode(), []);
   const pinned = new URLSearchParams(window.location.search).has('scale1');
@@ -219,6 +220,7 @@ function StorySlideView({ s, i, index, beat, ctx }: { s: StorySlide; i: number; 
       {s.template === 'story-intro' && <StoryIntro s={s} />}
       {s.template === 'story-memoir' && <StoryMemoir s={s} />}
       {s.template === 'story-live' && <StoryLive s={s} beat={beat} ctx={ctx} />}
+      {s.template === 'story-emergency' && <StoryEmergency s={s} />}
       {s.template === 'story-numbers' && <StoryNumbers s={s} current={current} />}
       {s.template === 'story-close' && <StoryClose s={s} />}
     </section>
