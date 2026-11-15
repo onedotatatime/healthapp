@@ -2,7 +2,7 @@ import type { StoryCloseSlide } from '../types';
 import { Lockup, typo } from '../../util';
 import { ri } from './shared';
 
-/** Slide 6: the invitation. Big two-line headline, the contact block, five link buttons, the lockup. */
+/** Slide 6: the invitation. Big two-line headline, the contact block, six link buttons, the lockup. */
 export function StoryClose({ s }: { s: StoryCloseSlide }) {
   return (
     <div className="ts-close">

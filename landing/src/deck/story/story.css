@@ -137,12 +137,12 @@
 .sc-name{margin:0;font-size:36px;line-height:44px;font-weight:700;color:#fff}
 .sc-line{margin:0;font-size:28px;line-height:36px;color:var(--faint)}
 .sc-lockup{position:absolute;left:120px;top:860px;width:300px}
-.sc-links{position:absolute;left:1150px;top:170px;width:650px;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:20px}
-.sc-link{display:flex;flex-direction:column;justify-content:center;gap:2px;height:116px;box-sizing:border-box;padding:0 36px;border-radius:32px;background:var(--mint);color:var(--night);text-decoration:none;box-shadow:var(--sh);transition:transform var(--dur-fast) var(--ease-out)}
+.sc-links{position:absolute;left:1150px;top:150px;width:650px;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:16px}
+.sc-link{display:flex;flex-direction:column;justify-content:center;gap:2px;height:104px;box-sizing:border-box;padding:0 36px;border-radius:32px;background:var(--mint);color:var(--night);text-decoration:none;box-shadow:var(--sh);transition:transform var(--dur-fast) var(--ease-out)}
 .sc-link:hover,.sc-link:focus-visible{transform:translateY(-2px)}
 .sc-link:active{transform:scale(.98)}
 .sc-link:focus-visible{outline:4px solid #fff;outline-offset:4px}
-.sc-link-label{font-size:40px;line-height:46px;font-weight:700;letter-spacing:-.01em}
+.sc-link-label{font-size:38px;line-height:44px;font-weight:700;letter-spacing:-.01em}
 .sc-link-url{font-size:22px;line-height:26px;font-weight:500;opacity:.8}
 
 /* ---- print: every slide, no pill ---- */
