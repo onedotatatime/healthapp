@@ -35,91 +35,86 @@ export const COPY = {
   optInError: 'Your choice was not saved. It is unchanged. Try again.',
   optInReadError: 'Could not read your choice just now.',
 
-  // The simulation screen (Anna, section 3)
+  // The simulation page: one diagram with a plan-month slider (MIN-4749; spec A15; words: docs/simulation-copy.md section 9, Anna MIN-4723 comment 9e14b7f0).
+  // No number is typed here: years, months, counts, euros, points and the geography come from the data as arguments.
   simLabel: 'Simulation on synthetic data. A model, not a measurement', // fixed by the CTO, never rewritten
-  simTitle: 'What matching could change',
-  simCaption:
-    '30 seconds on seeded synthetic records. Watch matches grow as the network grows, and what a stated assumption would mean for wrong or missed diagnoses and what they cost.',
+  simUnavailable: 'The simulation data could not be read.',
   // Section 6 of docs/simulation-copy.md (Anna, MIN-4604; approved by the CEO seat on MIN-4605). Every number is filled from the data file.
   simAssumption: (a: { start: string; ceiling: string }) =>
     `Assumption, not a finding: each match lowers the chance of a wrong or missed diagnosis by ${a.start}, rising to ${a.ceiling} as matches accumulate.`,
-  simMatchesSoFar: 'Matches so far:',
-  simEffectOfMatch: 'Assumed effect of a match:',
-  simKicker: 'Modelled drop so far',
-  simUnitYear: 'a year',
-  simPerInhabitant: (a: { amount: string }) => `${a.amount} per inhabitant a year`,
-  simOutcome: (a: { amount: string; geography: string; year: number }) =>
-    `In this model, the cost of wrong or missed diagnoses is ${a.amount} a year lower for ${a.geography}, on ${a.year} spending.`,
-  simFormula: (a: { drop: string; total: string; geography: string; year: number; amount: string }) =>
-    `${a.drop} points of health spending × ${a.total} (${a.geography}, ${a.year}) = ${a.amount} a year`,
-  simSourceLead: 'Health spending total:',
-  simSourceLink: (a: { geography: string; year: number }) => `Eurostat, current health expenditure, ${a.geography}, ${a.year}`,
-  simSourcesPrefix: 'Baselines:',
-  simDropped: 'Series not shown: no solid source.',
-  simReplay: 'Play again',
-  // Spec A12 (MIN-4680), words by Anna (MIN-4683). A dot counts as one record; where it sits and which dots turn teal are not identity.
-  simFieldLabel: (a: { matched: number; visible: number }) =>
-    `Match field: ${a.matched.toLocaleString('en-US')} of ${a.visible.toLocaleString('en-US')} synthetic records have a match`,
-  simFieldCaption:
-    'One dot, one synthetic record. Teal is a match; position says nothing about who it is.',
-  // The timeline: one plot, five lines, animated (MIN-4724, spec A14). Final strings: docs/simulation-copy.md section 8.1 (Anna, MIN-4723), the keys as she lists them.
-  // No number is typed here: months, counts, euros, points, the price and the geography come from the data as arguments.
-  tlTitle: 'As patients join, the other numbers grow with them',
-  tlCaption: (a: { first: number; last: number }) =>
-    `Plan months ${a.first} to ${a.last}, on synthetic records. In this model, as patients join, the records with a match, the modelled drop in cost, the fewer wrong or missed diagnoses and our planned income grow along with them.`,
-  tlTie: (a: { amount: string; geography: string }) =>
-    `The ${a.amount} a year above applies this same model to all ${a.geography} health spending. This chart counts only the patients in the network, so its figures are far smaller.`,
-  // The axis sentences: always on screen, never behind a tap (CEO seat condition 11). The reader compares heights only inside a unit.
-  tlScale: 'Each unit has its own scale: people, euros, diagnoses. Compare heights only inside a unit. Across units, compare how the lines grow.',
-  tlScaleMore: 'Patients and records with a match share one scale. Income and the modelled drop share another. Diagnoses have their own. Every scale starts at zero.',
-  tlScaleTop: 'Top: the largest value in the unit',
-  tlScaleBase: '0',
-  tlMonth: (a: { n: number; last: number }) => `Month ${a.n} of ${a.last}`,
-  tlReplay: 'Replay',
-  tlReplayAria: (a: { first: number }) => `Replay the chart from month ${a.first}`,
-  tlXAxis: 'Plan month',
-  tlBand: 'Free pilot: no patients counted',
-  tlFirstPaid: 'First paid cases',
-  // The short label at a line's head (and in the phone readout), then the full name (the values table), the unit and the kind.
-  tlHead: { patients: 'Patients', matches: 'With a match', income: 'Income, plan', drop: 'Cost drop, model', dx: 'Diagnoses, model' },
-  tlName: {
+  gTitle: { drop: 'What matching could change in Greece, year by year', saved: 'What matching could save Greece, year by year' },
+  gCaption: {
+    drop: (a: { first: number; last: number }) =>
+      `Plan years ${a.first} to ${a.last}, on synthetic records and a plan. Move the slider to see, at any month, how many patients have joined, how many records find a match, how many diagnoses go right instead of wrong or missed, what that is worth in Greek health spending in the model, and our planned income.`,
+    saved: (a: { first: number; last: number }) =>
+      `Plan years ${a.first} to ${a.last}, on synthetic records and a plan. Move the slider to see, at any month, how many patients have joined, how many records find a match, how many diagnoses go right instead of wrong or missed, how much money it could have saved in Greek health spending, in the model, and our planned income.`,
+  },
+  gSliderLabel: 'Plan year',
+  gSliderValue: (a: { year: number; month: number }) => `Year ${a.year}, month ${a.month}`,
+  gSliderAria: (a: { first: number; last: number }) => `Plan year, from ${a.first} to ${a.last}. The numbers below show that point in the plan.`,
+  gHead: {
     patients: 'Patients in the network',
     matches: 'Records with a match',
-    dx: 'Fewer wrong or missed diagnoses',
-    drop: 'Modelled drop in cost',
+    dx: 'Correct diagnoses gained',
+    money: { drop: 'Modelled drop in cost in Greece', saved: 'Money that could be saved in Greece, in the model' },
     income: 'Our income',
   },
-  tlUnit: {
-    patients: 'patients, running total',
-    matches: 'records, running total',
-    income: '€ a year, plan',
-    drop: '€ a year, model',
-    dx: 'a year, model',
+  gTag: { plan: 'Plan', model: 'Model', computed: 'Computed on synthetic records' },
+  // The suffix under a value. "a year" is the yearly basis (a year at that month's network size); the total basis says "in total".
+  gSuffix: {
+    yearly: { money: 'a year', income: 'a year, plan', dx: 'a year, in the model' },
+    total: { money: 'in total since the start', income: 'in total since the start, plan', dx: 'in total since the start, in the model' },
   },
-  tlTag: { plan: 'Plan', model: 'Model', computed: 'Computed on synthetic records' },
-  // Anna's tlVal.eur and tlVal.dx are "{amount} a year": the value and the suffix are two elements here so the suffix can be small, and this is the suffix.
-  tlPerYear: 'a year',
-  tlAssumeDx: 'Assumption: one visit per patient a year.',
-  tlRampPerCase: (a: { price: string; from: number; to: number }) =>
-    `Assumption: each paid case is one new patient in the network, at ${a.price} a case. Months ${a.from} to ${a.to} are a free pilot with no patients counted. Doctor-seat fees are income, not patients.`,
-  tlIncomePlan: 'Income: our plan, not a measurement. Every price and volume is an assumption.',
-  // `geography` is `euro.geography` of the file; with no euro block the sentence says nothing about a geography rather than a wrong one.
-  tlEuroNote: (a: { price: string; perPatient: string; last: number; geography?: string }) =>
-    `Each case is paid once, at ${a.price}. The modelled drop is a yearly figure for the patients in the network (${a.perPatient} per patient a year at month ${a.last}). In this model it counts only the direct cost of wrong or missed diagnoses, on the average spending per inhabitant${a.geography ? ` for ${a.geography}` : ''}.`,
-  tlFormula: (a: { points: string; perInhabitant: string; patients: string; amount: string }) =>
+  gHelp: {
+    dx: { yearly: 'Fewer wrong or missed diagnoses a year, in the model.', total: 'Fewer wrong or missed diagnoses added up since the start, in the model.' },
+    money: (a: { year: number }) => `Cost of wrong or missed diagnoses that the model removes, on ${a.year} spending.`,
+  },
+  // Pending Anna (MIN-4723 asked for these four, Pix's A15 names them; the growth wording is replaced by the CTO's rule on MIN-4744: income is held flat after the plan).
+  gBandPlan: (a: { planYears: number }) => `Plan: years 1 to ${a.planYears}`,
+  gBandAssumed: (a: { planYears: number }) => `After plan year ${a.planYears}: income held flat, not in the plan`,
+  gStatePlan: 'In the plan',
+  gStateAssumed: 'After the plan: income held flat',
+  gAxisTitle: 'Plan year',
+  // The scale sentences (docs/simulation-copy.md section 8) and, for the euro-only plot, one sentence of its own (pending Anna).
+  gScale: 'Each unit has its own scale: people, euros, diagnoses. Compare heights only inside a unit. Across units, compare how the lines grow.',
+  gScaleMore: 'Patients and records with a match share one scale. Income and the modelled drop share another. Diagnoses have their own. Every scale starts at zero.',
+  gScaleEuro: 'The plot shows euros only, on one scale that starts at zero. Patients, records with a match and diagnoses are in the list.',
+  gScaleTop: 'Top: the largest value in the unit',
+  gFact: (a: { total: string; year: number; perInhabitant: string; geography: string }) =>
+    `For scale: ${a.geography} spent ${a.total} on health in ${a.year}, ${a.perInhabitant} for each inhabitant.`,
+  gAssumeVisits: 'Assumption: one visit per patient a year.',
+  gAssumeShare: (a: { share: string }) =>
+    `The cost share is an OECD model estimate for a typical OECD country, about ${a.share} of health spending. It is not a Greek measurement.`,
+  // The CTO's one line under the diagram (MIN-4744 section 1), word for word, with the numbers from the file.
+  gPlateau: (a: { records: string; month: number; planYears: number }) =>
+    `Past ${a.records} records (month ${a.month}) the matches and their effect are held at the ${a.records}-record values; past year ${a.planYears} the plan's revenue is held flat.`,
+  // The CEO seat's strings (MIN-4746 comment 88b0c07c, conditions 12 and 15), word for word.
+  gIncomePlan: (a: { planYears: number }) => `Income: our plan to year ${a.planYears}, then held flat. Not a forecast.`,
+  gAssumeStay: 'Assumption: no patient leaves the network, and the effect applies every year.',
+  // The running totals under the yearly figures (CEO ruling 4, CTO fix A). Money keeps the drop wording whatever DIAGRAM.money is: "saved" is never put on a total.
+  gTotal: {
+    money: (a: { value: string; first: number }) => `${a.value} added up since month ${a.first}, in the model`,
+    dx: (a: { value: string; first: number }) => `${a.value} added up since month ${a.first}, in the model`,
+    income: (a: { value: string; first: number }) => `${a.value} added up since month ${a.first}, plan`,
+  },
+  gBase: (a: { geography: string; year: number; perInhabitant: string; total: string }) =>
+    `Spending base: ${a.geography}, ${a.year}, ${a.perInhabitant} per inhabitant, ${a.total} a year in all.`,
+  gFormula: (a: { points: string; perInhabitant: string; patients: string; amount: string }) =>
     `${a.points} points × ${a.perInhabitant} × ${a.patients} patients = ${a.amount} a year`,
-  tlShowValues: 'Show the values',
-  tlColMeasure: 'Measure',
-  tlColMonth: (month: number) => `Month ${month}`,
-  tlTableCaption: (a: { first: number; second: number }) => `Plan months ${a.first} and ${a.second}, the same figures as the chart.`,
-  // The text alternative, filled from the data. Every money and diagnoses figure is "a year" (CEO seat condition 10: no running total on screen or in the aria text).
-  tlDescLead: (a: { first: number; last: number; lines: number }) =>
-    `One chart with ${({ 3: 'three', 4: 'four', 5: 'five' } as Record<number, string>)[a.lines] ?? a.lines} lines, plan months ${a.first} to ${a.last}, synthetic model. Each unit has its own scale, so heights are compared only inside a unit.`,
-  tlDescPatients: (a: { paid: number | null; last: number; n: string }) =>
-    a.paid === null ? `Patients in the network: ${a.n} at month ${a.last}.` : `Patients in the network: none until month ${a.paid}, ${a.n} at month ${a.last}.`,
-  tlDescMatches: (a: { n: string; last: number }) => `Records with a match: ${a.n} at month ${a.last}.`,
-  tlDescDx: (a: { n: string }) => `Modelled fewer wrong or missed diagnoses: ${a.n} a year.`,
-  tlDescDrop: (a: { amount: string }) => `Modelled drop in cost: ${a.amount} a year.`,
-  tlDescIncome: (a: { amount: string }) => `Planned income: ${a.amount} a year, plan.`,
-  tlDescClose: 'A model and a plan, not a measurement.',
+  gSourceLead: 'Health spending:',
+  gBaselines: 'Baselines applied:',
+  gShowValues: 'Show the values',
+  gTableCaption: 'Every plan year, at its last month, the same figures as the diagram.',
+  gColYear: 'Plan year',
+  gColPatients: 'Patients',
+  gColMatches: 'With a match',
+  gColDx: { yearly: 'Diagnoses a year', total: 'Diagnoses in total' },
+  gColMoney: { drop: { yearly: 'Modelled drop a year', total: 'Modelled drop in total' }, saved: { yearly: 'Could be saved a year, in the model', total: 'Modelled drop in total' } },
+  gColIncome: { yearly: 'Income a year', total: 'Income in total' },
+  gColDxTotal: 'Diagnoses added up',
+  gColMoneyTotal: 'Modelled drop added up',
+  gColIncomeTotal: 'Income added up',
+  gTableAfter: '(income held flat)',
+  gDesc: (a: { year: number; month: number; patients: string; matches: string; dx: string; moneyHead: string; money: string; income: string; per: string }) =>
+    `One diagram, plan year ${a.year}, month ${a.month}, synthetic model. Patients: ${a.patients}. Records with a match: ${a.matches}. Correct diagnoses gained: ${a.dx} ${a.per}, in the model. ${a.moneyHead}: ${a.money} ${a.per}. Our income: ${a.income} ${a.per}, plan. A model and a plan, not a measurement.`,
 } as const;

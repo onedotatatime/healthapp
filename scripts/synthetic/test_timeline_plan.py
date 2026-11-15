@@ -1,4 +1,4 @@
-"""Plan-side checks on the timeline block of simulation.json (MIN-4701, CTO decision MIN-4699 comment 8b038e47; round 2: per-case ramp and the yearly income run rate, CEO seat MIN-4698). No matching, under 1 s.
+"""Plan-side checks on the timeline block of simulation.json (MIN-4701, CTO decision MIN-4699 comment 8b038e47; round 2: per-case ramp and the yearly income run rate, CEO seat MIN-4698). The ten_years block (MIN-4748, CTO decision MIN-4744) is checked the same way in section 4. No matching, under 1 s.
 Runs in the PR `static` job: a change to the plan's conservative line (docs/business/funding_plan.py) turns the PR red until simulate.py is rerun.
 It recomputes patients, income_eur and income_run_rate_eur from the plan with its own arithmetic (it does not import simulate.py) and compares them with the JSON.
 Usage: python3 test_timeline_plan.py [data_dir]    (default: ../../data/synthetic). Exit 1 on any failure."""
@@ -87,6 +87,96 @@ if tl is not None:
     check("3 matches.network equals patients; no month has more matches than patients", tl["matches"]["network"] == tl["patients"]["values"]
           and all(c <= p for c, p in zip(tl["matches"]["count"], tl["patients"]["values"])))
     check("3 patients at the last month are not more than cohort_size (%d)" % sim["cohort_size"], tl["patients"]["values"][-1] <= sim["cohort_size"])
+
+# 4. The ten_years block (MIN-4748, CTO decision MIN-4744 comment fee57739): the plan and the matching held to month 120, for Greece. Plan side only: nothing here runs the matching.
+#    Patients, income and the plateau are recomputed from funding_plan and from the file's own 12-step run; months 1 to 24 must equal the timeline block.
+ty = sim.get("ten_years")
+check("4 the ten_years block is in simulation.json (MIN-4748)", ty is not None)
+if ty is not None and tl is not None:
+    TY = 120
+    cons10 = fp.revenue(*fp.CONSERVATIVE, h=TY)
+    check("4 funding_plan.revenue(h=120) is the default revenue() up to month %d, then held flat at month 38 (the plan's rule, no growth)" % fp.H,
+          all(cons10[m] == cons[m] for m in range(1, fp.H + 1)) and all(cons10[m] == cons10[38] for m in range(38, TY + 1)) and len(cons10) == TY)
+    check("4 x is plan months 1..%d and every monthly array has %d values" % (TY, TY),
+          ty["x"]["values"] == list(range(1, TY + 1))
+          and all(len(a) == TY for a in (ty["patients"]["values"], ty["matches"]["values"], ty["diagnoses"]["yearly"]["values"], ty["diagnoses"]["total"]["values"], ty["diagnoses"]["drop_per_100"],
+                                         ty["saved_eur"]["yearly"]["values"], ty["saved_eur"]["total"]["values"], ty["saved_eur"]["drop_pts"],
+                                         ty["income_eur"]["yearly"]["values"], ty["income_eur"]["total"]["values"])))
+    # Patients and income, by this file's own arithmetic.
+    pv10, mv10 = ty["patients"]["values"], ty["matches"]["values"]
+    run_all = run_case = 0.0
+    exp_p, exp_it, exp_iy = [], [], []
+    for m in range(1, TY + 1):
+        run_all += cons10[m]
+        if m >= 9:
+            year = 0 if m <= 14 else 1 if m <= 26 else 2         # plan year 3's share is kept after month 26
+            run_case += cons10[m] * fp.CONSERVATIVE_PER_CASE[year] / fp.CONSERVATIVE[year]
+        exp_it.append(half_up(run_all * 1000))
+        exp_iy.append(half_up(cons10[m] * 12 * 1000))
+        exp_p.append(half_up((run_all if ty["patients"]["ramp"] == "all_revenue" else run_case) * 1000 / fp.PRICE_EUR_PER_CASE))
+    check("4 patients.ramp is the timeline's (%s) and patients.kind is plan" % tl["patients"]["ramp"], ty["patients"]["ramp"] == tl["patients"]["ramp"] and ty["patients"]["kind"] == "plan")
+    check("4 patients equals the plan's ramp to month 120, running total, half-up, EUR %d a case (plan year 3's per-case share kept past month 26)" % fp.PRICE_EUR_PER_CASE, pv10 == exp_p,
+          "json %s... plan %s..." % (pv10[-3:], exp_p[-3:]))
+    check("4 income_eur.total is the plan's running total and income_eur.yearly is the plan's revenue in that month x 12, held flat from month 38 (EUR %d a year)" % exp_iy[-1],
+          ty["income_eur"]["total"]["values"] == exp_it and ty["income_eur"]["yearly"]["values"] == exp_iy and len(set(exp_iy[37:])) == 1)
+    check("4 plan block names the plan, the held rule after year 3 (after_year_3), and is otherwise the timeline's plan",
+          all(ty["plan"].get(k) == v for k, v in tl["plan"].items()) and "held flat at month 38" in ty["plan"].get("after_year_3", ""))
+    # Months 1 to 24 equal the timeline block (CTO, MIN-4744 section 6).
+    K = fp.N
+    check("4 months 1 to %d of patients, matches and income (total and yearly) equal the timeline block" % K,
+          pv10[:K] == tl["patients"]["values"] and mv10[:K] == tl["matches"]["count"] and ty["income_eur"]["total"]["values"][:K] == tl["income_eur"]["values"]
+          and ty["income_eur"]["yearly"]["values"][:K] == tl["income_run_rate_eur"]["values"],
+          "patients %s matches %s" % (pv10[:K] == tl["patients"]["values"], mv10[:K] == tl["matches"]["count"]))
+    check("4 months 1 to %d of drop_pts, drop_per_100 and diagnoses (yearly) equal the timeline block (same matching, same published 2-decimal drops)" % K,
+          ty["saved_eur"]["drop_pts"][:K] == tl["drop_eur"]["drop_pts"] and ty["diagnoses"]["drop_per_100"][:K] == tl["diagnoses"]["drop_per_100"]
+          and ty["diagnoses"]["yearly"]["values"][:K] == tl["diagnoses"]["values"])
+    # Where the real matching stops and the plateau starts: computed from the records we have, not typed.
+    mu = max(m for m in range(1, TY + 1) if pv10[m - 1] <= sim["cohort_size"])
+    pl = ty["plateau"]
+    check("4 measured_until_month (%d) is the last month the network fits the %d synthetic records, and the plateau starts the month after" % (mu, sim["cohort_size"]),
+          ty["measured_until_month"] == mu and pl["from_month"] == mu + 1 and 0 < mu < TY and ty["matches"]["kind_until"] == {"computed": mu, "model": TY}, str((ty["measured_until_month"], pl["from_month"])))
+    p_drop5 = round(5 - sim["series"][1]["values"][-1], 2)       # the published 2-decimal drop per 100 visits at the full network (series 2)
+    check("4 the plateau is the 12-step run's last step: %d records, %d matched, effect %s, drop_pts %s, drop_per_100 %s, and it says so in words" % (
+              sim["cohort_size"], sim["matches"]["count"][-1], sim["assumption"]["effect"][-1], sim["euro"]["drop_pts"][-1], p_drop5),
+          pl["records"] == sim["cohort_size"] and pl["matched"] == sim["matches"]["count"][-1] and pl["effect"] == sim["assumption"]["effect"][-1] == sim["assumption"]["ceiling"]
+          and pl["drop_pts"] == sim["euro"]["drop_pts"][-1] and pl["drop_per_100"] == p_drop5 and len(pl.get("text", "")) > 40 and "held" in pl["text"],
+          str(pl))
+    check("4 matches[m] = half-up(patients[m] x matched / records) from the plateau on (a model); before it never more than patients, never falling",
+          all(mv10[m - 1] == half_up(pv10[m - 1] * pl["matched"] / pl["records"]) for m in range(mu + 1, TY + 1))
+          and all(c <= p for c, p in zip(mv10[:mu], pv10[:mu])) and all(b >= a for a, b in zip(mv10, mv10[1:])), str(mv10[mu - 2:mu + 3]))
+    dp10, dx10 = ty["saved_eur"]["drop_pts"], ty["diagnoses"]["drop_per_100"]
+    check("4 drop_pts and drop_per_100 are held at the plateau values from month %d on and never above the model's ceiling (11 x 0.2 = 2.2 points, 5 x 0.2 = 1 per 100)" % (mu + 1),
+          all(dp10[m - 1] == pl["drop_pts"] and dx10[m - 1] == pl["drop_per_100"] for m in range(mu + 1, TY + 1)) and all(0 <= v <= 2.2 for v in dp10) and all(0 <= v <= 1.0 for v in dx10),
+          str((dp10[mu - 2:mu + 2], dx10[mu - 2:mu + 2])))
+    # Greece's base: Eurostat hlth_sha11_hf EUR_HAB, EL, 2024 (Marketing, MIN-4723 comment 9e14b7f0). Typed here as an independent anchor, as test_simulate.py types 4074.88.
+    sv = ty["saved_eur"]
+    src = sv.get("source", {})
+    check("4 the Greek base is Eurostat's EUR 1,915.30 per inhabitant (EL, 2024), with name, url, query_url, year and the date it was opened; total EUR 19,869.37 million, population 10,375,764",
+          sv["per_inhabitant_eur"] == 1915.30 and src.get("year") == 2024 and all(src.get(k) for k in ("name", "url", "query_url", "opened"))
+          and "geo=EL" in src["query_url"] and "hlth_sha11_hf" in src["query_url"] and "EUR_HAB" in src["query_url"] and ty["geography"] == "Greece"
+          and sv["total_mio_eur"] == 19869.37 and sv["population"] == 10375764, str((sv.get("per_inhabitant_eur"), src)))
+    exp_sy = [half_up(pv10[m] * dp10[m] / 100 * 1915.30) for m in range(TY)]
+    exp_dy = [math.floor(pv10[m] * dx10[m] / 100 * 10 + 0.5) / 10 for m in range(TY)]
+
+    def total12(yearly, scale):                    # half-up(sum of the published yearly values to month m / 12), in integers
+        out, acc = [], 0
+        for v in yearly:
+            acc += v
+            out.append((2 * acc + 12 * scale) // (24 * scale))
+        return out
+    check("4 saved_eur.yearly[m] = half-up(patients x drop_pts / 100 x 1915.30) at every month, and it never exceeds the model's ceiling for those patients (2.2 points)",
+          sv["yearly"]["values"] == exp_sy and all(y <= half_up(p * 2.2 / 100 * 1915.30) for y, p in zip(sv["yearly"]["values"], pv10)), str(sv["yearly"]["values"][-3:]))
+    check("4 diagnoses.yearly[m] = half-up to 1 decimal of patients x drop_per_100 / 100 at every month; one visit per patient a year",
+          ty["diagnoses"]["yearly"]["values"] == exp_dy and "one visit per patient a year" in ty["diagnoses"]["assumption"], str(ty["diagnoses"]["yearly"]["values"][-3:]))
+    check("4 both bases: saved_eur.total and diagnoses.total are half-up(sum of the published yearly values / 12), running totals since month 1; every total never falls",
+          sv["total"]["values"] == total12(exp_sy, 1) and ty["diagnoses"]["total"]["values"] == total12([half_up(v * 10) for v in exp_dy], 10)
+          and all(all(b >= a for a, b in zip(v, v[1:])) for v in (sv["total"]["values"], ty["diagnoses"]["total"]["values"], ty["income_eur"]["total"]["values"], pv10)),
+          str((sv["total"]["values"][-3:], ty["diagnoses"]["total"]["values"][-3:])))
+    lim = half_up(pl["drop_pts"] / 100 * sv["total_mio_eur"] * 1e6)   # the all-Greece limit: drop_pts x Greece's total health spending (CEO seat MIN-4744; CTO review 1a8014d4)
+    check("4 no yearly money value exceeds the all-Greece limit (drop_pts x Greece's total spending, EUR %d), and patients never exceed Greece's population (%d)" % (lim, sv["population"]),
+          max(sv["yearly"]["values"]) <= lim and max(pv10) <= sv["population"], "max saved %d limit %d max patients %d population %d" % (max(sv["yearly"]["values"]), lim, max(pv10), sv["population"]))
+    check("4 every extrapolated value is marked: status on diagnoses, saved_eur and income_eur; the Greek rates caveat; the plateau text",
+          all(ty[k].get("status") for k in ("diagnoses", "saved_eur", "income_eur")) and "not Greek rates" in sv["status"] and "plan" in ty["income_eur"]["status"])
 
 print("\n%s" % ("ALL CHECKS PASSED" if not fails else "%d FAILED: %s" % (len(fails), "; ".join(fails))))
 sys.exit(1 if fails else 0)
