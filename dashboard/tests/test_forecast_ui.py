@@ -3,6 +3,7 @@ Runs common.js in node with the same browser stub as test_flag_rules.py; skipped
 Expected values are written by hand from the shape Cron posted on MIN-4566, never taken from the function."""
 import json
 import pathlib
+import re
 import shutil
 import subprocess
 import unittest
@@ -93,6 +94,25 @@ class ForecastUi(unittest.TestCase):
 
     def test_cut_list_is_empty_unless_off(self):
         self.assertEqual(run(forecast=dict(FC, verdict="risk", cut=[{"id": "MIN-7"}]))["cut"], 0)
+
+
+class ForecastCardPlacement(unittest.TestCase):
+    """MIN-4791: the forecast is its own card, last on the page, not inside the Now card."""
+    A_JS = (ROOT / "docs" / "dashboard" / "drafts" / "direction-A" / "a.js").read_text()
+
+    def test_forecast_box_is_not_inside_now_panel(self):
+        m = re.search(r'<div class="card now-panel".*?</div></div>\'', self.A_JS, re.S)
+        self.assertIsNotNone(m)
+        self.assertNotIn('id="fc"', m.group(0))
+        self.assertIn('id="nowp"', m.group(0))
+        self.assertIn('id="flags"', m.group(0))
+
+    def test_forecast_card_follows_dyn_and_hides_without_a_forecast(self):
+        self.assertLess(self.A_JS.index('id="dyn"'), self.A_JS.index('id="fcCard"'))
+        card = re.search(r'<section class="card fc-card".*?</section>', self.A_JS, re.S).group(0)
+        self.assertIn(" hidden ", card)
+        self.assertIn('id="fc" aria-live="polite"', card)
+        self.assertIn("card.hidden = !f", self.A_JS)
 
 
 if __name__ == "__main__":
