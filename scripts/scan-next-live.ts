@@ -4,7 +4,7 @@
 // like the phone would until nothing is queued or reading. Prints codes, statuses and timings only: no value, no name.
 //
 //   HEALTHAPP_DEMO_PASSCODE=... SUPABASE_ANON_KEY=... \
-//   deno run -A scripts/scan-next-live.ts [--docs 1,2,6,7,8] [--create doc-create-t] [--extract extract-exam-t]
+//   deno run -A scripts/scan-next-live.ts [--docs 1,2,6,7,8,11] [--create doc-create-t] [--extract extract-exam-t]
 //                                          [--list my-exams-t] [--unconfirm unconfirm-doc-t]
 // MIN-4555 addendum: a reading that passes identity ends `confirmed` and `unchecked` (no tap); opening one clears the mark;
 // unconfirm takes it back to `draft`; a doctor cannot unconfirm; the existing confirm saves it again.
@@ -74,7 +74,7 @@ for (const k of kicked) {
   const want = g.expected.outcome === "draft" ? "confirmed" : "refused";
   const good = r?.status === want && (want === "refused" ? r.reason === g.expected.reason : r.unchecked === true);
   if (good) ok++;
-  console.log(`doc ${String(k.n).padStart(2)}  expected ${want}${g.expected.reason ? "/" + g.expected.reason : ""}  got ${r?.status ?? "NOT FINAL"}${r?.reason ? "/" + r.reason : ""}  values_read=${r?.values_read ?? "-"}  unchecked=${r?.unchecked}  can_retry=${r?.can_retry}  ${good ? "ok" : "FAIL"}`);
+  console.log(`doc ${String(k.n).padStart(2)}  expected ${want}${g.expected.reason ? "/" + g.expected.reason : ""}${g.expected.identity ? " (" + g.expected.identity + ")" : ""}  got ${r?.status ?? "NOT FINAL"}${r?.reason ? "/" + r.reason : ""}  values_read=${r?.values_read ?? "-"}  unchecked=${r?.unchecked}  can_retry=${r?.can_retry}  ${good ? "ok" : "FAIL"}`);
 }
 console.log(`${ok}/${kicked.length} reached the expected final status; kicks all 202: ${kicked.every((k) => k.kickStatus === 202)}; slowest kick ${Math.max(...kicked.map((k) => k.kickMs))} ms`);
 console.log(`ids: ${kicked.map((k) => k.id).join(",")}`);

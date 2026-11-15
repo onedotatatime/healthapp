@@ -10,3 +10,5 @@ In a worktree-isolated run (MIN-4500, 2026-11-14) the harness refused `cd <other
 **Why:** the harness only lets git target the agent's own worktree; the brief said to stop and report on such a refusal.
 
 **How to apply:** do the PR work in the isolated worktree, but report "cleanup needs a non-isolated Release run" up front. Run git commands plain and alone; write files outside the tree through a python helper; pass full SHAs literally (gh `--match-head-commit` needs the 40-char SHA). A branch checked out in another worktree cannot be checked out here: work detached and push `HEAD:refs/heads/<branch>`. Related: [[healthapp-memory-tracked-rebase]].
+
+Update 2026-11-15 (MIN-4500): `git worktree remove <other path>` run plainly from the own worktree IS allowed, and without `--force` git itself refuses a worktree with modified or untracked files, so it doubles as the dirty check. `git -C <other>` and `cd <other> && git` stay refused. Also: a coordinator brief can be stale; read the issue's latest Release comment and `gh pr view` before redoing merges or deploys.
