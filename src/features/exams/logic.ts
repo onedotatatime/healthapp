@@ -229,8 +229,20 @@ export function reasonText(reason: string | null): string {
   }
 }
 
+/** A refusal whose photo is kept: the closing "Nothing was saved." / "We didn't save it." becomes the kept-for-14-days sentence (MIN-4638, word for word). */
+export function keptRefusalText(reason: string | null): string {
+  const text = reasonText(reason);
+  const tail = ' so it can be checked again; you can delete it.';
+  const swaps: [string, string][] = [
+    ['Nothing was saved.', `Nothing was saved, and the photo is kept for 14 days${tail}`],
+    ["We didn't save it.", `We didn't save it, and the photo is kept for 14 days${tail}`],
+  ];
+  for (const [from, to] of swaps) if (text.endsWith(from)) return text.slice(0, -from.length) + to;
+  return text;
+}
+
 /** The status table: which chip, what the row opens, which actions it offers. */
-export function rowView(i: Pick<ExamListItem, 'status' | 'reason' | 'can_retry' | 'can_delete' | 'unchecked'>): RowView {
+export function rowView(i: Pick<ExamListItem, 'status' | 'reason' | 'can_retry' | 'can_delete' | 'unchecked'> & { file_kept?: boolean }): RowView {
   const base = { opens: null, reason: null, notChecked: false, retry: false, del: false } as const;
   switch (i.status) {
     case 'queued': return { ...base, chip: 'Waiting', tone: 'neutral' };
@@ -240,8 +252,9 @@ export function rowView(i: Pick<ExamListItem, 'status' | 'reason' | 'can_retry' 
     case 'refused': {
       const identity = !!i.reason && IDENTITY_REASONS.has(i.reason);
       const chip = identity ? 'Not your exam' : i.reason === 'unsupported_kind' ? 'Not an exam' : 'Could not read';
-      // The file is gone after a refusal: Delete only, no Try again.
-      return { ...base, chip, tone: 'caution', reason: reasonText(i.reason), del: i.can_delete };
+      // Try again exactly when the server says can_retry (photo kept, within 14 days, read fewer than 3 times).
+      // file_kept only picks the sentence (MIN-4639).
+      return { ...base, chip, tone: 'caution', reason: i.file_kept ? keptRefusalText(i.reason) : reasonText(i.reason), retry: i.can_retry, del: i.can_delete };
     }
     case 'failed': return { ...base, chip: 'Could not read', tone: 'caution', reason: reasonText(i.reason), retry: i.can_retry, del: i.can_delete };
   }
