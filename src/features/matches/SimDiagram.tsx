@@ -9,7 +9,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { COPY } from './copy';
 import {
   DASH, DIAGRAM, LINES, afterPlan, clampMonth, formatBillions, formatCount, formatDx, formatEuro, formatEuroCents, formatEuroWhole, formatPct, formatPerInhabitant,
-  formatPoints, kindAt, lineValues, monthInYear, plotGeometry, plotted, polylinePoints, readoutAt, unitRefs, yearOf,
+  formatPoints, kindAt, lineValues, monthInYear, plotGeometry, plotted, polylinePoints, readoutAt, totalsAt, unitRefs, yearOf,
   type Basis, type Geometry, type Kind, type LineDef, type LineId, type MoneyWording, type PlotMode, type Shape, type TenYears,
 } from './tenYears';
 
@@ -123,6 +123,8 @@ export function SimDiagram({ model, initialMonth, config = DIAGRAM }: { model: T
   const staticPlot = useMemo(() => <Plot model={model} g={g} basis={basis} mode={plot} />, [model, g, basis, plot]);
 
   const r = readoutAt(model, basis, month);
+  const tot = totalsAt(model, month);
+  const showTotals = basis === 'yearly';
   const year = yearOf(month), inYear = monthInYear(month);
   const after = afterPlan(model, month);
   const cx = g.x(month);
@@ -159,6 +161,7 @@ export function SimDiagram({ model, initialMonth, config = DIAGRAM }: { model: T
             <p className="hv">
               <span data-testid="sim-value-money">{text.money}</span> <small>{suf.money}</small>
             </p>
+            {showTotals && <p className="ht" data-testid="sim-total-money">{COPY.gTotal.money({ value: formatEuro(tot.money), first: 1 })}</p>}
             <p className="hk">{COPY.gTag[kinds.money]}</p>
             <p className="hh">{COPY.gHelp.money({ year: model.spendYear })}</p>
           </div>
@@ -206,6 +209,9 @@ export function SimDiagram({ model, initialMonth, config = DIAGRAM }: { model: T
                   <span data-testid={`sim-value-${l.id}`}>{text[l.id]}</span>
                   {l.id === 'income' || l.id === 'dx' ? <small>{suf[l.id]}</small> : null}
                 </span>
+                {showTotals && (l.id === 'dx' || l.id === 'income') && (
+                  <p className="h ht" data-testid={`sim-total-${l.id}`}>{COPY.gTotal[l.id]({ value: l.id === 'dx' ? formatDx(tot.dx) : formatEuro(tot.income), first: 1 })}</p>
+                )}
                 {l.id === 'dx' && <p className="h">{COPY.gHelp.dx[basis]}</p>}
               </li>
             ))}
@@ -224,9 +230,10 @@ export function SimDiagram({ model, initialMonth, config = DIAGRAM }: { model: T
         <p className="fact" data-testid="sim-fact">{COPY.gFact(spend)}</p>
         <p data-testid="sim-assumption">{COPY.simAssumption({ start: formatPct(model.assumption.start), ceiling: formatPct(model.assumption.ceiling) })}</p>
         <p data-testid="sim-visits">{COPY.gAssumeVisits}</p>
+        <p data-testid="sim-stay">{COPY.gAssumeStay}</p>
         {model.costShare !== undefined && <p data-testid="sim-share">{COPY.gAssumeShare({ share: formatPct(model.costShare) })}</p>}
         <p data-testid="sim-plateau">{COPY.gPlateau({ records: formatCount(model.plateau.records), month: model.plateau.fromMonth, planYears: model.planYears })}</p>
-        <p data-testid="sim-income-plan">{COPY.gIncomePlan}</p>
+        <p data-testid="sim-income-plan">{COPY.gIncomePlan({ planYears: model.planYears })}</p>
         <p data-testid="sim-base">{COPY.gBase({ geography: model.geography, year: model.spendYear, perInhabitant: formatEuroCents(model.perInhabitantEur), total: formatBillions(model.spendTotalMio) })}</p>
         <p className="ff" data-testid="sim-formula">{formula}</p>
         <p className="m" data-testid="sim-sources">
@@ -251,16 +258,19 @@ export function SimDiagram({ model, initialMonth, config = DIAGRAM }: { model: T
               <tr>
                 <th>{COPY.gColYear}</th><th>{COPY.gColPatients}</th><th>{COPY.gColMatches}</th><th>{COPY.gColDx[basis]}</th>
                 <th>{COPY.gColMoney[money][basis]}</th><th>{COPY.gColIncome[basis]}</th>
+                {showTotals && <><th>{COPY.gColDxTotal}</th><th>{COPY.gColMoneyTotal}</th><th>{COPY.gColIncomeTotal}</th></>}
               </tr>
             </thead>
             <tbody>
               {yearEnds.map((m) => {
                 const t = readoutAt(model, basis, m);
+                const tt = totalsAt(model, m);
                 return (
                   <tr key={m} data-testid={`sim-values-row-${yearOf(m)}`}>
                     <td>{yearOf(m)}{afterPlan(model, m) ? ` ${COPY.gTableAfter}` : ''}</td>
                     <td>{formatCount(t.patients)}</td><td>{formatCount(t.matches)}</td><td>{formatDx(t.dx)}</td>
                     <td>{formatEuroWhole(t.money)}</td><td>{formatEuroWhole(t.income)}</td>
+                    {showTotals && <><td>{formatDx(tt.dx)}</td><td>{formatEuroWhole(tt.money)}</td><td>{formatEuroWhole(tt.income)}</td></>}
                   </tr>
                 );
               })}

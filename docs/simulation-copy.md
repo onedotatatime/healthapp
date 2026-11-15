@@ -323,7 +323,7 @@ Source: Anna, MIN-4723 comment 9e14b7f0 (the `g*` table, column M unless marked)
 | `gSliderValue` | Year {year}, month {month} | CTO (aria-valuetext) and Pix; also the `<output>` text |
 | `gSliderAria` | Plan year, from {first} to {last}. The numbers below show that point in the plan. | Anna's text, "that year" became "that point in the plan". **Ren, confirm** |
 | `gHead.patients`, `.matches`, `.dx`, `.income` | Patients in the network, Records with a match, Correct diagnoses gained, Our income | Anna |
-| `gHead.money.drop` / `.saved` | Modelled drop in cost in Greece / Money saved in Greece | Anna; CEO seat picks |
+| `gHead.money.drop` / `.saved` | Modelled drop in cost in Greece / Money that could be saved in Greece, in the model | Anna; CEO seat picks. The `saved` head and column carry "in the model" (CTO fix C, ruling 3: "saved" is never bare) |
 | `gTag.*` | Plan, Model, Computed on synthetic records | Anna. Records with a match reads "Computed on synthetic records" up to `measured_until_month` and "Model" after it (CTO MIN-4744 section 1) |
 | `gSuffix.yearly.*` | a year, plan (income), a year, in the model (diagnoses), a year (money) | Anna |
 | `gSuffix.total.*`, `gHelp.dx.total`, `gCol*.total` | in total since the start, plan / in the model | **Ren, confirm**; used only if the CEO seat picks the running total (`DIAGRAM.basis = 'total'`) |
@@ -335,7 +335,13 @@ Source: Anna, MIN-4723 comment 9e14b7f0 (the `g*` table, column M unless marked)
 | `gScale`, `gScaleMore`, `gScaleTop` | the three sentences of 8.1 (`tlScale`, `tlScaleMore`, `tlScaleTop`), unchanged | Anna |
 | `gScaleEuro` | The plot shows euros only, on one scale that starts at zero. Patients, records with a match and diagnoses are in the list. | **Ren, confirm**; used only if the CTO picks the euro-only plot (`DIAGRAM.plot = 'euro'`) |
 | `gFact` | For scale: {geography} spent {total} on health in {year}, {perInhabitant} for each inhabitant. | Anna's recommended A; it replaces the EU-27 figure |
-| `gAssumeVisits`, `gIncomePlan`, `simAssumption` | the existing lines (6.3, `tlAssumeDx`, `tlIncomePlan`) | unchanged |
+| `gAssumeVisits`, `simAssumption` | the existing lines (6.3, `tlAssumeDx`) | unchanged |
+| `gIncomePlan` | Income: our plan to year {planYears}, then held flat. Not a forecast. | CEO seat, MIN-4746 comment 88b0c07c (condition 12); replaces "Income: our plan, not a measurement. Every price and volume is an assumption." Anna confirms after staging (MIN-4745) |
+| `gAssumeStay` (NEW) | Assumption: no patient leaves the network, and the effect applies every year. | CEO seat, same comment (condition 15); sits next to `gAssumeVisits`, visible without a tap |
+| `gTotal.money` / `.dx` | {value} added up since month {first}, in the model | CEO ruling 4, CTO fix A. Under the money, diagnoses figures; read from `ten_years.*.total.values`. Money keeps this wording when `DIAGRAM.money = 'saved'` ("saved" is never put on a total). Not shown when `DIAGRAM.basis = 'total'` |
+| `gTotal.income` | {value} added up since month {first}, plan | as above |
+| `gColDxTotal`, `gColMoneyTotal`, `gColIncomeTotal` | Diagnoses added up, Modelled drop added up, Income added up | CTO fix A: the three total columns of the values table |
+| `gColMoney.saved` | Could be saved a year, in the model / Modelled drop in total | CTO fix C; the bare "Saved a year" / "Saved in total" are gone |
 | `gAssumeShare` | The cost share is an OECD model estimate for a typical OECD country, about {share} of health spending. It is not a Greek measurement. | Anna. `{share}` is read from the file's formula for series 3 |
 | `gPlateau` | Past {records} records (month {month}) the matches and their effect are held at the {records}-record values; past year {planYears} the plan's revenue is held flat. | CTO, MIN-4744 section 1, word for word |
 | `gBase`, `gFormula` | Spending base: {geography}, {year}, {perInhabitant} per inhabitant, {total} a year in all. / {points} points × {perInhabitant} × {patients} patients = {amount} a year | Anna. The formula is always the yearly figure at the slider's month |

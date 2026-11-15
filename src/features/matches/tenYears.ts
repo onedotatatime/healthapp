@@ -19,7 +19,7 @@ export type MoneyWording = 'drop' | 'saved';
  *  - `basis`: 'yearly' is "a year at that month's network size"; 'total' is the running total since month 1. One basis for all three flows.
  *  - `money`: 'drop' is "Modelled drop in cost in Greece" (the standing rule); 'saved' is the founder's word.
  */
-export const DIAGRAM: { plot: PlotMode; basis: Basis; money: MoneyWording } = { plot: 'five', basis: 'yearly', money: 'drop' };
+export const DIAGRAM: { plot: PlotMode; basis: Basis; money: MoneyWording } = { plot: 'euro', basis: 'yearly', money: 'drop' };
 
 export type Kind = 'plan' | 'model' | 'computed';
 export type LineId = 'money' | 'income' | 'patients' | 'matches' | 'dx';
@@ -197,6 +197,12 @@ export function readoutAt(m: TenYears, basis: Basis, month: number): Readout {
   const v = lineValues(m, basis);
   const i = clampMonth(month, m.months) - 1;
   return { money: v.money[i], income: v.income[i], patients: v.patients[i], matches: v.matches[i], dx: v.dx[i] };
+}
+
+/** The running totals since month 1, read from the file's `total` blocks (CEO ruling 4). */
+export function totalsAt(m: TenYears, month: number): Readout {
+  const i = clampMonth(month, m.months) - 1;
+  return { money: m.money.total[i], income: m.income.total[i], patients: m.patients[i], matches: m.matches[i], dx: m.dx.total[i] };
 }
 
 // ---- the plot's geometry (spec A15 section 2) -----------------------------------------------------------------------------------

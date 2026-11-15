@@ -56,7 +56,7 @@ export const COPY = {
     patients: 'Patients in the network',
     matches: 'Records with a match',
     dx: 'Correct diagnoses gained',
-    money: { drop: 'Modelled drop in cost in Greece', saved: 'Money saved in Greece' },
+    money: { drop: 'Modelled drop in cost in Greece', saved: 'Money that could be saved in Greece, in the model' },
     income: 'Our income',
   },
   gTag: { plan: 'Plan', model: 'Model', computed: 'Computed on synthetic records' },
@@ -88,7 +88,15 @@ export const COPY = {
   // The CTO's one line under the diagram (MIN-4744 section 1), word for word, with the numbers from the file.
   gPlateau: (a: { records: string; month: number; planYears: number }) =>
     `Past ${a.records} records (month ${a.month}) the matches and their effect are held at the ${a.records}-record values; past year ${a.planYears} the plan's revenue is held flat.`,
-  gIncomePlan: 'Income: our plan, not a measurement. Every price and volume is an assumption.',
+  // The CEO seat's strings (MIN-4746 comment 88b0c07c, conditions 12 and 15), word for word.
+  gIncomePlan: (a: { planYears: number }) => `Income: our plan to year ${a.planYears}, then held flat. Not a forecast.`,
+  gAssumeStay: 'Assumption: no patient leaves the network, and the effect applies every year.',
+  // The running totals under the yearly figures (CEO ruling 4, CTO fix A). Money keeps the drop wording whatever DIAGRAM.money is: "saved" is never put on a total.
+  gTotal: {
+    money: (a: { value: string; first: number }) => `${a.value} added up since month ${a.first}, in the model`,
+    dx: (a: { value: string; first: number }) => `${a.value} added up since month ${a.first}, in the model`,
+    income: (a: { value: string; first: number }) => `${a.value} added up since month ${a.first}, plan`,
+  },
   gBase: (a: { geography: string; year: number; perInhabitant: string; total: string }) =>
     `Spending base: ${a.geography}, ${a.year}, ${a.perInhabitant} per inhabitant, ${a.total} a year in all.`,
   gFormula: (a: { points: string; perInhabitant: string; patients: string; amount: string }) =>
@@ -101,8 +109,11 @@ export const COPY = {
   gColPatients: 'Patients',
   gColMatches: 'With a match',
   gColDx: { yearly: 'Diagnoses a year', total: 'Diagnoses in total' },
-  gColMoney: { drop: { yearly: 'Modelled drop a year', total: 'Modelled drop in total' }, saved: { yearly: 'Saved a year', total: 'Saved in total' } },
+  gColMoney: { drop: { yearly: 'Modelled drop a year', total: 'Modelled drop in total' }, saved: { yearly: 'Could be saved a year, in the model', total: 'Modelled drop in total' } },
   gColIncome: { yearly: 'Income a year', total: 'Income in total' },
+  gColDxTotal: 'Diagnoses added up',
+  gColMoneyTotal: 'Modelled drop added up',
+  gColIncomeTotal: 'Income added up',
   gTableAfter: '(income held flat)',
   gDesc: (a: { year: number; month: number; patients: string; matches: string; dx: string; moneyHead: string; money: string; income: string; per: string }) =>
     `One diagram, plan year ${a.year}, month ${a.month}, synthetic model. Patients: ${a.patients}. Records with a match: ${a.matches}. Correct diagnoses gained: ${a.dx} ${a.per}, in the model. ${a.moneyHead}: ${a.money} ${a.per}. Our income: ${a.income} ${a.per}, plan. A model and a plan, not a measurement.`,

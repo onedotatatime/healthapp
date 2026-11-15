@@ -57,11 +57,13 @@
 .dg-hero .hv small{font:var(--text-label);font-size:16px;color:var(--color-muted)}
 @media (min-width:900px){.dg-hero .hv small{display:block}}
 .dg-hero .hk{margin:0;font:var(--text-label);color:var(--color-muted)}
+.dg-hero .ht{margin:0;font:var(--text-label);color:var(--color-text);font-variant-numeric:tabular-nums}
 .dg-hero .hh{margin:2px 0 0;font:400 14px/1.35 var(--font);color:var(--color-muted)}
 .dg-rows{margin:0;padding:0;list-style:none;border-top:1px solid var(--color-border)}
 .dg-row{display:grid;grid-template-columns:36px minmax(0,1fr) auto;column-gap:var(--space-2);align-items:center;min-height:56px;border-bottom:1px solid var(--color-border)}
 .dg-row .n{display:block;font:var(--text-label);color:var(--color-text)}.dg-row .k{display:block;font:var(--text-label);color:var(--color-muted)}
 .dg-row .v{font:var(--text-h2);color:var(--color-text);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}.dg-row .v small{display:block;font:var(--text-label);color:var(--color-muted)}
+.dg-row .ht{font-variant-numeric:tabular-nums}
 .dg-row .h{grid-column:2/4;margin:0 0 var(--space-2);font:400 14px/1.4 var(--font);color:var(--color-muted)}
 .dg-box{position:relative}.dg-box svg{display:block;overflow:visible}
 .dg-box svg text{font:400 11px var(--font);fill:var(--color-muted)}

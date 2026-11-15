@@ -14,7 +14,7 @@ import { COPY } from './copy';
 import { SimDiagram } from './SimDiagram';
 import { SimulationUnavailable, SimulationView } from './Simulation';
 import {
-  DIAGRAM, LINES, afterPlan, kindAt, lineValues, monthInYear, parseSimulation, plotGeometry, plotted, polylinePoints, readoutAt, shareFromFormula, unitRefs, yearOf,
+  DIAGRAM, LINES, afterPlan, kindAt, lineValues, monthInYear, parseSimulation, plotGeometry, plotted, polylinePoints, readoutAt, totalsAt, shareFromFormula, unitRefs, yearOf,
   type TenYears,
 } from './tenYears';
 
@@ -142,7 +142,7 @@ describe('the plot: one scale per unit, from zero, fixed over all 120 months', (
     expect(a === b && b === c).toBe(false); // the card does change with the slider
   });
   it('the matches line is solid up to the last measured month and dashed (a model) after it', () => {
-    const html = render(model(), 120);
+    const html = render(model(), 120, { plot: 'five', basis: 'yearly', money: 'drop' });
     const poly = html.match(/<g data-testid="sim-line-matches">([\s\S]*?)<\/g>/)![1];
     const lines = poly.match(/<polyline[^>]*>/g)!;
     expect(lines).toHaveLength(2);
@@ -239,7 +239,7 @@ describe('the page: one diagram, nothing from the old page, the words and the la
     );
     expect(text(page, 'sim-visits')).toBe('Assumption: one visit per patient a year.');
     expect(text(page, 'sim-share')).toContain('about 11% of health spending');
-    expect(text(page, 'sim-income-plan')).toBe(COPY.gIncomePlan);
+    expect(text(page, 'sim-income-plan')).toBe(COPY.gIncomePlan({ planYears: 3 }));
     expect(text(page, 'sim-base')).toBe(`Spending base: Greece, 2024, €${T.saved_eur.per_inhabitant_eur.toLocaleString('en-US', { minimumFractionDigits: 2 })} per inhabitant, €${(T.saved_eur.total_mio_eur / 1000).toFixed(1)} billion a year in all.`);
     const sources = page.slice(page.indexOf('data-testid="sim-sources"'), page.indexOf('</p>', page.indexOf('data-testid="sim-sources"'))).replace(/<[^>]+>/g, ' ');
     for (const name of ['Eurostat', 'OECD', 'WHO']) expect(sources, name).toContain(name);
@@ -263,11 +263,50 @@ describe('the page: one diagram, nothing from the old page, the words and the la
   });
 });
 
+describe('fix A and B (CTO MIN-4744, CEO seat rulings 4, 12 and 15): the totals sit under the yearly figures; the two assumption lines', () => {
+  const m = model();
+  for (const month of [36, 120]) {
+    it(`month ${month}: money, diagnoses and income each show their running total from the file`, () => {
+      const html = render(m, month);
+      const i = month - 1;
+      expect(text(html, 'sim-total-money')).toBe(`${eur(T.saved_eur.total.values[i])} added up since month 1, in the model`);
+      expect(text(html, 'sim-total-dx')).toBe(`${dx(T.diagnoses.total.values[i])} added up since month 1, in the model`);
+      expect(text(html, 'sim-total-income')).toBe(`${eur(T.income_eur.total.values[i])} added up since month 1, plan`);
+      // the yearly figures are still the headline values
+      expect(text(html, 'sim-value-money')).toBe(eur(T.saved_eur.yearly.values[i]));
+      expect(totalsAt(m, month).income).toBe(T.income_eur.total.values[i]);
+    });
+  }
+  it('year 10 reads 1,668, €7.0 million and €6.3 million (the CTO\'s figures)', () => {
+    const html = render(m, 120);
+    expect(text(html, 'sim-total-dx')).toContain('1,668');
+    expect(text(html, 'sim-total-money')).toContain('€7.0 million');
+    expect(text(html, 'sim-total-income')).toContain('€6.3 million');
+  });
+  it('the values table carries the three total columns, with the file values at year 10', () => {
+    const html = render(m, 120);
+    for (const h of ['Diagnoses added up', 'Modelled drop added up', 'Income added up']) expect(html).toContain(`<th>${h}</th>`);
+    const row = html.slice(html.indexOf('data-testid="sim-values-row-10"'));
+    expect(row).toContain(`€${grouped(T.saved_eur.total.values[119])}`);
+    expect(row).toContain(`€${grouped(T.income_eur.total.values[119])}`);
+  });
+  it('the total basis does not repeat the totals line (the readout is already the total)', () => {
+    expect(render(m, 120, { plot: 'five', basis: 'total', money: 'drop' })).not.toContain('sim-total-money');
+  });
+  it('B: the income line and the stay assumption are the CEO seat\'s words, visible without a tap', () => {
+    const html = render(m, 120);
+    expect(text(html, 'sim-income-plan')).toBe('Income: our plan to year 3, then held flat. Not a forecast.');
+    expect(text(html, 'sim-stay')).toBe('Assumption: no patient leaves the network, and the effect applies every year.');
+    expect(html.replace(/<[^>]+>/g, ' ')).not.toMatch(/Every price and volume/);
+  });
+});
+
 describe('the three open rulings are constants and each one changes what it says it changes', () => {
   const m = model();
-  it('default: five lines, a year at network size, the modelled-drop wording', () => {
-    expect(DIAGRAM).toEqual({ plot: 'five', basis: 'yearly', money: 'drop' });
+  it('default: the euro axis (CTO ruling MIN-4744), a year at network size, the modelled-drop wording', () => {
+    expect(DIAGRAM).toEqual({ plot: 'euro', basis: 'yearly', money: 'drop' });
     expect(plotted('five')).toHaveLength(5);
+    expect(plotted('euro')).toHaveLength(2);
     expect(text(render(m, 120), 'sim-title')).toBe('What matching could change in Greece, year by year');
     expect(render(m, 120)).toContain('Modelled drop in cost in Greece');
   });
@@ -292,7 +331,11 @@ describe('the three open rulings are constants and each one changes what it says
   it('money "saved": the founder\'s word in the title, the caption and the head, and nowhere in the default', () => {
     const saved = render(m, 120, { plot: 'five', basis: 'yearly', money: 'saved' });
     expect(text(saved, 'sim-title')).toBe('What matching could save Greece, year by year');
-    expect(saved).toContain('Money saved in Greece');
+    expect(saved).toContain('Money that could be saved in Greece, in the model');
+    // Ruling 3: "saved" never stands bare on a head, a column or a total.
+    expect(saved).toContain('Could be saved a year, in the model');
+    expect(saved).not.toMatch(/Money saved in Greece|>Saved a year<|>Saved in total<|saved in total/i);
+    expect(text(saved, 'sim-total-money')).toBe(`${eur(T.saved_eur.total.values[119])} added up since month 1, in the model`);
     expect(render(m, 120).replace(/<[^>]+>/g, ' ')).not.toMatch(/\bsaved?\b|\bsaves\b|\bsavings\b/i);
   });
 });
