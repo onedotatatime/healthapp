@@ -1,4 +1,4 @@
-/* The recruitment search on /doctor/simulate (MIN-4706). Same tokens and cards as simulate.css; no shadows beyond .sm-card, no new colours. */
+/* The sentence box, the step rows and the result of /doctor/simulate (MIN-4706, MIN-4736). Same tokens and cards as simulate.css; no shadows beyond .sm-card, no new colours. */
 .rc-form{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-end}
 .rc-field{display:grid;gap:var(--space-1);flex:1 1 280px;min-width:0}
 .rc-field label{font:var(--text-label);color:var(--color-muted)}
@@ -6,7 +6,6 @@
 .rc-input::placeholder{color:var(--color-muted);opacity:1}
 .rc-form .btn{flex:0 0 auto;min-height:var(--tap-input)}
 @media (max-width:480px){.rc-form .btn{flex:1 1 100%}}
-.rc-labels{display:grid;gap:var(--space-2)}
 .rc-out{display:grid;gap:var(--space-3);min-width:0}
 .rc-read{font:var(--text-label);color:var(--color-muted)}
 .rc-notice{padding:var(--space-2) var(--space-3);border-left:3px solid var(--color-info);background:var(--color-info-bg);color:var(--ink)}
@@ -14,7 +13,9 @@
 .rc-pick{min-height:var(--tap-doctor);padding:2px 14px;border-radius:var(--radius-pill);background:var(--color-surface-quiet);border:1px solid var(--color-link);color:var(--color-link);font:var(--text-label);cursor:pointer}
 .rc-pick:hover{background:var(--color-surface)}
 .rc-funnel{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-2)}
-.rc-funnel li{display:grid;grid-template-columns:6rem minmax(0,1fr);column-gap:var(--space-3);align-items:start;padding:10px var(--space-3);border-left:3px solid var(--color-link)}
+.rc-funnel li{display:grid;grid-template-columns:6rem minmax(0,1fr);column-gap:var(--space-3);align-items:start;min-height:64px;padding:10px var(--space-3);border-left:3px solid var(--color-border);opacity:.35;transition:opacity var(--dur-step) var(--ease-out),border-color var(--dur-step) var(--ease-out)}
+.rc-funnel li.show{opacity:1;border-color:var(--color-link)}
+.rc-end{display:grid;gap:var(--space-2)}
 .rc-num{font:var(--text-h2);text-align:right;white-space:nowrap}
 .rc-funnel strong{display:block}
 .rc-funnel span.rc-line{display:block;font-size:14px;color:var(--color-muted)}
