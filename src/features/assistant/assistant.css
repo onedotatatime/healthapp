@@ -87,7 +87,7 @@
 @media (max-width:519px){.as-facts{grid-template-columns:1fr}.as-facts dd{margin-bottom:var(--space-2)}}
 
 /* MIN-4664 doctor dashboard (Pix, docs/design/min-4659/dashboard.css). New tokens: none. From 900: left nav + main column, two chart columns.
-   Under 900: the existing column, both views stacked, the nav as two cells. Card glass or solid white; the timer is the one blurred surface. */
+   Under 900: the existing column, the views stacked, the nav as three cells. Card glass or solid white; the timer is the one blurred surface. */
 .page.doctor.dash{max-width:1360px}
 @media (min-width:900px){.page.doctor.dash{padding-left:32px;padding-right:32px}}
 .dash-shell{display:grid;grid-template-columns:1fr;gap:var(--space-4);align-items:start}
@@ -100,7 +100,7 @@
 .dash-sec .sec-sub{margin:0 0 var(--space-4)}
 .dash-view>.as-panel,.dash-view>.mx-panel,.dash-view>.ot-panel{margin:0}
 .ask-main.card{background:var(--color-surface)}
-.dnav{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--space-1);padding:var(--space-2);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-image);box-shadow:var(--shadow-soft)}
+.dnav{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-1);padding:var(--space-2);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-image);box-shadow:var(--shadow-soft)}
 .dnav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:64px;padding:var(--space-2);border:0;background:transparent;border-radius:var(--radius-sm);color:var(--color-text);font:var(--text-label);line-height:1.2;text-align:center;cursor:pointer}
 .dnav button svg{flex:none}
 .dnav button:hover{background:var(--color-surface)}
@@ -170,3 +170,28 @@ button.flag-chip,.flag-more{cursor:pointer;min-height:44px}
 .exam-n{font:500 16px/1.4 var(--font)}
 .exam .chev{grid-column:2;grid-row:1 / span 2;color:var(--color-link)}
 .ask-main .as-quick .btn{min-width:0;min-height:44px;padding:0 20px}
+
+/* MIN-4665 Possible diagnoses (Pix, docs/design/min-4659/dashboard.css, section 7). Cards are solid white (long reading): no number, rank or colour difference between them. */
+.dx-view{display:grid;gap:var(--space-4);align-content:start;min-width:0}
+.dx-view>h2{margin:0}
+.dx-banner{display:flex;gap:var(--space-3);align-items:flex-start;padding:var(--space-4);border-radius:var(--radius-sm);background:var(--color-caution-bg);border:1px solid var(--color-flag-text);color:var(--color-text);font:600 16px/1.5 var(--font)}
+.dx-banner svg{flex:none;margin-top:1px}
+.dx-banner p{margin:0}
+.dx-view .as-strip{margin:0}
+.dx-run{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3) var(--space-4)}
+.dx-run p{margin:0}
+.dx-retry{margin:var(--space-3) 0 0}
+.dx-guard{margin:0;color:var(--color-muted);font:500 16px/1.5 var(--font)}
+.dx-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-4);list-style:none;margin:0;padding:0}
+@media (min-width:900px){.dx-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dx-card{display:grid;gap:var(--space-3);align-content:start;min-width:0;padding:var(--space-5) 20px;background:var(--color-surface);border-radius:var(--radius-image);box-shadow:var(--shadow-soft);border:1px solid var(--color-border)}
+.dx-card h3{margin:0;font:var(--text-h2);letter-spacing:-.03em;overflow-wrap:anywhere}
+.dx-row{margin:0}
+.dx-k{display:block;margin:0 0 2px;font:var(--text-label);color:var(--color-muted)}
+.dx-list{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-2)}
+.dx-based{display:flex;flex-wrap:wrap;gap:var(--space-2);align-items:center;margin:0}
+.dx-based .dx-k{flex:0 0 100%}
+.src-chip{position:relative;display:inline-flex;align-items:center;min-height:28px;padding:0 12px;border-radius:var(--radius-pill);background:var(--color-surface);border:1px solid var(--color-link);color:var(--color-link);font:var(--text-label);white-space:normal;text-align:left;cursor:pointer}
+.src-chip::after{content:'';position:absolute;inset:-8px -4px}
+.src-chip[aria-pressed='true']{background:var(--color-info-bg)}
+.skel{display:block;height:12px;border-radius:var(--radius-pill);background:var(--color-skeleton)}

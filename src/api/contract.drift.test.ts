@@ -45,3 +45,16 @@ describe('frontend contract copies match Cron\'s contract.ts', () => {
     });
   }
 });
+
+describe('MIN-4665 diagnoses block', () => {
+  it('is in Cron\'s file, whole, so the copy above is compared name by name', () => {
+    const names = ['DiagnosesRequest', 'DiagnosisStatement', 'DiagnosisItem', 'DiagnosesCounts', 'DiagnosesResponse'];
+    const missing = names.filter((n) => !isSchema((cron as Record<string, unknown>)[n]));
+    expect(missing, `missing from supabase/functions/_shared/contract.ts: ${missing.join()}`).toEqual([]);
+  });
+  it('is strict: an extra key (score, rank, probability) fails the parse', () => {
+    const item = { name: 'X', fits: [{ text: 't', cites: ['r:00000000-0000-4000-8000-000000000001'] }], does_not_explain: [], not_in_record: [] };
+    expect(analysis.DiagnosisItem.safeParse(item).success).toBe(true);
+    for (const k of ['score', 'rank', 'probability']) expect(analysis.DiagnosisItem.safeParse({ ...item, [k]: 1 }).success, k).toBe(false);
+  });
+});
