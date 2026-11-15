@@ -33,6 +33,8 @@
   --tap-input:56px;                                 /* inputs */
   --tap-doctor:var(--target-min);
 }
+/* Height of the sticky page label on /doctor/simulate (MIN-4609); the page measures the real one and overwrites it on its own element. */
+:root{--label-h:72px}
 /* Motion (MIN-4606). The first four and --ease-out are the brand values (docs/brand/tokens.css), repeated here so the app's role tokens name every motion value it uses; the rest are new. Linear is the CSS keyword, used only for the /simulation clock. */
 :root{
   --dur-fast:200ms;
