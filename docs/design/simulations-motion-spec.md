@@ -287,6 +287,154 @@ The x values are the data's `x.values` (12 of them, 417, 833, 1250 ... 5000), sh
 
 Per-dot fade, per-dot landing scale for the whole matched block, group hues and rings (that is `/doctor/simulate`), scatter placement, hover or tap on a dot, any zoom.
 
+## A13. Addendum: the timeline diagram (MIN-4700, parent MIN-4696)
+
+Founder, 2026-11-15, verbatim: "this diagrams dont seems so optimistic. It was supposed. ... maybe to have one diagram with all the numbers inside showing how having onboard patients and growing our model and getting everyday more and more correct diagnoses how the money saved and our income grow". Goal: supports direction 5 and 4 (the one picture that shows patients, matches, diagnoses and money growing together). Everything on it is synthetic or a plan, and the card says so.
+
+**Inputs that fix the shape (not reopened here):** the CTO's decision on MIN-4699 (comment 8b038e47): add under the hero, static, inline SVG, no library, one shared month axis 1 to 24, stacked lanes, every y axis from zero, no second y axis, no indexed, log or cropped axis; the data block `timeline` (24 values per measure, running totals, index `i` is the end of plan month `i + 1`). Anna's strings (MIN-4697, part 1, placeholders until she signs). The CEO seat's conditions (`docs/simulation-copy.md` section 6.4). Which optional measures show is the CEO seat's call on MIN-4698; this section says what changes for each.
+
+**Not verified:** nothing is built. The mock `docs/design/min-4700/timeline-mock.html` carries **placeholder values** (anchors from the CTO's scratch run and Product's preview, linearly interpolated between them; not the generator's output) and was measured in headless Chrome at 390 and 1280, not on a device, not under touch, not on staging. Pixel numbers below are from that mock; Ren measures the build (tolerance ±8 px). No dark theme exists in the app (`prefers-color-scheme` appears nowhere in `src/`); the dark view is a mapping proposal, section 12 below. Mobbin was searched once (stacked analytics charts): the references put a stat strip above one chart and a legend below it; this spec labels at the line instead, because the founder asked for "all the numbers inside" and the hard limits ask that a measure is told apart without a legend hunt. Figma: no file touched in this run (see the hand-back).
+
+### 1. The form, with sizes (decision 1)
+
+**One card, three stacked lanes, one month scale.** "One diagram" is one frame whose lanes share the x position of every month. Each lane has its own y axis from 0 in its own unit; measures with the same unit share a lane (CTO). Lane order is fixed, top to bottom:
+
+| Lane | Measures | Axis | Plot height at 1280 / 390 | Needed? |
+|---|---|---|---|---|
+| 1 People | Patients in the network (plan), Records with a match (computed) | `niceAxis(max of both)`, from 0 | 200 / 150 px | required |
+| 2 Euros | Our income (plan), Modelled drop in cost (model) | one euro axis, `niceAxis(max of both)`, from 0 | 200 / 150 px | income required; the drop line is optional |
+| 3 Diagnoses | Fewer wrong or missed diagnoses (model) | `niceAxis(max)`, from 0 | 130 / 110 px | optional (the lane disappears with its measure) |
+
+`niceAxis` is the one already in `simData.ts`; no new axis function. The x scale for every lane: `x(m) = L + (m - 1) * (W - L - R) / 23`, `m` = 1 to 24, `W` = the plot's measured width in CSS px.
+
+| | 1280 (card 1120 wide) | 390 (card 358 wide) |
+|---|---|---|
+| Card padding | 16 / 24 (as the hero) | 12 / 16 (as `.sim-chart`) |
+| Plot SVG width `W` | 818 (lane grid: plot column, 12 gap, 240 key column) | 324 (single column) |
+| Insets `L`, `R`, `T` | 44, 12, 14 | 40, 12, 14 |
+| Month step | 33.1 px | 11.9 px |
+| Bottom inset `B` | 6 (lanes above the last); 44 on the last lane (month labels and "Plan month") | 24 on every lane (month labels); 44 on the last |
+| Card height, three lanes (measured on the mock) | about 1,265 | about 1,880 |
+
+**The plot SVG is built at its measured width (1 unit = 1 CSS px), not scaled from a fixed viewBox**, so 11 px text stays 11 px (the existing 320 x 190 viewBox would print 24 px ticks at 768). Re-measure on resize (`ResizeObserver`, one redraw, no animation). `aria-hidden="true"`, `focusable="false"`.
+
+**Drawn in each plot, bottom to top:** the free-pilot band; vertical hairlines at months 3, 6, ... 24 (`.grid`); horizontal gridlines (`.grid`) and the zero line (`.axis`); the "first paid" line; the month tick marks (24, 4 px); the lines (3 px); the end markers at month 24. Month labels at 3, 6, ... 24 (every third, ending on the last; no value typed in the component). At 1280 only the last lane carries the labels; at 390 **every lane carries them**, because the key rows sit between the lanes and the shared scale would otherwise be far from lane 1. The scale is the same either way.
+
+**The pilot band and the first paid month (if the CEO seat keeps them; CTO fixed both).**
+- Band: month cells 3 to 8, from `x(2.5)` to `x(8.5)`, full plot height, fill `--color-surface-quiet`, in every lane. Label "Free pilot: no patients counted" (Anna) in lane 1 only, an HTML overlay in the band's top-left (`position:absolute`, left `x(2.5)`, top `T`, width the band's width), `600 11px/1.3` (12 px from 900 px up), `--color-text`, wrapping (at 390 the band is 71 px wide and the label takes three lines, about 51 px: inside the empty space above the zero lines).
+- Marker: a vertical line at `x(9)`, 1.5 px, `--color-border-strong`, in every lane, the first month with a count. Label "First paid cases" (Anna) as SVG text at `x(9) + 6`, `T + 12`, lane 1 only, `600 11px` (12 from 900), `--color-text`. Rule: this label's box must not overlap a line or a marker (measure; at the placeholder values it clears by more than 50 px at both widths). If the data ever put a line under it, the label moves to the line's right end.
+- Lines are drawn for all 24 months from the data, so the zeros before month 9 lie on the zero line. The band label says those months have no patients counted; nothing is hidden or invented.
+
+### 2. Direct labels and end values (decision 2)
+
+No legend. Each measure is named, valued and typed **at its line end** (1280) or **in a key row above its lane** (390). The same element in the DOM serves both; CSS grid areas move it (`.tl-keys` is the right column at 900 px and up, a block above the plot below it).
+
+**Three kinds, each told apart by line pattern, end marker, colour and a text tag (never colour alone):**
+
+| Kind | Which measures | Line | End marker (10 px) | Colour, light | Tag (Anna, placeholder) |
+|---|---|---|---|---|---|
+| Computed on synthetic records | Records with a match | solid | circle | `--color-link` (teal-600) | Computed on synthetic records |
+| Model | Fewer wrong or missed diagnoses; Modelled drop in cost | dashed `6 4` (the existing `.line.model`) | diamond (square rotated 45 degrees) | `--color-flag-text` (coral-900) | Model |
+| Plan | Patients in the network; Our income | dash-dot `12 4 2 4` | square | `--color-info` (teal-night) | Plan |
+
+Line width 3 px (the three small charts use 2.5: these are the hero lines of the page), `stroke-linejoin: round`, butt caps (round caps blur a dash pattern). End marker: fill the kind colour, 2 px stroke `--color-surface` (as `.tip`). The same kind has the same look in every lane.
+
+**Key content, in this order:** a 36 x 14 glyph (the line pattern for 24 px plus the end marker), the measure name (`--text-label`, `--color-text`), the end value, the kind tag (`--text-label`, `--color-muted`).
+
+| | 1280 (right column, 240 px) | 390 (row above the lane's plot) |
+|---|---|---|
+| Layout | block, `position:absolute`, `top` set from the tip's y | row grid `36px 1fr auto`, min height 44 px, gap 8 px |
+| Order | glyph and name; the value; the tag | glyph, name over tag; the value at the right |
+| Value type | `600 32px/40px` (the existing `.sim-value`) | `--text-h2` (600 24px/1.2) |
+| Value colour | `--color-text` | `--color-text` |
+
+**Placement rule at 1280 (Ren measures, types no pixel):** `top = tip y - 40`, then sort the lane's keys by tip y, and each next key starts at least (previous key's measured height + 8) px below the previous one's top; clamp to the lane. At the placeholder values: lane 1 tips at 77 and 157 px, keys at 37 to 113 and 121 to 197; lane 2 tips at 50 and 152 px. A lane's plot must be tall enough for its keys (lane 1 and 2: 200 px holds two; do not shorten them). The name may wrap to two lines (the longest, "Fewer wrong or missed diagnoses", does at 240 px); the placement uses the measured height.
+
+**End values** are the data's month-24 values, one formatter for the page (the CTO's unit test mirrors the Python arithmetic): counts with thousands separators (4,109; 1,693); euros as `€164k` (rounded to whole thousands) with the exact whole-euro value in the values table below; diagnoses with the data's own decimals. The value is the figure the founder asked to see: large, running total, at the end of the line.
+
+### 3. Where it sits, and the three small charts (decision 3)
+
+- **Directly under the hero, above `.sim-grid`.** Order at 390, top to bottom: label, h1, caption, hero, **timeline card**, chart 1, chart 2, chart 3, footer, Play again. At 1280 the card is full width (1120).
+- **The three small charts stay, unchanged and not folded.** Reason: CEO condition 4 (MIN-4605) ties the euro figure to chart 3 with its own zero-based axis on screen; a disclosure would hide the proof exactly where a phone reader needs it. Folding them is not needed for length either: the card is the main chart and the small ones follow. Removing or hiding them needs the CEO seat.
+- **Card chrome:** `.tl` = the `.sim-chart` look (`--glass-card`, 1 px `--glass-edge`, `--radius-card`, `--shadow-soft`); no new surface. Title `--text-lead` (600 20px/1.4), `--color-text`; caption and the hero tie sentence `--text-doctor-body`, `--color-muted`; lane titles `--text-label` at 16 px, `--color-text`; lane units `--text-label`, `--color-muted`. A 1 px `--color-border` rule separates lanes.
+- **Assumption lines travel with what they qualify**, static ink text at full opacity, `--text-doctor-body`, `--color-text`, under their lane: lane 1 the ramp assumption (Anna); lane 2 the income plan marker, and the learning-curve line (`COPY.simAssumption`, unchanged) when the drop line shows; lane 3 the learning-curve line. The permanent label `simLabel` is the page's sticky bar and stays on screen with the card at every scroll position; this card changes nothing about it. A short foot line (pilot months, doctor-seat fees are income) closes the card in `--color-muted`. If the page is too long at 390, cut in this order: lane 3, then the drop line; never an assumption line.
+
+### 4. Motion (decision 4)
+
+- **Default: none.** The card is painted finished from first paint; it does not run on the 30-second clock (CTO); `SIM_*` and the 30,000 ms tests do not change. It takes no `.sim-enter` and shifts none of the existing `--i` stagger indexes.
+- **Optional draw-in, if time allows (cut first):** the lines group (`.tl-lines`: lines and end markers) reveals left to right once, `clip-path: inset(0 100% 0 0)` to `inset(0)`, 600 ms, `--ease-out`, started when the card first scrolls into view (`IntersectionObserver`, once). CSS only, no per-frame JS. Labels, key values, tags, bands, gridlines and axes never animate and are never inside the clipped group (rule 0.1 and 0.2 apply: the values are readable from frame 0). `clip-path` is used because a stroke-dash reveal would break the dash patterns that carry the kinds.
+- **`prefers-reduced-motion: reduce`:** no draw-in, nothing animates; the finished state at once (the existing global rule `animation:none!important` already covers it; the media query keeps the keyframes from being added at all).
+
+### 5. States (decision 5)
+
+| State | What is on screen |
+|---|---|
+| Normal | Card with the required lanes and every approved optional measure |
+| `timeline` missing, not an object, `x` not 1 to 24, or any required measure (patients, income, matches) not 24 finite non-negative numbers | **The card is not rendered.** No placeholder, no error text, no empty frame. The hero, the three charts and the footer are as today (they simply follow the hero). The page is never broken by this block |
+| An optional measure (`diagnoses`, `drop_eur`) absent or invalid | Only that line is left out. Lane 3 disappears with its only measure and the month labels and "Plan month" move to the last lane left. Lane 2 keeps income alone and its axis is `niceAxis(max income)` from 0 |
+| Lane 2's two measures state different bases (one a running total, one a yearly rate, from their `unit` strings) | The drop line is left out (a second axis or a rescale is banned, and two bases on one axis would mislead). Income stays |
+| CEO seat drops a measure on MIN-4698 | Same as "absent": no code change beyond the data, the lane logic above handles every combination (`hide` in the mock) |
+| CEO seat drops the pilot band or the month 9 marker | The band and the label go; the marker line and its label go; nothing else moves (they sit in the plot's own layers) |
+| Reduced motion | Section 4 |
+| Width between 481 and 899 | The 390 layout (key rows above the plot); the plot is as wide as the column; same rules |
+
+What changes if a measure is dropped, in one line each: **diagnoses** lane 3 and its note go; **drop** lane 2 holds income alone and the learning-curve line leaves lane 2; **income** (public-page question) the card keeps lanes 1 and 3, lane 2 goes (a lane with no measures is absent, same rule as lane 3; the CTO's contract then marks `income_eur` optional, because today a missing income would mean no card); **patients** lane 1 holds the matches line alone and its note changes to Anna's matches-only line; **the band and the marker** as the table.
+
+### 6. The text alternative (decision 6)
+
+- `<section aria-labelledby="{title id}" aria-describedby="{desc id}">`. The description is Anna's `aria-label` text, filled from the data, in a visually hidden `<p id>` (not an `aria-label` on a graphic, so a screen reader reads it as text, and the numbers equal the file).
+- Everything visible is real text: title, caption, lane titles, units, key names, values, tags, assumption lines. The three plot SVGs are `aria-hidden`. The band and marker labels are visible text next to them.
+- **A small values table under the card**, in a `<details>` (summary "Show the values", Anna, min height 44 px, `--color-link`): rows = the measures that show, columns = Measure, Month 12, Month 24 (the ends of plan years 1 and 2), whole numbers, whole euros (`€164,352`), the data's decimals for diagnoses. 3 columns fit 324 px at 14 px with 4 px cell padding. It is the exact-number alternative for the rounded `€164k`.
+
+### 7. The hard limits as checks Ren can measure
+
+| Limit (CEO seat, section 6.4, and MIN-4696) | Check |
+|---|---|
+| Every axis starts at zero | In every lane the value of the bottom tick is 0 and `y(0)` equals the plot's bottom; the top tick is `niceAxis(max)` of that lane's visible measures. No lane's top tick is below its max. A unit test on the builder with a fixture, and a DOM check on the page |
+| No log, no crop, no rescale, no second y axis, no indexed axis | One y axis per lane (one set of tick labels at the plot's left). The y of a point is a linear function of the value only: `y(v) = T + plotH * (1 - v / top)` for every point of every line in the lane (unit test: all 24 points of every line, compared with the data) |
+| Every plotted number equals the JSON | The 24 y positions invert to the data values within 0.5 px; the key values and the table cells equal the formatted data (the one formatter) |
+| The label and the assumption line stay visible with the diagram | `data-testid="sim-label"` is in the viewport (sticky) with the card at 390 and 1280; each lane's note is a sibling of its plot, never inside an element that animates opacity or `clip-path` |
+| Three kinds look different and say what they are | Each key shows a glyph, a tag and a name; computed, model, plan have three different `stroke-dasharray` values (`none`, `6 4`, `12 4 2 4`) and three different end-marker shapes; the tag text is present for every measure |
+| Free pilot (months 3 to 8) and month 9 marked | The band spans `x(2.5)` to `x(8.5)`; the marker line sits at `x(9)`; both present with their labels in lane 1 (or both absent when the CEO seat drops them) |
+| Told apart without colour alone | Converting the card to grey scale leaves the three line patterns, the three marker shapes and the tags. The names are next to the lines |
+| Contrast on the page's tokens | Pairs below, computed. Text at least 4.5, lines, markers and axes at least 3 |
+| Readable at 390 and 1280, no overflow | `document.documentElement.scrollWidth` equals the viewport width at 390 and 1280; no SVG text box outside its SVG; band label box inside the band; key boxes at least 44 px high at 390 and not overlapping at 1280; measured sizes pasted on MIN-4702 |
+| Missing block means no card | With `timeline` removed from the fixture the card's test id is absent and the hero and three charts render as before |
+
+**Colour pairs (WCAG 2.x, computed 2026-11-15; ground = the card glass over the page, darkest pixel `#FCF5F4`, then white):**
+
+| Pair | Ratio | Needs | Result |
+|---|---|---|---|
+| teal-600 line on card | 5.08 to 5.47 | 3 (graphic) | pass |
+| coral-900 line on card | 6.25 to 6.73 | 3 | pass |
+| teal-night line on card | 11.43 to 12.30 | 3 | pass |
+| the same three on the pilot band (`--color-surface-quiet`) | 4.85, 5.96, 10.90 | 3 | pass |
+| ink, ink-soft text on card | 15.58, 6.48 | 4.5 | pass |
+| ink-soft on the band | 6.18 | 4.5 | pass |
+| zero line, ticks, "first paid" line (`--color-border-strong`) on card | 4.07 | 3 | pass |
+| `--color-border-strong` on the band | 3.88 | 3 | pass |
+| hairline gridlines (`--color-border`) | decorative | n/a | the values are in text |
+
+### 8. Tokens and constants
+
+**No new colour in the light theme.** Every colour is a role token above. No new type token: the end value reuses `.sim-value` (32/40) and `--text-h2`; chart text is the existing 11 px SVG text (12 px for the two annotations from 900 px up). One new constant block beside `simData.ts`: `TL_LANES = [{ id: 'people', h: [200, 150] }, { id: 'euro', h: [200, 150] }, { id: 'dx', h: [130, 110] }]` (heights at wide and narrow), `TL_INSETS = { wide: { L: 44, R: 12, T: 14 }, narrow: { L: 40, R: 12, T: 14 } }`, `TL_KEY_GAP = 8`. Words only from Anna's `copy.ts` entries; no number or unit typed in a component.
+
+### 9. The mock
+
+`docs/design/min-4700/timeline-mock.html` (open it in a browser; add `?theme=dark` for the dark mapping, `?hide=drop,dx` to see a measure dropped, `?still=1` for no draw-in). It loads the repo's real token and page CSS and contains a reference builder (about 60 lines of plain JS: the axes, the x scale, the lines, the key placement). It is a reference for Ren, not code to ship: it types its placeholder numbers and its strings, which the app must not. Renders in `docs/design/min-4700/shots/` (1280 and 390, light and dark). **The values in it are placeholders: month 24 shows 4,109 patients, 1,693 records, 11.8 diagnoses, €62k drop, €164k income, taken from the CTO's scratch numbers and Product's estimate; the real ones come from `timeline`.**
+
+### 10. Words I need from Anna (placeholders in the mock)
+
+Lane titles and unit lines (People, Euros, Diagnoses; "Patients and records, running total"; the euro unit, once the CEO seat fixes the basis); the three kind tags (Plan, Model, Computed on synthetic records); the table's summary ("Show the values") and its column heads; the matches-only note for lane 1 if patients drop. Title, caption, band label, marker label, "Plan month", the three assumption lines, the tie sentence and the aria text are Anna's draft strings from MIN-4697, used as written.
+
+### 11. Left out, and why
+
+An area fill under the lines (overlapping fills in one lane blur the kinds, and an area makes the euro lane look bigger than its numbers); a second y axis or any rescale (banned); month 25 or later (CTO: out); hover or tap tooltips (the values are on screen as text, and touch is not verified); a legend (labels are at the lines); folding the three small charts; per-point value labels along the lines (the end value and the table carry the numbers; more labels at 11 px would crowd 12 px month steps at 390); a count-up of the end values (a number that is not the data is on screen for a moment).
+
+### 12. Dark view (proposal; the app has no dark theme)
+
+You asked for light and dark. Nothing in `src/` switches theme, and A12 left a dark mode out, so this ships only if someone builds the theme. The card is written with role tokens only, so a theme change reaches it without edits. The mapping the mock uses (`html.inverse`) takes the existing brand palette only: ground `--teal-night`, text `--white`, computed `--mint`, model `--peach`, plan `--white`. Two derived mixes are not in the palette and need approval if it ships: the card (`--white` 6% over `--teal-night`) and muted text (`--white` 72% over `--teal-night`). Computed on the dark card (about `#264749`): mint 6.78, peach 7.87, white 10.33, muted text 6.01, `border-strong` mix 4.07, mint on the band 6.00. Same patterns, markers and tags, so the kinds are told apart the same way.
+
 ---
 
 # B. `/doctor/simulate` (MIN-4609)
@@ -400,6 +548,7 @@ None for the motion. One for the error state if Product keeps it in scope: `runE
 
 - Ren, MIN-4608: sections 0, 1, A. Ren, MIN-4609: sections 0, 1, B. Paste the step tables on the build issues; each row is a test.
 - Cron, MIN-4607: A8.
+- Ren, MIN-4702: A13 (the timeline diagram, MIN-4700) with `docs/design/min-4700/timeline-mock.html`; Cron, MIN-4701: A13 sections 5 and 7 for what the data must hold.
 - CTO, MIN-4610: no React Bits dependency; one new type token, two new motion tokens, one new data block; the new data is additive.
 - Anna, MIN-4604: A9 and B8.
 - Cut order inside this spec (matches Product's cut line): B whole screen first; then A's quality bar; then steps 6 and 7 (landing baselines and edge); the euro figure last.

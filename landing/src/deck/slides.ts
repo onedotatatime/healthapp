@@ -137,7 +137,7 @@ const mainSlides: Slide[] = [
   },
   {
     id: '6c', counter: '6c', template: 'threecards', theme: 'air', kicker: 'Clinical trials', notes: N['6c'],
-    headline: 'Recruitment is slow and costly. We make it faster, and charge only per patient.',
+    headline: 'Recruitment is slow and costly. We make it faster. The sponsor pays per trial and per randomised patient.',
     cards: [
       { title: 'Today, what a day of delay costs', figure: { value: '€36,000', mark: '*', unit: 'What one day of delay costs one trial to run.' } },
       { title: 'With Pathien, what one trial saves', figure: { value: '€180,000', mark: '*', unit: 'Saved per trial if enrolment ends 5 days sooner: 5 × €36,000.' } },

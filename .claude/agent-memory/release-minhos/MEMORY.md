@@ -8,3 +8,11 @@
 - [Release audit cleanup](feedback_release_audit_cleanup.md) — merged = mergeCommit on main + Pages check; leased atomic remote deletes; lsof for live cwd; batch branch -D refused
 - [feedback_quoted_heredoc](feedback_quoted_heredoc.md) — Never build a PR body or comment with an unquoted heredoc; backticks in markdown run as commands in the shell'
 - [project_healthapp_live_function_checks](project_healthapp_live_function_checks.md) — How Release calls a deployed healthapp edge function for real as the dev doctor, proves a boxd machine is gone
+- [healthapp release contents](project_healthapp_release_contents.md) — merge-base check, pin release branch by refspec, merge pinned to head
+- [healthapp staging verify](project_healthapp_staging_verify.md) — /health needs a Playwright render for the sha; twin ff push can be refused, gate E2E on it
+- [healthapp function smoke creds](project_healthapp_function_smoke_creds.md) — scan-next-live needs anon key + demo passcode; check env before a function deploy
+- [healthapp SQL needs the connector](project_healthapp_sql_needs_connector.md) — 017/hdb go through execute_sql only; without it, merge the PR and stop before SQL
+- [healthapp function download-diff](project_healthapp_function_download_diff.md) — one folder per function (shared files overwrite); verify_jwt check; smoke scripts in scratchpad
+- [healthapp squash release conflicts](project_healthapp_squash_release_conflicts.md) — staging→main conflicts after a squash; prove main ⊂ staging, release branch + merge -s ours
+- [healthapp /health from the bundle](project_healthapp_health_check_bundle.md) — /health is client-rendered: read env+sha from chunks; staging=demo, staging-dev=dev twin
+- [Prod release checks](project_healthapp_prod_release_checks.md) — secret by digest, function by download+cmp, re-join staging by merge, pin merge to head

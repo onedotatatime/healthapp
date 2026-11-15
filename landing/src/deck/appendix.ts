@@ -170,7 +170,7 @@ Footer: Prices, volumes, days saved and the exchange rate are assumptions. "Our 
 - *"Is the diary a validated outcome measure?"* No. It keeps the patient's words, the time and a 1 to 10 severity, and never says what a symptom might be.
 - *"Is it a medical device?"* It must not give clinical conclusions, and an investigator decides. Whether that keeps it outside the MDR is for a regulatory adviser (PRD Q18).
 
-**Sources:** S23 to S31. docs/business/clinical-trials-fit.md §8. Q38 (prices) open.`,
+**Sources:** S23 to S31. docs/business/clinical-trials-fit.md §8. Q38 (prices, who is billed) decided, 15 Nov 2026.`,
     ],
   },
   {
@@ -187,9 +187,9 @@ Footer: Prices, volumes, days saved and the exchange rate are assumptions. "Our 
 - *"Why the cost of a day, not the recruitment budget per trial?"* $357M ÷ 1,497 ≈ $240,000 per trial is the whole trial's recruitment line, worldwide. On that line alone, ASPE's 35.9% lower cost per patient (S29) on our about 19 patients saves under €5,000 (our estimate), less than our fee. A sponsor's value is the days, so the cards use the cost of a day.
 - *"Why €36,000 a day?"* The phase 2 and 3 blend (S23), rounded down. Phase 2: about €21,600 a day, 5 days ≈ €108,000. Phase 3: about €50,700, 5 days ≈ €253,000.`,
       `- *"Why 5 days?"* ASPE assumes about a year of recruitment per phase (S29), so 5 days is about 1.4% of it. ASPE also modelled EHR-based recruitment: 35.9% lower recruitment cost per patient, and $0.46M to $2.5M saved per phase 3 study (3.1% to 8.8% of its cost) (S29, verified). Our €180,000 (about $198,000) sits below ASPE's lowest phase 3 figure on purpose. An assumption, to be tested with a sponsor.
-- *"Why €1,000 a randomised patient, not €1,500?"* v3.9 had €1,500. ASPE puts the recruitment line at about $500 to $700 per participant (S29, S30), and the vendor average is $1,379 (S28): €1,500 (about $1,650) would sit above both. €1,000 (about $1,100) stays under the vendor average and is paid only when the patient is randomised. The value case rests on days saved, not on the fee. Q38 is open: the founder decides.
+- *"Why €1,000 a randomised patient, not €1,500?"* v3.9 had €1,500. ASPE puts the recruitment line at about $500 to $700 per participant (S29, S30), and the vendor average is $1,379 (S28): €1,500 (about $1,650) would sit above both. €1,000 (about $1,100) stays under the vendor average and is paid only when the patient is randomised. The value case rests on days saved, not on the fee. We reconsider €1,500 only after a sponsor pilot measures 5 or more days saved.
 - *"Why a set-up fee?"* Each trial's criteria are turned into rules, and a person reviews those rules before they run. €5,000 per trial and country is an assumption.
-- *"Trial clinics pay?"* Sponsors and CROs fund recruitment and pay sites per patient. We bill the sponsor or CRO, or the site where the sponsor's recruitment budget runs through it. Never the patient. A recruitment service fee, never a data sale.
+- *"Trial clinics pay?"* Sponsors and CROs fund recruitment and pay sites per patient. We bill the sponsor or CRO only, never the site: one payer and one contract per trial. Never the patient. A recruitment service fee, never a data sale.
 - *"How hard is recruitment?"* About 11% of sites in a typical trial enrol no patient and 37% under-enrol (S24, secondary, old). 19% of phase 2 and 3 trials closed in 2011 ended early for poor accrual or below 85% of target (S25, verified).`,
     ],
   },
@@ -380,7 +380,7 @@ Build = the two engineers and the ML engineer. Sell = business development and m
 | **Total** | | **€1,000k** | **100%** |
 
 - Costs are loaded monthly costs for Athens employees, one method for every hire: gross salary with any variable pay (14 payments a year) × 1.2179 for employer social security (21.79%, **secondary**), ÷ 12, × the share of time, plus about €200 a month for tools for every person, part-time included. Every salary is an **assumption**, anchored to **secondary** salary surveys (plan §2); the clinical lead's salary has no source checked.
-- Not in the budget: the founder's own pay (€3,000 a month would cost €72k, from the buffer), equity for the hires, and certification (CTO estimate €300k to €800k, the next round).
+- Not in the budget: a salary for the founder (he takes none from this round and keeps his equity), equity for the hires, and certification (CTO estimate €300k to €800k, the next round).
 - The research partner's names (NKUA Medical School with Attikon University General Hospital; the Athena Research Center's Archimedes unit) are **targets**; nobody has been contacted.`,
     ],
   },
@@ -461,7 +461,7 @@ Rerun with the same €97k buffer and the same €400k first tranche: break-even
 
 - Revenue follows slide 10: paid revenue starts at plan month 9, after a free pilot; it climbs in a straight line inside each year and is held flat after year 3.
 - Gross margin 87.5% (the third number). If a person must check every case, margin falls to about 50% to 75% and break-even rises to about €534k to €801k a year.
-- Not counted: clinical-trials revenue (if the sponsor pilot converts, one trial in months 19 to 24 and then five a year, break-even moves to month 28), government revenue (tenders are slow), and any grant until it is signed.
+- Not counted: clinical-trials revenue (if the sponsor pilot converts, one trial in months 19 to 24 and then five a year, break-even moves to month 28), government revenue (tenders are slow; counted only once a contract is signed), and any grant until it is signed.
 
 **Unit economics, in two lines** *(assumptions)*:
 - One hospital pays **€40k a year** (1,000 cases × €40) at an **87.5% gross margin**; it costs about **€30k to €40k to win** and pays that back in **about 12 months**.
