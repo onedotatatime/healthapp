@@ -11,7 +11,9 @@
 # Q39 government revenue not counted until a contract is signed. D3 order unchanged, tranche-2 hires wait for the release.
 # D5 no founder salary from this round (full-time cost shown as a contingency). D6/D13 both new seats kept.
 # None of these changes a cash line: every cash number is the same as v4.
-import sys, math
+import sys, math, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from funding_plan import N, H, GM, PRICE_EUR_PER_CASE, CONSERVATIVE, UPSIDE, rng, revenue   # the plan's revenue line lives in funding_plan.py (MIN-4701)
 V3 = '--v3' in sys.argv
 EMP = 1.2179     # employer social security 21.79% (secondary, PwC)
 TOOLS = 0.2      # about EUR200 a month for tools, per person
@@ -19,15 +21,10 @@ def loaded(gross, share=1.0):
     """Loaded monthly cost: gross a year (14 salaries) x 1.2179 / 12, times the share of time, plus tools."""
     return gross*EMP/12/1000*share + TOOLS
 def loaded_v3(gross, tools=0.2): return gross*EMP/12/1000 + tools   # v3's helper, kept for --v3
-N = 24           # budgeted plan months
-H = 48           # horizon simulated
 ASK = 1000.0
-GM = 0.875       # gross margin: EUR5 cost per EUR40 case (the third number)
 GATE = 9         # the tranche-2 gate fires at the end of month 9
 T1 = 300.0 if V3 else 400.0   # tranche 1, drawn after G2, before month 1
 T2 = ASK - T1                 # tranche 2, drawn before month GATE+1 (v4: committed at signing, released by the gate)
-
-def rng(a, b): return range(a, b+1)
 if V3:
     team = {
      'Engineer (platform and pipeline)':   [(rng(1,H), loaded_v3(50000))],
@@ -68,20 +65,7 @@ def cost(m, team=team, other=other):
     return t, by
 c = lambda m: cost(m)[0]
 
-def revenue(y1, y2, y3):
-    """Slide 10's yearly totals as months: paid revenue starts at plan month 9 (after the free pilot),
-    climbs in a straight line inside each year, and is held flat after year 3 (no growth assumed)."""
-    r = {m:0.0 for m in rng(1,H)}
-    k = y1/21.0
-    for i in rng(1,6): r[8+i] = k*i
-    s = r[14]
-    for start, tot in ((15,y2),(27,y3)):
-        e = s + (tot - 12*s)/6.5
-        for i in rng(1,12): r[start-1+i] = s + (e-s)*i/12
-        s = r[start+11]
-    for m in rng(39,H): r[m] = s
-    return r
-cons = revenue(26,180,560); up = revenue(258,1705,4850)
+cons = revenue(*CONSERVATIVE); up = revenue(*UPSIDE)
 
 def path(costf, rev, t1=T1, t2=T2, gate=GATE, shift=0):
     """Month-end cash with tranche 1 drawn before month 1 and tranche 2 before month gate+1."""

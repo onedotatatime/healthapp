@@ -106,6 +106,69 @@ check("5 last step (5,000 records, 2,071 matches): series 2 4.54, series 3 9.99,
       and "€%d" % js_round(eu["drop_eur_per_inhabitant"][-1]) == "€41"
       and eu["total_mio_eur"] == 1833973.32 and eu["total_eur_per_inhabitant"] == 4074.88 and eu["year"] == 2024 and eu["geography"] == "EU-27")
 
+# 5b. The timeline block (MIN-4701, CTO contract MIN-4699 comment 8b038e47): the plan's months 1 to 24 run through the same matching.
+#     The plan side (patients and income against funding_plan) is also checked by test_timeline_plan.py, which runs in CI without matching.
+tl = sim.get("timeline")
+check("5b the timeline block exists", tl is not None)
+if tl is not None:
+    sys.path.insert(0, os.path.join(HERE, "..", "..", "docs", "business"))
+    import funding_plan as fp
+    TN = fp.N
+    pv, iv, cv, ev = tl["patients"]["values"], tl["income_eur"]["values"], tl["matches"]["count"], tl["effect"]
+    ramp = tl["patients"]["ramp"]
+    check("5b one value per plan month (%d) for every measure, x = 1..%d, whole numbers where the contract says whole" % (TN, TN),
+          tl["x"]["values"] == list(range(1, TN + 1)) and all(len(a) == TN for a in (pv, iv, cv, ev, tl["matches"]["network"]))
+          and all(type(v) is int for v in pv + iv + cv) and all(len(tl[k]["values"]) == TN for k in ("diagnoses", "drop_eur") if k in tl))
+    check("5b every total starts at its first plan month's value and never falls (patients, income, matches; diagnoses and drop when present)",
+          all(all(b >= a for a, b in zip(v, v[1:])) for v in [pv, iv, cv] + [tl[k]["values"] for k in ("diagnoses", "drop_eur") if k in tl])
+          and pv[0] == iv[0] == cv[0] == 0)
+    check("5b patients at the last month are not more than cohort_size", pv[-1] <= sim["cohort_size"] and tl["matches"]["network"] == pv)
+    check("5b matches.definition is the 12-step run's", tl["matches"]["definition"] == ma["definition"])
+    # Income against the plan's own figures, here by the plan module's revenue() (test_timeline_plan.py holds the independent arithmetic).
+    cons = fp.revenue(*fp.CONSERVATIVE)
+    rev24 = sum(cons[m] for m in range(1, TN + 1))
+    year1 = sum(cons[m] for m in range(9, 15))
+    check("5b income total equals the plan's 24-month figure (EUR %d) and month 14 equals plan year 1 (EUR %dk)" % (js_round(rev24 * 1000), fp.CONSERVATIVE[0]),
+          iv[-1] == js_round(rev24 * 1000) and iv[13] == js_round(year1 * 1000) == fp.CONSERVATIVE[0] * 1000 and iv[7] == 0 and iv[8] > 0)
+    # The network at month m is the first patients[m] records of the same shuffle; opted-in records in it bound the matches.
+    order = list(coh)
+    random.Random(sim["seed"]).shuffle(order)
+    opt_prefix = [0]
+    for r in order:
+        opt_prefix.append(opt_prefix[-1] + (1 if r["matching_opt_in"] else 0))
+    pool = [opt_prefix[n] for n in pv]
+    check("5b matches[m] <= the opted-in records in the network at month m", all(c <= p for c, p in zip(cv, pool)))
+    C = ma["count"][-1]
+    check("5b effect[m] == half-up(1000 x (0.1 + 0.1 x count[m] / C)) / 1000 with C = the 12-step run's last count (%d), at all %d months" % (C, TN),
+          all(ev[m] == js_round(1000 * (0.1 + 0.1 * cv[m] / C)) / 1000 for m in range(TN)) and ev[0] == 0.1)
+    # The last row, from the CTO's scratch run on real matching (MIN-4699: 4,109 patients, 1,693 records with a match, effect 0.182, drop 0.92)
+    # and from this generator's own run for the other ramp (2,806, 1,137, 0.155).
+    last = {"all_revenue": (4109, 1693, 0.182), "per_case_only": (2806, 1137, 0.155)}[ramp]
+    check("5b last row (%s ramp): patients %d, records with a match %d, effect %s" % ((ramp,) + last), (pv[-1], cv[-1], ev[-1]) == last)
+    # drop_pts as the euro block publishes it: round(11 - round(11 x (1 - effect x rate), 2), 2), effect unrounded.
+    dps = []
+    for m in range(TN):
+        rate = cv[m] / pool[m] if pool[m] else 0.0
+        eff = 0.1 + 0.1 * cv[m] / C
+        dps.append(round(11 - round(11 * (1 - eff * rate), 2), 2))
+    drop_last = {"all_revenue": 0.92, "per_case_only": 0.77}[ramp]
+    check("5b drop_pts at the last month (%s ramp) is %s, and never falls" % (ramp, drop_last), dps[-1] == drop_last and all(b >= a for a, b in zip(dps, dps[1:])), str(dps))
+    new = [b - a for a, b in zip([0] + pv, pv)]
+    if "diagnoses" in tl:                  # optional: only after the CEO seat approves it (MIN-4698)
+        run, exp = 0.0, []
+        for m in range(TN):
+            rate = cv[m] / pool[m] if pool[m] else 0.0
+            run += new[m] * 5 / 100 * (0.1 + 0.1 * cv[m] / C) * rate
+            exp.append(math.floor(run * 10 + 0.5) / 10)
+        check("5b diagnoses equals new x 5/100 x effect x rate, summed, half-up to 1 decimal", tl["diagnoses"]["values"] == exp and bool(tl["diagnoses"]["status"]), str(exp[-3:]))
+    if "drop_eur" in tl:
+        method, run, exp = tl["drop_eur"]["method"], 0.0, []
+        for m in range(TN):
+            run += (pv[m] / 12 if method == "patient_months" else new[m]) * dps[m] / 100 * 4074.88
+            exp.append(js_round(run))
+        check("5b drop_eur (%s) equals its formula at the published 2-decimal drop, half-up to the euro" % method,
+              method in ("patient_months", "case_year") and tl["drop_eur"]["values"] == exp and bool(tl["drop_eur"]["status"]), str(exp[-3:]))
+
 # 6. The file reproduces byte for byte (simulate.py builds its own 5,000-record cohort; run_all.sh does the same on a fresh run).
 with tempfile.TemporaryDirectory() as t:
     subprocess.check_call([sys.executable, os.path.join(HERE, "simulate.py"), t], stdout=subprocess.DEVNULL, cwd=HERE)
