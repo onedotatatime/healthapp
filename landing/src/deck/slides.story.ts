@@ -13,7 +13,6 @@ export const storySlides: StorySlide[] = [
     facts: [
       'Founder, onedotatatime.design studio',
       'Designing digital products since 2009',
-      'Product design lead at Kariera.gr and MoRo Technology',
     ],
     background: '/img/bg-hero.webp',
     photo: { src: '/story/lefteris.webp', alt: 'Lefteris Georgaras', caption: 'Lefteris Georgaras' },

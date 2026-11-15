@@ -26,10 +26,9 @@
 
 **Support:** A product builder, based in Athens.
 
-**Labels (three facts, small, under the name):**
+**Labels (two facts, small, under the name):**
 - Founder, onedotatatime.design studio
 - Designing digital products since 2009
-- Product design lead at Kariera.gr and MoRo Technology
 
 **Labels (footer, small, as on the pitch deck cover):** Pathien lockup · Gen AI Summit Hackathon · Biotech & AI · Athens LifeTech Park
 
@@ -39,7 +38,7 @@
 
 **Facts and where they come from:**
 - "Founder, onedotatatime.design studio": founder, 14 Nov 2026, verbatim: *"Just me Lefteris Georgaras (founder of onedotatatime.design studio)"*; pitch deck slide 13.
-- "Designing digital products since 2009" and "Product design lead at Kariera.gr and MoRo Technology": his CV (`~/Desktop/LefterisGeorgaras.pdf`), public career facts only. First design role 2009; Lead Digital Product Designer at MoRo Technology (2019) and at Kariera.gr, later VP of Design there (2022). **For the founder to confirm:** the CV is older than today. The label is written so it holds whether he is still at Kariera.gr or not. If he prefers his title, use "VP of Design, Kariera.gr" (add "former" if he has left).
+- "Designing digital products since 2009": his CV (`~/Desktop/LefterisGeorgaras.pdf`), public career fact only; first design role 2009. The third row (job title at Kariera.gr and MoRo Technology) was removed on 2026-11-15; founder: "just product builder".
 - "Built with a team of AI agents this weekend": pitch deck slide 13 ("One founder and AI agents built this").
 - Nothing private on this slide: no phone, no personal email, no age, no address.
 
