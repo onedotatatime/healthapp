@@ -74,7 +74,7 @@ export const STORY_FRAMES: Record<FrameId, FrameConfig> = {
     title: 'Simulation, live',
     viewW: 1600, viewH: 910, iframeW: 1280, iframeH: 728,
     fallback: '/story/fallback-simulation.webp',
-    fallbackAlt: 'The simulation page: five lines over time, matches growing as more people join',
+    fallbackAlt: "The simulation page, a model on synthetic data: with all of Greece's patients in the network the yearly loss to wrong or missed diagnoses falls from €2.19 billion to €1.98 billion, lower by €201 million (9.2%)",
   },
 };
 
