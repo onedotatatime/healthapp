@@ -1,11 +1,15 @@
 """Writes simulation.json. Series 1 = the real matching logic on growing cohort samples. Series 2 and 3 = Anna's formula (MIN-4506),
 with an assumed effect of a match that rises with the matches made so far (MIN-4605). The euro block turns the cost drop into money (MIN-4607).
-Usage: python3 simulate.py <data_dir>"""
+The network is SIM_N = 1,200 synthetic records (founder, 2026-11-15: "lets go to 1200"), built here with generate.make_cohort(n=1200): common patterns scale,
+rare patterns keep their size. It is NOT read from cohort.json: that file stays the 400-record cohort that the DB seed and the matches panel use.
+Usage: python3 simulate.py <out_dir>   (writes <out_dir>/simulation.json)"""
 import json, os, random, sys
 from match import find_matches, features, K, MIN_SHARED
+from generate import make_cohort, SEED as GEN_SEED
 
 SEED = 20261114 + 2
 STEPS = 12
+SIM_N = 1200                # synthetic records at the last step (12 steps of 100)
 EFFECT_START = 0.10         # assumed effect of the first match (CEO seat, MIN-4605, 2026-11-15)
 EFFECT_CEILING = 0.20       # assumed effect once the network is full; the 20% approved on MIN-4506. Also the file's `assumption.value`.
 BASE_WRONG_PER_100 = 5      # WHO patient safety fact sheet (low end of 5-20%)
@@ -22,7 +26,7 @@ SPEND_QUERY_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.
 SPEND_OPENED = "2026-11-15"
 
 d = sys.argv[1]
-cohort = json.load(open(os.path.join(d, "cohort.json")))["records"]
+cohort = make_cohort(random.Random(GEN_SEED), SIM_N)[0]     # same seed as generate.py --n 1200
 order = list(cohort)
 random.Random(SEED).shuffle(order)           # the network "grows" in this order
 feats = {}

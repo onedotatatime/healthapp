@@ -34,21 +34,24 @@ N = len(sim["x"]["values"])
 s1, s2, s3 = sim["series"]
 eu, ma, asum = sim["euro"], sim["matches"], sim["assumption"]
 
-# 1. Byte-identical to the base ref, except what the contract lets change.
+# 1. Identical to the base ref, except what the founder's 2026-11-15 decision ("lets go to 1200") changes: the network size.
+#    Changes by decision: cohort_size 400 -> 1200, x (100 ... 1200), series 1 values, the last value of series 2 and 3. Everything else stays.
 try:
     base = json.loads(subprocess.check_output(["git", "-C", HERE, "show", "%s:data/synthetic/simulation.json" % BASE_REF], stderr=subprocess.STDOUT))
 except Exception as e:
     base = None
     check("1 base file readable from %s" % BASE_REF, False, str(getattr(e, "output", e)))
 if base is not None:
-    top = ["synthetic", "label", "seed", "cohort_size", "k", "min_shared", "steps", "x"]
+    top = ["synthetic", "label", "seed", "k", "min_shared", "steps"]
     same = all(json.dumps(sim[k]) == json.dumps(base[k]) for k in top)
-    same = same and json.dumps(sim["series"][0]) == json.dumps(base["series"][0])
+    same = same and sim["series"][0]["id"] == base["series"][0]["id"] and sim["series"][0]["key"] == base["series"][0]["key"]
     for i in (1, 2):
         a, b = sim["series"][i], base["series"][i]
         same = same and all(json.dumps(a[k]) == json.dumps(b[k]) for k in ("id", "key", "label", "unit", "baseline", "sources"))
-        same = same and a["values"][0] == b["values"][0] and a["values"][-1] == b["values"][-1]
-    check("1 identical to %s: top-level keys, x, series 1, id/key/label/unit/baseline/sources and first+last value of series 2 and 3" % BASE_REF, same)
+        same = same and a["values"][0] == b["values"][0]
+    check("1 identical to %s: top-level keys (not cohort_size, x), series 1 id/key, series 2 and 3 id/key/label/unit/baseline/sources and first value" % BASE_REF, same)
+check("1 network: cohort_size 1200, x = 100 ... 1200 in 12 steps of 100",
+      sim["cohort_size"] == 1200 and sim["x"]["values"] == list(range(100, 1201, 100)) and sim["steps"] == 12)
 
 # 2. matches and the effect curve.
 c = ma["count"]
@@ -71,16 +74,14 @@ check("4 every euro array has %d values, 0 where the match count is 0" % N,
       all(len(eu[k]) == N for k in ("drop_pts", "drop_mio_eur", "drop_eur_per_inhabitant", "loss_mio_eur"))
       and all(dm[k] == 0 and eu["drop_eur_per_inhabitant"][k] == 0 for k in range(N) if c[k] == 0))
 
-# 5. The CEO's last row.
-check("5 last step: series 2 4.66, series 3 10.26, drop_pts 0.74, '€13.6 billion', '€30'",
-      s2["values"][-1] == 4.66 and v3[-1] == 10.26 and eu["drop_pts"][-1] == 0.74 and fmt(dm[-1]) == "€13.6 billion"
-      and "€%d" % js_round(eu["drop_eur_per_inhabitant"][-1]) == "€30"
+# 5. The last row at 1,200 records (the CEO's 400-record row was 4.66, 10.26, 0.74, €13.6 billion, €30).
+check("5 last step (1,200 records, 473 matches): series 2 4.56, series 3 10.04, drop_pts 0.96, '€17.6 billion', '€39'",
+      ma["count"][-1] == 473 and s2["values"][-1] == 4.56 and v3[-1] == 10.04 and eu["drop_pts"][-1] == 0.96 and fmt(dm[-1]) == "€17.6 billion"
+      and "€%d" % js_round(eu["drop_eur_per_inhabitant"][-1]) == "€39"
       and eu["total_mio_eur"] == 1833973.32 and eu["total_eur_per_inhabitant"] == 4074.88 and eu["year"] == 2024 and eu["geography"] == "EU-27")
 
-# 6. The file reproduces byte for byte from its own cohort (run_all.sh does the same on a fresh cohort).
+# 6. The file reproduces byte for byte (simulate.py builds its own 1,200-record cohort; run_all.sh does the same on a fresh run).
 with tempfile.TemporaryDirectory() as t:
-    with open(os.path.join(t, "cohort.json"), "wb") as f:
-        f.write(open(os.path.join(D, "cohort.json"), "rb").read())
     subprocess.check_call([sys.executable, os.path.join(HERE, "simulate.py"), t], stdout=subprocess.DEVNULL, cwd=HERE)
     check("6 simulate.py reproduces simulation.json byte for byte", open(os.path.join(t, "simulation.json"), "rb").read() == open(os.path.join(D, "simulation.json"), "rb").read())
 
