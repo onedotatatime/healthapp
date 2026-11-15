@@ -158,9 +158,9 @@ Card 2: With Pathien, what one trial saves
 - Below ASPE's lowest modelled saving from EHR-based recruitment, $0.46M ≈ €418,000 per phase 3 study *(S29, verified)*.
 - Fewer failed screenings: today 36.3% fail *(S26, secondary)*. If a third fewer of our referrals fail, the site screens about 6 fewer people per trial *(assumption)*.`,
       `Card 3: How we charge, and what the sponsor keeps
-- Big number: **about €24,000 per trial** *(our estimate)*: €5,000 set-up + €1,000 per randomised patient *(assumptions)* × about 19 randomised.
+- Big number: **about €24,000 per trial** *(our estimate)*: €5,000 set-up + €1,000 per randomised patient *(assumptions)* × about 19 randomised: about 13% of the €180,000 saving.
 - The sponsor keeps €180,000 − €24,000 = **about €156,000** per trial *(our estimate)*.
-- 10 trials a year: about €240,000 *(assumption; not in slide 10's totals)*. Never the patient.
+- 5 trials a year: about €120,000 *(assumption; not in slide 10's totals; the funding plan uses the same five a year)*. Never the patient.
 
 Footer: Prices, volumes, days saved and the exchange rate are assumptions. "Our estimate" is our arithmetic on sourced inputs, not a result. Consent only. Never a data sale.
 
@@ -206,18 +206,18 @@ Footer: Prices, volumes, days saved and the exchange rate are assumptions. "Our 
 - **25 to 30%** of medical tests are unnecessary, about **2.5%** of health spending. *(OECD, 2025, S10)*
 - **Worked example, Greece** *(our estimate)*:
   - The whole prize: about **€3.5 billion a year** of the €19.9 billion Greece spends on health is the cost of diagnostic error. *(S10 × S15)*
-  - Our first slice, unnecessary and repeated tests only: **about €4M a year (conservative) to about €75M a year (upside)**, depending on how many patients bring their record. *(our estimate, S10, S15, S17)*
+  - Our first slice, unnecessary and repeated tests only: **about €4M a year (conservative) to about €30M a year (upside)**, depending on how many patients bring their record. *(our estimate, S10, S15, S17)*
 
-One line on who pays: Hospitals and clinics pay per case or per seat; the patient is free. What that could earn, and how it compares with these savings: slide 10.
+One line on who pays: Hospitals and clinics pay per case or per seat; the patient is free. What that could earn: slide 10.
 
 Footer: "Our estimate" means our arithmetic on sourced inputs. The share we prevent and the adoption rate are assumptions to be tested in pilots. Not a forecast.`,
       `**3. The formula:**
 Formula for questions (do not read out): savings a year = cost base × share avoidable × share we prevent × adoption.
 - Conservative: €810M (Greek stand-alone lab and imaging spend, 2024, S15) × 25% unnecessary (OECD low end, S10) × 20% we prevent (assumption) × 10% adoption (assumption) = **about €4M**.
-- Upside: €497M (OECD's 2.5% unnecessary-test share × €19.87bn Greek spend) × 50% we prevent (assumption, anchored to S17: duplicate-imaging odds 0.44 when doctors used a shared record) × 30% adoption (assumption) = **about €75M**.
-- Whole prize: €19.87bn × 17.5% = about €3.5bn (our estimate). Never say €75M without "upside" and the adoption assumption.
+- Upside: €497M (OECD's 2.5% unnecessary-test share, S10, × €19.87bn Greek spend, S15) × 20% we prevent (assumption, the same as the conservative line) × 30% adoption (assumption) = **about €30M** (€29.8M). The 20% sits well under the one measured effect: doctors who used a shared record ordered fewer duplicate images, odds ratio 0.44 (S17). S17 covers duplicate imaging only, not every unnecessary test, so it no longer sets a 50% share (v4.6).
+- Whole prize: €19.87bn × 17.5% = about €3.5bn (our estimate). Never say €30M without "upside" and the adoption assumption.
 
-**4. Sources:** S10 (verified), S15 (verified), S17 (verified), S6 (verified). No count of wrong diagnoses per year exists for Greece or the EU in a primary source, so none is on the slide. No euro figure for duplicate tests in Greece or the EU exists either; the €4M to €75M is ours and labelled so.`,
+**4. Sources:** S10 (verified), S15 (verified), S17 (verified). No count of wrong diagnoses per year exists for Greece or the EU in a primary source, so none is on the slide. No euro figure for duplicate tests in Greece or the EU exists either; the €4M to €30M is ours and labelled so.`,
     ],
   },
   {
@@ -263,7 +263,7 @@ Formula for questions (do not read out): savings a year = cost base × share avo
 | Year 2+ | National health-data agencies | A patient-held layer next to the national record | Tender, sandbox |
 
 Footer: Models are hypotheses for pilots to test. Prices and volumes on slide 10 are assumptions.`,
-      `**5. The arithmetic:** **"A fraction of what they save", the arithmetic** *(our estimate, shown small on the slide)*: slide 7 says better records could save **€4M (conservative) to €75M (upside) a year on tests, in Greece alone**. Our year-3 revenue from every customer in every country is **€0.56M to €4.85M**: about **14%** of the conservative saving and about **6%** of the upside one. Savings outside Greece and the savings on diagnostic error itself are not counted, so the real ratio is smaller.
+      `**5. Break-even in hospitals** *(our estimate)*: at the steady team of six our running costs are about €33.4k a month. At an 87.5% gross margin that needs about **€458k of revenue a year**: **about 12 hospitals at €40k a year** (11.4, rounded up: 11 bring €440k), or about 760 doctor seats at €600 a year, or a mix. Slide 10's conservative year 3 is €560k. v4.6 compared year-3 revenue from every country with savings on tests in Greece alone; the two did not share a base, so that ratio is dropped.
 
 **6.** Not counted: rare-disease pilots (free, grant-funded), national agencies (tenders, year 2+), clinical-trial pre-screening (slide 6c: priced per trial and per randomised patient, not projected until a sponsor pilot sets the volume), research use (later, consent-gated, never a data sale).
 
@@ -312,10 +312,10 @@ Footer, required: Our estimate. Every price, customer count and volume is an ass
     columns: [
       `**7. Answers for questions:**
 - *Why €40 to €80 a case?* No one publishes a price for a consented, translated record packet. We ask buyers for their figure first (treg-findings-2026-11-14.md Q6, question 5: ask for a monthly figure, do not suggest one).
-- *Why €50 a seat?* Below paid AI scribes (Tandem Pro lists €125 a month, S18), above the free tools (OpenEvidence and Glass are free to US clinicians, S8). Same assumption A7 used in dollars.
+- *Why €50 a seat?* Below paid AI scribes (Tandem Pro lists €125 a month, S18), above the free tools (OpenEvidence and Glass are free to US clinicians, S8). The same €600 a year A7 uses for every seat.
 - *Is 45,000 cases a lot?* Turkey alone welcomed about 1.5M health tourists in 2024 (S19, secondary). 45,000 cases is about 3% of one country's year.
 - *Who saves, who pays?* Not always the same desk. The payer or the patient saves on repeated tests; the international-patient department pays for a faster first visit and patients who arrive ready. The pilot measures both.`,
-      `**Sources:** S10 and S15 via slide 7 (verified inputs, our estimate); S18 (company pricing page, via market-and-competitors.md §2); S19 (secondary); S8; buyers.md §1.1, §1.2, §1.4, §1.7 and §5 (models, no prices). **Sales' do-not-use list:** it names "our TAM, SAM and SOM themselves, until the $600 seat price and 1% share are validated". The 1% share is dropped. A seat price has to appear because the founder asked what we can earn; it stays at €50 a month, carries the word "assumption" at the same size, and is anchored to a published list price (S18), not to market share. Bumrungrad's international-patient count (🟡 in buyers.md) is not used.`,
+      `**Sources:** S18 (company pricing page, via market-and-competitors.md §2); S19 (secondary); S8; buyers.md §1.1, §1.2, §1.4, §1.7 and §5 (models, no prices). **Sales' do-not-use list:** it names "our TAM, SAM and SOM themselves, until the $600 seat price and 1% share are validated". The 1% share is dropped. A seat price has to appear because the founder asked what we can earn; it stays at €50 a month, carries the word "assumption" at the same size, and is anchored to a published list price (S18), not to market share. Bumrungrad's international-patient count (🟡 in buyers.md) is not used.`,
     ],
   },
   {
@@ -353,19 +353,19 @@ Footer, required: Named organisations are targets from public research. None has
     grid: "1.15fr 1fr",
     notes: ["Appendix slide. Shown when asked, or when a main slide's \"Details\" link is clicked. Not in the 3-minute script. The \"Back\" link returns to the main slide."],
     columns: [
-      `From the CEO's plan v3 (docs/business/team-and-funding-plan.md §2, §2b, §3 and §5; the model reruns in docs/business/funding-model.py). Founder, 15 Nov 2026: *"Fund 1m -> do the maths"*. **Every cost and revenue figure here is an assumption, our plan.** Not on this slide, by the founder's rule: where the money comes from.
+      `From the CEO's plan v4 (docs/business/team-and-funding-plan.md §2, §2b, §3 and §5; the model reruns in docs/business/funding-model.py). Founder, 15 Nov 2026: *"Fund 1m -> do the maths"*. **Every cost and revenue figure here is an assumption, our plan.** Not on this slide, by the founder's rule: where the money comes from.
 
 **1. The team: 6 people, plus a research partner** *(loaded monthly cost at Athens rates, with employer contributions; assumptions)*
 
 | Who | Starts | Cost a month | 24 months |
 |---|---|---|---|
 | Engineer (platform and pipeline) | Month 1, full-time | €5.3k | €127k |
-| Clinical and regulatory lead (half-time) | Month 1 | €3.1k | €76k |
+| Clinical and regulatory lead (half-time) | Month 1 | €3.2k | €78k |
 | ML engineer | Month 2, full-time | €5.8k | €133k |
-| Business development | Month 2, full-time | €5.1k | €118k |
-| Marketing | Month 3 half-time, full-time from month 10 | €1.8k, then €3.7k | €68k |
+| Business development | Month 2, full-time | €5.5k | €125k |
+| Marketing | Month 3 half-time, full-time from month 10 | €2.0k, then €3.9k | €72k |
 | Second engineer | Month 13, full-time | €4.8k | €57k |
-| **Team total** | | **€27.7k at full team** | **€578k (58%)** |
+| **Team total** | | **€28.4k at full team** | **€592k (59%)** |
 | Research partner (target, not contacted): a university hospital and an AI research centre | Month 4 | about €2.9k | €49.8k (5%) |
 
 Build = the two engineers and the ML engineer. Sell = business development and marketing. Prove = the clinical and regulatory lead and the research partner.`,
@@ -373,11 +373,15 @@ Build = the two engineers and the ML engineer. Sell = business development and m
 
 | Function | What is inside | 24 months | Share |
 |---|---|---|---|
-| **Sell** | Business development €117.8k · marketing €67.6k · pilots and go-to-market €60.0k · public-procurement adviser €15.0k · trials sponsor pilot €25.0k | **€285k** | **29%** |
+| **Sell** | Business development €125.4k · marketing €72.0k · pilots and go-to-market €60.0k · public-procurement adviser €15.0k · trials sponsor pilot €25.0k | **€297k** | **30%** |
 | Build | Engineer €126.6k · ML engineer €133.0k · second engineer €57.2k · infrastructure and AI €44.0k | €361k | 36% |
-| Prove | Clinical and regulatory lead €75.5k · regulatory and legal €67.0k · regulatory pathway €50.0k · research partner €49.8k | €242k | 24% |
-| Buffer | About 3.4 months of the steady burn | €112k | 11% |
-| **Total** | | **€1,000k** | **100%** |`,
+| Prove | Clinical and regulatory lead €77.9k · regulatory and legal €67.0k · regulatory pathway €50.0k · research partner €49.8k | €245k | 24% |
+| Buffer | About 2.9 months of the steady burn | €97k | 10% |
+| **Total** | | **€1,000k** | **100%** |
+
+- Costs are loaded monthly costs for Athens employees, one method for every hire: gross salary with any variable pay (14 payments a year) × 1.2179 for employer social security (21.79%, **secondary**), ÷ 12, × the share of time, plus about €200 a month for tools for every person, part-time included. Every salary is an **assumption**, anchored to **secondary** salary surveys (plan §2); the clinical lead's salary has no source checked.
+- Not in the budget: the founder's own pay (€3,000 a month would cost €72k, from the buffer), equity for the hires, and certification (CTO estimate €300k to €800k, the next round).
+- The research partner's names (NKUA Medical School with Attikon University General Hospital; the Athena Research Center's Archimedes unit) are **targets**; nobody has been contacted.`,
     ],
   },
   {
@@ -391,32 +395,34 @@ Build = the two engineers and the ML engineer. Sell = business development and m
 
 | Quarter | Months | Burn a month | What drives it |
 |---|---|---|---|
-| Q1 | 1 to 3 | €37.6k | First hires; regulatory opinion, DPIA, contracts, security test |
-| Q2 | 4 to 6 | €31.2k | Marketing half-time; research partner starts |
-| Q3 | 7 to 9 | €28.5k | Pilot running; the three numbers measured |
-| Q4 | 10 to 12 | €38.0k | Tranche 2: marketing full-time; regulatory pathway, procurement adviser, trials pilot |
-| Q5 | 13 to 15 | €42.8k | Second engineer; the peak |
-| Q6 | 16 to 18 | €41.9k | Student project ends |
-| Q7 | 19 to 21 | €39.1k | Trials pilot ends; validation contract ends |
-| Q8 | 22 to 24 | €37.1k | Full team, run costs |
-| After | 25 on | €32.7k | Steady team of six; certification is the next round |
+| Q1 | 1 to 3 | €38.0k | First hires; regulatory opinion, DPIA, contracts, security test |
+| Q2 | 4 to 6 | €31.8k | Marketing half-time; research partner starts |
+| Q3 | 7 to 9 | €29.2k | Pilot running; the three numbers measured |
+| Q4 | 10 to 12 | €38.6k | Tranche 2: marketing full-time; regulatory pathway, procurement adviser, trials pilot |
+| Q5 | 13 to 15 | €43.4k | Second engineer; the peak |
+| Q6 | 16 to 18 | €42.5k | Student project ends |
+| Q7 | 19 to 21 | €39.7k | Trials pilot ends; validation contract ends |
+| Q8 | 22 to 24 | €37.7k | Full team, run costs |
+| After | 25 on | €33.4k | Steady team of six; certification is the next round |
 
-Average €37.0k a month over the 24 months.
+Average €37.6k a month over the 24 months.
 
 **4. Runway**
 
 - With no revenue at all, the money lasts **27 months**.
-- Months 1 to 9 cost €292k, inside tranche 1 (€300k). Months 10 to 24 cost €596k; with the buffer, tranche 2 is €700k.
-- The buffer (€112k) covers about 3.4 months of the steady burn: slower sales, a longer DPIA or ethics approval, a gap before tranche 2.`,
+- Tranche 1 (€400k) carries months 1 to 9 (€297k) and keeps €103k in reserve: about 3.5 months at the month-9 burn, for a late pilot or a late gate. Tranche 2 (€600k), committed at the same signing, carries months 10 to 24 (€606k) with what is left of that reserve.
+- The buffer (€97k at month 24) covers about 2.9 months of the steady burn: slower sales, a longer DPIA or ethics approval.`,
       `**5. Tranches and gates**
 
 | Gate | Date or month | What opens |
 |---|---|---|
 | **G1**, before any money | 30 Nov 2026 | 2 of 5 buyers name a cost and a budget owner, plus 1 written pilot interest; 3 of 5 doctors name the moment they would open it. No money |
-| **G2**, before any money | 15 Jan 2027 | A pilot agreed in writing with a buyer; the regulatory adviser's first opinion; a committed clinician. Opens **tranche 1, €300k** (months 1 to 9; month 1 about March 2027, assumption) |
-| **The three numbers**, at the end of the pilot | About month 9 | The buyer names **€40 a case or more**; **1,000 paid cases a year or more** per hospital; **€5 or less a case to run** at 98% field accuracy. Opens **tranche 2, €700k** (months 10 to 24) |
+| **G2**, before any money | 15 Jan 2027 | A pilot agreed in writing with a buyer; the regulatory adviser's first opinion; a committed clinician. Opens **tranche 1, €400k** (months 1 to 9, plus about 3.5 months of reserve; month 1 about March 2027, assumption). **Tranche 2, €600k**, is committed at the same signing |
+| **The gate (three numbers)**, at the end of the pilot | About month 9 | The hospital **commits in writing to 1,000 or more paid cases a year at €40 or more a case**, and the pilot measures **€5 or less a case to run** at 98% field accuracy. Releases **tranche 2, €600k** (months 10 to 24), already committed |
 | Inner gate: regulatory pathway (€50k) | Months 10 to 24 | Released only if the regulatory opinion says the roadmap needs a device route; otherwise it returns to the buffer |
 | Inner gate: trials sponsor pilot (€25k) | Months 10 to 18 | Released only when a sponsor or CRO agrees a pilot in writing; if none signs by month 12, it returns to the buffer |
+
+- If the gate fails, tranche 1 alone, held at month 9's costs, lasts to about month 12.5.
 
 Nobody is hired before G2. If G2 fails, nobody is hired.`,
     ],
@@ -428,17 +434,18 @@ Nobody is hired before G2. If G2 fails, nobody is hired.`,
     grid: "1.15fr 1fr 1fr",
     notes: ["Appendix slide. Shown when asked, or when a main slide's \"Details\" link is clicked. Not in the 3-minute script. The \"Back\" link returns to the main slide."],
     columns: [
-      `**6. Break-even, on both revenue lines (slide 10)** *(gross margin 87.5%: €5 cost on a €40 case)*
+      `**6. Break-even, on both revenue lines (slide 10)** *(gross margin 87.5%: €5 cost on a €40 case; break-even is the first month gross profit covers running costs)*
 
 | | Conservative (€26k / €180k / €560k in years 1 to 3) | Upside (€258k / €1.7M / €4.85M) |
 |---|---|---|
 | Revenue inside the 24 months | about €164k | about €1.57M |
-| **Revenue passes costs** | **Month 29** | **Month 12** |
-| Cash at month 24 | about €255k | about €1.49M |
-| **Cash at its lowest** | **about €204k, month 30** | never below the start |
-| Months sales can slip and still reach break-even | 6 | 18 |
+| **Break-even** (gross profit covers running costs) | **Month 31** | **Month 12** |
+| Cash at month 24 | about €241k | about €1.47M |
+| **Cash at its lowest, before tranche 2** | **about €104k, month 9** (€600k committed, not yet drawn) | about €114k, month 9 |
+| **Cash at its lowest, after tranche 2** | **about €186k, month 30** | **about €690k, month 11** (costs start months before revenue) |
+| Months sales can slip and still reach break-even | 5 | 17 |
 
-Break-even at the steady team of six: about €449k of revenue a year (about 11 hospitals at €40k a year, or about 750 doctor seats). The plan is sized on the conservative line; if the upside arrives, tranche 2 can be smaller.`,
+The plan is sized on the conservative line; if the upside arrives, tranche 2 can be smaller or released early. **The upside needs more people, not modelled:** it runs 45,000 cases and 2,000 seats a year by year 3 on the six-person cost base.`,
       `**7. The €885k alternative** *(if the founder wants less than €1M)*
 
 | Lever | Saves |
@@ -449,15 +456,16 @@ Break-even at the steady team of six: about €449k of revenue a year (about 11 
 | Research partner back to 15 months | €12k |
 | **Together** | **about €115k: the ask becomes about €885k** |
 
-Rerun with the same €112k buffer: break-even still month 29, and sales can still slip 6 months. What is lost is the clinician-led regulatory start, the trials test and the earlier second engineer, not the runway.`,
+Rerun with the same €97k buffer and the same €400k first tranche: break-even still month 31, and sales can still slip 5 months. What is lost is the clinician-led regulatory start, the trials test and the earlier second engineer, not the runway.`,
       `**8. Assumptions**
 
-- Costs are loaded monthly costs for Athens employees: gross salary (14 payments a year) × 1.2179 for employer social security (21.79%, **secondary**), ÷ 12, plus about €200 a month for tools. Every salary is an **assumption**, anchored to **secondary** salary surveys (plan §2); the clinical lead's salary has no source checked.
 - Revenue follows slide 10: paid revenue starts at plan month 9, after a free pilot; it climbs in a straight line inside each year and is held flat after year 3.
-- Gross margin 87.5% (the third number). If a person must check every case, margin falls to about 50% to 75% and break-even rises to about €523k to €785k a year.
-- Not counted: clinical-trials revenue (if the sponsor pilot converts, break-even moves to month 27), government revenue (tenders are slow), and any grant until it is signed.
-- Not in the budget: the founder's own pay (€3,000 a month would cost €72k, from the buffer), equity for the hires, and certification (CTO estimate €300k to €800k, the next round).
-- The research partner's names (NKUA Medical School with Attikon University General Hospital; the Athena Research Center's Archimedes unit) are **targets**; nobody has been contacted.`,
+- Gross margin 87.5% (the third number). If a person must check every case, margin falls to about 50% to 75% and break-even rises to about €534k to €801k a year.
+- Not counted: clinical-trials revenue (if the sponsor pilot converts, one trial in months 19 to 24 and then five a year, break-even moves to month 28), government revenue (tenders are slow), and any grant until it is signed.
+
+**Unit economics, in two lines** *(assumptions)*:
+- One hospital pays **€40k a year** (1,000 cases × €40) at an **87.5% gross margin**; it costs about **€30k to €40k to win** and pays that back in **about 12 months**.
+- **About 12 hospitals** cover our running costs (€458k a year; 11 bring €440k, short of it), or about 760 doctor seats; at month 24 the conservative line runs at **about €19k a month**, half of that.`,
     ],
   },
 ];

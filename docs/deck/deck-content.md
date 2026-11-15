@@ -11,7 +11,7 @@ Version entries before v4.2 use the old numbers.
 | | |
 |---|---|
 | **Owner** | Anna Lytica (Marketing), MIN-4429. Deck story: CEO (MIN-4425). Design: Pix (MIN-4428), next. |
-| **Version** | **v4.6, 15 Nov 2026** (MIN-4503: slide 1 cover headline replaced. Founder, 15 Nov 2026, verbatim, after none of the five proposed cover headlines was picked: *"just write Your medical history, in one place."* The headline is now "Your medical history, / in one place.", broken after the comma, the same words as the landing page hero; the one-liner and the speaker notes are unchanged; web deck `slides.ts` matches. Was "Maria asks Google what her pain means. Her doctors each see one page of her history.") v4.5, 15 Nov 2026 (MIN-4503: slide 6c rebuilt so the three cards compare the same thing. Founder, 15 Nov 2026, verbatim, asked of the v4.4 cards "$360M\*" and "$200,000\*": *"does 360m is the whole and the 200000 is per trial?"*, then: *"You need to be clear with the numbers and compare the same thing"*. The v4.4 cards mixed a market total over the life of 1,497 trials (recruitment budget, dollars), a per-trial running-cost saving (dollars) and our per-trial fee (euros). All three cards are now the cost of recruitment time, for one trial in one country, in euros at $1.10 to €1: card 1 **€36,000\*** a day of delay ($40,000, S23, rounded down); card 2 **€180,000\*** saved, 5 × €36,000; card 3 **€24,000\*** our fee, the sponsor keeps €156,000. The market totals ($357M ≈ €325M recruitment budget, 1,497 trials, 776,650 participants, ≈ €270M of running cost if each saved 5 days) moved to A3 as context, with a new answer on why the cards use the cost of a day and not the recruitment budget per trial. A3's worked example, speaker notes, web deck (`slides.ts`, `notes.ts`, `appendix.ts`) and `docs/business/clinical-trials-fit.md` §8 match. Was $360M / $200,000 / €24,000, sponsor keeps €158,000.) v4.4, 15 Nov 2026 (MIN-4503: slide 5b step 1 reversed. Founder, 15 Nov 2026, verbatim: *"probably in a serious condition"*. Step 1 now reads "possibly in a serious condition"; speaker notes and A2 "For questions" items 1 and 4 rewritten to match: support verifies with the hospital, not the patient. Replaces the v3.5 wording "with no serious condition".) **v4.3, 15 Nov 2026** (MIN-4503: the ask is now **€1M over 24 months**, in two gated tranches of **€300k** and **€700k** (was €600k over 18 months), merged from the CEO's plan v3, `docs/business/team-and-funding-plan.md` §7; slide 13 (team and ask) and slide 14 (why) rewritten with main numbers only: the headline, the ask, the two gates, the spend bar (Sell €285k · 29%, Build €361k · 36%, Prove €242k · 24%, Buffer €112k · 11%), one team line and an "\*" footnote with "Details → A9"; A9 filled with the full tables (team, spend by function, burn by quarter, runway, tranches and inner gates, break-even on both lines and the cash low point, the €885k alternative, assumptions); the 3-minute script and `docs/submission/pitch-script.md` now say €1M over 24 months; Q27 and Q39 updated; founder, verbatim: "Fund 1m -> do the maths", then "Keep at all slides the main numbers and add all at appendix with link"). v4.2, 15 Nov 2026 (MIN-4503: main numbers only on every slide, every detail moved to nine appendix slides A1 to A9 with a "Details → A_" link from each main slide; slide 3 cut to a headline and three points; slide 4 cut to five one-sentence steps; old slide 5 (live demo) removed, its content moved to A2 and slide 4's "For questions", the demo still runs live with no slide; privacy (old 6, now 5) cut to three points; old 7c (now 6c) cut to three cards, each a title, one big number with a "\*" and one line, one small footnote; the asterisk-and-small-footnote style made deck-wide for estimates in rule 8, replacing the same-size label rule; business model (old 10, now 9) rebuilt on three buyer groups: hospitals, governments and national health systems, private clinics; old Appendix A is now A7; slides renumbered, map in the comment at the top; slides 13 and 14 (old 14 and 15) unchanged apart from links, pending the CEO's €1M text; nothing deleted, only moved; founder, verbatim, in order: "slide 3 -> reduce content and make it clear and understandable / Slide 4 -> reduce the text also, clear sentences / Slide 5 -> remove / Slide 6-> remove unnecessary info", then "7c -> estimate should be with a * and small letters / Seriously just numbers with an explanation, not too much content", then "bussiness model / We need hospitals, governments, private clinics", then "Keep at all slides the main numbers and add all at appendix with link"). Slide numbers in the entries below are the old numbers. v4.1, 15 Nov 2026 (MIN-4503: the "Mock-up" tag removed from slides 4, 6 and 7 and every other screen; the "Working demo · synthetic data" tag stays on slide 5; slide 2's four chips (Orthopaedist, Rheumatologist, Private lab, Search history) and its closing line ("The history exists, split across providers, apps, private labs, paper and other countries. It never reaches one desk.") removed; rule 8's waiver extended to the Mock-up tag; no other text changed; founder, verbatim, with a screenshot of the chips row: "remove the \"mockup\" tags / remove the whole line"). v4.0, 15 Nov 2026 (MIN-4503: slide 7b slimmed to two lines per column and the revenue strip removed; new slide 7c, Clinical trials, the economics, three cards: today's recruitment cost, what Pathien could save a sponsor, how we charge; success fee lowered from €1,500 to €1,000 per randomised patient (assumption) because ASPE puts the recruitment line at about $500 to $700 per participant and a vendor average at $1,379; sources S29 to S31; slide 11 totals unchanged; founder, verbatim: "Pricing -> show different in 3 cards / * The current situation, the cost of one hire, number of trials and the participants, total cost / * How cheaper could be from our patient match and selection and how many money we can save them / * How we can charge and the revenue", then "Reduct the content of patient selection and patient experience"). v3.9, 15 Nov 2026 (MIN-4503: slide 7b rewritten: no "not built" eyebrow; two columns for the challenge's Topic 2, patient selection and recruitment, and Topic 3, patient experience; a revenue strip with a sourced cost of delay and a priced unit, €5,000 per trial set-up and €1,500 per randomised patient, both assumptions; sources S23 to S28; slide 11 totals unchanged, trial revenue named under "Not counted"; founder, verbatim: "Change the content and focus / NOT not build yet next steps / Say how our solution can cover / patient selection and recruitment; / patient experience; / Connect with revenue from trial clinics"). v3.8, 15 Nov 2026 (MIN-4503: new slide 7b, Clinical trials, after slide 7; labelled "Not built yet · our next step"; founder, verbatim: "Deck 7 -> Create a deck 7b to connect to the Clinical_Trials_Challenge"; the founder's summary is `docs/business/clinical-trials-fit.md`; no other slide renumbered). v3.7, 15 Nov 2026 (MIN-4503: slide 12, Tel Aviv and Sheba ARC removed; founder, verbatim: "remove tel aviv for now at 12 slide"). v3.6, 15 Nov 2026 (MIN-4503: slide 6b step 4 and its speaker note: the support person calls the hospital to verify the situation, not the patient; founder, verbatim: "not to verify with patient but to verify the situation with the hospital"). v3.5, 15 Nov 2026 (MIN-4503: slide 6b, the concept label and all pricing removed, and a four-step "How it's used" flow added; founder, verbatim: "6b -> concept ,not build -> remove / Pricing -> No / But add how to use / Patient abroad or at a hospital with no serious condition -> Doctor scans the code on the machine -> opens the doctor page -> one of our support team calls to verify the condition and give the doctor access"; rule 8 (concept labels) is waived for 6b by the founder; S21 and S22 unused). v3.4, 14 Nov 2026 (MIN-4462: every insurer mention removed from slides 6, 6b, 10, 11, 13 and both scripts; founder: "remove the never insurers -> not sure about this", then "Drop every insurer mention"; the internal data rule is unchanged). v3.3, 14 Nov 2026 (MIN-4503: slide 6b, the "Concept render" tag removed and the encryption point added; founder: "remove the concept render -> and mention that this device has our own encrypted software for the data so they are not in the cloud"; the eyebrow "Concept · not built" stays). v3.2, 14 Nov 2026 (MIN-4503: new slide 6b, Pathien Vault, a concept device for patients who want maximum privacy; founder: "what if someone that want's his privacy can buy our device that can hold his data. Anna and pix work on this and add one slide with a very super elegant image with our device that looks very premioum"; no other slide renumbered). v3.1, 14 Nov 2026 (MIN-4503: team and ask from the CEO plan v2, `docs/business/team-and-funding-plan.md` §7; slide 14 replaced, slide 15 new; founder: "put it in the deck when ready"). v3, 14 Nov 2026 (MIN-4503: name Pathien; new slide 11, revenue years 1 to 3, on the founder's ask "the numbers of how many money we can earn" and "Yes, update to v3"; Appendix A's SOM retired for the bottom-up line; demo slides say what is real and what is synthetic). v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
+| **Version** | **v4.7, 15 Nov 2026** (MIN-4503: CFO fixes, applied word for word from `docs/business/cfo-fixes-v4.7.md`. Founder, 15 Nov 2026, verbatim, asking for the check: *"lets go a step back / I want the /c-level-skills:cfo-advisor to check the whole presentation and check the financial numbers is there are ok"*; and on the tranche choice: *"CFO will answer"*. Tranches €400k then €600k, both committed at signing, the second released when a hospital commits in writing to 1,000+ paid cases a year at €40+; break-even at month 31, when gross profit covers running costs (was "month 29", revenue alone); one cost method for every hire (spend bar €297k / €361k / €245k / €97k); slide 10's "6 to 14%" replaced by "about 12 hospitals cover our running costs"; slide 7 headline "Diagnostic error costs 17.5%", upside €75M → €30M; A7 in euros; trials five a year; slide 3 says "Greek press reports"; A9 tables from plan v4.) v4.6, 15 Nov 2026 (MIN-4503: slide 1 cover headline replaced. Founder, 15 Nov 2026, verbatim, after none of the five proposed cover headlines was picked: *"just write Your medical history, in one place."* The headline is now "Your medical history, / in one place.", broken after the comma, the same words as the landing page hero; the one-liner and the speaker notes are unchanged; web deck `slides.ts` matches. Was "Maria asks Google what her pain means. Her doctors each see one page of her history.") v4.5, 15 Nov 2026 (MIN-4503: slide 6c rebuilt so the three cards compare the same thing. Founder, 15 Nov 2026, verbatim, asked of the v4.4 cards "$360M\*" and "$200,000\*": *"does 360m is the whole and the 200000 is per trial?"*, then: *"You need to be clear with the numbers and compare the same thing"*. The v4.4 cards mixed a market total over the life of 1,497 trials (recruitment budget, dollars), a per-trial running-cost saving (dollars) and our per-trial fee (euros). All three cards are now the cost of recruitment time, for one trial in one country, in euros at $1.10 to €1: card 1 **€36,000\*** a day of delay ($40,000, S23, rounded down); card 2 **€180,000\*** saved, 5 × €36,000; card 3 **€24,000\*** our fee, the sponsor keeps €156,000. The market totals ($357M ≈ €325M recruitment budget, 1,497 trials, 776,650 participants, ≈ €270M of running cost if each saved 5 days) moved to A3 as context, with a new answer on why the cards use the cost of a day and not the recruitment budget per trial. A3's worked example, speaker notes, web deck (`slides.ts`, `notes.ts`, `appendix.ts`) and `docs/business/clinical-trials-fit.md` §8 match. Was $360M / $200,000 / €24,000, sponsor keeps €158,000.) v4.4, 15 Nov 2026 (MIN-4503: slide 5b step 1 reversed. Founder, 15 Nov 2026, verbatim: *"probably in a serious condition"*. Step 1 now reads "possibly in a serious condition"; speaker notes and A2 "For questions" items 1 and 4 rewritten to match: support verifies with the hospital, not the patient. Replaces the v3.5 wording "with no serious condition".) **v4.3, 15 Nov 2026** (MIN-4503: the ask is now **€1M over 24 months**, in two gated tranches of **€300k** and **€700k** (was €600k over 18 months), merged from the CEO's plan v3, `docs/business/team-and-funding-plan.md` §7; slide 13 (team and ask) and slide 14 (why) rewritten with main numbers only: the headline, the ask, the two gates, the spend bar (Sell €285k · 29%, Build €361k · 36%, Prove €242k · 24%, Buffer €112k · 11%), one team line and an "\*" footnote with "Details → A9"; A9 filled with the full tables (team, spend by function, burn by quarter, runway, tranches and inner gates, break-even on both lines and the cash low point, the €885k alternative, assumptions); the 3-minute script and `docs/submission/pitch-script.md` now say €1M over 24 months; Q27 and Q39 updated; founder, verbatim: "Fund 1m -> do the maths", then "Keep at all slides the main numbers and add all at appendix with link"). v4.2, 15 Nov 2026 (MIN-4503: main numbers only on every slide, every detail moved to nine appendix slides A1 to A9 with a "Details → A_" link from each main slide; slide 3 cut to a headline and three points; slide 4 cut to five one-sentence steps; old slide 5 (live demo) removed, its content moved to A2 and slide 4's "For questions", the demo still runs live with no slide; privacy (old 6, now 5) cut to three points; old 7c (now 6c) cut to three cards, each a title, one big number with a "\*" and one line, one small footnote; the asterisk-and-small-footnote style made deck-wide for estimates in rule 8, replacing the same-size label rule; business model (old 10, now 9) rebuilt on three buyer groups: hospitals, governments and national health systems, private clinics; old Appendix A is now A7; slides renumbered, map in the comment at the top; slides 13 and 14 (old 14 and 15) unchanged apart from links, pending the CEO's €1M text; nothing deleted, only moved; founder, verbatim, in order: "slide 3 -> reduce content and make it clear and understandable / Slide 4 -> reduce the text also, clear sentences / Slide 5 -> remove / Slide 6-> remove unnecessary info", then "7c -> estimate should be with a * and small letters / Seriously just numbers with an explanation, not too much content", then "bussiness model / We need hospitals, governments, private clinics", then "Keep at all slides the main numbers and add all at appendix with link"). Slide numbers in the entries below are the old numbers. v4.1, 15 Nov 2026 (MIN-4503: the "Mock-up" tag removed from slides 4, 6 and 7 and every other screen; the "Working demo · synthetic data" tag stays on slide 5; slide 2's four chips (Orthopaedist, Rheumatologist, Private lab, Search history) and its closing line ("The history exists, split across providers, apps, private labs, paper and other countries. It never reaches one desk.") removed; rule 8's waiver extended to the Mock-up tag; no other text changed; founder, verbatim, with a screenshot of the chips row: "remove the \"mockup\" tags / remove the whole line"). v4.0, 15 Nov 2026 (MIN-4503: slide 7b slimmed to two lines per column and the revenue strip removed; new slide 7c, Clinical trials, the economics, three cards: today's recruitment cost, what Pathien could save a sponsor, how we charge; success fee lowered from €1,500 to €1,000 per randomised patient (assumption) because ASPE puts the recruitment line at about $500 to $700 per participant and a vendor average at $1,379; sources S29 to S31; slide 11 totals unchanged; founder, verbatim: "Pricing -> show different in 3 cards / * The current situation, the cost of one hire, number of trials and the participants, total cost / * How cheaper could be from our patient match and selection and how many money we can save them / * How we can charge and the revenue", then "Reduct the content of patient selection and patient experience"). v3.9, 15 Nov 2026 (MIN-4503: slide 7b rewritten: no "not built" eyebrow; two columns for the challenge's Topic 2, patient selection and recruitment, and Topic 3, patient experience; a revenue strip with a sourced cost of delay and a priced unit, €5,000 per trial set-up and €1,500 per randomised patient, both assumptions; sources S23 to S28; slide 11 totals unchanged, trial revenue named under "Not counted"; founder, verbatim: "Change the content and focus / NOT not build yet next steps / Say how our solution can cover / patient selection and recruitment; / patient experience; / Connect with revenue from trial clinics"). v3.8, 15 Nov 2026 (MIN-4503: new slide 7b, Clinical trials, after slide 7; labelled "Not built yet · our next step"; founder, verbatim: "Deck 7 -> Create a deck 7b to connect to the Clinical_Trials_Challenge"; the founder's summary is `docs/business/clinical-trials-fit.md`; no other slide renumbered). v3.7, 15 Nov 2026 (MIN-4503: slide 12, Tel Aviv and Sheba ARC removed; founder, verbatim: "remove tel aviv for now at 12 slide"). v3.6, 15 Nov 2026 (MIN-4503: slide 6b step 4 and its speaker note: the support person calls the hospital to verify the situation, not the patient; founder, verbatim: "not to verify with patient but to verify the situation with the hospital"). v3.5, 15 Nov 2026 (MIN-4503: slide 6b, the concept label and all pricing removed, and a four-step "How it's used" flow added; founder, verbatim: "6b -> concept ,not build -> remove / Pricing -> No / But add how to use / Patient abroad or at a hospital with no serious condition -> Doctor scans the code on the machine -> opens the doctor page -> one of our support team calls to verify the condition and give the doctor access"; rule 8 (concept labels) is waived for 6b by the founder; S21 and S22 unused). v3.4, 14 Nov 2026 (MIN-4462: every insurer mention removed from slides 6, 6b, 10, 11, 13 and both scripts; founder: "remove the never insurers -> not sure about this", then "Drop every insurer mention"; the internal data rule is unchanged). v3.3, 14 Nov 2026 (MIN-4503: slide 6b, the "Concept render" tag removed and the encryption point added; founder: "remove the concept render -> and mention that this device has our own encrypted software for the data so they are not in the cloud"; the eyebrow "Concept · not built" stays). v3.2, 14 Nov 2026 (MIN-4503: new slide 6b, Pathien Vault, a concept device for patients who want maximum privacy; founder: "what if someone that want's his privacy can buy our device that can hold his data. Anna and pix work on this and add one slide with a very super elegant image with our device that looks very premioum"; no other slide renumbered). v3.1, 14 Nov 2026 (MIN-4503: team and ask from the CEO plan v2, `docs/business/team-and-funding-plan.md` §7; slide 14 replaced, slide 15 new; founder: "put it in the deck when ready"). v3, 14 Nov 2026 (MIN-4503: name Pathien; new slide 11, revenue years 1 to 3, on the founder's ask "the numbers of how many money we can earn" and "Yes, update to v3"; Appendix A's SOM retired for the bottom-up line; demo slides say what is real and what is synthetic). v2, 14 Nov 2026 (MIN-4503: reframed on the founder's two points, "Dr Google" and better doctor decisions; numbers from `pitch-numbers-2026-11-14.md` and `treg-findings-2026-11-14.md`). v1, 13 Nov 2026. |
 | **Event** | Gen AI Summit Hackathon, Athens LifeTech Park, Biotech & AI track |
 | **Market** | Global. Founder: "Dont focus on the greek market. we need to focus on global market" |
 | **Sources** | Only `docs/research/` (Sales). Each number carries a source ID from the table at the end (S1 to S31; S29 to S31, added in v4.0 by Marketing for slide 6c, old 7c; S23 to S28, added in v3.9 by Marketing for slide 6b, old 7b, used on 6c since v4.0; S21 and S22, added in v3.2 by Marketing as price anchors for slide 5b, old 6b, are unused since v3.5, when the founder removed the price) and its status from the research: **verified**, **secondary**, or **assumption**. Nothing from the research's "Do not put on a slide" list is used. Since v4.2 the sources sit on the appendix slides; each main slide links to its appendix. |
@@ -80,16 +80,16 @@ Link: Sources and more numbers → A1
 
 **Body (three points):**
 - **AI alone:** right condition **94.9%** of the time. In people's hands: under **34.5%**. *(Nature Medicine, 2026, S14)*
-- Since November 2026, Greece caps repeat tests. Doctors need the earlier result. *(S16)*
+- Greek press reports that since November 2026, Greece caps repeat tests. Doctors need the earlier result. *(Greek press, S16)*
 - Since 2025, Europe's EHDS lets patients add to and control their own record. *(S4)*
 
 Link: Details → A1
 
 **Visual note for Pix:** Left: two bars from S14, "AI alone 94.9%" and "In people's hands < 34.5%", with the gap labelled "the missing history". Right: the two other points as two short lines, no timeline (the timeline is on A1). The link bottom-right.
 
-**Speaker notes (~30 s):** "Three things changed. First, a 2026 Nature Medicine study: the models alone found the right condition 95 percent of the time, but people using them got under 35 percent, because they gave the model incomplete information. A smarter chatbot is not the answer. The complete record, in front of the doctor, is. Second, this month Greece started putting lab results in MyHealth and limiting repeat tests, so doctors need the earlier result at hand. Third, Europe's EHDS gives patients the right to hold and add to their record. We are not a rival to the national file. We carry what it does not hold: private tests, imaging, old paper, records from abroad, and a summary for the doctor."
+**Speaker notes (~30 s):** "Three things changed. First, a 2026 Nature Medicine study: the models alone found the right condition 95 percent of the time, but people using them got under 35 percent, because they gave the model incomplete information. A smarter chatbot is not the answer. The complete record, in front of the doctor, is. Second, Greek press reports that this month Greece started putting lab results in MyHealth and limiting repeat tests, so doctors need the earlier result at hand. Third, Europe's EHDS gives patients the right to hold and add to their record. We are not a rival to the national file. We carry what it does not hold: private tests, imaging, old paper, records from abroad, and a summary for the doctor."
 
-**Sources:** S14 (verified), S16 (secondary), S4 (verified). The v4.1 body, the timeline and the fourth point ("AI reads documents"): A1.
+**Sources:** S14 (verified), S16 (secondary: Greek press; the EOPYY decision itself not opened, so the slide says "Greek press reports"), S4 (verified). The v4.1 body, the timeline and the fourth point ("AI reads documents"): A1.
 
 ---
 
@@ -260,7 +260,7 @@ v4.0 (founder, 15 Nov 2026, verbatim): *"Pricing -> show different in 3 cards / 
 
 **Card 3 (accented): How we charge, and what the sponsor keeps**
 - **€24,000\***
-- Our fee per trial, out of that saving. The sponsor keeps €156,000.
+- Our fee per trial, about 13% of that saving. The sponsor keeps €156,000.
 
 Footnote (small): \* Our estimate for one trial in one country, in euros at $1.10 to €1. Days saved and prices are assumptions. Not a result. Details → A3
 
@@ -276,18 +276,18 @@ Footnote (small): \* Our estimate for one trial in one country, in euros at $1.1
 
 ## Slide 7: Impact, what better decisions save (was 8)
 
-**Headline:** Wrong diagnoses cost 17.5% of health spending. Better first decisions are the biggest saving in healthcare.
+**Headline:** Diagnostic error costs 17.5% of health spending. Better first decisions are the biggest saving in healthcare.
 
 **Body (three numbers, one line each):**
 - **17.5%** of health spending goes on the harm of diagnostic error. *(OECD, S10)*
 - **€3.5bn\*** a year: what diagnostic error costs Greece.
-- **€4M to €75M\*** a year: our first slice, repeated and unnecessary tests in Greece.
+- **€4M to €30M\*** a year: our first slice, repeated and unnecessary tests in Greece.
 
 Footnote (small): \* Our estimate on sourced inputs; the share we prevent and adoption are assumptions. Not a forecast. Details → A4
 
-**Visual note for Pix:** One big number left: "17.5% of health spending". Right: a funnel for Greece: €19.9bn spend → €3.5bn\* → "our first slice: €4M to €75M\* a year, tests only". The "\*" on the funnel numbers and the one footnote small, bottom-left (rule 8, v4.2). No market circles on this slide.
+**Visual note for Pix:** One big number left: "17.5% of health spending". Right: a funnel for Greece: €19.9bn spend → €3.5bn\* → "our first slice: €4M to €30M\* a year, tests only". The "\*" on the funnel numbers and the one footnote small, bottom-left (rule 8, v4.2). No market circles on this slide.
 
-**Speaker notes (~30 s):** "The OECD put a price on it last year: diagnostic error eats 17.5 percent of health spending, almost 2 percent of GDP. Halving it would free 8 percent. Take Greece, where we are standing: that is about three and a half billion euros a year. We start with the smallest, most measurable slice, unnecessary and repeated tests. On tests alone, between 4 and 75 million euros a year in Greece, depending on adoption. The bigger prize is the diagnosis itself."
+**Speaker notes (~30 s):** "The OECD put a price on it last year: diagnostic error eats 17.5 percent of health spending, almost 2 percent of GDP. Halving it would free 8 percent. Take Greece, where we are standing: that is about three and a half billion euros a year. We start with the smallest, most measurable slice, unnecessary and repeated tests. On tests alone, between 4 and 30 million euros a year in Greece, depending on adoption. The bigger prize is the diagnosis itself."
 
 **Sources:** S10, S15, S17 (verified). The formula, the GDP and OECD-wide figures, the 25 to 30% unnecessary tests and the "who pays" line: A4.
 
@@ -350,15 +350,15 @@ The founder asked for it on the main deck (14 Nov 2026): *"let's see the pitchin
 
 **Body (two numbers, one line each):**
 - **€0.56M to €4.85M\*:** our revenue in year 3, conservative to upside.
-- **About 6 to 14%\*:** that revenue as a share of what better records save on tests, in Greece alone.
+- **About 12 hospitals\*** at €40k a year each cover our running costs.
 
 Footnote (small): \* Our estimate. Every price, customer count and volume is an assumption for the pilots to test. Not a forecast. Details → A6
 
 **Visual note for Pix:** Two bars per year (conservative, upside), years 1 to 3, with only the year totals as labels (€26k / €258k · €180k / €1.7M · €0.56M / €4.85M); the year-3 totals as the only big numbers. The stacking by line A, B and C and the input tables are on A6. "\*" on the big numbers, one footnote small, bottom-left (rule 8, v4.2). No market circles, no red, no currency other than euros.
 
-**Speaker notes (~30 s):** "How do we earn? Not from diagnoses: we never make one. Hospitals pay for the complete history in front of their doctors. An international-patient department pays per case; a clinic chain pays per doctor seat. On our assumptions, year three is between about half a million and five million euros. Compare that with slide 7: better records could save four to seventy-five million a year on tests, in Greece alone. Our customers pay a small share of what the system saves. Every price here is an assumption, and the pilots exist to test it."
+**Speaker notes (~30 s):** "How do we earn? Not from diagnoses: we never make one. Hospitals pay for the complete history in front of their doctors. An international-patient department pays per case; a clinic chain pays per doctor seat. On our assumptions, year three is between about half a million and five million euros. About twelve hospitals, at forty thousand euros a year each, cover our running costs. Every price here is an assumption, and the pilots exist to test it."
 
-**Sources:** S10 and S15 via slide 7; S18; S19; S8; `buyers.md`. The input tables, the yearly totals by line, the arithmetic, "Not counted", the answers for questions and the do-not-use note: A6. Rule 7 kept: no word frames revenue as earned from diagnoses.
+**Sources:** S18; S19; S8; `buyers.md`; the break-even line from `docs/business/funding-model.py` (A9). The input tables, the yearly totals by line, the arithmetic, "Not counted", the answers for questions and the do-not-use note: A6. Rule 7 kept: no word frames revenue as earned from diagnoses.
 
 ---
 
@@ -416,20 +416,20 @@ Link: Details → A8
 
 **Team today.** Lefteris Georgaras, founder, onedotatatime.design, with AI agents. Research partner: a university hospital and an AI research centre (targets, not contacted).
 
-**What I ask.** **€1M\*** over 24 months, in two gated tranches:
+**What I ask.** **€1M\*** over 24 months, committed at signing, released in two gated tranches:
 
 | Gate | Tranche |
 |---|---|
-| A hospital signs a pilot | **€300k** |
-| The pilot proves price, volume and cost per case | **€700k** |
+| A hospital signs a pilot | **€400k** |
+| The hospital commits to 1,000+ paid cases a year at €40+; a case costs us €5 or less | **€600k** |
 
 **Footer, small, required:** \* Our plan, not a raise in progress; costs are assumptions. Nobody is hired before a hospital signs a pilot. Certification is the next round. Details → A9
 
 **Visual note for Pix:** Left: the founder, a small "AI agents" mark, one outlined "research partner" tile marked "target". Right: the two gates as two steps, the money on each step; €1M as the one big number. No stock faces. No red. The Pathien lockup top-left, as on every slide; the founder photo used in house templates where it exists.
 
-**Speaker notes (~20 s):** "Today it is me, and a team of AI agents that built this with me this weekend. What I ask is one million euros over twenty-four months, in two parts. Three hundred thousand only when a hospital signs a pilot. Seven hundred thousand only when that pilot proves the price, the volume and the cost of each case."
+**Speaker notes (~20 s):** "Today it is me, and a team of AI agents that built this with me this weekend. What I ask is one million euros over twenty-four months, committed at one signing. Four hundred thousand when a hospital signs a pilot. Six hundred thousand released only when that hospital commits to paid cases at our price, and each case costs us five euros or less."
 
-**Sources:** `docs/business/team-and-funding-plan.md` §3 (the ask, tranches, milestones) and §5 (the three numbers: €40 a case or more, 1,000 cases a year or more, €5 or less a case to run; on A9). All amounts are our plan.
+**Sources:** `docs/business/team-and-funding-plan.md` §3 (the ask, tranches, milestones) and §5 (the gate: the hospital commits in writing to 1,000 or more paid cases a year at €40 or more, and a case costs €5 or less to run; on A9). All amounts are our plan.
 
 ---
 
@@ -437,7 +437,7 @@ Link: Details → A8
 
 **v4.3:** rewritten on the CEO's plan v3 (§7). Main numbers only: the headline, the spend bar, one line on the team. The team table, the burn, the runway and break-even moved to A9. No "where the money comes from" content (founder, 14 Nov: *"Where the money comes from -> no"*).
 
-**Headline:** Why €1M: six people, 29% to sell, break-even at month 29\*.
+**Headline:** Why €1M: six people, 30% to sell, break-even at month 31\*.
 
 **One line:** 6 people: 3 build, 2 sell, 1 clinical and regulatory lead.
 
@@ -445,15 +445,15 @@ Link: Details → A8
 
 | Sell | Build | Prove | Buffer |
 |---|---|---|---|
-| **€285k · 29%** | €361k · 36% | €242k · 24% | €112k · 11% |
+| **€297k · 30%** | €361k · 36% | €245k · 24% | €97k · 10% |
 
-**Footer, small, required:** \* Our plan; costs are assumptions. Break-even on our conservative revenue line (slide 10). Details → A9
+**Footer, small, required:** \* Our plan; costs are assumptions. Break-even: when gross profit covers running costs, on our conservative revenue line (slide 10). Details → A9
 
 **Contact line** (bottom of the slide, unchanged): `hello@onedotatatime.design` · **healthapp-landing.pages.dev** (live). The brand domain pathien.health is chosen but not registered (brand check, 14 Nov); it goes on the slide only once it resolves.
 
 **Visual note for Pix:** The bar is the slide. "Sell" carries the one accent; the other three parts in neutral tints. Under each part its label in one or two words (Sell, Build, Prove, Buffer); what each part contains is on A9, not here. The "\*" footnote small at the bottom. No red. The DNA-shaped QR in a corner, pointing to https://healthapp-landing.pages.dev (live; the founder approves the link before print).
 
-**Speaker notes (~20 s):** "Why this amount. Six people: two engineers and an ML engineer to build it, a clinician to keep it safe and on the regulatory path, and business development and marketing to sell it to hospitals, clinics and governments. Twenty-nine percent goes to selling. On our conservative line it pays for itself at month twenty-nine, with money left. If you know a hospital that would pilot this, come and find me. Thank you."
+**Speaker notes (~20 s):** "Why this amount. Six people: two engineers and an ML engineer to build it, a clinician to keep it safe and on the regulatory path, and business development and marketing to sell it to hospitals, clinics and governments. Thirty percent goes to selling. On our conservative line we break even at month thirty-one, with money left. If you know a hospital that would pilot this, come and find me. Thank you."
 
 **Sources:** `docs/business/team-and-funding-plan.md` §2 (the team), §2b (the research partner: targets only, named on A9, not on this slide), §3 (use of funds by function, break-even). Not on any slide: funding sources (plan §4, founder: "Where the money comes from -> no").
 
@@ -623,9 +623,9 @@ Card 2: With Pathien, what one trial saves
 - Fewer failed screenings: today 36.3% fail *(S26, secondary)*. If a third fewer of our referrals fail, the site screens about 6 fewer people per trial *(assumption)*.
 
 Card 3: How we charge, and what the sponsor keeps
-- Big number: **about €24,000 per trial** *(our estimate)*: €5,000 set-up + €1,000 per randomised patient *(assumptions)* × about 19 randomised.
+- Big number: **about €24,000 per trial** *(our estimate)*: €5,000 set-up + €1,000 per randomised patient *(assumptions)* × about 19 randomised: about 13% of the €180,000 saving.
 - The sponsor keeps €180,000 − €24,000 = **about €156,000** per trial *(our estimate)*.
-- 10 trials a year: about €240,000 *(assumption; not in slide 10's totals)*. Never the patient.
+- 5 trials a year: about €120,000 *(assumption; not in slide 10's totals; the funding plan uses the same five a year)*. Never the patient.
 
 Footer (v4.1): Prices, volumes, days saved and the exchange rate are assumptions. "Our estimate" is our arithmetic on sourced inputs, not a result. Consent only. Never a data sale.
 
@@ -666,19 +666,19 @@ Footer (v4.1): Prices, volumes, days saved and the exchange rate are assumptions
 - **25 to 30%** of medical tests are unnecessary, about **2.5%** of health spending. *(OECD, 2025, S10)*
 - **Worked example, Greece** *(our estimate)*:
   - The whole prize: about **€3.5 billion a year** of the €19.9 billion Greece spends on health is the cost of diagnostic error. *(S10 × S15)*
-  - Our first slice, unnecessary and repeated tests only: **about €4M a year (conservative) to about €75M a year (upside)**, depending on how many patients bring their record. *(our estimate, S10, S15, S17)*
+  - Our first slice, unnecessary and repeated tests only: **about €4M a year (conservative) to about €30M a year (upside)**, depending on how many patients bring their record. *(our estimate, S10, S15, S17)*
 
-One line on who pays (v4.1): Hospitals and clinics pay per case or per seat; the patient is free. What that could earn, and how it compares with these savings: slide 10.
+One line on who pays (v4.1): Hospitals and clinics pay per case or per seat; the patient is free. What that could earn: slide 10.
 
 Footer (v4.1): "Our estimate" means our arithmetic on sourced inputs. The share we prevent and the adoption rate are assumptions to be tested in pilots. Not a forecast.
 
 **3. The formula:**
 Formula for questions (do not read out): savings a year = cost base × share avoidable × share we prevent × adoption.
 - Conservative: €810M (Greek stand-alone lab and imaging spend, 2024, S15) × 25% unnecessary (OECD low end, S10) × 20% we prevent (assumption) × 10% adoption (assumption) = **about €4M**.
-- Upside: €497M (OECD's 2.5% unnecessary-test share × €19.87bn Greek spend) × 50% we prevent (assumption, anchored to S17: duplicate-imaging odds 0.44 when doctors used a shared record) × 30% adoption (assumption) = **about €75M**.
-- Whole prize: €19.87bn × 17.5% = about €3.5bn (our estimate). Never say €75M without "upside" and the adoption assumption.
+- Upside: €497M (OECD's 2.5% unnecessary-test share, S10, × €19.87bn Greek spend, S15) × 20% we prevent (assumption, the same as the conservative line) × 30% adoption (assumption) = **about €30M** (€29.8M). The 20% sits well under the one measured effect: doctors who used a shared record ordered fewer duplicate images, odds ratio 0.44 (S17). S17 covers duplicate imaging only, not every unnecessary test, so it no longer sets a 50% share (v4.6).
+- Whole prize: €19.87bn × 17.5% = about €3.5bn (our estimate). Never say €30M without "upside" and the adoption assumption.
 
-**4. Sources:** S10 (verified), S15 (verified), S17 (verified), S6 (verified). No count of wrong diagnoses per year exists for Greece or the EU in a primary source, so none is on the slide. No euro figure for duplicate tests in Greece or the EU exists either; the €4M to €75M is ours and labelled so.
+**4. Sources:** S10 (verified), S15 (verified), S17 (verified). No count of wrong diagnoses per year exists for Greece or the EU in a primary source, so none is on the slide. No euro figure for duplicate tests in Greece or the EU exists either; the €4M to €30M is ours and labelled so.
 
 ---
 
@@ -716,7 +716,7 @@ Formula for questions (do not read out): savings a year = cost base × share avo
 2. The v4.1 buyer table (five rows).
 3. The revenue inputs: cases or seats × price, conservative and upside.
 4. Revenue by line and year.
-5. "A fraction of what they save", the arithmetic.
+5. Break-even in hospitals, the arithmetic.
 6. Not counted.
 7. Answers for questions, and the do-not-use note.
 
@@ -763,7 +763,7 @@ Speaker notes (v4.1): "The patient is free. The first buyer is the hospital that
 | C. Labs, upside | €0 | €25k | €50k |
 | **Upside total** | **€258k** | **€1,705k** | **€4,850k** |
 
-**5. The arithmetic:** **"A fraction of what they save", the arithmetic** *(our estimate, shown small on the slide)*: slide 7 says better records could save **€4M (conservative) to €75M (upside) a year on tests, in Greece alone**. Our year-3 revenue from every customer in every country is **€0.56M to €4.85M**: about **14%** of the conservative saving and about **6%** of the upside one. Savings outside Greece and the savings on diagnostic error itself are not counted, so the real ratio is smaller.
+**5. Break-even in hospitals** *(our estimate)*: at the steady team of six our running costs are about €33.4k a month. At an 87.5% gross margin that needs about **€458k of revenue a year**: **about 12 hospitals at €40k a year** (11.4, rounded up: 11 bring €440k), or about 760 doctor seats at €600 a year, or a mix. Slide 10's conservative year 3 is €560k. v4.6 compared year-3 revenue from every country with savings on tests in Greece alone; the two did not share a base, so that ratio is dropped.
 
 **6.** Not counted: rare-disease pilots (free, grant-funded), national agencies (tenders, year 2+), clinical-trial pre-screening (slide 6c: priced per trial and per randomised patient, not projected until a sponsor pilot sets the volume), research use (later, consent-gated, never a data sale).
 
@@ -771,11 +771,11 @@ Footer, required: Our estimate. Every price, customer count and volume is an ass
 
 **7. Answers for questions:**
 - *Why €40 to €80 a case?* No one publishes a price for a consented, translated record packet. We ask buyers for their figure first (`treg-findings-2026-11-14.md` Q6, question 5: ask for a monthly figure, do not suggest one).
-- *Why €50 a seat?* Below paid AI scribes (Tandem Pro lists €125 a month, S18), above the free tools (OpenEvidence and Glass are free to US clinicians, S8). Same assumption A7 used in dollars.
+- *Why €50 a seat?* Below paid AI scribes (Tandem Pro lists €125 a month, S18), above the free tools (OpenEvidence and Glass are free to US clinicians, S8). The same €600 a year A7 uses for every seat.
 - *Is 45,000 cases a lot?* Turkey alone welcomed about 1.5M health tourists in 2024 (S19, secondary). 45,000 cases is about 3% of one country's year.
 - *Who saves, who pays?* Not always the same desk. The payer or the patient saves on repeated tests; the international-patient department pays for a faster first visit and patients who arrive ready. The pilot measures both.
 
-**Sources:** S10 and S15 via slide 7 (verified inputs, our estimate); S18 (company pricing page, via `market-and-competitors.md` §2); S19 (secondary); S8; `buyers.md` §1.1, §1.2, §1.4, §1.7 and §5 (models, no prices). **Sales' do-not-use list:** it names "our TAM, SAM and SOM themselves, until the $600 seat price and 1% share are validated". The 1% share is dropped. A seat price has to appear because the founder asked what we can earn; it stays at €50 a month, carries the word "assumption" at the same size, and is anchored to a published list price (S18), not to market share. Bumrungrad's international-patient count (🟡 in `buyers.md`) is not used.
+**Sources:** S18 (company pricing page, via `market-and-competitors.md` §2); S19 (secondary); S8; `buyers.md` §1.1, §1.2, §1.4, §1.7 and §5 (models, no prices). **Sales' do-not-use list:** it names "our TAM, SAM and SOM themselves, until the $600 seat price and 1% share are validated". The 1% share is dropped. A seat price has to appear because the founder asked what we can earn; it stays at €50 a month, carries the word "assumption" at the same size, and is anchored to a published list price (S18), not to market share. Bumrungrad's international-patient count (🟡 in `buyers.md`) is not used.
 
 ---
 
@@ -785,25 +785,26 @@ Footer, required: Our estimate. Every price, customer count and volume is an ass
 
 Moved here from the impact slide (old slide 8, now 7) in v2. **v3:** the founder asked for the revenue line on the main deck (slide 10), which settles Q24 for revenue. This appendix keeps only the ceiling (TAM, SAM) for questions; the SOM is retired.
 
-**Headline:** Every doctor who sees a new patient is a seat: about $1.9B a year in the US, EU and India, on our assumptions.
+**Headline:** Every doctor who sees a new patient is a seat: about €1.9bn a year in the US, EU and India, on our assumptions.
 
 **Body (bottom-up, the doctor pays, the patient is free):**
 
 | | Doctors | At an assumed price | Per year |
 |---|---|---|---|
-| United States | 905,452 direct-care physicians *(AAMC 2025, S6, verified)* | $600 per seat *(assumption)* | $543M |
-| European Union | about 1.98M practising physicians *(Eurostat 2023, S7, secondary)* | $600 per seat *(assumption)* | $1,188M |
-| India | 1,386,157 registered doctors *(NMC via Parliament, S7, secondary)* | $120 per seat *(assumption)* | $166M |
-| **SAM** | | | **about $1.9B** |
+| United States | 905,452 direct-care physicians *(AAMC 2025, S6, verified)* | €600 per seat *(assumption)* | €543M |
+| European Union | about 1.98M practising physicians *(Eurostat 2023, S7, secondary)* | €600 per seat *(assumption)* | €1,188M |
+| India | 1,386,157 registered doctors *(NMC via Parliament, S7, secondary)* | €120 per seat *(assumption)* | €166M |
+| **SAM** | | | **about €1.9bn** |
 
-- **TAM about $8.5B a year:** about 14.1M doctors worldwide at $600. *(Derived from a secondary density figure, S7; a ceiling, not a forecast.)*
+- **TAM about €8.5bn a year:** about 14.1M doctors worldwide at €600. *(Derived from a secondary density figure, S7; a ceiling, not a forecast.)*
+- **The per-case line is not sized here.** This ceiling counts doctor seats only; slide 10's per-case line (hospitals, €40 to €80 a case) has no market size on this slide.
 - **SOM retired in v3.** The old line (about $19M a year by year 3, 1% of SAM seats, about 42,700 paying doctors, assumption) is replaced by slide 10's bottom-up line: **€0.56M to €4.85M in year 3** (our estimate), with 400 to 2,000 paying seats plus 8,000 to 45,000 paid cases. One revenue story: slide 10. This slide only says how big the ceiling is.
 
 Footer, required: The seat price is an assumption to be tested in pilots. A ceiling, not a forecast.
 
-**Visual note for Pix:** Two nested circles (TAM, SAM; no SOM circle in v3) with the dollar figure in each and the word "assumption" visibly attached to each. The US doctor count is the one verified number: give it weight. Small table beside the circles. No analyst market-size figures.
+**Visual note for Pix:** Two nested circles (TAM, SAM; no SOM circle in v3) with the euro figure in each and the word "assumption" visibly attached to each. The US doctor count is the one verified number: give it weight. Small table beside the circles. No analyst market-size figures.
 
-**Speaker notes (~30 s):** "We size the paying side only: doctors. The US alone has about 905,000 physicians in direct care. At an assumed fifty dollars a seat a month, which sits under paid AI scribes and above the free tools, the US, the EU and India are about a 1.9 billion dollar a year market. That is the ceiling, not our plan. Our plan is on slide 10: two thousand seats at most by year three, plus per-case fees. These are our assumptions, and the pilots exist to test the price."
+**Speaker notes (~30 s):** "We size the paying side only: doctors. The US alone has about 905,000 physicians in direct care. At an assumed fifty euros a seat a month, which sits under paid AI scribes and above the free tools, the US, the EU and India are about a 1.9 billion euro a year market. That is the ceiling, not our plan. Our plan is on slide 10: two thousand seats at most by year three, plus per-case fees. These are our assumptions, and the pilots exist to test the price."
 
 **Sources:** S6 (verified), S7 (secondary; derived and assumption labels per `market-and-competitors.md` §1.2). **Note:** Sales lists "our TAM, SAM and SOM themselves, until the $600 seat price and 1% share are validated" under "Do not put on a slide". This slide shows them only because the brief asks for TAM/SAM/SOM, and every dollar figure carries its assumption label on the slide itself. If the CEO prefers, cut the dollar figures and keep the verified doctor count plus the model's formula (PRD Q24).
 
@@ -847,19 +848,19 @@ Sources: `buyers.md` §4 (pilots); `market-and-competitors.md` §5 (market order
 
 **Back to:** slide 13 · slide 14
 
-From the CEO's plan v3 (`docs/business/team-and-funding-plan.md` §2, §2b, §3 and §5; the model reruns in `docs/business/funding-model.py`). Founder, 15 Nov 2026: *"Fund 1m -> do the maths"*. **Every cost and revenue figure here is an assumption, our plan.** Not on this slide, by the founder's rule: where the money comes from.
+From the CEO's plan v4 (`docs/business/team-and-funding-plan.md` §2, §2b, §3 and §5; the model reruns in `docs/business/funding-model.py`). Founder, 15 Nov 2026: *"Fund 1m -> do the maths"*. **Every cost and revenue figure here is an assumption, our plan.** Not on this slide, by the founder's rule: where the money comes from.
 
 **1. The team: 6 people, plus a research partner** *(loaded monthly cost at Athens rates, with employer contributions; assumptions)*
 
 | Who | Starts | Cost a month | 24 months |
 |---|---|---|---|
 | Engineer (platform and pipeline) | Month 1, full-time | €5.3k | €127k |
-| Clinical and regulatory lead (half-time) | Month 1 | €3.1k | €76k |
+| Clinical and regulatory lead (half-time) | Month 1 | €3.2k | €78k |
 | ML engineer | Month 2, full-time | €5.8k | €133k |
-| Business development | Month 2, full-time | €5.1k | €118k |
-| Marketing | Month 3 half-time, full-time from month 10 | €1.8k, then €3.7k | €68k |
+| Business development | Month 2, full-time | €5.5k | €125k |
+| Marketing | Month 3 half-time, full-time from month 10 | €2.0k, then €3.9k | €72k |
 | Second engineer | Month 13, full-time | €4.8k | €57k |
-| **Team total** | | **€27.7k at full team** | **€578k (58%)** |
+| **Team total** | | **€28.4k at full team** | **€592k (59%)** |
 | Research partner (target, not contacted): a university hospital and an AI research centre | Month 4 | about €2.9k | €49.8k (5%) |
 
 Build = the two engineers and the ML engineer. Sell = business development and marketing. Prove = the clinical and regulatory lead and the research partner.
@@ -868,57 +869,63 @@ Build = the two engineers and the ML engineer. Sell = business development and m
 
 | Function | What is inside | 24 months | Share |
 |---|---|---|---|
-| **Sell** | Business development €117.8k · marketing €67.6k · pilots and go-to-market €60.0k · public-procurement adviser €15.0k · trials sponsor pilot €25.0k | **€285k** | **29%** |
+| **Sell** | Business development €125.4k · marketing €72.0k · pilots and go-to-market €60.0k · public-procurement adviser €15.0k · trials sponsor pilot €25.0k | **€297k** | **30%** |
 | Build | Engineer €126.6k · ML engineer €133.0k · second engineer €57.2k · infrastructure and AI €44.0k | €361k | 36% |
-| Prove | Clinical and regulatory lead €75.5k · regulatory and legal €67.0k · regulatory pathway €50.0k · research partner €49.8k | €242k | 24% |
-| Buffer | About 3.4 months of the steady burn | €112k | 11% |
+| Prove | Clinical and regulatory lead €77.9k · regulatory and legal €67.0k · regulatory pathway €50.0k · research partner €49.8k | €245k | 24% |
+| Buffer | About 2.9 months of the steady burn | €97k | 10% |
 | **Total** | | **€1,000k** | **100%** |
 
 **3. Burn by quarter**
 
 | Quarter | Months | Burn a month | What drives it |
 |---|---|---|---|
-| Q1 | 1 to 3 | €37.6k | First hires; regulatory opinion, DPIA, contracts, security test |
-| Q2 | 4 to 6 | €31.2k | Marketing half-time; research partner starts |
-| Q3 | 7 to 9 | €28.5k | Pilot running; the three numbers measured |
-| Q4 | 10 to 12 | €38.0k | Tranche 2: marketing full-time; regulatory pathway, procurement adviser, trials pilot |
-| Q5 | 13 to 15 | €42.8k | Second engineer; the peak |
-| Q6 | 16 to 18 | €41.9k | Student project ends |
-| Q7 | 19 to 21 | €39.1k | Trials pilot ends; validation contract ends |
-| Q8 | 22 to 24 | €37.1k | Full team, run costs |
-| After | 25 on | €32.7k | Steady team of six; certification is the next round |
+| Q1 | 1 to 3 | €38.0k | First hires; regulatory opinion, DPIA, contracts, security test |
+| Q2 | 4 to 6 | €31.8k | Marketing half-time; research partner starts |
+| Q3 | 7 to 9 | €29.2k | Pilot running; the three numbers measured |
+| Q4 | 10 to 12 | €38.6k | Tranche 2: marketing full-time; regulatory pathway, procurement adviser, trials pilot |
+| Q5 | 13 to 15 | €43.4k | Second engineer; the peak |
+| Q6 | 16 to 18 | €42.5k | Student project ends |
+| Q7 | 19 to 21 | €39.7k | Trials pilot ends; validation contract ends |
+| Q8 | 22 to 24 | €37.7k | Full team, run costs |
+| After | 25 on | €33.4k | Steady team of six; certification is the next round |
 
-Average €37.0k a month over the 24 months.
+Average €37.6k a month over the 24 months.
 
 **4. Runway**
 
 - With no revenue at all, the money lasts **27 months**.
-- Months 1 to 9 cost €292k, inside tranche 1 (€300k). Months 10 to 24 cost €596k; with the buffer, tranche 2 is €700k.
-- The buffer (€112k) covers about 3.4 months of the steady burn: slower sales, a longer DPIA or ethics approval, a gap before tranche 2.
+- Tranche 1 (€400k) carries months 1 to 9 (€297k) and keeps €103k in reserve: about 3.5 months at the month-9 burn, for a late pilot or a late gate. Tranche 2 (€600k), committed at the same signing, carries months 10 to 24 (€606k) with what is left of that reserve.
+- If the gate fails, tranche 1 alone, held at month 9's costs, lasts to about month 12.5.
+- The buffer (€97k at month 24) covers about 2.9 months of the steady burn: slower sales, a longer DPIA or ethics approval.
 
 **5. Tranches and gates**
 
 | Gate | Date or month | What opens |
 |---|---|---|
 | **G1**, before any money | 30 Nov 2026 | 2 of 5 buyers name a cost and a budget owner, plus 1 written pilot interest; 3 of 5 doctors name the moment they would open it. No money |
-| **G2**, before any money | 15 Jan 2027 | A pilot agreed in writing with a buyer; the regulatory adviser's first opinion; a committed clinician. Opens **tranche 1, €300k** (months 1 to 9; month 1 about March 2027, assumption) |
-| **The three numbers**, at the end of the pilot | About month 9 | The buyer names **€40 a case or more**; **1,000 paid cases a year or more** per hospital; **€5 or less a case to run** at 98% field accuracy. Opens **tranche 2, €700k** (months 10 to 24) |
+| **G2**, before any money | 15 Jan 2027 | A pilot agreed in writing with a buyer; the regulatory adviser's first opinion; a committed clinician. Opens **tranche 1, €400k** (months 1 to 9, plus about 3.5 months of reserve; month 1 about March 2027, assumption). **Tranche 2, €600k**, is committed at the same signing |
+| **The gate (three numbers)**, at the end of the pilot | About month 9 | The hospital **commits in writing to 1,000 or more paid cases a year at €40 or more a case**, and the pilot measures **€5 or less a case to run** at 98% field accuracy. Releases **tranche 2, €600k** (months 10 to 24), already committed |
 | Inner gate: regulatory pathway (€50k) | Months 10 to 24 | Released only if the regulatory opinion says the roadmap needs a device route; otherwise it returns to the buffer |
 | Inner gate: trials sponsor pilot (€25k) | Months 10 to 18 | Released only when a sponsor or CRO agrees a pilot in writing; if none signs by month 12, it returns to the buffer |
 
 Nobody is hired before G2. If G2 fails, nobody is hired.
 
-**6. Break-even, on both revenue lines (slide 10)** *(gross margin 87.5%: €5 cost on a €40 case)*
+**6. Break-even, on both revenue lines (slide 10)** *(gross margin 87.5%: €5 cost on a €40 case; break-even is the first month gross profit covers running costs)*
 
 | | Conservative (€26k / €180k / €560k in years 1 to 3) | Upside (€258k / €1.7M / €4.85M) |
 |---|---|---|
 | Revenue inside the 24 months | about €164k | about €1.57M |
-| **Revenue passes costs** | **Month 29** | **Month 12** |
-| Cash at month 24 | about €255k | about €1.49M |
-| **Cash at its lowest** | **about €204k, month 30** | never below the start |
-| Months sales can slip and still reach break-even | 6 | 18 |
+| **Break-even** (gross profit covers running costs) | **Month 31** | **Month 12** |
+| Cash at month 24 | about €241k | about €1.47M |
+| **Cash at its lowest, before tranche 2** | **about €104k, month 9** (€600k committed, not yet drawn) | about €114k, month 9 |
+| **Cash at its lowest, after tranche 2** | **about €186k, month 30** | **about €690k, month 11** (costs start months before revenue) |
+| Months sales can slip and still reach break-even | 5 | 17 |
 
-Break-even at the steady team of six: about €449k of revenue a year (about 11 hospitals at €40k a year, or about 750 doctor seats). The plan is sized on the conservative line; if the upside arrives, tranche 2 can be smaller.
+**Unit economics, in two lines** *(assumptions)*:
+- One hospital pays **€40k a year** (1,000 cases × €40) at an **87.5% gross margin**; it costs about **€30k to €40k to win** and pays that back in **about 12 months**.
+- **About 12 hospitals** cover our running costs (€458k a year; 11 bring €440k, short of it), or about 760 doctor seats; at month 24 the conservative line runs at **about €19k a month**, half of that.
+
+The plan is sized on the conservative line; if the upside arrives, tranche 2 can be smaller or released early. **The upside needs more people, not modelled:** it runs 45,000 cases and 2,000 seats a year by year 3 on the six-person cost base.
 
 **7. The €885k alternative** *(if the founder wants less than €1M)*
 
@@ -930,14 +937,14 @@ Break-even at the steady team of six: about €449k of revenue a year (about 11 
 | Research partner back to 15 months | €12k |
 | **Together** | **about €115k: the ask becomes about €885k** |
 
-Rerun with the same €112k buffer: break-even still month 29, and sales can still slip 6 months. What is lost is the clinician-led regulatory start, the trials test and the earlier second engineer, not the runway.
+Rerun with the same €97k buffer and the same €400k first tranche: break-even still month 31, and sales can still slip 5 months. What is lost is the clinician-led regulatory start, the trials test and the earlier second engineer, not the runway.
 
 **8. Assumptions**
 
-- Costs are loaded monthly costs for Athens employees: gross salary (14 payments a year) × 1.2179 for employer social security (21.79%, **secondary**), ÷ 12, plus about €200 a month for tools. Every salary is an **assumption**, anchored to **secondary** salary surveys (plan §2); the clinical lead's salary has no source checked.
+- Costs are loaded monthly costs for Athens employees, one method for every hire: gross salary with any variable pay (14 payments a year) × 1.2179 for employer social security (21.79%, **secondary**), ÷ 12, × the share of time, plus about €200 a month for tools for every person, part-time included. Every salary is an **assumption**, anchored to **secondary** salary surveys (plan §2); the clinical lead's salary has no source checked.
 - Revenue follows slide 10: paid revenue starts at plan month 9, after a free pilot; it climbs in a straight line inside each year and is held flat after year 3.
-- Gross margin 87.5% (the third number). If a person must check every case, margin falls to about 50% to 75% and break-even rises to about €523k to €785k a year.
-- Not counted: clinical-trials revenue (if the sponsor pilot converts, break-even moves to month 27), government revenue (tenders are slow), and any grant until it is signed.
+- Gross margin 87.5% (the third number). If a person must check every case, margin falls to about 50% to 75% and break-even rises to about €534k to €801k a year.
+- Not counted: clinical-trials revenue (if the sponsor pilot converts, one trial in months 19 to 24 and then five a year, break-even moves to month 28), government revenue (tenders are slow), and any grant until it is signed.
 - Not in the budget: the founder's own pay (€3,000 a month would cost €72k, from the buffer), equity for the hires, and certification (CTO estimate €300k to €800k, the next round).
 - The research partner's names (NKUA Medical School with Attikon University General Hospital; the Athena Research Center's Archimedes unit) are **targets**; nobody has been contacted.
 
@@ -974,19 +981,19 @@ v4.2: the demo still runs live, with no slide: after slide 4 the laptop switches
 >
 > Two rules hold everywhere. The patient holds the key. The patient never gets a diagnosis from us.
 >
-> Why it matters: the OECD puts the cost of diagnostic error at 17.5 percent of health spending. In Greece that is about three and a half billion euros a year. We start with the smallest slice, repeated and unnecessary tests: on our estimate, 4 to 75 million euros a year in Greece alone, depending on adoption.
+> Why it matters: the OECD puts the cost of diagnostic error at 17.5 percent of health spending. In Greece that is about three and a half billion euros a year. We start with the smallest slice, repeated and unnecessary tests: on our estimate, 4 to 30 million euros a year in Greece alone, depending on adoption.
 >
-> Since this month, Greece puts public lab results in MyHealth and limits repeat tests. We carry what it does not hold: private tests, imaging, old paper, records from abroad.
+> Since this month, Greek press reports, Greece puts public lab results in MyHealth and limits repeat tests. We carry what it does not hold: private tests, imaging, old paper, records from abroad.
 >
-> The patient is free. Hospitals pay per case, starting with the ones that treat patients from abroad, and clinic chains pay per doctor seat. On our assumptions, that is half a million to five million euros a year by year three, a small share of what better records save. We never earn from a diagnosis; we never make one. The record ships first, under GDPR and HIPAA; the assistant's possibilities ship after certification under the EU MDR.
+> The patient is free. Hospitals pay per case, starting with the ones that treat patients from abroad, and clinic chains pay per doctor seat. On our assumptions, that is half a million to five million euros a year by year three. About twelve hospitals cover our running costs. We never earn from a diagnosis; we never make one. The record ships first, under GDPR and HIPAA; the assistant's possibilities ship after certification under the EU MDR.
 >
-> I am Lefteris Georgaras, founder of onedotatatime.design. I built this here with AI agents. I ask for one million euros over twenty-four months, released only when a hospital signs a pilot. Pathien: P-A-T-H-I-E-N. Thank you.
+> I am Lefteris Georgaras, founder of onedotatatime.design. I built this here with AI agents. I ask for one million euros over twenty-four months: four hundred thousand when a hospital signs a pilot, the rest when that hospital commits to paid cases. Pathien: P-A-T-H-I-E-N. Thank you.
 
 ---
 
 ## Pitch script: 30 seconds (about 90 words)
 
-> Up to 15 percent of diagnoses are wrong or late, and half of us ask Google before a doctor. Both happen because the history never reaches one desk. Pathien puts it there: the patient adds every exam once, and lets a doctor in by a DNA-shaped handshake. The doctor asks, and every answer shows its source. Patients never get a diagnosis from us. Hospitals pay per case or per seat, a small share of what better first decisions save: in Greece, diagnostic error costs about €3.5bn a year.
+> Up to 15 percent of diagnoses are wrong or late, and half of us ask Google before a doctor. Both happen because the history never reaches one desk. Pathien puts it there: the patient adds every exam once, and lets a doctor in by a DNA-shaped handshake. The doctor asks, and every answer shows its source. Patients never get a diagnosis from us. Hospitals pay per case or per seat. In Greece alone, diagnostic error costs about €3.5bn a year.
 
 ---
 
@@ -1000,7 +1007,7 @@ Slide numbers in this table are the v4.2 numbers (old numbers in brackets where 
 | Q24 | **Answered for revenue** (founder, 14 Nov, verbatim: "the numbers of how many money we can earn based on good diagnoses?", then "Yes, update to v3"). The revenue line is on the main deck (slide 10), framed per case and per seat, never per diagnosis. SOM retired; TAM and SAM stay in A7 as a ceiling, for questions only. Open: whether A7 is shown at all. | Founder (revenue); CEO, with Sales (A7) |
 | Q25 | **Answered in v3.7** (founder, 15 Nov: "remove tel aviv for now at 12 slide"). Sheba ARC and Tel Aviv are removed from go-to-market (slide 11, was 12); Mayo Clinic Platform stays as the gateway. | Founder |
 | Q26 | **Answered in v3.1** by the CEO plan v2 and the founder's "put it in the deck when ready": the regulatory slide (12) stays the closing content slide; team and ask follow as slides 13 and 14. | CEO, founder |
-| Q27 | **Answered in v3.1** (founder, 14 Nov: "Just me Lefteris Georgaras (founder of onedotatatime.design studio)"). **Amount set in v4.3** on the CEO's plan v3 (founder, 15 Nov: "Fund 1m -> do the maths"): €1M over 24 months, €300k then €700k (slides 13, 14, A9). Open: the founder approves the amount and the public wording before the pitch. | Founder, through the CEO |
+| Q27 | **Answered in v3.1** (founder, 14 Nov: "Just me Lefteris Georgaras (founder of onedotatatime.design studio)"). **Amount set in v4.3** on the CEO's plan v3 (founder, 15 Nov: "Fund 1m -> do the maths"): €1M over 24 months, €400k then €600k, both committed at signing (slides 13, 14, A9; the tranche split is the CFO's, on the founder's delegation, 15 Nov: "CFO will answer"). Open: the founder approves the amount and the public wording before the pitch. | Founder, through the CEO |
 | Q29 | **Answered** (founder, 14 Nov, verbatim: "Route to the doctor"). Patient-side offer: log the symptom, send it to the doctor, who sees it with the full history. No interpretation, urgency score or causes; fixed 112 line only. Slide 4 and A2 updated. | Founder |
 | Q30 | Greek copy: say "ιατρικές εξετάσεις" or "αποτελέσματα εξετάσεων", never "εξετάσεις" alone (Google reads it as school exams; treg Q2). | Marketing, for any Greek version |
 | Q31 | Slide 10's prices (€40 to €80 a case, €50 a seat a month, on A6) and volumes are assumptions. Ask the first buyers for their own figure (treg Q6, question 5) and replace them. | Sales, Founder at LifeTech Park |
