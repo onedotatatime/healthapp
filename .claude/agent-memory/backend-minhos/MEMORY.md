@@ -20,4 +20,4 @@
 - [healthapp identity name-only A](project_healthapp_identity_name_only_a.md) — MIN-4630 A branch pushed; local deno/check:static traps
 - [healthapp local migration job](project_healthapp_local_migration_job.md) — PGlite + socket for 017-style checks and real pgstore SQL, no docker; one-connection trap
 - [healthapp sim timeline](project_healthapp_sim_timeline.md) — MIN-4701: timeline block, ramp param vs byte-for-byte check 6, round 2 done e061350, shared-worktree JSON trap
-- [healthapp nightly (MIN-4718)](project_healthapp_nightly.md) — worktree write-guard bounce, webkit, JSON report shape, Linear filters, E2E assignee convention
+- [healthapp sim ten years](project_healthapp_sim_ten_years.md) — MIN-4748 ten_years block, 78f5517, plateau rule, scratch-tree commit recipe for a stale shared worktree
