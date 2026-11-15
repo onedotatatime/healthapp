@@ -26,6 +26,44 @@ function errorOf(json: unknown, status: number): { message: string; code?: strin
   return { message: `HTTP ${status}` };
 }
 
+const headersFor = (env: OkEnv, accessToken?: string) => ({
+  'content-type': 'application/json',
+  apikey: env.anonKey,
+  authorization: `Bearer ${accessToken ?? env.anonKey}`,
+  'x-healthapp-env': env.env,
+});
+
+/**
+ * MIN-4675: the same call for a function that answers with a stream (NDJSON), so the body is handed back unread.
+ * It keeps the header rule: `x-healthapp-env` is sent from this file only. A non-2xx answer throws the same ApiError as
+ * `makeCall`, so `authedCall` can refresh the session on a 401 and try once more. Needs the user's token (no anon fallback).
+ */
+export function makeStream(env: OkEnv, fetchImpl: typeof fetch = (...a) => fetch(...a)) {
+  return async function streamFunction(name: string, opts: { accessToken: string; signal?: AbortSignal }): Promise<Response> {
+    let res: Response;
+    try {
+      res = await fetchImpl(`${env.supabaseUrl}/functions/v1/${env.functionPrefix}${name}`, {
+        method: 'POST',
+        headers: { ...headersFor(env, opts.accessToken), accept: 'application/x-ndjson' },
+        signal: opts.signal,
+      });
+    } catch {
+      throw new ApiError(0, 'Could not reach the server.');
+    }
+    if (!res.ok) {
+      let json: unknown = null;
+      try {
+        json = JSON.parse(await res.text());
+      } catch {
+        /* not JSON */
+      }
+      const { message, code } = errorOf(json, res.status);
+      throw new ApiError(res.status, message, code);
+    }
+    return res;
+  };
+}
+
 /**
  * The one wrapper for Edge Function calls. It is the only place that sends `x-healthapp-env`
  * (MIN-4449 decision 1, 1: on function calls only, never as a global supabase-js header).
@@ -42,12 +80,7 @@ export function makeCall(env: OkEnv, fetchImpl: typeof fetch = (...a) => fetch(.
     try {
       res = await fetchImpl(`${env.supabaseUrl}/functions/v1/${env.functionPrefix}${name}`, {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          apikey: env.anonKey,
-          authorization: `Bearer ${opts.accessToken ?? env.anonKey}`,
-          'x-healthapp-env': env.env,
-        },
+        headers: headersFor(env, opts.accessToken),
         body: body === undefined ? undefined : JSON.stringify(body),
         signal: opts.signal,
         keepalive: opts.keepalive,

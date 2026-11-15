@@ -28,6 +28,12 @@ export function formatRunTime(iso: string): string {
 /** Milliseconds from the recorded start to each phase, from the wrapper's own timestamps. */
 export const vmOffsets = (vm: VmBlock): number[] => vm.phases.map((p) => Math.max(0, Date.parse(p.at) - Date.parse(vm.started_at)));
 
+/** Milliseconds from the live run's `start` line to one of its `phase` lines. 0 when either time cannot be read. */
+export const offsetMs = (startIso: string, atIso: string): number => {
+  const d = Date.parse(atIso) - Date.parse(startIso);
+  return Number.isFinite(d) ? Math.max(0, d) : 0;
+};
+
 export function formatValue(l: LabRow): string {
   return l.unit === 'qual' ? (l.value ? COPY.positive : COPY.negative) : `${l.value} ${l.unit}`;
 }

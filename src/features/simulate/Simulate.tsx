@@ -1,8 +1,9 @@
 /**
- * /doctor/simulate (MIN-4594, parent MIN-4592). The doctor clicks once: the recorded boxd run is replayed with its real times,
- * the 5,000 synthetic records appear as dots, and the matching runs in this browser over them (matcher.ts). The count on screen
- * is the matcher's return value. The "contact" is simulated: nothing is written or sent. Doctor-only (RequireRole in App.tsx).
- * No Supabase, no Edge Function, no RPC, no Gemini, no network call: the data is one file in this chunk.
+ * /doctor/simulate (MIN-4594, parent MIN-4592; live since MIN-4675). The doctor clicks once: a real boxd machine makes the 5,000
+ * synthetic records and the card lights its states with their real times (live.ts, one call). When the live run cannot happen the
+ * recorded run is replayed as before, with a sentence saying why. Then the records appear as dots and the matching runs in this
+ * browser over them (matcher.ts). The count on screen is the matcher's return value. The "contact" is simulated: nothing is
+ * written or sent. Doctor-only (RequireRole in App.tsx). The only network call of the module is in live.ts; no key, no model.
  */
 import { Flask } from '@phosphor-icons/react';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
@@ -11,8 +12,10 @@ import runJson from '../../../data/synthetic/run-5000.json';
 import { COPY as MATCHES_COPY } from '../matches/copy';
 import { COPY } from './copy';
 import { DotCanvas, colorOfGroup, type Stage } from './DotCanvas';
-import { findMatches, parseRun, type MatchOutcome, type RecordDetail, type RunFile, type VmBlock } from './matcher';
-import { codeLabel, countryName, formatRunTime, formatValue, groupName, vmOffsets } from './format';
+import { createLiveRunner, type FallbackReason, type LiveResult, type LiveSend } from './live';
+import { MachineCard, type MachineView } from './MachineCard';
+import { findMatches, parseRun, type MatchOutcome, type RecordDetail, type RunFile } from './matcher';
+import { codeLabel, countryName, formatValue, groupName, offsetMs, vmOffsets } from './format';
 import { SM_CARD_AT, SM_CONTACT_STEP_MS, SM_RINGS_AT, barFraction, stepAt } from './motion';
 import './simulate.css';
 
@@ -36,9 +39,11 @@ export default function Simulate() {
   return <SimulateView run={run} />;
 }
 
-export function SimulateView({ run }: { run: RunFile }) {
+/** `run` is the recorded run (the fallback). `send` is the live call; tests and the review harness pass a fake, the page passes none. */
+export function SimulateView({ run, send }: { run: RunFile; send?: LiveSend }) {
   const [phase, setPhase] = useState<Phase>('idle');
-  const [vmIdx, setVmIdx] = useState(-1);
+  const [machine, setMachine] = useState<MachineView | null>(null);
+  const [active, setActive] = useState<RunFile>(run); // the records on screen: the live run, or the recorded one
   const [step, setStep] = useState(0);
   const [outcome, setOutcome] = useState<MatchOutcome | null>(null);
   const [runId, setRunId] = useState(0);
@@ -51,7 +56,14 @@ export function SimulateView({ run }: { run: RunFile }) {
   const timers = useRef<number[]>([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); };
-  useEffect(() => clear, []);
+  const runner = useRef<ReturnType<typeof createLiveRunner> | null>(null);
+  if (!runner.current) runner.current = createLiveRunner(send);
+  const alive = useRef(true);
+  const call = useRef<AbortController | null>(null);
+  useEffect(() => {
+    alive.current = true;
+    return () => { alive.current = false; call.current?.abort(); clear(); };
+  }, []);
 
   // The strip sticks under the page label, which wraps to one or two lines: its height is measured, not guessed.
   useEffect(() => {
@@ -75,26 +87,72 @@ export function SimulateView({ run }: { run: RunFile }) {
     window.scrollTo({ top, behavior: 'smooth' });
   }, [phase, reduced]);
 
+  /** The live run is back: its 5,000 records are the ones on screen. A file the matcher cannot read plays the recorded run instead. */
+  const goLive = (res: Extract<LiveResult, { live: true }>, red: boolean) => {
+    let out: MatchOutcome;
+    try { out = findMatches(res.run); } catch { return replay('error', red); }
+    setActive(res.run);
+    setOutcome(out); // the matching runs here, on the records the machine made
+    const footer = res.size && res.seconds !== null ? `${res.size}, ${res.seconds} s in total.` : null;
+    setMachine((m) => m && { ...m, footer });
+    if (red) setPhase('dots');
+    else later(() => setPhase('dots'), 700);
+  };
+
+  /** The recorded run, exactly as before, under one sentence saying why the live one did not happen. The card starts again from empty. */
+  const replay = (reason: FallbackReason, red: boolean) => {
+    setActive(run);
+    setOutcome(findMatches(run));
+    const vm = run.vm;
+    const notice = COPY.fallback[reason];
+    if (!vm) {
+      setMachine({ mode: 'replay', notice, startedAt: null, states: false, lines: [], footer: null });
+      setPhase('dots');
+      return;
+    }
+    const at = vmOffsets(vm);
+    const lines = vm.phases.map((p, i) => ({ id: p.id, offsetMs: at[i], log: p.log }));
+    const base = { mode: 'replay' as const, notice, startedAt: vm.started_at, states: true, footer: vm.size ? `${vm.size}, ${vm.seconds} s in total.` : null };
+    if (red) {
+      setMachine({ ...base, lines });
+      setPhase('dots');
+      return;
+    }
+    setMachine({ ...base, lines: [] });
+    at.forEach((ms, i) => later(() => setMachine((m) => m && { ...m, lines: lines.slice(0, i + 1) }), ms));
+    later(() => setPhase('dots'), at[at.length - 1] + 700);
+  };
+
   const start = () => {
+    const r = runner.current!;
+    if (r.running) return; // one call at a time
     clear();
     const red = prefersReduced();
+    const ctl = new AbortController();
+    let startedAt = '';
+    const pending = r.start(
+      {
+        onStart: (e) => { startedAt = e.at; setMachine({ mode: 'live', notice: null, startedAt: e.at, states: true, lines: [], footer: null }); },
+        onPhase: (e) => setMachine((m) => m && { ...m, lines: [...m.lines, { id: e.id, offsetMs: offsetMs(startedAt, e.at), log: COPY.liveLog[e.id] }] }),
+      },
+      ctl.signal,
+    );
+    if (!pending) return;
+    call.current = ctl;
     setReduced(red);
-    setOutcome(findMatches(run)); // the matching runs here, at the click
+    setOutcome(null);
+    setActive(run);
     setRunId((n) => n + 1);
     setStep(0);
     setRings(false);
     clickScroll.current = window.scrollY;
-    const vm = run.vm;
-    if (vm && !red) {
-      setVmIdx(-1);
-      setPhase('machine');
-      const at = vmOffsets(vm);
-      at.forEach((ms, i) => later(() => setVmIdx(i), ms));
-      later(() => setPhase('dots'), at[at.length - 1] + 700);
-    } else {
-      setVmIdx(vm ? vm.phases.length - 1 : -1);
-      setPhase('dots');
-    }
+    setMachine({ mode: 'pending', notice: null, startedAt: null, states: true, lines: [], footer: null });
+    setPhase('machine');
+    void pending.then((res) => {
+      if (!alive.current) return;
+      if (res.live) goLive(res, red);
+      else replay(res.reason, red);
+    });
   };
 
   const revealed = useCallback(() => {
@@ -126,55 +184,26 @@ export function SimulateView({ run }: { run: RunFile }) {
         </button>
       </p>
 
-      {started && <MachineCard vm={run.vm} vmIdx={vmIdx} />}
+      {started && machine && <MachineCard view={machine} />}
 
       {showDots && outcome && (
         <section ref={recordsRef} className="sm-card" aria-labelledby="sm-h2" data-testid="sim-records">
           <h2 id="sm-h2"><b>2</b> {COPY.recordsTitle}</h2>
           <p className="muted">{COPY.recordsBody}</p>
-          <Strip run={run} outcome={outcome} step={step} />
-          <DotCanvas key={runId} run={run} stage={stage} reveal={showDots} reduced={reduced} shareRows={outcome.shareRows} matched={outcome.matched} onRevealed={revealed} />
+          <Strip run={active} outcome={outcome} step={step} />
+          <DotCanvas key={runId} run={active} stage={stage} reveal={showDots} reduced={reduced} shareRows={outcome.shareRows} matched={outcome.matched} onRevealed={revealed} />
           <ul className="sm-legend" aria-label="Seeded groups">
-            {run.groups.map((g) => (
-              <li key={g}><i style={{ background: colorOfGroup(g) }} aria-hidden="true" />{groupName(g)} <span className="mono">{nf(run.seeded[g] ?? 0)}</span></li>
+            {active.groups.map((g) => (
+              <li key={g}><i style={{ background: colorOfGroup(g) }} aria-hidden="true" />{groupName(g)} <span className="mono">{nf(active.seeded[g] ?? 0)}</span></li>
             ))}
           </ul>
           <p className="muted sm-small">{COPY.groupNote}</p>
         </section>
       )}
 
-      {(phase === 'matching' || phase === 'done') && outcome && <MatchingCard run={run} outcome={outcome} step={step} />}
-      {phase === 'done' && outcome && <Matches run={run} outcome={outcome} key={runId} />}
+      {(phase === 'matching' || phase === 'done') && outcome && <MatchingCard run={active} outcome={outcome} step={step} />}
+      {phase === 'done' && outcome && <Matches run={active} outcome={outcome} key={runId} />}
     </main>
-  );
-}
-
-function MachineCard({ vm, vmIdx }: { vm: VmBlock | null; vmIdx: number }) {
-  return (
-    <section className="sm-card" aria-labelledby="sm-h1" data-testid="sim-machine">
-      <h2 id="sm-h1"><b>1</b> {COPY.machineTitle}</h2>
-      <p className="muted">{COPY.machineBody}</p>
-      <p className="sm-fixed" data-testid="sim-machine-label">{vm ? COPY.machineLabel(formatRunTime(vm.started_at)) : COPY.machineFallback}</p>
-      {vm && (
-        <>
-          <ol className="sm-states" aria-label="Machine states">
-            {vm.phases.map((p, n) => (
-              <li key={p.id} className={n < vmIdx ? 'past' : n === vmIdx ? 'now' : ''} aria-current={n === vmIdx ? 'step' : undefined}>
-                <span className="sm-box" data-s={p.id} />
-                <strong>{COPY.machineStates[p.id]}</strong>
-              </li>
-            ))}
-          </ol>
-          <ul className="sm-log mono" aria-live="polite">
-            {vmIdx < 0 && <li>{COPY.machineWaiting}</li>}
-            {vm.phases.slice(0, vmIdx + 1).map((p, i) => (
-              <li key={p.id}><span>+{(vmOffsets(vm)[i] / 1000).toFixed(1)} s</span> {p.log}</li>
-            ))}
-          </ul>
-          {vm.size && <p className="muted sm-small">{vm.size}, {vm.seconds} s in total.</p>}
-        </>
-      )}
-    </section>
   );
 }
 
