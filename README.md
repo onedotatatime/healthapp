@@ -43,7 +43,7 @@ Linear (sign-in needed): [MIN-4554](https://linear.app/minhos/issue/MIN-4554) (d
 
 Who pays and why: buyers, market and competitors, the lean canvas, where clinical trials fit, and the team and funding plan.
 
-[Lean summary](docs/lean/00-summary.md) · [Value proposition](docs/lean/04-value-proposition.md) · [Business model canvas](docs/lean/05-business-model-canvas.md) · [Market-fit scorecard](docs/lean/06-market-fit-scorecard.md) · [Buyers](docs/research/buyers.md) · [Market and competitors](docs/research/market-and-competitors.md) · [Clinical trials fit](docs/business/clinical-trials-fit.md) · [Team and funding plan](docs/business/team-and-funding-plan.md) · [Submission details](docs/submission/project-details.md)
+[Lean summary](docs/lean/00-summary.md) · [Value proposition](docs/lean/04-value-proposition.md) · [Business model canvas](docs/lean/05-business-model-canvas.md) · [Market-fit scorecard](docs/lean/06-market-fit-scorecard.md) · [Buyers](docs/research/buyers.md) · [Market and competitors](docs/research/market-and-competitors.md) · [Clinical trials fit](docs/business/clinical-trials-fit.md) · [Team and funding plan](docs/business/team-and-funding-plan.md)
 
 ## Finance
 
@@ -55,7 +55,7 @@ The numbers behind the pitch: the funding model and plan, the CFO review fixes, 
 
 The name, the words and the story: naming and voice, brand guidelines, landing copy, the pitch deck and its script, and the simulation wording.
 
-[Naming and voice](docs/brand/naming.md) · [Brand guidelines](docs/brand/brand-guidelines.md) · [Landing copy](docs/landing/copy.md) · [Deck content](docs/deck/deck-content.md) · [Story deck content](docs/story/story-deck-content.md) · [Pitch script](docs/submission/pitch-script.md) · [Simulation copy](docs/simulation-copy.md)
+[Naming and voice](docs/brand/naming.md) · [Brand guidelines](docs/brand/brand-guidelines.md) · [Landing copy](docs/landing/copy.md) · [Deck content](docs/deck/deck-content.md) · [Story deck content](docs/story/story-deck-content.md) · [Simulation copy](docs/simulation-copy.md)
 
 Linear (sign-in needed): [MIN-4619](https://linear.app/minhos/issue/MIN-4619) (brand, Pathien) · [MIN-4728](https://linear.app/minhos/issue/MIN-4728) (`/story` deck).
 
