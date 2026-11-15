@@ -70,3 +70,7 @@ verify_jwt = false
 # MIN-4556 addendum: the owner takes a saved exam back to a draft, called from the browser (the function verifies the session itself).
 [functions.healthapp-unconfirm-doc]
 verify_jwt = false
+
+# MIN-4674: the doctor's live simulation run on a boxd machine. Called from the browser; the function verifies the session and the doctor role itself.
+[functions.healthapp-simulate-live]
+verify_jwt = false
