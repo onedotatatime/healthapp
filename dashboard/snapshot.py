@@ -3,13 +3,14 @@
 
     snapshot.py [--out PATH] [--push] [--home DIR] [--hand PATH] [--rates PATH] [--root DIR] [--now ISO]
 
-Stdlib only (Python 3.9+). Five blocks, each with its own asOf and error:
+Stdlib only (Python 3.9+). Seven blocks, each with its own asOf and error:
   linear  Linear GraphQL, READ-ONLY queries (a test fails if this file contains a write operation); also the `forecast` block (MIN-4565)
   usage   ~/.claude/projects transcripts, read through the same scan()/build_run() code as conductor's bin/usage
   money   usage tokens by model x rates.json x eurPerUsd. An estimate at API list price, never a bill
   hand    ~/.healthapp-dashboard/hand-set.json (credits, demo steps, clean runs, milestone metadata)
   branches  the healthapp repo's branches: local git (read-only: no fetch, no lock, no write) and PRs through one `gh pr list` call (MIN-4460)
   repo      numbers only about the same repo: branches, PRs, commits, lines of code (MIN-4568). Same read-only git and one more `gh pr list`; every field names its source in build_repo
+  founder_time  minutes of the founder's own chat messages per day, chat and direction (MIN-4559); metadata only, never message text
 Besides the blocks, `directions` (the project goal's five directions and how close each is, MIN-4653) is computed inside the `linear` block from the same
 fetch: DIRECTION_ROOTS (or config.directionRoots in hand-set.json) names the root issues of each direction, and everything under them is counted. Counts only.
 A block that fails keeps its last good value, gets a newer `error`, keeps its old `asOf`; the others stay fresh.
@@ -29,7 +30,7 @@ SECRET_RE = re.compile('|'.join(['lin' + '_api_', 'eyJ' + '[A-Za-z0-9_-]{30,}', 
 HOME_DEFAULT = '~/.healthapp-dashboard'
 USAGE_BIN_DEFAULT = '~/AppDevelopment/conductor/bin/usage'
 ENV_AGENTS = '~/.claude/.env.agents'
-BLOCKS = ('linear', 'usage', 'money', 'hand', 'branches', 'repo')
+BLOCKS = ('linear', 'usage', 'money', 'hand', 'branches', 'repo', 'founder_time')
 
 
 DIRECTION_STATUSES = ('on_track', 'at_risk', 'off_track', 'not_started')
@@ -985,6 +986,128 @@ def build_hand(hand):
     return data
 
 
+# ----------------------------------------------------------------------------- founder time (MIN-4559)
+# METADATA ONLY (CTO, MIN-4558): the timestamp of each of the founder's own messages in the Claude chats on this Mac, the chat title and the git
+# branch of the chat. The text of a message is never read, kept or printed. GitHub and Linear actions are not his time (agents act under his accounts).
+FT_GAP_CAP_MIN = 10          # a message is credited the minutes until his next message anywhere, at most this many
+FT_LAST_MIN = 2              # the last message of the window (no next one) is credited this many
+FT_TOP_CHATS = 12
+FT_ISSUE_RE = re.compile(r'\bMIN-\d+\b', re.I)
+# issue (and its whole subtree) -> the directions it serves. Overridable in hand-set config.founderTime.directionRoots. Time on an issue that is under
+# none of these is "not toward the goal"; time in a chat with no issue in its title or branch is "untagged" (also not counted toward the goal).
+FT_DIRECTION_ROOTS = {'MIN-4554': [1, 2], 'MIN-4546': [3], 'MIN-4547': [4], 'MIN-4504': [5]}
+
+
+def ft_parent_map(nodes):
+    parent = {}
+    for n in nodes or []:
+        p = n.get('parent') or {}
+        if p.get('identifier'):
+            parent[n['identifier']] = p['identifier']
+            gp = (p.get('parent') or {}).get('identifier')
+            if gp:
+                parent.setdefault(p['identifier'], gp)
+    return parent
+
+
+def directions_of(issue_id, roots, parent):
+    cur, seen = issue_id, set()
+    while cur and cur not in seen:
+        if cur in roots:
+            return list(roots[cur])
+        seen.add(cur)
+        cur = parent.get(cur)
+    return []
+
+
+def read_founder_chats(root, name_filter, since, until):
+    """[{key, title, issues:set, stamps:[datetime]}] for the top-level chat files of the healthapp project directories. A founder message is a
+    user record with turnOrigin 'human' that is neither a sidechain (sub-agent) nor meta; tool results, task notifications and agent briefs are not."""
+    import glob
+    chats = []
+    for proj in sorted(os.listdir(root)):
+        if name_filter and name_filter not in proj:
+            continue
+        for p in sorted(glob.glob(os.path.join(root, proj, '*.jsonl'))):      # top level only: sub-agent transcripts live deeper
+            if os.path.getmtime(p) < since.timestamp():
+                continue
+            title, branches, stamps = '', set(), []
+            with open(p, errors='replace') as f:
+                for line in f:
+                    try:
+                        o = json.loads(line)
+                    except ValueError:
+                        continue
+                    t = o.get('type')
+                    if t == 'custom-title':
+                        title = o.get('customTitle') or title
+                    if o.get('gitBranch'):
+                        branches.add(o['gitBranch'])
+                    if t == 'user' and o.get('turnOrigin') == 'human' and not o.get('isSidechain') and not o.get('isMeta') and o.get('timestamp'):
+                        ts = parse(o['timestamp'])
+                        if since <= ts <= until:
+                            stamps.append(ts)
+            if stamps:
+                issues = {m.upper() for m in FT_ISSUE_RE.findall(title + ' ' + ' '.join(branches))}
+                chats.append({'key': os.path.basename(p)[:-6], 'title': title, 'issues': issues, 'stamps': stamps})
+    return chats
+
+
+def build_founder_time(chats, nodes, ftcfg, dirs, now, since, tz):
+    roots = {k.upper(): v for k, v in (ftcfg.get('directionRoots') or FT_DIRECTION_ROOTS).items()}
+    parent = ft_parent_map(nodes)
+    cap = timedelta(minutes=ftcfg.get('gapCapMinutes', FT_GAP_CAP_MIN))
+    last = timedelta(minutes=ftcfg.get('lastMessageMinutes', FT_LAST_MIN))
+    pts = sorted((ts, c['key']) for c in chats for ts in c['stamps'])
+    by_key = {c['key']: c for c in chats}
+    mins, msgs, day = collections.Counter(), collections.Counter(), collections.defaultdict(float)
+    for i, (ts, key) in enumerate(pts):
+        gap = pts[i + 1][0] - ts if i + 1 < len(pts) else last
+        m = min(gap, cap).total_seconds() / 60
+        mins[key] += m
+        msgs[key] += 1
+        day[ts.astimezone(tz).date().isoformat()] += m
+    titles = {d['n']: d['title'] for d in (dirs or [])}
+    per_dir, rows = collections.Counter(), []
+    day_goal = collections.defaultdict(float)
+    for key, m in mins.items():
+        c = by_key[key]
+        issues = sorted(c['issues'])
+        share = {}                                           # bucket -> minutes of this chat
+        for iid in issues:
+            ds = directions_of(iid, roots, parent)
+            for b in (ds or ['none']):
+                share[b] = share.get(b, 0) + m / len(issues) / len(ds or [0])
+        if not issues:
+            share['untagged'] = m
+        for b, v in share.items():
+            per_dir[b] += v
+        toward = sum(v for b, v in share.items() if isinstance(b, int))
+        rows.append({'chat': clean(c['title'])[:60] or 'untitled chat', 'issues': issues[:6], 'directions': sorted(b for b in share if isinstance(b, int)),
+                     'minutes': round(m, 1), 'messages': msgs[key], 'toward_goal_minutes': round(toward, 1)})
+    total = sum(mins.values())
+    toward = sum(v for b, v in per_dir.items() if isinstance(b, int))
+    rows.sort(key=lambda r: -r['minutes'])
+    drains = [dict(r, off_goal_minutes=round(r['minutes'] - r['toward_goal_minutes'], 1)) for r in rows]
+    drain = max(drains, key=lambda r: r['off_goal_minutes'], default=None)
+    per_direction = [{'key': str(n), 'title': titles.get(n), 'minutes': round(per_dir.get(n, 0), 1)} for n in range(1, 6)]
+    per_direction += [{'key': 'none', 'title': 'Not toward the goal (an issue under no direction)', 'minutes': round(per_dir.get('none', 0), 1)},
+                      {'key': 'untagged', 'title': 'Not toward the goal (no issue in the chat title or branch)', 'minutes': round(per_dir.get('untagged', 0), 1)}]
+    return {
+        'window': {'since': iso(since), 'until': iso(now)},
+        'method': 'Only the timestamps of your own messages in the Claude chats on this Mac. Each message counts the minutes until your next message '
+                  'anywhere, at most %d; the last one counts %d. Chats are tagged by the issue in the chat title or git branch, never by message text. '
+                  'GitHub and Linear actions are not counted.' % (cap.total_seconds() / 60, last.total_seconds() / 60),
+        'total_minutes': round(total, 1), 'toward_goal_minutes': round(toward, 1),
+        'share_toward_goal': round(toward / total, 3) if total else None,
+        'messages': sum(msgs.values()),
+        'per_day': [{'date': d, 'minutes': round(v, 1)} for d, v in sorted(day.items())],
+        'per_direction': per_direction,
+        'per_chat': rows[:FT_TOP_CHATS],
+        'biggest_drain': {k: drain[k] for k in ('chat', 'issues', 'off_goal_minutes')} if drain and drain['off_goal_minutes'] > 0 else None,
+    }
+
+
 # ----------------------------------------------------------------------------- repo numbers (MIN-4568)
 
 REPO_PR_LIMIT = 1000                   # one `gh pr list` call; reaching the limit is reported, never hidden
@@ -1227,8 +1350,14 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         return build_repo(rcfg, now, since, runner, gh_bin)
     run_block(state, 'repo', repo_numbers, now)
 
+    def founder_time():
+        tz = parse(hand['buildStart']).tzinfo
+        chats = read_founder_chats(root, cfg.get('projectFilter'), since, now)
+        return build_founder_time(chats, holder.get('nodes'), cfg.get('founderTime') or {}, ((state.get('linear') or {}).get('data') or {}).get('directions'), now, since, tz)
+    run_block(state, 'founder_time', founder_time, now)
+
     g = lambda b: (state.get(b) or {}).get('data') or {}
-    h, lin, us, mo, br, rp = g('hand'), g('linear'), g('usage'), g('money'), g('branches'), g('repo')
+    h, lin, us, mo, br, rp, ft = g('hand'), g('linear'), g('usage'), g('money'), g('branches'), g('repo'), g('founder_time')
     snap = {
         'schema': SCHEMA, 'intervalSec': INTERVAL_SEC, 'generatedAt': iso(now),
         'blocks': {b: {'asOf': (state.get(b) or {}).get('asOf'), 'error': (state.get(b) or {}).get('error')} for b in BLOCKS},
@@ -1258,6 +1387,8 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         snap['branches'] = br
     if rp:
         snap['repo'] = rp
+    if ft:
+        snap['founder_time'] = ft
     return snap
 
 
