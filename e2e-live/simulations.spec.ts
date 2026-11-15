@@ -1,9 +1,12 @@
 import { readFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, mockSimulateLive, test } from './helpers/simulate-live';
 
 // /simulation and /doctor/simulate on staging after MIN-4603 (MIN-4612). Synthetic data only.
 // Expected values come from data/synthetic/simulation.json (the file the build serves), formatted here by the written rule,
 // not by importing the app's formatter, so a wrong formatter or a wrong deployed file fails.
+// The Run click on /doctor/simulate calls healthapp-simulate-live (a real boxd machine): every Run in this file mocks that POST
+// (MIN-4677, helpers/simulate-live.ts), and the helper fails the test if a click ever reaches the real function.
 // Run: see playwright.simulation.config.ts. Passcode comes from HEALTHAPP_DEMO_PASSCODE, is never logged.
 const PASSCODE = process.env.HEALTHAPP_DEMO_PASSCODE ?? '';
 const SIM = JSON.parse(readFileSync('data/synthetic/simulation.json', 'utf8'));
@@ -205,6 +208,7 @@ test.describe('/doctor/simulate (demo doctor)', () => {
     test.setTimeout(170_000);
     await signIn(page);
     await page.goto('/doctor/simulate');
+    await mockSimulateLive(page);
     await expect(T(page, 'sim-page-label')).toBeVisible();
     expect(await fixedLabelsSolid(page)).toEqual([]);
 
@@ -242,6 +246,7 @@ test.describe('/doctor/simulate (demo doctor)', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await signIn(page);
     await page.goto('/doctor/simulate');
+    await mockSimulateLive(page);
     await T(page, 'sim-run').click();
     await expect(T(page, 'sim-count-line')).toBeVisible({ timeout: 5_000 });
     for (let i = 1; i <= 5; i++) await expect(T(page, `sim-step-${i}`)).toBeVisible();
@@ -256,6 +261,7 @@ test.describe('/doctor/simulate (demo doctor)', () => {
     test.setTimeout(170_000);
     await signIn(page);
     await page.goto('/doctor/simulate');
+    await mockSimulateLive(page);
     expect(await overflow(page), 'px of sideways scroll before the run').toBeLessThanOrEqual(0);
     await T(page, 'sim-run').click();
     await expect(T(page, 'sim-dots')).toBeVisible({ timeout: 30_000 });
