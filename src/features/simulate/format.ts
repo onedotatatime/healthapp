@@ -4,8 +4,11 @@ import type { VmBlock } from './matcher';
 
 export { countryName } from '../matches/pattern';
 
-/** "img_hilar_lymphadenopathy" -> "Hilar lymphadenopathy"; everything else follows the matches screens. */
-export const codeLabel = (code: string) => featureLabel(code.replace(/^img_/, ''));
+/** The codes the generic rule spells badly ("Gp", "HLA B27", "VitD"): their words on this page (MIN-4757). */
+const WORDS: Record<string, string> = { spec_gp: 'General practice', HLA_B27_positive: 'HLA-B27 positive', vitD_low: 'Vitamin D low' };
+
+/** "img_hilar_lymphadenopathy" -> "Hilar lymphadenopathy"; the three above by name; everything else follows the matches screens. */
+export const codeLabel = (code: string) => WORDS[code] ?? featureLabel(code.replace(/^img_/, ''));
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 /** "2026-11-14T21:25:14Z" -> "14 Nov 2026, 21:25 UTC". Fixed zone, so the screen reads the same on any laptop. */
