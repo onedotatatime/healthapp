@@ -62,4 +62,47 @@ export const COPY = {
     `Match field: ${a.matched.toLocaleString('en-US')} of ${a.visible.toLocaleString('en-US')} synthetic records have a match`,
   simFieldCaption:
     'One dot, one synthetic record. Teal is a match; position says nothing about who it is.',
+  // The timeline diagram (MIN-4702, spec A13). Final strings: docs/simulation-copy.md section 7.1 (Anna, MIN-4697 part 2), the keys as she lists them.
+  // No number is typed here: months, counts, euros, points and the price come from the data as arguments.
+  tlTitle: 'What a growing network could change, month by month',
+  tlCaption: (a: { first: number; last: number }) =>
+    `Plan months ${a.first} to ${a.last}, on synthetic records. As more patients join, more records find a match; the model then shows fewer wrong or missed diagnoses, a lower cost for those patients, and our planned income.`,
+  tlTie: (a: { amount: string; geography: string }) =>
+    `The ${a.amount} a year above applies this same model to all ${a.geography} health spending. This chart counts only the patients in the network, so its figures are far smaller.`,
+  tlXAxis: 'Plan month',
+  tlBand: 'Free pilot: no patients counted',
+  tlFirstPaid: 'First paid cases',
+  tlName: {
+    patients: 'Patients in the network',
+    matches: 'Records with a match',
+    dx: 'Fewer wrong or missed diagnoses',
+    drop: 'Modelled drop in cost',
+    income: 'Our income',
+  },
+  tlTag: { plan: 'Plan', model: 'Model', computed: 'Computed on synthetic records' },
+  tlLaneTitle: { people: 'People', euro: 'Euros', dx: 'Diagnoses' },
+  tlUnitPeople: 'Patients and records, running total',
+  tlUnitEuro: '€ a year, one scale for both lines',
+  tlUnitDx: 'A year, across these patients, in the model',
+  tlAssumeDx: 'Assumption: one visit per patient a year.',
+  tlRampPerCase: (a: { price: string; from: number; to: number }) =>
+    `Assumption: each paid case is one new patient in the network, at ${a.price} a case. Months ${a.from} to ${a.to} are a free pilot with no patients counted. Doctor-seat fees are income, not patients.`,
+  tlIncomePlan: 'Income: our plan, not a measurement. Every price and volume is an assumption.',
+  tlEuroNote: (a: { price: string; perPatient: string; last: number }) =>
+    `Each case is paid once, at ${a.price}. The modelled drop is a yearly figure for the patients in the network (${a.perPatient} per patient a year at month ${a.last}). In this model it counts only the direct cost of wrong or missed diagnoses, on the EU-27 average spending per inhabitant.`,
+  tlFormula: (a: { points: string; perInhabitant: string; patients: string; amount: string }) =>
+    `${a.points} points × ${a.perInhabitant} × ${a.patients} patients = ${a.amount} a year`,
+  tlShowValues: 'Show the values',
+  tlColMeasure: 'Measure',
+  tlColMonth: (month: number) => `Month ${month}`,
+  tlTableCaption: (a: { first: number; second: number }) => `Plan months ${a.first} and ${a.second}, the same figures as the chart.`,
+  // The text alternative, filled from the data. Every money and diagnoses figure is "a year" (CEO seat condition 10: no running total on screen or in the aria text).
+  tlDescLead: (a: { first: number; last: number }) => `Chart, plan months ${a.first} to ${a.last}, synthetic model.`,
+  tlDescPatients: (a: { paid: number | null; last: number; n: string }) =>
+    a.paid === null ? `Patients in the network: ${a.n} at month ${a.last}.` : `Patients in the network: none until month ${a.paid}, ${a.n} at month ${a.last}.`,
+  tlDescMatches: (a: { n: string; last: number }) => `Records with a match: ${a.n} at month ${a.last}.`,
+  tlDescDx: (a: { n: string }) => `Modelled fewer wrong or missed diagnoses: ${a.n} a year.`,
+  tlDescDrop: (a: { amount: string }) => `Modelled drop in cost: ${a.amount} a year.`,
+  tlDescIncome: (a: { amount: string }) => `Planned income: ${a.amount} a year, plan.`,
+  tlDescClose: 'A model and a plan, not a measurement.',
 } as const;

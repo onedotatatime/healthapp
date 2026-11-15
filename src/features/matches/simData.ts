@@ -67,6 +67,8 @@ const RawSimulation = z.object({
   }),
   matches: z.unknown().optional(),
   euro: z.unknown().optional(),
+  /** Checked apart, like `euro` (CTO, MIN-4699): an invalid block means no diagram and nothing else changes. */
+  timeline: z.unknown().optional(),
   series: z.array(Series),
 });
 
@@ -77,6 +79,7 @@ export type SimulationData = {
   series: SimSeries[];
   matches?: SimMatches;
   euro?: SimEuro;
+  timeline?: SimTimeline;
 };
 
 export type SimParse = { ok: true; data: SimulationData } | { ok: false };
@@ -114,7 +117,123 @@ export function parseSimulation(raw: unknown): SimParse {
   };
   if (matches) data.matches = matches;
   if (euroOk) data.euro = e.data;
+  const timeline = parseTimeline(p.data.timeline);
+  if (timeline) data.timeline = timeline;
   return { ok: true, data };
+}
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// The timeline (MIN-4696; contract: CTO, MIN-4699 comment 8b038e47; built by Cron on MIN-4701; spec A13 of docs/design/simulations-motion-spec.md).
+// 24 plan months. Parsed apart from the three series: an invalid block means no diagram and nothing else on the page
+// changes; an invalid OPTIONAL measure means only that line is left out. Nothing is padded and nothing is typed in the UI.
+// ---------------------------------------------------------------------------------------------------------------------------
+
+/** The plan has 24 months on the screen (CTO, MIN-4699 section 4: months 25 to 36 are out). */
+export const TL_MONTHS = 24;
+/** The free pilot starts in plan month 3 (docs/business/team-and-funding-plan.md section 3: "Months 3 to 8 ... free pilot"). It ends the month before the first paid case, which is read from the data. */
+export const TL_PILOT_FROM = 3;
+/** The x axis is labelled at every third month, ending on the last (spec A13 section 1). */
+export const TL_LABEL_EVERY = 3;
+
+/**
+ * The free pilot band and the first-paid marker, derived from the data and never typed: the first paid month is the first month with a
+ * patient; the band is the months from the plan's pilot start up to the month before it. No paid month after the pilot start means neither.
+ */
+export function pilotBand(patients: number[], months: number[]): { from: number; to: number; firstPaid: number } | null {
+  const i = patients.findIndex((v) => v > 0);
+  if (i < 0) return null;
+  const firstPaid = months[i];
+  if (firstPaid <= TL_PILOT_FROM) return null;
+  return { from: TL_PILOT_FROM, to: firstPaid - 1, firstPaid };
+}
+
+const nonNegative = (n: number) => z.array(z.number().min(0)).length(n);
+/** A count that only accumulates (patients, records with a match): 24 non-negative values that never fall. */
+const runningTotal = (n: number) => nonNegative(n).refine(nonDecreasing, { message: 'a running total never falls' });
+const Unit = z.string().min(1);
+
+/**
+ * The block as the CEO seat's decision on MIN-4698 fixed it: patients are the per-case ramp only, and the money and diagnoses measures
+ * are YEARLY figures at that month's network size (never a running total of modelled money). Our income is the plan's yearly run rate
+ * (`income_run_rate_eur`). The running income total (`income_eur`) stays in the file for the plan check and is not drawn.
+ */
+const RawTimeline = z.object({
+  label: z.string().min(1),
+  x: z.object({ unit: z.string(), values: z.array(z.number()).length(TL_MONTHS) }),
+  plan: z.object({ name: z.string().min(1), status: z.string().min(1), price_eur_per_case: z.number().positive() }),
+  patients: z.object({ unit: Unit, values: runningTotal(TL_MONTHS), ramp: z.string() }),
+  matches: z.object({ count: runningTotal(TL_MONTHS) }),
+  income_run_rate_eur: z.object({ unit: Unit, status: z.string().min(1), values: nonNegative(TL_MONTHS) }),
+  /** Optional, each written only on the CEO seat's decision (`status` quotes it). Checked one by one below: an invalid one leaves only its own line out. */
+  diagnoses: z.unknown().optional(),
+  drop_eur: z.unknown().optional(),
+});
+const Diagnoses = z.object({ unit: Unit, status: z.string().min(1), method: z.string().min(1), assumption: z.string().min(1), values: nonNegative(TL_MONTHS) });
+const Drop = z.object({
+  unit: Unit, status: z.string().min(1), method: z.string().min(1), values: nonNegative(TL_MONTHS),
+  /** The published two-decimal drop in points of spending, per month, and the spending base: the two inputs of the formula line. */
+  drop_pts: nonNegative(TL_MONTHS), per_inhabitant_eur: z.number().positive(),
+});
+
+export type SimTimeline = {
+  label: string;
+  x: number[];
+  plan: { name: string; status: string; priceEurPerCase: number };
+  patients: { unit: string; values: number[] };
+  matches: { values: number[] };
+  /** Our income: the plan's yearly run rate at each month. A plan, not a measurement. */
+  income: { unit: string; status: string; values: number[] };
+  diagnoses?: { unit: string; status: string; method: string; assumption: string; values: number[] };
+  drop?: { unit: string; status: string; method: string; values: number[]; points: number[]; perInhabitantEur: number };
+};
+
+/** Whether a unit string says a running total or a yearly rate. Money and diagnoses are shown only as yearly figures (CEO seat, MIN-4698 condition 10). */
+export type MoneyBasis = 'running' | 'yearly';
+export function basisOf(unit: string): MoneyBasis | null {
+  if (/running|so far|cumulative/i.test(unit)) return 'running';
+  if (/a year|per year|yearly|annual/i.test(unit)) return 'yearly';
+  return null;
+}
+
+/** The drop at one month from its two published inputs: points / 100 x the spending base x the patients. The formula line on screen is this, so it must give the figure shown. */
+export const dropFromInputs = (points: number, perInhabitantEur: number, patients: number) => (points / 100) * perInhabitantEur * patients;
+
+/**
+ * The `timeline` block, or `undefined`. Required: x = plan months 1 to 24; the plan's own status and price; patients and records with a
+ * match (24 non-negative values that never fall; the patient ramp is the per-case one, the only one the assumption line describes);
+ * our income as the plan's yearly run rate. Optional: diagnoses and drop_eur, each with a status that quotes the decision, and each only
+ * as a YEARLY figure. A drop line whose formula does not give its own end value at the precision shown (whole thousands) is left out,
+ * as is a line on a running-total basis: two bases on one euro axis would mislead, and a rescale is banned.
+ */
+export function parseTimeline(raw: unknown): SimTimeline | undefined {
+  const t = RawTimeline.safeParse(raw);
+  if (!t.success) return undefined;
+  const d = t.data;
+  if (!d.x.values.every((v, i) => v === i + 1)) return undefined;
+  if (d.patients.ramp !== 'per_case_only') return undefined;
+  if (!pilotBand(d.patients.values, d.x.values)) return undefined;   // the card's story is the free pilot and the first paid month: a block without them is not this plan
+  if (basisOf(d.income_run_rate_eur.unit) !== 'yearly') return undefined;
+  const out: SimTimeline = {
+    label: d.label,
+    x: d.x.values,
+    plan: { name: d.plan.name, status: d.plan.status, priceEurPerCase: d.plan.price_eur_per_case },
+    patients: { unit: d.patients.unit, values: d.patients.values },
+    matches: { values: d.matches.count },
+    income: { unit: d.income_run_rate_eur.unit, status: d.income_run_rate_eur.status, values: d.income_run_rate_eur.values },
+  };
+  const rec = (raw ?? {}) as Record<string, unknown>;
+  const dx = Diagnoses.safeParse(rec.diagnoses);
+  if (dx.success && basisOf(dx.data.unit) === 'yearly') out.diagnoses = { ...dx.data };
+  const dr = Drop.safeParse(rec.drop_eur);
+  if (dr.success && basisOf(dr.data.unit) === 'yearly') {
+    const last = TL_MONTHS - 1;
+    const given = dr.data.values[last];
+    const formula = dropFromInputs(dr.data.drop_pts[last], dr.data.per_inhabitant_eur, d.patients.values[last]);
+    if (formatEuroK(formula) === formatEuroK(given)) {
+      out.drop = { unit: dr.data.unit, status: dr.data.status, method: dr.data.method, values: dr.data.values, points: dr.data.drop_pts, perInhabitantEur: dr.data.per_inhabitant_eur };
+    }
+  }
+  return out;
 }
 
 export const isModel = (s: SimSeries) => s.id !== 1 && s.formula !== undefined;
@@ -218,6 +337,25 @@ export const formatPerInhabitant = (eur: number) => `€${Math.round(eur)}`;
 export const formatTotal = (mio: number) => `€${grouped.format(Math.round(mio / 1e3))} billion`;
 /** A share of 0 to 1 as a percentage with one decimal and a trailing .0 dropped: 10%, 11.5%, 20%. */
 export const formatPct = (share: number) => `${(share * 100).toFixed(1).replace(/\.0$/, '')}%`;
+
+/** A euro amount in whole euros, thousands comma: the exact figure of the values table (€164,352). */
+export const formatEuroWhole = (eur: number) => `€${grouped.format(Math.round(eur))}`;
+/** A euro amount with cents, thousands comma: the per-inhabitant base and the per-patient figure (€4,074.88, €31.38). */
+export const formatEuroCents = (eur: number) => `€${eur.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+/** A euro amount of the timeline, rounded to whole thousands from 1,000 up (€164k), whole euros below. */
+export function formatEuroK(eur: number): string {
+  const r = Math.round(eur);
+  if (r >= 999_500) return `€${(r / 1e6).toFixed(1).replace(/\.0$/, '')}m`;
+  return r >= 1000 ? `€${grouped.format(Math.round(r / 1000))}k` : `€${r}`;
+}
+/** A euro axis tick: thousands with at most one decimal, so 2,500 reads €2.5k and never a rounded €3k. */
+export function formatEuroTick(eur: number): string {
+  if (eur < 1000) return `€${+eur.toFixed(2)}`;
+  const k = Math.round((eur / 1000) * 10) / 10;
+  return `€${k}k`;
+}
+/** A tick of a unit-less axis (people, diagnoses): the value with at most two decimals, thousands comma. */
+export const formatTick = (v: number) => (Number.isInteger(v) ? grouped.format(v) : String(+v.toFixed(2)));
 
 /** Axis from zero to a round top at or above the data: 4 or 5 ticks. Never rescaled to make a curve steeper. */
 export function niceAxis(max: number): { top: number; ticks: number[] } {

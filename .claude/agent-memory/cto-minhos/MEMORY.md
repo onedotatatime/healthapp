@@ -10,4 +10,14 @@
 - [Matches RPC review](project_matches_rpc_review.md) — MIN-4505 PR #25 pass; PR #51 coding pass with 3 fixes (glycated regex, ANA titre, 014); local PG18 replay recipe
 - [Simulation euro contract](project_simulation_euro_contract.md) — MIN-4610: part 1 contract; part 2 pass at 291fedf after founder 1,200 change; cond 6 over all drops
 - [Doctor simulate page](project_doctor_simulate.md) — MIN-4504: no live boxd VM, recorded run replayed, browser matching on 5,000 synthetic, persona-rare, S from 6, consent before data
+- [Simulation timeline](project_simulation_timeline.md) — MIN-4699: part 2 PASS 37bff7e (2,806/1,137, €88k vs €229k a year); merge-tree vs new staging, golden vs v5
 - [Simulation at 5,000](project_simulation_5000.md) — MIN-4684: part 1 GO, part 2 PASS (spec line 233 + Ren actuals); load long task is app boot; generator tests are scripts
+- [Clean replay](reference_clean_replay.md) — git archive + cp -c node_modules for Lane B jobs; check:static needs git, run it in the worktree
+- [Doctor dashboard decision](project_doctor_dashboard_decision.md) — MIN-4660/4666: diagnoses fn off per env; 2a M1/M2; 2b approved (rebase, drop pending skip); demo yes on 4 conditions
+- [One-off real-row delete](project_oneoff_real_row_delete.md) — MIN-4629: gate only the delete window, hdb scan counts are schema-wide, founder scans live; his confirmed rows lack files
+- [Identity name-only](project_identity_name_only.md) — MIN-4630: printed ID never refuses (A passed 58d0207); ground-truth.json feeds live smokes; B keeps refused files 14 days
+- [Confirmed without file](project_confirmed_without_file.md) — MIN-4644: no delete-after-confirm in code; 10 no-file confirmed rows match the persona seed; split counts by sha256_file and seed ids
+- [Matches timeout and 5,000](project_matches_timeout_5000.md) — MIN-4649: 018 live; 019 passed at 117cc88 (49 KB DO block, fingerprint raise, one-call rollback); one-query replay
+- [Token refresh 401](project_token_refresh_401.md) — MIN-4648: session_not_found from global signOut; auth-js 2.119 keeps the session on a refused refresh (no SIGNED_OUT), probe the library
+- [Staging real data](project_staging_real_data.md) — MIN-4658: branch `staging` builds as demo, tests on twin `staging-dev`; real exams 20 on patient.demo (+10 synthetic), 3 on founder.demo; cleanup direction on hold
+- [Doctor simulate page](project_doctor_simulate.md) — MIN-4670: founder overrode MIN-4504; live boxd machine at the click (SDK /web entry), recorded run is the fallback; MIN-4676 pass, e2e-live specs were not mocked

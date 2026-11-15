@@ -99,3 +99,46 @@
 .mx-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-3);margin-top:var(--space-3)}
 .mx-foot p{margin:0;flex:1 1 280px}
 .mx-run .btn{min-width:0}
+
+/* The timeline diagram (MIN-4702, spec A13 and mock docs/design/min-4700/timeline-mock.html). Role tokens only; no new colour. Static, so nothing to reduce. */
+.tl{--tl-computed:var(--color-link);--tl-model:var(--color-flag-text);--tl-plan:var(--color-info);margin:0 0 var(--space-4);padding:var(--space-3) var(--space-4) var(--space-4);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft)}
+@media (min-width:900px){.tl{padding:var(--space-4) var(--space-5) var(--space-5)}}
+.tl h2{margin:0 0 var(--space-1);font:var(--text-lead);color:var(--color-text)}
+.tl-cap{margin:0 0 var(--space-3);max-width:70ch;font:var(--text-doctor-body);color:var(--color-muted)}
+.tl-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.tl-lane{display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:'head' 'keys' 'plot' 'note';margin-top:var(--space-4)}
+.tl-lane+.tl-lane{padding-top:var(--space-4);border-top:1px solid var(--color-border)}
+@media (min-width:900px){.tl-lane{grid-template-columns:minmax(0,1fr) 240px;column-gap:var(--space-3);grid-template-areas:'head head' 'plot keys' 'note note'}.tl-lane+.tl-lane{padding-top:var(--space-3)}}
+.tl-head{grid-area:head;margin-bottom:var(--space-2)}
+.tl-lane-title{margin:0;font:var(--text-label);font-size:16px;color:var(--color-text)}
+.tl-lane-unit{margin:0;font:var(--text-label);color:var(--color-muted)}
+.tl-keys{grid-area:keys;position:relative;display:grid;gap:var(--space-1);margin-bottom:var(--space-2)}
+@media (min-width:900px){.tl-keys{display:block;margin:0}}
+.tl-key{display:grid;grid-template-columns:36px minmax(0,1fr) auto;grid-template-areas:'glyph name fig' 'glyph tag fig';column-gap:var(--space-2);align-items:center;min-height:var(--target-min)}
+@media (min-width:900px){.tl-key{position:absolute;left:0;right:0;min-height:0;grid-template-columns:36px minmax(0,1fr);grid-template-areas:'glyph name' 'fig fig' 'tag tag';align-content:start;row-gap:0}}
+.tl-glyph{grid-area:glyph}
+.tl-key-name{grid-area:name;font:var(--text-label);color:var(--color-text)}
+.tl-key-tag{grid-area:tag;font:var(--text-label);color:var(--color-muted)}
+.tl-key-fig{grid-area:fig;font:var(--text-h2);color:var(--color-text);white-space:nowrap;text-align:right}
+@media (min-width:900px){.tl-key-fig{font:600 32px/40px var(--font);text-align:left}}
+.tl-plot{grid-area:plot;position:relative;min-width:0}
+.tl-svg{display:block}
+.tl-svg text{font:400 11px var(--font);fill:var(--color-muted)}
+.tl-svg .axis,.tl-svg .tick{stroke:var(--color-border-strong);stroke-width:1}
+.tl-svg .grid{stroke:var(--color-border);stroke-width:1}
+.tl-svg .band{fill:var(--color-surface-quiet)}
+.tl-svg .first{stroke:var(--color-border-strong);stroke-width:1.5}
+.tl-svg .line{fill:none;stroke-width:3;stroke-linejoin:round;stroke-linecap:butt}
+.tl-svg .mk{font:600 11px var(--font);fill:var(--color-text)}
+@media (min-width:900px){.tl-svg .mk{font-size:12px}}
+.tl-band{position:absolute;margin:0;padding:4px 3px;box-sizing:border-box;font:600 11px/1.3 var(--font);color:var(--color-text);overflow-wrap:anywhere}
+@media (min-width:900px){.tl-band{font-size:12px;padding:4px 8px}}
+.tl-notes{grid-area:note}
+.tl-note{margin:var(--space-2) 0 0;font:var(--text-doctor-body);color:var(--color-text)}
+.tl-values{margin-top:var(--space-3)}
+.tl-values summary{min-height:var(--target-min);display:flex;align-items:center;font:var(--text-label);font-size:16px;color:var(--color-link);cursor:pointer}
+.tl-values table{width:100%;border-collapse:collapse;font:var(--text-doctor-body)}
+.tl-values th,.tl-values td{padding:var(--space-2);text-align:right;border-top:1px solid var(--color-border);font-weight:400}
+.tl-values th:first-child,.tl-values td:first-child{text-align:left}
+.tl-values thead th{font:var(--text-label);color:var(--color-muted)}
+@media (max-width:480px){.tl-values table{font-size:14px}.tl-values th,.tl-values td{padding:var(--space-2) 4px}}

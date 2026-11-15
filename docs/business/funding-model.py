@@ -1,11 +1,19 @@
-# Pathien funding model v4 (EUR thousands). Every input is an assumption unless the plan labels it otherwise.
-# Run:  python3 docs/business/funding-model.py          -> v4 (the plan's numbers, deck v4.7)
+# Pathien funding model v5 (EUR thousands). Every input is an assumption unless the plan labels it otherwise.
+# Run:  python3 docs/business/funding-model.py          -> v5 (the plan's numbers, deck v4.8; cash numbers identical to v4)
 #       python3 docs/business/funding-model.py --v3     -> v3 as shipped in deck v4.6, for the before/after check
 # v4 changes (CFO, 15 Nov 2026, MIN-4503): one cost method for every hire (variable pay loaded, tools for everyone);
 # tranches EUR400k / EUR600k, both committed at signing, the second drawn when the gate holds; cash simulated
 # tranche by tranche; break-even = gross profit covers running costs; both cash lows reported; unit economics,
 # dilution, trial volume and slide 7's savings formula computed here so every deck number reruns.
-import sys, math
+# v5 (CFO on the founder's behalf, 15 Nov 2026, founder: "CFO you make the call"): the open money decisions taken.
+# D2 convertible loan agreement, tranche-1 cap EUR3.5M pre-money (floor EUR3.0M), tranche 2 at 1.5x (step-up),
+# walk away above 25% dilution. Q38 EUR5,000 set-up + EUR1,000 per randomised patient, sponsor or CRO billed only.
+# Q39 government revenue not counted until a contract is signed. D3 order unchanged, tranche-2 hires wait for the release.
+# D5 no founder salary from this round (full-time cost shown as a contingency). D6/D13 both new seats kept.
+# None of these changes a cash line: every cash number is the same as v4.
+import sys, math, os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from funding_plan import N, H, GM, PRICE_EUR_PER_CASE, CONSERVATIVE, UPSIDE, rng, revenue   # the plan's revenue line lives in funding_plan.py (MIN-4701)
 V3 = '--v3' in sys.argv
 EMP = 1.2179     # employer social security 21.79% (secondary, PwC)
 TOOLS = 0.2      # about EUR200 a month for tools, per person
@@ -13,15 +21,10 @@ def loaded(gross, share=1.0):
     """Loaded monthly cost: gross a year (14 salaries) x 1.2179 / 12, times the share of time, plus tools."""
     return gross*EMP/12/1000*share + TOOLS
 def loaded_v3(gross, tools=0.2): return gross*EMP/12/1000 + tools   # v3's helper, kept for --v3
-N = 24           # budgeted plan months
-H = 48           # horizon simulated
 ASK = 1000.0
-GM = 0.875       # gross margin: EUR5 cost per EUR40 case (the third number)
 GATE = 9         # the tranche-2 gate fires at the end of month 9
 T1 = 300.0 if V3 else 400.0   # tranche 1, drawn after G2, before month 1
 T2 = ASK - T1                 # tranche 2, drawn before month GATE+1 (v4: committed at signing, released by the gate)
-
-def rng(a, b): return range(a, b+1)
 if V3:
     team = {
      'Engineer (platform and pipeline)':   [(rng(1,H), loaded_v3(50000))],
@@ -62,20 +65,7 @@ def cost(m, team=team, other=other):
     return t, by
 c = lambda m: cost(m)[0]
 
-def revenue(y1, y2, y3):
-    """Slide 10's yearly totals as months: paid revenue starts at plan month 9 (after the free pilot),
-    climbs in a straight line inside each year, and is held flat after year 3 (no growth assumed)."""
-    r = {m:0.0 for m in rng(1,H)}
-    k = y1/21.0
-    for i in rng(1,6): r[8+i] = k*i
-    s = r[14]
-    for start, tot in ((15,y2),(27,y3)):
-        e = s + (tot - 12*s)/6.5
-        for i in rng(1,12): r[start-1+i] = s + (e-s)*i/12
-        s = r[start+11]
-    for m in rng(39,H): r[m] = s
-    return r
-cons = revenue(26,180,560); up = revenue(258,1705,4850)
+cons = revenue(*CONSERVATIVE); up = revenue(*UPSIDE)
 
 def path(costf, rev, t1=T1, t2=T2, gate=GATE, shift=0):
     """Month-end cash with tranche 1 drawn before month 1 and tranche 2 before month gate+1."""
@@ -109,7 +99,7 @@ def runway_no_revenue(costf, t1=T1, t2=T2):
         cash -= costf(m)
     return H
 
-tag = "v3 (as shipped, deck v4.6)" if V3 else "v4 (deck v4.7)"
+tag = "v3 (as shipped, deck v4.6)" if V3 else "v5 (deck v4.8)"
 print(f"=== Pathien funding model {tag} ===")
 tot = sum(c(m) for m in rng(1,N))
 print(f"Spend months 1-{N}: {tot:.1f}k ; buffer {ASK-tot:.1f}k ({(ASK-tot)/ASK*100:.1f}%)")
@@ -164,6 +154,9 @@ print(f"  conservative run rate at month 24: {cons[24]:.1f}k a month = {cons[24]
 print("--- trials (not in slide 10's totals) ---")
 fee = 5 + 19*1.0; saving = 5*36
 print(f"  fee per trial {fee:.0f}k = {fee/saving*100:.1f}% of the {saving:.0f}k saving ; 5 trials a year = {5*fee:.0f}k")
+fee15 = 5 + 19*1.5
+print(f"  Q38 (decided: EUR1,000 a randomised patient, sponsor or CRO billed only). Not chosen: EUR1,500 -> {fee15:.1f}k a trial"
+      f" = {fee15/saving*100:.1f}% of the saving, sponsor keeps {saving-fee15:.1f}k ; 5 a year = {5*fee15:.1f}k")
 tr = dict(cons)
 for m in rng(19,24): tr[m] += fee/6
 for m in rng(25,36): tr[m] += 5*fee/12
@@ -178,7 +171,16 @@ print(f"  conservative {lab_img} x 25% x 20% x 10% = {cons_s:.2f}M")
 print(f"  upside v4.6  {spend*0.025:.0f} x 50% x 30% = {up_v46:.1f}M (50% anchored to S17's odds ratio for duplicate imaging only)")
 print(f"  upside v4.7  {spend*0.025:.0f} x 20% x 30% = {up_v47:.1f}M (same 20% prevented share as conservative)")
 
-print("--- dilution (assumption; caps are guesses, the founder decides, D2) ---")
+print("--- dilution (D2 decided as CFO, 15 Nov 2026: caps are pre-money, tranche 2 at 1.5x tranche 1's cap) ---")
+def dil(cap1, mult):
+    s1 = T1/(cap1+T1); s2 = T2/(cap1*mult+T2)
+    return s1, s2, s1*(1-s2)+s2
+for cap1, name in ((3500, 'target'), (3000, 'floor')):
+    s1, s2, tt = dil(cap1, 1.5)
+    print(f"  {name}: tranche-1 cap EUR{cap1/1000:.1f}M -> {s1*100:.1f}% ; tranche-2 cap EUR{cap1*1.5/1000:.2f}M -> {s2*100:.1f}% ; total {tt*100:.1f}%"
+          f" (founder keeps {100-tt*100:.1f}% before any option pool)")
+print(f"  walk-away: above 25% from this round (EUR2.5M with a step-up gives {dil(2500,1.5)[2]*100:.1f}%)")
+print("  grid, for reference:")
 for cap1 in (2500, 3500):
     s1 = T1/(cap1+T1)
     for mult, name in ((1.5, 'tranche 2 at 1.5x the cap'), (1.0, 'both at one cap')):
@@ -186,6 +188,15 @@ for cap1 in (2500, 3500):
         else:
             s2 = T2/(cap1*mult+T2); tot_s = s1*(1-s2)+s2
         print(f"  tranche-1 cap EUR{cap1/1000:.1f}M: tranche 1 {s1*100:.1f}% ; {name}: total {tot_s*100:.1f}%")
+
+print("--- D5 contingency (not in the plan): the founder full-time at EUR48k gross from month 10 ---")
+fp = loaded(48000)
+cf = lambda m: c(m) + (fp if m >= GATE+1 else 0)
+tot_f = sum(cf(m) for m in rng(1,N))
+print(f"  {fp:.2f}k a month loaded ; months 10-24 {tot_f-tot:.1f}k ; buffer {ASK-tot_f:.1f}k ({(ASK-tot_f)/ASK*100:.1f}%) ;"
+      f" steady burn {cf(25):.1f}k -> break-even revenue {cf(25)*12/GM:.0f}k a year")
+summary(cf, cons, "  founder full-time, conservative")
+print(f"  founder full-time: sales can slip {maxslip(cf, cons)} months")
 
 print("--- the lower-ask alternative (levers), rerun with the same buffer ---")
 alt_team = dict(team); alt_team['Second engineer (integrations)'] = [(rng(19,H), team['Second engineer (integrations)'][0][1])]
