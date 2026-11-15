@@ -140,7 +140,7 @@ function Dashboard({ model, grantId, patientId, ctx, openCite, onOpenCite, onOpe
   };
   const nav: { v: View; label: string; icon: React.ReactNode }[] = [
     { v: 'overview', label: 'Overview', icon: <ChartLineUp size={22} weight="bold" aria-hidden="true" /> },
-    { v: 'diagnoses', label: 'Possible diagnoses', icon: <Stethoscope size={22} weight="bold" aria-hidden="true" /> },
+    { v: 'diagnoses', label: 'Related diagnoses', icon: <Stethoscope size={22} weight="bold" aria-hidden="true" /> },
     { v: 'ask', label: 'Ask the assistant', icon: <ChatCircleText size={22} weight="bold" aria-hidden="true" /> },
   ];
   return (
@@ -158,7 +158,7 @@ function Dashboard({ model, grantId, patientId, ctx, openCite, onOpenCite, onOpe
           <ExamsList exams={exams} onOpenSubject={onOpenSubject} />
           <OverviewPanel overview={model.overview} openCite={openCite} onOpenCite={onOpenCite} onOpenSubject={onOpenSubject} />
         </div>
-        <div id="dash-diagnoses" className="dash-view" hidden={wide && view !== 'diagnoses'} aria-label="Possible diagnoses">
+        <div id="dash-diagnoses" className="dash-view" hidden={wide && view !== 'diagnoses'} aria-label="Related diagnoses">
           <DiagnosesPanel api={api} grantId={grantId} index={model.index} openCite={openCite} onOpenCite={onOpenCite} onGone={onGone} />
         </div>
         <section id="dash-ask" className="dash-view card ask-main" hidden={wide && view !== 'ask'} aria-label="Assistant">

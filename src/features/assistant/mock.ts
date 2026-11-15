@@ -85,7 +85,7 @@ export function answerFor(question: string, n = 1): AssistantResponse {
 export const MOCK_PHOTO = (label: string) =>
   `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480"><rect width="360" height="480" fill="#fff"/><rect x="16" y="16" width="328" height="448" fill="none" stroke="#6F8084"/><text x="32" y="56" font-family="monospace" font-size="16" fill="#12303A">SYNTHETIC EXAM PHOTO</text><text x="32" y="84" font-family="monospace" font-size="13" fill="#5B6B70">${label.replace(/[<&]/g, '')}</text>${Array.from({ length: 9 }, (_, i) => `<rect x="32" y="${120 + i * 36}" width="${200 + ((i * 53) % 90)}" height="10" fill="#DDE3E2"/>`).join('')}</svg>`)}`;
 
-/** SYNTHETIC possible diagnoses for the persona, in the order the server gives them (by name). Shape only: nothing here is a medical statement about anyone. */
+/** SYNTHETIC related diagnoses for the persona, in the order the server gives them (by name). Shape only: nothing here is a medical statement about anyone. */
 export const MOCK_DIAGNOSES: DiagnosesResponse = {
   run_id: uid(950),
   status: 'ok',
@@ -121,7 +121,7 @@ export interface MockAssistantOptions {
   fileAnalyses?: Record<string, FileAnalysisRow | null | Error>;
   /** The over-time answer, or an Error. Default: computed from the record. */
   overTime?: OverTimeResponse | Error | ((record: RecordData) => OverTimeResponse);
-  /** The possible-diagnoses answer, or an Error. Default: `MOCK_DIAGNOSES`. */
+  /** The related-diagnoses answer, or an Error. Default: `MOCK_DIAGNOSES`. */
   diagnoses?: DiagnosesResponse | Error;
   /** How long the diagnoses call takes (the preview's `?dx=slow`). Default: at most 600 ms. */
   diagnosesLatencyMs?: number;

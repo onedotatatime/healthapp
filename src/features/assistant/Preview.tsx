@@ -2,7 +2,7 @@
  * `/preview/doctor-analysis`: the doctor's workspace (overview, "Over time", "About this file" in the source viewer)
  * against the in-memory assistant, for review and the demo before the two backends are live. SYNTHETIC only: Maria
  * Papadopoulou is the stage persona. Nothing here reaches a server. A result on this screen does not count toward the goal.
- * `?over=empty | error | slow | many` steers the over-time read. `?dx=none | off | timeout | failed | ended | truncated | drops | slow | many` steers the Possible diagnoses answer (MIN-4665). `?file=error` makes the file analysis read fail.
+ * `?over=empty | error | slow | many` steers the over-time read. `?dx=none | off | timeout | failed | ended | truncated | drops | slow | many` steers the Related diagnoses answer (MIN-4665). `?file=error` makes the file analysis read fail.
  * The four file states, one per document: Blood test 30 Oct (analysed, 2 items), 12 Mar (analysed, none),
  * Imaging 2 Jun (not analysed yet), Doctor's letter 20 Jan (analysis failed).
  */
@@ -27,7 +27,7 @@ const extra = (key: string, analyte: string, unit: string, values: number[], lo:
 };
 const MANY = [extra('glucose', 'Glucose', 'mg/dL', [88, 92, 97], 70, 100), extra('ferritin', 'Ferritin', 'ng/mL', [60, 40, 20, 9], 15, 150), extra('hb', 'Haemoglobin', 'g/dL', [12.4, 11.9], 12, 16), extra('vitd', 'Vitamin D', 'ng/mL', [31, 28, 24], null, null), extra('alb', 'Albumin', 'g/L', [42, 43, 41], 35, 50), extra('tsh', 'TSH', 'mIU/L', [2.1, 2.4], 0.4, 4)];
 
-/** `?dx=`: the Possible diagnoses answers the view can get (synthetic). `many` is six items with long names, in the server's order (by name). */
+/** `?dx=`: the Related diagnoses answers the view can get (synthetic). `many` is six items with long names, in the server's order (by name). */
 function diagnosesFor(dx: string | null): { diagnoses?: DiagnosesResponse | Error; diagnosesLatencyMs?: number } {
   const counts = MOCK_DIAGNOSES.counts;
   switch (dx) {

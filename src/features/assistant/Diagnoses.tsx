@@ -1,5 +1,5 @@
 /**
- * Possible diagnoses (MIN-4665), the doctor's third view. Slice 2 of the live dashboard (MIN-4659); the guard, the order
+ * Related diagnoses (MIN-4665), the doctor's third view. Slice 2 of the live dashboard (MIN-4659); the guard, the order
  * and the words are the CTO's (MIN-4660 section 3), the layout is Pix's (docs/design/min-4659, section 7).
  * - Nothing is called when the view opens: one call to `healthapp-diagnoses` per press of the button.
  * - The banner is in the DOM in every state and cannot be closed.

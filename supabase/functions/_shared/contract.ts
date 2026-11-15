@@ -668,7 +668,7 @@ export type RpcResponseOf<N extends RpcName> = z.infer<(typeof RPCS)[N]["respons
 // ---------------------------------------------------------------------------------------------
 // healthapp-diagnoses (MIN-4662; doctor in a live grant; CTO decision on MIN-4660 §5)
 // ---------------------------------------------------------------------------------------------
-// Possible diagnoses for the doctor to evaluate, from one patient's record. On request only, nothing stored.
+// Related diagnoses for the doctor to evaluate, from one patient's record. On request only, nothing stored.
 // 403 wrong_role for a patient, 403 grant_expired when the grant has ended, 503 model_unavailable, 500 internal.
 // Off by default per environment: status "off" with no read and no model call.
 // Every object is strict: an extra key fails the parse on both sides. No number, rank or probability field exists.

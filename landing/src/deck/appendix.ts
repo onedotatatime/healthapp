@@ -69,7 +69,7 @@ Headline: Live: Maria's folder, a doctor's question, an answer with its source.
 6. Time ends → the doctor's screen closes; Maria's log shows who looked and until when.
 
 **What is real and what is not (on the slide, small, under the checklist):**
-- **Working pipeline, on synthetic data:** reading the photo into values, the name and ID match, the handshake and the time limit enforced by the database, cited answers, the signed log of who looked. *(Measured on the demo: 235 of 235 fields read correctly on our synthetic test set; docs/submission/project-details.md, S20.)*
+- **Working pipeline, on synthetic data:** reading the photo into values, the name and ID match, the handshake and the time limit enforced by the database, cited answers, the signed log of who looked. *(Measured on the demo: 235 of 235 fields read correctly on our synthetic test set; scripts/m2-harness.ts, MIN-4475, S20.)*
 - **Simulated tonight:** the encryption key sits on our server, not on Maria's phone; the "verified by source" lab is our own demo lab (the signature check is real); possible matches come from a seeded synthetic set; doctor-to-doctor contact is a mock-up.
 
 Footer: Synthetic patient. Synthetic exams. No real health data.

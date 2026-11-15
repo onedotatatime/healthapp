@@ -1,6 +1,7 @@
 /**
- * Possible diagnoses (MIN-4665): the strings, the states and the one-call-per-press controller. No React, so every rule
- * is a unit test. The words are the CTO's (decision on MIN-4660, section 3) and are not reworded here. This module is
+ * Related diagnoses (MIN-4665): the strings, the states and the one-call-per-press controller. No React, so every rule
+ * is a unit test. The words are the CTO's (decision on MIN-4660, section 3) and are not reworded here, except one term: the view's name
+ * changed from "Possible" to "Related" diagnoses on the founder's instruction (MIN-4778), overriding MIN-4660 section 3 for it. This module is
  * only imported by the doctor's lazy assistant chunk. Nothing in it can hold a number, a rank or a percentage: the
  * response has no field for one, and the view renders the strings it is given, in the order it is given.
  */
@@ -9,21 +10,21 @@ import type { DiagnosesResponse } from './analysis.contract';
 import { isGrantGone, type AssistantApi } from './api';
 
 export const DX = {
-  title: 'Possible diagnoses',
+  title: 'Related diagnoses',
   /** Fixed, in the DOM in every state of the view. Word for word from the prototype. */
   banner: "For the doctor to evaluate. Not a diagnosis. Based on this patient's symptoms and exams only. Listed in alphabetical order; no ranking.",
   aiLine: 'This list comes from an AI reading this record. Check each line against its source.',
-  run: 'List possible diagnoses',
+  run: 'List related diagnoses',
   runAgain: 'List again',
   loading: 'Reading the record. This can take up to a minute.',
   fits: 'Fits:',
   doesNotExplain: 'Does not fully explain:',
   notInRecord: 'Not in this record:',
   basedOn: 'Based on:',
-  off: 'Possible diagnoses is switched off in this environment.',
+  off: 'Related diagnoses is switched off in this environment.',
   none: 'No possibility could be listed from this record.',
   timeout: 'The list could not be made in time. Try again.',
-  failed: 'Possible diagnoses could not be loaded.',
+  failed: 'Related diagnoses could not be loaded.',
   retry: 'Try again',
   ended: 'Access to this record has ended.',
   truncated: 'This record is larger than what the assistant reads. The list may miss the newest results.',

@@ -1,0 +1,54 @@
+/* Replay page: overrides on top of ../direction-A/a.css and ../shared/base.css. Overview only, so the rail is gone. */
+.rail{display:none}
+.app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto 1fr}
+#strip{display:none}                     /* links to drawers that this page does not have */
+
+/* the Play overlay: one big button over the overview */
+.rp-over{position:fixed;inset:0;z-index:15;display:grid;place-items:center;padding:20px;background:color-mix(in srgb,var(--bg) 78%,transparent);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.rp-over[hidden]{display:none}
+.rp-card{display:grid;justify-items:center;gap:14px;width:100%;max-width:30rem;text-align:center}
+.rp-title{margin:0;font:600 12px/16px var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--ink-2)}
+.rp-play{min-height:72px;width:100%;padding:12px 28px;font:600 20px/26px var(--sans);white-space:normal;text-align:center;box-shadow:var(--glow)}
+.rp-play[disabled]{box-shadow:none}
+.rp-note{margin:0;font:400 14px/20px var(--sans);color:var(--ink-2)}
+.rp-small{font-size:12px;line-height:16px}
+.rp-note:empty{display:none}
+
+/* the bar under the header: stop or replay, progress, replay time */
+.rp-bar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--surface) 80%,transparent)}
+.rp-bar[hidden]{display:none}
+.rp-bar-btn{min-height:44px;min-width:96px}
+.rp-track{flex:1 1 160px;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;min-width:120px}
+.rp-track i{display:block;height:100%;background:var(--brand);transform-origin:left;transform:scaleX(0)}
+.rp-read{font:500 13px/18px var(--mono);color:var(--ink);white-space:nowrap}
+.rp-msg{flex-basis:100%;font:400 13px/18px var(--sans);color:var(--ink-2)}
+.rp-msg:empty{display:none}
+
+/* while playing: what judges "now" is hidden (forecast, flags, verdict), because it would mix today's totals with past counts */
+.replaying #fc,.replaying #flags,.replaying .top .verdict{display:none}
+.replaying .p-who .sub,.replaying #log{display:none}      /* the live log is built from changes between snapshots; replayed frames would write lines into it */
+.replaying #hero .card-h .src{display:none}            /* "LIVE · clock" would be wrong on a replayed clock */
+
+/* a value with no history keeps its live value and says "now" */
+.replaying .dirs .card-h::after,
+.replaying .hero-repo .hr-h::after,
+.replaying .p-tokens .card-h::after,
+.replaying .p-who .card-h::after,
+.replaying .p-tasks .sub::after,
+.replaying .p-money [data-blk="hand"] .sub::after,
+.replaying .ladder-head .card-h::after{content:"now";flex:none;padding:0 6px;border-radius:3px;background:var(--brand-tint);color:var(--brand-text);font:700 10px/14px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+.replaying .dirs .card-h::after{content:"status now"}
+.replaying .ladder-head .card-h::after{display:none}                /* the milestone counts are replayed; only without a doneSeries are they live */
+.replaying.rp-nodone .ladder-head .card-h::after{display:inline-block}
+.replaying.rp-nodone .dirs .card-h::after{content:"counts and status now"}
+.replaying.rp-nodone .p-tasks .card-h::after{content:"now";flex:none;padding:0 6px;border-radius:3px;background:var(--brand-tint);color:var(--brand-text);font:700 10px/14px var(--mono);letter-spacing:.06em;text-transform:uppercase}
+
+/* the Tasks card: done is replayed, the other three states have no history and are hidden; "Open" reads "Not done yet" (replay.js) */
+.replaying:not(.rp-nodone) .p-tasks .leg > div:nth-child(2),
+.replaying:not(.rp-nodone) .p-tasks .leg > div:nth-child(3),
+.replaying:not(.rp-nodone) .p-tasks .leg > div:nth-child(5){display:none}
+
+@media (max-width:899px){
+  .rp-bar{padding:8px 12px}
+  .rp-read{white-space:normal}
+}

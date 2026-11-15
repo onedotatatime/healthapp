@@ -1,5 +1,5 @@
 /**
- * MIN-4665 Possible diagnoses: the CTO's rules (MIN-4660 sections 3 and 4) as tests. Every state is rendered from mocks
+ * MIN-4665 Related diagnoses: the CTO's rules (MIN-4660 sections 3 and 4) as tests. Every state is rendered from mocks
  * (renderToStaticMarkup, so no jsdom: this suite has none). SYNTHETIC data only: MOCK_DIAGNOSES and the persona say
  * nothing about any real record and do not count toward the goal.
  */
@@ -42,7 +42,7 @@ describe('the fixed banner and the AI line are in the DOM in every state', () =>
       expect(text(m)).toContain(DX.banner);
       expect(m).toContain('data-testid="dx-banner"');
       expect(text(m)).toContain(DX.aiLine);
-      expect(text(m)).toContain('Possible diagnoses'); // the title
+      expect(text(m)).toContain('Related diagnoses'); // the title
     });
   }
   it('is the CTO\'s sentence, word for word', () => {
@@ -54,7 +54,7 @@ describe('the fixed banner and the AI line are in the DOM in every state', () =>
 describe('every state of the view, from mocks', () => {
   it('before the request: the button, no card, no call text', () => {
     const m = view({ status: 'idle' });
-    expect(text(m)).toContain('List possible diagnoses');
+    expect(text(m)).toContain('List related diagnoses');
     expect(count(m, 'dx-card')).toBe(0);
     expect(m).toContain('data-state="idle"');
   });
@@ -71,7 +71,7 @@ describe('every state of the view, from mocks', () => {
     expect(count(m, 'dx-card')).toBe(2);
     const t = text(m);
     for (const s of ['Inflammatory arthritis', 'Osteoarthritis', 'Fits:', 'Does not fully explain:', 'Not in this record:', 'Based on:', 'RF, anti-CCP', 'List again']) expect(t, s).toContain(s);
-    expect(t).not.toContain('List possible diagnoses');
+    expect(t).not.toContain('List related diagnoses');
   });
   it('a label with nothing under it is not drawn (the second card has no "does not fully explain")', () => {
     const m = view({ status: 'ok', data: MOCK_DIAGNOSES });
@@ -92,7 +92,7 @@ describe('every state of the view, from mocks', () => {
   });
   it('switched off: the sentence, no button, no card', () => {
     const m = view({ status: 'off' });
-    expect(text(m)).toContain('Possible diagnoses is switched off in this environment.');
+    expect(text(m)).toContain('Related diagnoses is switched off in this environment.');
     expect(count(m, 'dx-run')).toBe(0);
     expect(count(m, 'dx-card')).toBe(0);
     expect(classify(response({ status: 'off', items: [] })).status).toBe('off');
@@ -105,7 +105,7 @@ describe('every state of the view, from mocks', () => {
   });
   it('not configured or an error: the sentence and a button (500, network, an answer that does not parse)', () => {
     const m = view({ status: 'error', kind: 'failed' });
-    expect(text(m)).toContain('Possible diagnoses could not be loaded.');
+    expect(text(m)).toContain('Related diagnoses could not be loaded.');
     expect(count(m, 'dx-retry')).toBe(1);
   });
   it('the grant ended: no button, and the workspace is told', () => {

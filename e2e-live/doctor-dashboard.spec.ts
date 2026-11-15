@@ -102,7 +102,7 @@ test.describe.serial('doctor dashboard, slice 1 (staging-dev)', () => {
     // slice 2 (MIN-4665) added the third item; the diagnoses view itself is covered in doctor-diagnoses.spec.ts
     await expect(nav.getByRole('button')).toHaveCount(3);
     await expect(nav.getByRole('button', { name: 'Overview' })).toBeVisible();
-    await expect(nav.getByRole('button', { name: 'Possible diagnoses' })).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Related diagnoses' })).toBeVisible();
     await expect(nav.getByRole('button', { name: 'Ask the assistant' })).toBeVisible();
     await expect(doctor.getByTestId('over-time')).toHaveAttribute('data-state', 'series'); // an empty or failed over-time answer is a blocker for the rest of this run
     await doctor.waitForTimeout(2_500); // a late call on open would land here
@@ -289,7 +289,7 @@ test.describe.serial('doctor dashboard, slice 1 (staging-dev)', () => {
     await doctor.getByTestId('nav-overview').click();
     await expect(doctor.getByTestId('over-time')).toBeVisible();
     expect(calls.overTime, 'switching views never refetches the series').toBe(1);
-    expect(calls.diagnoses, 'no diagnoses call unless the doctor presses List possible diagnoses').toBe(0);
+    expect(calls.diagnoses, 'no diagnoses call unless the doctor presses List related diagnoses').toBe(0);
   });
 
   test('D6 when the patient ends access the dashboard closes', async () => {

@@ -20,7 +20,7 @@ import {
   type Saved,
   type Store,
 } from "./docs.ts";
-import type { DraftIn } from "./extract.ts";
+import type { DraftIn, LoincRow } from "./extract.ts";
 
 type Sql = postgres.Sql;
 let _sql: Sql | null = null;
@@ -97,11 +97,26 @@ async function writeConfirm(tx: Q, S: string, docId: string, p: ConfirmPlan, unc
   );
 }
 
+/** MIN-4689: the LOINC list per env, cached per isolate for LOINC_TTL_MS. Reference data only. */
+const LOINC_TTL_MS = 10 * 60_000;
+const loincCache = new Map<HealthappEnv, { at: number; rows: LoincRow[] }>();
+
 export const pgStore: Store = {
   async roleOf(env, uid) {
     const rows = await db().unsafe(`select role from ${schema(env)}.profiles where id = $1`, [uid]);
     const role = rows[0]?.role;
     return role === "patient" || role === "doctor" ? (role as Role) : null;
+  },
+
+  async loincCodes(env) {
+    const hit = loincCache.get(env);
+    if (hit && Date.now() - hit.at < LOINC_TTL_MS) return hit.rows;
+    const rows = await db().unsafe(`select loinc, name_en, name_el, ucum from ${schema(env)}.lab_loinc order by loinc collate "C"`);
+    const out: LoincRow[] = rows.map((r: Record<string, string | null>) => ({
+      loinc: r.loinc as string, name_en: r.name_en as string, name_el: r.name_el ?? null, ucum: r.ucum ?? null,
+    }));
+    if (out.length) loincCache.set(env, { at: Date.now(), rows: out });
+    return out;
   },
 
   async identityOf(env, uid) {
@@ -290,10 +305,10 @@ export const pgStore: Store = {
       if (draft.results.length) {
         await tx.unsafe(
           `insert into ${S}.results (document_id, patient_id, pos, analyte, analyte_key, value_num, value_text, unit,
-                                     ref_low, ref_high, ref_text, flag, confidence)
+                                     ref_low, ref_high, ref_text, flag, confidence, loinc)
            select $1::uuid, $2::uuid, x.ord::int - 1, x.v->>'analyte', x.v->>'analyte_key', (x.v->>'value_num')::numeric, x.v->>'value_text',
                   x.v->>'unit', (x.v->>'ref_low')::numeric, (x.v->>'ref_high')::numeric, x.v->>'ref_text', x.v->>'flag',
-                  (x.v->>'confidence')::real
+                  (x.v->>'confidence')::real, x.v->>'loinc'
              from jsonb_array_elements($3::jsonb) with ordinality as x(v, ord)`,
           [docId, patientId, jsonb(draft.results)],
         );
