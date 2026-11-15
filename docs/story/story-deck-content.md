@@ -13,7 +13,7 @@
 **Rules this deck keeps (check again after any edit):**
 
 1. **No diagnosis claims**, from the app or about him. His condition is not named.
-2. **No insurers.** No numbers on any slide except the two on 5b, both from the pitch deck's sources.
+2. **No insurers.** No statistic on any slide except the two on 5b (and the €3.5bn estimate that comes with the second), all from the pitch deck's sources. Dates and the "5,000 synthetic records" label are not statistics.
 3. **Never implied that matching or trials run on real people today.** Slides 4 and 5 are questions ("what if"). The live frame on slide 5 is labelled a simulation on synthetic records.
 4. **His own records are shown by his choice**, and the words say they are his own (slides 2, 3a, 3b).
 5. No exclamation marks. Pathien has no ™ or ®. Coral is fill only, no red (pitch deck rules 6 and brand note).
