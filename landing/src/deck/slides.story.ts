@@ -29,7 +29,6 @@ export const storySlides: StorySlide[] = [
       { src: '/story/spreadsheet-2019-blood.webp', alt: 'My spreadsheet, 2019: blood test results, column by column, date by date', chip: 'My spreadsheet, 2019' },
       { src: '/story/spreadsheet-2019-other.webp', alt: 'My spreadsheet, 2019: other test results, date by date', chip: 'My spreadsheet, 2019' },
     ],
-    footer: 'My own photo and my own records, shared by my choice.',
   },
   {
     id: '3', template: 'story-live', variant: 'duo', theme: 'air', notes: N['3'], hotFromBeat: 0,
@@ -49,8 +48,6 @@ export const storySlides: StorySlide[] = [
       { frame: 'doctor', label: "My doctor's view · the same exams", labelStatic: "The doctor's view" },
       { frame: 'patient', label: 'My record · my own exams, since 2019', labelStatic: "The patient's view" },
     ],
-    tag: 'Live app · my own records, shown by my choice.',
-    tagStatic: 'Screenshots of the app · synthetic data, not my own record.',
   },
   {
     id: '5', template: 'story-live', variant: 'solo', theme: 'air', notes: N['5'], hotFromBeat: 0,
@@ -86,8 +83,13 @@ export const storySlides: StorySlide[] = [
     support: "I'll show you my record, and what my doctor sees.",
     name: 'Lefteris Georgaras',
     email: 'hello@onedotatatime.design',
-    link: { label: 'healthapp-landing.pages.dev', href: 'https://healthapp-landing.pages.dev' },
+    links: [
+      { label: 'Full pitch', href: 'https://healthapp-landing.pages.dev/deck' },
+      { label: 'Live marketing', href: 'https://healthapp-landing.pages.dev' },
+      { label: 'Product', href: 'https://healthapp-8ui.pages.dev' },
+      { label: 'Simulation', href: 'https://healthapp-8ui.pages.dev/simulation' },
+      { label: 'Recruit for trial', href: 'https://healthapp-8ui.pages.dev/doctor/simulate' },
+    ],
     photo: { src: '/story/lefteris.webp', alt: 'Lefteris Georgaras' },
-    qr: { src: '/deck-qr.svg', alt: 'QR code to healthapp-landing.pages.dev' },
   },
 ];

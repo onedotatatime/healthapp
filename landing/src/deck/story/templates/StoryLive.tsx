@@ -59,8 +59,6 @@ export function StoryLive({ s, beat, ctx }: { s: StoryLiveSlide; beat: number; c
           </div>
         );
       })}
-
-      {s.tag && <p className="sl-tag demo-tag rise" style={ri(6)}>{typo(allShown ? s.tag : (s.tagStatic ?? s.tag))}</p>}
     </div>
   );
 }

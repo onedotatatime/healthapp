@@ -26,7 +26,6 @@ export interface StoryMemoirSlide extends StoryBase {
   support: string;
   photos: { src: string; alt: string; chip?: string; position?: string }[];
   sheets: { src: string; alt: string; chip: string }[];
-  footer: string;
 }
 
 export interface StoryBeat {
@@ -53,9 +52,6 @@ export interface StoryLiveSlide extends StoryBase {
   /** One entry per beat. The frames never remount between beats. */
   beats: StoryBeat[];
   frames: StoryFrameSpec[];
-  /** The peach pill under the frames: when live, and when the frames are pictures. Optional. */
-  tag?: string;
-  tagStatic?: string;
   /** The beat from which the frames take clicks and keys. 0 on both live slides: with the presenter key the founder acts in the app from the start. */
   hotFromBeat: number;
 }
@@ -73,9 +69,9 @@ export interface StoryCloseSlide extends StoryBase {
   support: string;
   name: string;
   email: string;
-  link: { label: string; href: string };
+  /** Tappable link buttons, shown as a column on the right. Each shows the label and the short URL. */
+  links: { label: string; href: string }[];
   photo: { src: string; alt: string };
-  qr: { src: string; alt: string };
 }
 
 export type StorySlide =
