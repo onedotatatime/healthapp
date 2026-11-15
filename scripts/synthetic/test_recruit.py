@@ -216,6 +216,37 @@ def hand_built_records_prove_the_criteria_rule():
     assert R.eligible_rows([mk(1, "Hb_low")], ia, CX) == []
 
 
+VM_FILE = os.path.join(os.path.dirname(FILE), "recruit-50000.vm.json")
+
+
+def _vm():
+    with open(VM_FILE) as f:
+        return json.load(f)
+
+
+@check
+def vm_file_sha256_is_the_committed_files_hash():
+    import hashlib
+    want = hashlib.sha256(RAW).hexdigest()
+    got = _vm()["file_sha256"]
+    assert got == want, "the recorded machine hashed a different file: %s, committed file is %s" % (got, want)
+
+
+@check
+def vm_script_sha256_is_the_files_made_script_sha256():
+    got = _vm()["script_sha256"]
+    want = DATA["made"]["script_sha256"]
+    assert got == want, "the machine ran different scripts than the ones recorded in the file: %s vs %s" % (got, want)
+
+
+@check
+def vm_machine_was_deleted_and_phases_are_the_four_recorded_ones():
+    vm = _vm()
+    assert vm["deleted"] is True, "the recorded machine was not deleted"
+    assert [p["id"] for p in vm["phases"]] == ["created", "running", "done", "deleted"], vm["phases"]
+    assert vm["provider"] == "boxd" and vm["seconds"] > 0
+
+
 if __name__ == "__main__":
     TMP.cleanup()
     failed = [n for n, ok, _ in RESULTS if not ok]
