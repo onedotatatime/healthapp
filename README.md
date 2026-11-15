@@ -4,6 +4,15 @@ Pathien Health: a patient scans a paper medical exam with a phone, an AI reads i
 
 This repo is private. Rules for agents and contributors: [`CLAUDE.md`](CLAUDE.md). Links to Linear below need a Linear sign-in.
 
+## Project summary
+
+| | |
+|---|---|
+| DO NOT OPEN IF YOU ARE NOT AN INVESTOR | [Full pitch](https://healthapp-landing.pages.dev/deck/) |
+| DECK IN A HURRY | https://healthapp-landing.pages.dev/story/?live=live-athens-2026 |
+| LOOKING AROUND | https://healthapp-landing.pages.dev/ |
+| DEMO | [Demo](https://healthapp-8ui.pages.dev) (DM for details) |
+
 ## Project in one minute
 
 Hi, I'm Lefteris. For many years, based on personal experience, I was trying to find a way to create my personal medical wiki. So I scanned all my paperwork and I built Pathien Health.
