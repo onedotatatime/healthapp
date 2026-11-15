@@ -4,13 +4,14 @@
  * `DoctorWorkspace` (handshake/DoctorConnect.tsx), so the patient bundle never contains it. When access ends the shell
  * unmounts and everything here, including the conversation and the photo URL, goes with it.
  */
-import { ChartLineUp, ChatCircleText } from '@phosphor-icons/react';
+import { ChartLineUp, ChatCircleText, Stethoscope } from '@phosphor-icons/react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { EmptyState, ErrorNote, Spinner } from '../../components/Primitives';
 import { useActiveGrant } from '../handshake/context';
 import { PossibleMatchesPanel } from '../matches/PossibleMatchesPanel';
 import { askErrorMessage, isGrantGone } from './api';
 import { CARDS_SHOWN, orderSeries } from './analysis';
+import { DiagnosesPanel } from './Diagnoses';
 import { ExamsList } from './Exams';
 import { AskPanel } from './Ask';
 import { useAssistantApi } from './context';
@@ -92,7 +93,7 @@ export default function AssistantWorkspace() {
 }
 
 const WIDE = '(min-width: 900px)';
-/** From 900 the nav switches between two views; under it the existing column stays (one stack, both views) and the nav scrolls. */
+/** From 900 the nav switches between three views; under it the existing column stays (one stack, both views) and the nav scrolls to a section. */
 function useWide(): boolean {
   return useSyncExternalStore(
     (cb) => {
@@ -105,7 +106,7 @@ function useWide(): boolean {
   );
 }
 
-type View = 'overview' | 'ask';
+type View = 'overview' | 'diagnoses' | 'ask';
 interface DashProps {
   model: { data: RecordData; index: ReturnType<typeof buildIndex>; overview: ReturnType<typeof buildOverview> };
   grantId: string;
@@ -129,7 +130,7 @@ function Dashboard({ model, grantId, patientId, ctx, openCite, onOpenCite, onOpe
 
   const go = (v: View) => {
     setView(v);
-    if (!wide) document.getElementById(v === 'ask' ? 'dash-ask' : 'dash-overview')?.scrollIntoView?.({ block: 'start' });
+    if (!wide) document.getElementById(`dash-${v}`)?.scrollIntoView?.({ block: 'start' });
   };
   const goToCard = (key: string) => {
     if (otState.status !== 'ready') return;
@@ -139,6 +140,7 @@ function Dashboard({ model, grantId, patientId, ctx, openCite, onOpenCite, onOpe
   };
   const nav: { v: View; label: string; icon: React.ReactNode }[] = [
     { v: 'overview', label: 'Overview', icon: <ChartLineUp size={22} weight="bold" aria-hidden="true" /> },
+    { v: 'diagnoses', label: 'Possible diagnoses', icon: <Stethoscope size={22} weight="bold" aria-hidden="true" /> },
     { v: 'ask', label: 'Ask the assistant', icon: <ChatCircleText size={22} weight="bold" aria-hidden="true" /> },
   ];
   return (
@@ -155,6 +157,9 @@ function Dashboard({ model, grantId, patientId, ctx, openCite, onOpenCite, onOpe
           <PossibleMatchesPanel patientId={patientId} onGone={onGone} />
           <ExamsList exams={exams} onOpenSubject={onOpenSubject} />
           <OverviewPanel overview={model.overview} openCite={openCite} onOpenCite={onOpenCite} onOpenSubject={onOpenSubject} />
+        </div>
+        <div id="dash-diagnoses" className="dash-view" hidden={wide && view !== 'diagnoses'} aria-label="Possible diagnoses">
+          <DiagnosesPanel api={api} grantId={grantId} index={model.index} openCite={openCite} onOpenCite={onOpenCite} onGone={onGone} />
         </div>
         <section id="dash-ask" className="dash-view card ask-main" hidden={wide && view !== 'ask'} aria-label="Assistant">
           <AskPanel api={api} grantId={grantId} ctx={ctx} onGone={onGone} />

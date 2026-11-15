@@ -4,7 +4,7 @@ import { ApiError } from '../../api/call';
 import { authedCall } from '../../api/authed';
 import { callFunction, supabase } from '../../api/client';
 import type { AssistantApi } from './api';
-import { FILE_ANALYSIS_COLUMNS, FileAnalysisRow, OverTimeResponse } from './analysis.contract';
+import { DiagnosesResponse, FILE_ANALYSIS_COLUMNS, FileAnalysisRow, OverTimeResponse } from './analysis.contract';
 import { AssistantResponse, DIARY_COLUMNS, DOCUMENT_COLUMNS, DiaryRow, DocPhotoResponse, DocumentRow, FINDING_COLUMNS, FindingRow, RESULT_COLUMNS, ResultRow } from './contract';
 
 function need() {
@@ -52,5 +52,9 @@ export const realAssistantApi: AssistantApi = {
   },
   async overTime(grantId) {
     return authedCall((accessToken) => need().callFunction('over-time', { grant_id: grantId }, OverTimeResponse, { accessToken }));
+  },
+  async diagnoses(grantId) {
+    // Same helper as ask and overTime: a refused refresh still says "Sign in again". The strict schema turns an extra key into an ApiError.
+    return authedCall((accessToken) => need().callFunction('diagnoses', { grant_id: grantId }, DiagnosesResponse, { accessToken }));
   },
 };
