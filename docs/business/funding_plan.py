@@ -11,6 +11,9 @@ UPSIDE = (258, 1705, 4850)       # slide 10's upside yearly totals, EUR thousand
 # Deck A6 line A (paid cases per hospital), conservative, EUR thousands per plan year; the rest of CONSERVATIVE is doctor seats (line B).
 # Added for the patient ramp "per_case_only" (Marketing, MIN-4697). Not used by funding-model.py.
 CONSERVATIVE_PER_CASE = (20, 120, 320)
+# First month of the free pilot: team-and-funding-plan.md section 3, "Months 3 to 8 · Free pilot". Named, not computed: nothing in this plan derives it (revenue() hard-codes paid month 9).
+# Read by scripts/synthetic/simulate.py (timeline.plan.pilot_from); funding-model.py does not use it (MIN-4715, CTO decision MIN-4714).
+PILOT_FROM = 3
 
 
 def rng(a, b): return range(a, b+1)
