@@ -1,15 +1,18 @@
 Series 1: matches growing as the network grows
-    33 records |   0.0% | 
-    67 records |   0.0% | 
-   100 records |   1.1% | #
-   133 records |   5.7% | ###
-   167 records |   6.5% | ###
-   200 records |  10.3% | #####
-   233 records |  21.4% | ###########
-   267 records |  24.8% | ############
-   300 records |  29.3% | ###############
-   333 records |  31.0% | ################
-   367 records |  30.4% | ###############
-   400 records |  33.5% | #################
-Series 2 (wrong/missed per 100 visits): 5.0 -> 4.66
-Series 3 (cost, % of spend):           11.0 -> 10.26
+   100 records |   0.0% | 
+   200 records |   6.2% | ###
+   300 records |  19.9% | ##########
+   400 records |  34.2% | #################
+   500 records |  38.0% | ###################
+   600 records |  38.8% | ###################
+   700 records |  39.7% | ####################
+   800 records |  41.3% | #####################
+   900 records |  41.0% | #####################
+  1000 records |  42.4% | #####################
+  1100 records |  42.1% | #####################
+  1200 records |  43.8% | ######################
+Series 2 (wrong/missed per 100 visits): 5.0 -> 4.56
+Series 3 (cost, % of spend):           11.0 -> 10.04
+Matches (records with a match):         0 -> 473
+Assumed effect of a match:              0.1 -> 0.2
+Euro, drop (EUR million, EU-27 2024):   0.0 -> 17606.14   | per inhabitant 0.0 -> 39.12

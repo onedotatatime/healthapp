@@ -70,8 +70,8 @@ export function Product({ s }: { s: ProductSlide }) {
           </article>
         ))}
       </div>
-      <div className="pr-under">
-        {s.under.map((u) => (
+      {s.under && <div className="pr-under">
+        {s.under?.map((u) => (
           <section key={u.label} className="pr-note">
             <h4 className="caps">{u.label}</h4>
             {u.badges && (
@@ -83,7 +83,7 @@ export function Product({ s }: { s: ProductSlide }) {
             {u.lines.map((l, i) => <p key={i}>{rich(l)}</p>)}
           </section>
         ))}
-      </div>
+      </div>}
     </div>
   );
 }

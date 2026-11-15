@@ -327,3 +327,16 @@ html[data-motion="reduced"] .blk[data-state="loading"]::after{animation:none}
 .viewer .notes{font-size:12px;color:#9FB4BB;padding:0 16px 4px;text-align:center}
 .viewer a.btn:focus-visible,.viewer button:focus-visible{outline-color:#5BD9CB}
 @media (max-width:899px){ .posters{grid-template-columns:minmax(0,1fr)} }
+/* doctor simulations drawer (MIN-4600) */
+.simcard{margin-bottom:var(--gap)}
+.simlabel{margin:0 0 6px;font:600 12px/18px var(--mono);color:var(--ink-2)}
+.simsub{margin:16px 0 6px}
+.simfun{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.simfun li{display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px;align-items:baseline;font-size:14px}
+.simfun b{font-size:18px;text-align:right}
+.simcty{margin:0;display:flex;flex-wrap:wrap;gap:6px}
+.simtbl{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.simtbl th{text-align:left;font:600 11px/16px var(--mono);text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);padding:6px 8px 6px 0;border-bottom:1px solid var(--line)}
+.simtbl td{padding:5px 8px 5px 0;border-bottom:1px solid var(--line);vertical-align:middle}
+.simtbl td:last-child{display:flex;align-items:center;gap:10px}
+.simbar{display:inline-block;height:8px;width:calc(var(--w) * .6);min-width:2px;border-radius:2px;background:var(--brand-text)}

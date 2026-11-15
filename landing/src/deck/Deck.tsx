@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Slide } from './types';
-import { Lockup, typo } from './util';
-import { Appendix, Chart, Compare, Cover, Funnel, Hero, Product, Statement, Stats, Steps, Table, TeamAsk } from './templates';
+import { DeckLink, Lockup, typo } from './util';
+import { Appendix, Chart, Compare, Cover, Detail, Funnel, Hero, Product, Spend, Statement, Stats, Steps, Table, TeamAsk, ThreeCards, TwoColumn } from './templates';
 
 const W = 1920;
 const H = 1080;
@@ -18,8 +18,12 @@ function SlideBody({ s }: { s: Slide }) {
     case 'product': return <Product s={s} />;
     case 'compare': return <Compare s={s} />;
     case 'steps': return <Steps s={s} />;
+    case 'twocol': return <TwoColumn s={s} />;
+    case 'threecards': return <ThreeCards s={s} />;
     case 'teamask': return <TeamAsk s={s} />;
     case 'appendix': return <Appendix s={s} />;
+    case 'spend': return <Spend s={s} />;
+    case 'detail': return <Detail s={s} />;
   }
 }
 
@@ -27,37 +31,56 @@ function SlideView({ s, counter, current }: { s: Slide; counter?: string; curren
   const isCover = s.template === 'cover';
   const topLockup = s.template === 'teamask';
   const isHero = s.template === 'hero';
+  const hasRow = !!(s.footer || s.note || s.links?.length);
   return (
     <section
       className={`slide theme-${s.theme} t-${s.template}-slide ${current ? 'is-current' : ''}`}
       aria-hidden={!current}
-      aria-label={`Slide ${s.id}`}
+      aria-label={`Slide ${s.counter ?? s.id}`}
     >
       {!isCover && (
         <header className={`slide-head ${topLockup ? 'with-lockup' : ''}`}>
           {topLockup && <Lockup theme={s.theme} className="head-lockup" />}
           <span className="eyebrow">{s.no ? `${s.no} · ${s.kicker}` : s.kicker}</span>
+          {s.back && (
+            <nav className="back-links" aria-label="Back to the main slide">
+              {s.back.map((l) => <DeckLink key={l.to} to={l.to} label={`← ${l.label}`} />)}
+            </nav>
+          )}
           {counter && <span className="counter">{counter}</span>}
         </header>
       )}
       <SlideBody s={s} />
-      {s.footer && <p className="slide-foot">{typo(s.footer)}</p>}
-      {!isCover && !topLockup && !isHero && <Lockup theme={s.theme} className="foot-lockup" />}
+      {(hasRow || (!isCover && !topLockup && !isHero)) && (
+        <footer className={`foot-row ${isHero ? 'is-hero' : ''}`}>
+          <div className="foot-text">
+            {s.footer && <p className="slide-foot">{typo(s.footer)}</p>}
+            {s.note && <p className="slide-note">{typo(s.note)}</p>}
+          </div>
+          {s.links && s.links.length > 0 && (
+            <nav className="foot-links" aria-label="Details">
+              {s.links.map((l) => <DeckLink key={l.to} to={l.to} label={l.label} />)}
+            </nav>
+          )}
+          {!isCover && !topLockup && !isHero && <Lockup theme={s.theme} className="foot-lockup" />}
+        </footer>
+      )}
     </section>
   );
 }
 
-// The hash is the slide id: #1 ... #15, #6b, #16 (backup) or #a. Anything else falls back to the first slide.
+// The hash is the slide id: #1 ... #14, #5b, #6b, #6c, #A1 ... #A9. An appendix id without a part letter (#A3) is the first part.
+// Anything else falls back to the first slide.
 const parseHash = (slides: Slide[]) => {
   const h = window.location.hash.replace('#', '').toLowerCase();
-  if (h === 'a' || h === 'appendix') return slides.length - 1;
+  if (h === 'a' || h === 'appendix') return slides.findIndex((s) => s.id === 'A1');
   const i = slides.findIndex((s) => s.id.toLowerCase() === h);
   return i >= 0 ? i : 0;
 };
 
 export function Deck({ slides }: { slides: Slide[] }) {
   const n = slides.length;
-  const numbered = slides.filter((s) => !s.backup && !s.counter);
+  const numbered = slides.filter((s) => !s.counter);
   const total = numbered.length;
   const [index, setIndex] = useState(() => parseHash(slides));
   const [scale, setScale] = useState(1);
@@ -73,7 +96,10 @@ export function Deck({ slides }: { slides: Slide[] }) {
   useEffect(() => {
     const target = `#${slides[index].id}`;
     if (window.location.hash !== target) window.history.replaceState(null, '', target);
-    document.title = `Pathien | Pitch deck | ${slides[index].counter ?? index + 1} / ${n}`;
+    document.title = `Pathien | Pitch deck | ${slides[index].counter ?? slides[index].id}`;
+    // after a link click the focus sits on a link that is now hidden: hand the keyboard back to the deck
+    const a = document.activeElement as HTMLElement | null;
+    if (a && a !== document.body && a.closest('.slide') && !a.closest('.is-current')) a.blur();
   }, [index, n, slides]);
   useEffect(() => {
     const onHash = () => setIndex(parseHash(slides));
@@ -98,6 +124,9 @@ export function Deck({ slides }: { slides: Slide[] }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // Enter and Space on a focused link or button belong to that control, not to the slide changer. Arrows still change slides.
+      const onControl = !!(e.target as HTMLElement).closest?.('a,button');
+      if (onControl && (e.key === 'Enter' || e.key === ' ')) return;
       switch (e.key) {
         case 'ArrowRight': case 'ArrowDown': case 'PageDown': case ' ': case 'Enter':
           e.preventDefault(); go(index + 1); break;
@@ -138,7 +167,6 @@ export function Deck({ slides }: { slides: Slide[] }) {
   const cur = slides[index];
   const counterFor = (s: Slide) => {
     if (s.template === 'cover') return undefined;
-    if (s.backup) return 'Backup';
     if (s.counter) return s.counter;
     return `${numbered.indexOf(s) + 1} / ${total}`;
   };

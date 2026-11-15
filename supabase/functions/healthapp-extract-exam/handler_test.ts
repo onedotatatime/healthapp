@@ -270,6 +270,22 @@ Deno.test("doc 6, another person: refused name_mismatch, nothing saved, the uplo
   for (const word of ["ΠΑΠΑΔΟΠΟΥΛΟΣ", "ΓΕΩΡΓΙΟΣ", "AB654321", "Μαρία", "AK123456"]) assertEquals(everything.includes(word), false, word);
 });
 
+Deno.test("MIN-4614: a father's name and no ID is saved name_only; two extra parts and no ID are refused with counts only in the log", async () => {
+  const ok = await run({ ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΤΟΥ ΓΕΩΡΓΙΟΥ", printed_id: "", header_confidence: { ...GOOD.header_confidence, printed_id: 0 } });
+  assertEquals([ok.doc?.document.status, ok.doc?.document.identity_status], ["confirmed", "name_only"]);
+  const { t, doc, x } = await run({
+    ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", printed_id: "", header_confidence: { ...GOOD.header_confidence, printed_id: 0 },
+  });
+  assertEquals([doc?.document.status, x?.reason], ["refused", "name_mismatch"]);
+  const line = t.logs.find((l) => l.status === "refused");
+  assertEquals(
+    [line?.profile_parts, line?.profile_parts_found, line?.printed_parts, line?.extra_parts, line?.id_printed, line?.id_equal],
+    [2, 2, 4, 2, false, false],
+  );
+  const everything = JSON.stringify([doc, x, t.logs]);
+  for (const word of ["ΠΑΠΑΔΟΠΟΥΛΟΥ", "ΓΕΩΡΓΙΟΥ", "ΑΙΚΑΤΕΡΙΝΗΣ", "Μαρία", "AK123456"]) assertEquals(everything.includes(word), false, word);
+});
+
 Deno.test("doc 8, her name and another ID: refused id_mismatch, nothing saved", async () => {
   const { t, doc, x } = await run({ ...GOOD, printed_name: "PAPADOPOULOU MARIA", printed_id: "AK987654" });
   assertEquals([doc?.document.status, x?.reason], ["refused", "id_mismatch"]);

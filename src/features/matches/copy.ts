@@ -33,7 +33,20 @@ export const COPY = {
   simTitle: 'What matching could change',
   simCaption:
     '30 seconds on seeded synthetic records. Watch matches grow as the network grows, and what a stated assumption would mean for wrong or missed diagnoses and what they cost.',
-  simAssumption: (pct: string) => `Assumption, not a finding: a match lowers the chance of a wrong or missed diagnosis by ${pct}.`,
+  // Section 6 of docs/simulation-copy.md (Anna, MIN-4604; approved by the CEO seat on MIN-4605). Every number is filled from the data file.
+  simAssumption: (a: { start: string; ceiling: string }) =>
+    `Assumption, not a finding: each match lowers the chance of a wrong or missed diagnosis by ${a.start}, rising to ${a.ceiling} as matches accumulate.`,
+  simMatchesSoFar: 'Matches so far:',
+  simEffectOfMatch: 'Assumed effect of a match:',
+  simKicker: 'Modelled drop so far',
+  simUnitYear: 'a year',
+  simPerInhabitant: (a: { amount: string }) => `${a.amount} per inhabitant a year`,
+  simOutcome: (a: { amount: string; geography: string; year: number }) =>
+    `In this model, the cost of wrong or missed diagnoses is ${a.amount} a year lower for ${a.geography}, on ${a.year} spending.`,
+  simFormula: (a: { drop: string; total: string; geography: string; year: number; amount: string }) =>
+    `${a.drop} points of health spending × ${a.total} (${a.geography}, ${a.year}) = ${a.amount} a year`,
+  simSourceLead: 'Health spending total:',
+  simSourceLink: (a: { geography: string; year: number }) => `Eurostat, current health expenditure, ${a.geography}, ${a.year}`,
   simSourcesPrefix: 'Baselines:',
   simDropped: 'Series not shown: no solid source.',
   simReplay: 'Play again',

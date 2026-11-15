@@ -1,15 +1,16 @@
 // Name and ID match (MIN-4478; PRD 10.14 B1). Pure, no I/O. It runs on the server on the model's output
 // and the profile row; nothing a client sends reaches it.
 //
-// The rule (MIN-4478, widened 2026-11-14 for real Greek lab prints): the name parts of the profile are
-// compared with the printed name after one fold (accents, case, Greek to Latin, common spelling variants).
-//  - Same set of parts: the name matches on its own.
-//  - Every profile part is among the printed parts, and the printed name has extra parts (a father's name,
-//    an initial that counts): it matches ONLY when an ID is printed and equals the profile's ID exactly.
-//  - Anything else, including a printed name that lacks a profile part, is refused.
-// A name with no printed ID is accepted as "name_only" only on the strict set rule. No readable name is
-// refused earlier (extract.ts `build`, reason name_missing). No fuzzy matching: a misspelt name is
-// refused, which is the safe direction for a record that doctors will read.
+// The rule (MIN-4478, widened 2026-11-14 and again for MIN-4614, real Greek lab prints): the name parts of the
+// profile are compared with the printed name after one fold (accents, case, Greek to Latin, common spelling
+// variants), with the patronymic markers ("του", "της", "of") dropped from both sides so they never count as a part.
+//  - Every profile part must be among the printed parts, and both names need two parts at least. Otherwise: refused.
+//  - extra = printed parts - profile parts (a father's name, an initial that counts).
+//  - An ID is printed and the profile has one: equal is a match (any extra), different is id_mismatch.
+//  - Otherwise (no printed ID, or the profile has none): up to ONE extra part is accepted as "name_only", the same
+//    standing a bare two-part name with no ID always had. Two extra parts or more need the matching ID: refused.
+// No readable name is refused earlier (extract.ts `build`, reason name_missing). No fuzzy matching: a misspelt
+// name is refused, which is the safe direction for a record that doctors will read.
 import { normalizeId } from "./extract.ts";
 
 const GREEK: Record<string, string> = {
@@ -33,9 +34,12 @@ function fold(raw: string): string {
   return t.replace(/C/g, "K").replace(/H/g, "I").replace(/Y/g, "I").replace(/V/g, "B");
 }
 
-/** The name parts that count: letters only, at least two long (a lone initial proves nothing). */
+/** The folded forms of "του", "της" and "of": they introduce a father's or mother's name and are not a name part. */
+const MARKERS = new Set(["TU", "TIS", "OF"]);
+
+/** The name parts that count: letters only, at least two long (a lone initial proves nothing), no marker. */
 export function nameTokens(raw: string): string[] {
-  return fold(raw).split(/[^A-Z]+/).filter((t) => t.length >= 2);
+  return fold(raw).split(/[^A-Z]+/).filter((t) => t.length >= 2 && !MARKERS.has(t));
 }
 
 /** Strict: the two names have the same set of parts (two at least on each side). */
@@ -59,9 +63,26 @@ export interface IdentityProfile {
   full_name_latin: string | null;
   national_id_norm: string | null;
 }
+/** What a refusal reports to the log: counts and flags only, never a name, an ID or a word of the document (MIN-4614). */
+export interface IdentityCounts {
+  profile_parts: number;
+  profile_parts_found: number;
+  printed_parts: number;
+  extra_parts: number;
+  id_printed: boolean;
+  id_equal: boolean;
+}
 export type IdentityVerdict =
   | { ok: true; status: "match" | "name_only" }
-  | { ok: false; reason: "name_mismatch" | "id_mismatch"; printed: string; profile: string };
+  | { ok: false; reason: "name_mismatch" | "id_mismatch"; printed: string; profile: string; counts: IdentityCounts };
+
+/** How one profile name sits in the printed name: part counts, with the printed parts the profile does not have as extra. */
+function compare(printedName: string, known: string) {
+  const p = new Set(nameTokens(printedName)), k = new Set(nameTokens(known));
+  let found = 0;
+  for (const t of k) if (p.has(t)) found++;
+  return { k: k.size, p: p.size, found, extra: p.size - found, whole: k.size >= 2 && p.size >= 2 && found === k.size };
+}
 
 /**
  * `printedName` is non-empty here (the caller refuses an empty one as name_missing first).
@@ -76,14 +97,24 @@ export function matchIdentity(
   const printed = printedId?.trim() ? printedId.trim() : null;
   const known = profile.national_id_norm;
   const idPair = printed !== null && !!known;
+  // The profile name (Greek or Latin) that fits best: a whole one first, then the most parts found, then the fewest extra.
+  const fits = names.map((n) => compare(printedName, n)).sort((x, y) =>
+    Number(y.whole) - Number(x.whole) || y.found - x.found || x.extra - y.extra
+  );
+  const best = fits[0];
   const idEqual = idPair && normalizeId(printed) === normalizeId(known);
-  const strict = names.some((n) => sameName(printedName, n));
-  // Extra printed words are safe only when the printed ID is present and exactly the profile's.
-  const loose = idPair && names.some((n) => containsName(printedName, n));
-  if (!strict && !loose) return { ok: false, reason: "name_mismatch", printed: printedName, profile: profile.full_name };
-  if (!idPair) return { ok: true, status: "name_only" };
-  if (!idEqual) return { ok: false, reason: "id_mismatch", printed: printed!, profile: known! };
-  return { ok: true, status: "match" };
+  const counts: IdentityCounts = {
+    profile_parts: best.k, profile_parts_found: best.found, printed_parts: best.p, extra_parts: best.extra,
+    id_printed: printed !== null, id_equal: idEqual,
+  };
+  const refuse = (reason: "name_mismatch" | "id_mismatch"): IdentityVerdict => ({
+    ok: false, reason, counts,
+    printed: reason === "id_mismatch" ? printed! : printedName, profile: reason === "id_mismatch" ? known! : profile.full_name,
+  });
+  if (!best.whole) return refuse("name_mismatch");
+  if (idPair) return idEqual ? { ok: true, status: "match" } : refuse("id_mismatch");
+  // No ID to check: one extra part is a father's name; two or more need the ID to prove it is the same person.
+  return best.extra <= 1 ? { ok: true, status: "name_only" } : refuse("name_mismatch");
 }
 
 export function mismatchMessage(v: Extract<IdentityVerdict, { ok: false }>): string {

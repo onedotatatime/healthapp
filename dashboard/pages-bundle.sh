@@ -23,13 +23,12 @@ mkdir -p "$OUT"
 cp -R "$SRC/direction-A" "$SRC/shared" "$SRC/fonts" "$OUT/"
 cp "$SRC/_headers" "$SRC/robots.txt" "$OUT/"
 
-# Public bundle, view key as the only gate (CTO decision on MIN-4458, 14 Nov 2026): until Cloudflare
-# Access is proven by curl on production, a preview host and a hash URL, the workshop text, the deck
-# text, the sample data and every local path stay out. The source files are not changed; the bundled
-# copies are rewritten here. Each edit must match exactly once, so a change in the source fails the
-# bundle instead of slipping through.
+# Public bundle, view key as the only gate (CTO decisions on MIN-4458, 14 and 15 Nov 2026): the sample data, the deck text and every
+# local path stay out. The business exercises are public since 15 Nov (founder's call): shared/content.js carries them, with issue ids
+# replaced by "the issue"; the deck slides stay empty stubs. The source files are not changed; the bundled copies are rewritten here.
+# Each edit must match exactly once, so a change in the source fails the bundle instead of slipping through.
 python3 - "$SRC" "$OUT" <<'PY'
-import re, sys
+import json, re, sys
 src, out = sys.argv[1], sys.argv[2]
 
 def sub_once(text, pattern, repl, what, flags=0):
@@ -38,10 +37,18 @@ def sub_once(text, pattern, repl, what, flags=0):
         sys.exit(f"pages-bundle: expected exactly one match for {what}, found {n}")
     return new
 
-# 1. content.js: same shape, no text.
+# 1. content.js: the exercises as they are (issue ids replaced), the decks as empty stubs.
+raw = open(f"{src}/shared/content.js").read()
+m = re.search(r"^const CONTENT = (\{.*\});\s*$", raw, re.S | re.M)
+if not m:
+    sys.exit("pages-bundle: shared/content.js does not have the expected shape")
+exercises = json.loads(m.group(1))["exercises"]
+if len(exercises) != 7:
+    sys.exit(f"pages-bundle: expected 7 exercises, found {len(exercises)}")
+ex_text = re.sub(r"MIN-\d+", "the issue", json.dumps(exercises, ensure_ascii=False, separators=(",", ":")))
 with open(f"{out}/shared/content.js", "w") as f:
-    f.write("// Public stub (CTO go-live decision): no workshop or deck text in the public bundle.\n"
-            'const CONTENT = {"exercises":[],"decks":{"short":{"slides":[],"version":"","file":"","secs":0},'
+    f.write("// Public bundle (CTO decision of 15 Nov): the business exercises only. No deck text, no issue ids.\n"
+            f'const CONTENT = {{"exercises":{ex_text},"decks":{{"short":{{"slides":[],"version":"","file":"","secs":0}},'
             '"full":{"slides":[],"version":"","file":""}}};\n')
 
 # 2. sample-data.js: same shape; only the four build times and the two cap pairs are kept.
@@ -118,11 +125,29 @@ fi
 if grep -rnE '/Users/|file://' "$OUT" >&2; then
   echo "local path in the upload set" >&2; fail=1
 fi
-# The two stubs stay stubs: small, and no issue ids.
-for f in "$OUT/shared/content.js" "$OUT/sample-data.js"; do
-  if [ "$(wc -c < "$f")" -gt 2048 ]; then echo "$f is larger than 2 KB (real content?)" >&2; fail=1; fi
-  if grep -nE 'MIN-[0-9]' "$f" >&2; then echo "issue id in $f" >&2; fail=1; fi
-done
+# sample-data.js stays a stub: small, and no issue ids.
+f="$OUT/sample-data.js"
+if [ "$(wc -c < "$f")" -gt 2048 ]; then echo "$f is larger than 2 KB (real content?)" >&2; fail=1; fi
+if grep -nE 'MIN-[0-9]' "$f" >&2; then echo "issue id in $f" >&2; fail=1; fi
+# content.js: the 7 exercises and two empty deck stubs, nothing else (CTO guard 1, MIN-4458 15 Nov).
+f="$OUT/shared/content.js"
+size=$(wc -c < "$f")
+if [ "$size" -gt 122880 ] || [ "$size" -lt 20000 ]; then echo "$f is $size bytes, expected 20 to 120 KB" >&2; fail=1; fi
+if [ "$(grep -o '"md":' "$f" | wc -l | tr -d ' ')" != 7 ]; then echo "$f does not hold exactly 7 exercises" >&2; fail=1; fi
+if [ "$(grep -o '"slides":\[\]' "$f" | wc -l | tr -d ' ')" != 2 ]; then echo "$f deck slides are not the two empty stubs" >&2; fail=1; fi
+if grep -nE 'MIN-[0-9]' "$f" >&2; then echo "issue id in $f" >&2; fail=1; fi
+if grep -nE '[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}' "$f" >&2; then echo "email address in $f" >&2; fail=1; fi
+# sim-data.js: the generated aggregates (MIN-4600): in date with data/synthetic/, small, labelled, and no per-record field.
+python3 "$ROOT/dashboard/build_sims.py" --check >&2 || fail=1
+f="$OUT/shared/sim-data.js"
+if [ ! -f "$f" ]; then echo "shared/sim-data.js is missing" >&2; fail=1; else
+  if [ "$(wc -c < "$f")" -gt 4096 ]; then echo "$f is larger than 4 KB" >&2; fail=1; fi
+  if ! grep -qF 'Seeded synthetic data. Not real patients.' "$f"; then echo "the synthetic-data label is missing from $f" >&2; fail=1; fi
+  if grep -nE '\b(records|detail|matched|persona|codes|labs|imaging|symptoms)"?\s*:|syn-[0-9]' "$f" >&2; then echo "per-record field in $f" >&2; fail=1; fi
+fi
+# The deck link is one constant, and the Demo tab is gone.
+if ! grep -qF 'https://healthapp-landing.pages.dev/deck/' "$OUT/shared/common.js"; then echo "deck URL missing from shared/common.js" >&2; fail=1; fi
+if grep -qF '#/demo' "$OUT/direction-A/index.html"; then echo "the Demo tab is still in direction-A/index.html" >&2; fail=1; fi
 # No issue id in common.js outside comments (stricter than "in a string literal": code counts too).
 if perl -0777 -pe 's{/\*.*?\*/}{}gs; s{^\s*//[^\n]*}{}gm' "$OUT/shared/common.js" | grep -nE 'MIN-[0-9]' >&2; then
   echo "issue id in shared/common.js outside a comment" >&2; fail=1
