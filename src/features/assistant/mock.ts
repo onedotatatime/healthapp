@@ -6,7 +6,7 @@
  */
 import { ApiError } from '../../api/call';
 import type { AssistantApi } from './api';
-import type { FileAnalysisRow, OverTimeResponse } from './analysis.contract';
+import type { DiagnosesResponse, FileAnalysisRow, OverTimeResponse } from './analysis.contract';
 import { computeOverTime } from './analysis.calc';
 import type { AssistantResponse, DiaryRow, DocumentRow, FindingRow, ResultRow, Segment } from './contract';
 import type { RecordData } from './record';
@@ -85,6 +85,35 @@ export function answerFor(question: string, n = 1): AssistantResponse {
 export const MOCK_PHOTO = (label: string) =>
   `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="360" height="480" viewBox="0 0 360 480"><rect width="360" height="480" fill="#fff"/><rect x="16" y="16" width="328" height="448" fill="none" stroke="#6F8084"/><text x="32" y="56" font-family="monospace" font-size="16" fill="#12303A">SYNTHETIC EXAM PHOTO</text><text x="32" y="84" font-family="monospace" font-size="13" fill="#5B6B70">${label.replace(/[<&]/g, '')}</text>${Array.from({ length: 9 }, (_, i) => `<rect x="32" y="${120 + i * 36}" width="${200 + ((i * 53) % 90)}" height="10" fill="#DDE3E2"/>`).join('')}</svg>`)}`;
 
+/** SYNTHETIC possible diagnoses for the persona, in the order the server gives them (by name). Shape only: nothing here is a medical statement about anyone. */
+export const MOCK_DIAGNOSES: DiagnosesResponse = {
+  run_id: uid(950),
+  status: 'ok',
+  truncated: false,
+  created_at: '2026-11-15T09:00:00.000Z',
+  counts: { facts: 14, items: 2, citations: 7, guard_drops: 0, errors: 0 },
+  items: [
+    {
+      name: 'Inflammatory arthritis',
+      fits: [
+        { text: 'CRP was 14.2 mg/L and ESR 28 mm/h on 30 Oct 2026, both above the printed range.', cites: [`r:${ID.crpOct}`, `r:${ID.esrOct}`] },
+        { text: 'The patient wrote on 2 Nov 2026 that the knee was stiff in the morning for about an hour.', cites: [`d:${ID.d2}`] },
+      ],
+      does_not_explain: [{ text: 'Both markers were within the printed range on 12 Mar 2026.', cites: [`r:${ID.crpMar}`, `r:${ID.esrMar}`] }],
+      not_in_record: ['RF', 'anti-CCP'],
+    },
+    {
+      name: 'Osteoarthritis',
+      fits: [
+        { text: 'The orthopaedic letter of 20 Jan 2026 writes: mild osteoarthritis of the left knee.', cites: [`f:${ID.fLetter}`] },
+        { text: 'The knee MRI report of 2 Jun 2026 concludes: small joint effusion, left knee.', cites: [`f:${ID.fMri}`] },
+      ],
+      does_not_explain: [],
+      not_in_record: ['X-ray report'],
+    },
+  ],
+};
+
 export interface MockAssistantOptions {
   latencyMs?: number;
   record?: RecordData;
@@ -92,15 +121,21 @@ export interface MockAssistantOptions {
   fileAnalyses?: Record<string, FileAnalysisRow | null | Error>;
   /** The over-time answer, or an Error. Default: computed from the record. */
   overTime?: OverTimeResponse | Error | ((record: RecordData) => OverTimeResponse);
+  /** The possible-diagnoses answer, or an Error. Default: `MOCK_DIAGNOSES`. */
+  diagnoses?: DiagnosesResponse | Error;
+  /** How long the diagnoses call takes (the preview's `?dx=slow`). Default: at most 600 ms. */
+  diagnosesLatencyMs?: number;
 }
 
-export function createMockAssistant(opts: MockAssistantOptions = {}): AssistantApi & { asked: string[] } {
+export function createMockAssistant(opts: MockAssistantOptions = {}): AssistantApi & { asked: string[]; diagnosesCalls: string[] } {
   const wait = () => new Promise((r) => setTimeout(r, opts.latencyMs ?? 900));
   const record = opts.record ?? MOCK_RECORD;
   let n = 0;
   const asked: string[] = [];
+  const diagnosesCalls: string[] = [];
   return {
     asked,
+    diagnosesCalls,
     async loadRecord() {
       await new Promise((r) => setTimeout(r, Math.min(opts.latencyMs ?? 900, 300)));
       return record;
@@ -128,6 +163,13 @@ export function createMockAssistant(opts: MockAssistantOptions = {}): AssistantA
       if (o instanceof Error) throw o;
       if (typeof o === 'function') return o(record);
       return o ?? computeOverTime(record);
+    },
+     async diagnoses(grantId) {
+      diagnosesCalls.push(grantId);
+      await new Promise((r) => setTimeout(r, opts.diagnosesLatencyMs ?? Math.min(opts.latencyMs ?? 900, 600)));
+      const o = opts.diagnoses;
+      if (o instanceof Error) throw o;
+      return o ?? MOCK_DIAGNOSES;
     },
   };
 }

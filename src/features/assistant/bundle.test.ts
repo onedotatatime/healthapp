@@ -9,11 +9,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 
-const SENTINELS = ['Ask about this patient', 'Not in this record.', 'General medical knowledge, not from this record', 'Could not confirm a source for one statement', 'Straight line through', 'About this file'];
+const SENTINELS = ['Ask about this patient', 'Not in this record.', 'General medical knowledge, not from this record', 'Could not confirm a source for one statement', 'Straight line through', 'About this file',
+  // MIN-4665 Possible diagnoses: the fixed banner, the AI line and two state lines only the doctor's view holds
+  'For the doctor to evaluate. Not a diagnosis.', 'This list comes from an AI reading this record.', 'Possible diagnoses is switched off in this environment.', 'List possible diagnoses'];
+/** The function name, as the one place that calls it writes it (real.ts: `callFunction('diagnoses', ...)`). It must be in a lazy chunk and in no entry chunk. */
+const FN_NAME = /["'`]diagnoses["'`]/;
 const out = mkdtempSync(join(tmpdir(), 'healthapp-bundle-'));
 afterAll(() => rmSync(out, { recursive: true, force: true }));
 
-describe('patient chunks hold no assistant module', () => {
+describe('patient chunks hold no assistant module (and no Possible diagnoses view, MIN-4665)', () => {
   it('keeps the assistant in a lazy chunk, away from every chunk the entry page loads', () => {
     execFileSync('npx', ['vite', 'build', '--outDir', out, '--emptyOutDir', '--logLevel', 'error'], { stdio: 'pipe' });
     const html = readFileSync(join(out, 'index.html'), 'utf8');
@@ -27,6 +31,11 @@ describe('patient chunks hold no assistant module', () => {
       expect(holders.length, `${s} is in no chunk: the sentinel is stale`).toBeGreaterThan(0);
       expect(holders.every((f) => !entry.includes(`assets/${f}`))).toBe(true);
     }
+    // MIN-4665: the function name is called from one lazy chunk (the doctor's), never from an entry chunk
+    for (const f of entry) expect(FN_NAME.test(read(f)), `the function name "diagnoses" is called from entry chunk ${f}`).toBe(false);
+    const callers = all.filter((f) => FN_NAME.test(read(f)));
+    expect(callers.length, 'the function name is in no chunk: the check is stale').toBeGreaterThan(0);
+    expect(callers.every((f) => !entry.includes(`assets/${f}`))).toBe(true);
     // the synthetic record stays out of the entry chunk too
     for (const f of entry) expect(read(f).includes('Synthetic Diagnostic Lab'), `synthetic record in entry chunk ${f}`).toBe(false);
   }, 120_000);
