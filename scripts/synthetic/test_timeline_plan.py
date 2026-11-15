@@ -1,6 +1,6 @@
-"""Plan-side checks on the timeline block of simulation.json (MIN-4701, CTO decision MIN-4699 comment 8b038e47). No matching, under 1 s.
+"""Plan-side checks on the timeline block of simulation.json (MIN-4701, CTO decision MIN-4699 comment 8b038e47; round 2: per-case ramp and the yearly income run rate, CEO seat MIN-4698). No matching, under 1 s.
 Runs in the PR `static` job: a change to the plan's conservative line (docs/business/funding_plan.py) turns the PR red until simulate.py is rerun.
-It recomputes patients and income_eur from the plan with its own arithmetic (it does not import simulate.py) and compares them with the JSON.
+It recomputes patients, income_eur and income_run_rate_eur from the plan with its own arithmetic (it does not import simulate.py) and compares them with the JSON.
 Usage: python3 test_timeline_plan.py [data_dir]    (default: ../../data/synthetic). Exit 1 on any failure."""
 import json, math, os, re, sys
 
@@ -48,12 +48,11 @@ check("2 per-case lines sit inside the totals (line A < total, same plan years)"
 # 3. The timeline block against the plan.
 sim = json.load(open(os.path.join(D, "simulation.json")))
 tl = sim.get("timeline")
-if tl is None:
-    print("SKIP  3 no timeline block in %s yet (MIN-4701 round 1: the regenerated file waits for the CEO seat, MIN-4698). Remove this skip when it lands." % os.path.join(D, "simulation.json"))
-else:
+check("3 the timeline block is in simulation.json (MIN-4701 round 2; no skip)", tl is not None)
+if tl is not None:
     N = fp.N
     ramp = tl["patients"].get("ramp")
-    check("3 patients.ramp is one of per_case_only, all_revenue", ramp in ("per_case_only", "all_revenue"), str(ramp))
+    check("3 patients.ramp is per_case_only, the CEO seat's decision (MIN-4698)", ramp == "per_case_only", str(ramp))
     # The expected arrays, by this file's own arithmetic.
     exp_income, exp_patients = [], []
     run_all = run_case = 0.0
@@ -71,6 +70,10 @@ else:
           "json %s... plan %s..." % (tl["income_eur"]["values"][-3:], exp_income[-3:]))
     check("3 patients equals the plan's ramp (%s), running total, half-up, EUR %d a case" % (ramp, fp.PRICE_EUR_PER_CASE), tl["patients"]["values"] == exp_patients,
           "json %s... plan %s..." % (tl["patients"]["values"][-3:], exp_patients[-3:]))
+    ry = tl.get("income_run_rate_eur", {}).get("values")
+    check("3 income_run_rate_eur is the plan's revenue in that month x 12, in euros (a yearly figure, MIN-4698); none before the first paid month",
+          ry == [half_up(cons[m] * 12 * 1000) for m in range(1, N + 1)] and ry[:8] == [0] * 8 and ry[8] > 0,
+          "json %s... plan %s..." % (str(ry)[-40:], [half_up(cons[m] * 12 * 1000) for m in range(N - 2, N + 1)]))
     check("3 the last income is the plan's own 24-month figure x 1000 (EUR 164,352 for 26/180/560)",
           tl["income_eur"]["values"][-1] == half_up(sum(cons[m] for m in range(1, N + 1)) * 1000))
     check("3 income at month 14 is the plan's first year, EUR %dk" % fp.CONSERVATIVE[0], tl["income_eur"]["values"][13] == fp.CONSERVATIVE[0] * 1000)

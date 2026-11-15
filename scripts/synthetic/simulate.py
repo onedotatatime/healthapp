@@ -7,8 +7,9 @@ The timeline block (MIN-4696, built under MIN-4701 to the CTO's contract, MIN-46
 Founder, 2026-11-15, verbatim: "this diagrams dont seems so optimistic. It was supposed. Have we connected it to patient numbers during time? or connect the timeline
 with the money? maybe to have one diagram with all the numbers inside showing how having onboard patients and growing our model and getting everyday more and more
 correct diagnoses how the money saved and our income grow". Patients and income come from the funding model's own code (docs/business/funding_plan.py), never typed.
-Usage: python3 simulate.py <out_dir> [--ramp per_case_only|all_revenue] [--diagnoses] [--drop-method patient_months|case_year --status "<CEO seat quote>"]
-(writes <out_dir>/simulation.json; with no option it writes the timeline's required measures only)"""
+Round 2 (CEO seat, MIN-4698, 2026-11-15): the ramp is per_case_only (doctor-seat fees are income, not patients); the money and the diagnoses on screen are YEARLY figures
+at that month's network size, never running totals (patients and records with a match stay running totals); income is shown as the plan's yearly run rate.
+Usage: python3 simulate.py <out_dir> [--ramp per_case_only|all_revenue]     (writes <out_dir>/simulation.json; the default is what is committed)"""
 import argparse, json, math, os, random, sys, time
 from match import find_matches, features, K, MIN_SHARED
 from generate import make_cohort, SEED as GEN_SEED
@@ -33,23 +34,20 @@ SPEND_SOURCE_NAME = "Eurostat, current health expenditure (hlth_sha11_hf, all fi
 SPEND_SOURCE_URL = "https://ec.europa.eu/eurostat/databrowser/view/hlth_sha11_hf/default/table"
 SPEND_QUERY_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/hlth_sha11_hf?format=JSON&unit=MIO_EUR&icha11_hf=TOT_HF&geo=EU27_2020&time=2024"
 SPEND_OPENED = "2026-11-15"
-# Timeline (MIN-4701). The patient ramp is a parameter; the CEO seat picks one on MIN-4698.
-#   all_revenue   : patients = running total of the plan's revenue / EUR 40 (counts doctor-seat fees as cases). The CTO's contract formula.
-#   per_case_only : patients = running total of the plan's revenue x its per-case share (deck A6 line A / total, per plan year) / EUR 40 (Marketing, MIN-4697).
-TIMELINE_RAMP = "all_revenue"
+# Timeline (MIN-4701). The patient ramp is a parameter; the CEO seat decided on MIN-4698 (2026-11-15). The committed file is the default invocation (test_simulate.py check 6).
+#   per_case_only : patients = running total of the plan's revenue x its per-case share (deck A6 line A / total, per plan year) / EUR 40 (Marketing, MIN-4697). THE DEFAULT.
+#   all_revenue   : patients = running total of the plan's revenue / EUR 40 (counts doctor-seat fees as cases). The CTO's first contract formula; kept for comparison only.
+TIMELINE_RAMP = "per_case_only"
 TIMELINE_LABEL = "Plan months on synthetic records. A plan and a model, not a measurement"      # provisional: Marketing's string (MIN-4697 part 2) replaces it
 TIMELINE_PLAN_STATUS = "a plan, not a measurement (CEO seat, MIN-4503)"
-DROP_METHODS = ("patient_months", "case_year")
+# The CEO seat's wording, MIN-4698 decision comment 7b038e47: the modelled drop "is the yearly figure at that month's network size".
+TIMELINE_MEASURE_STATUS = ("CEO on the founder's behalf, MIN-4698, 2026-11-15: the modelled drop in cost is the yearly figure at that month's network size, "
+                           "a model on synthetic records and a plan, not a measurement")
 
 ap = argparse.ArgumentParser(description="Writes simulation.json")
 ap.add_argument("out_dir")
 ap.add_argument("--ramp", choices=("per_case_only", "all_revenue"), default=TIMELINE_RAMP, help="how the plan's months become patients (default: %s)" % TIMELINE_RAMP)
-ap.add_argument("--diagnoses", action="store_true", help="also write timeline.diagnoses (off until the CEO seat approves it)")
-ap.add_argument("--drop-method", choices=DROP_METHODS, default=None, help="also write timeline.drop_eur with this method (off until the CEO seat approves it)")
-ap.add_argument("--status", default=None, help="the CEO seat's decision, quoted; required with --diagnoses or --drop-method")
 args = ap.parse_args()
-if (args.diagnoses or args.drop_method) and not args.status:
-    ap.error("--diagnoses and --drop-method need --status, the CEO seat's decision quoted (MIN-4698); nothing is invented here")
 d = args.out_dir
 RUN_5000 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data", "synthetic", "run-5000.json")
 SARCOID = json.load(open(RUN_5000))["seeded"]["rare_sarcoid_like"]      # the run's S (MIN-4684 c): one set of 5,000 records on every screen
@@ -104,7 +102,6 @@ tl_seconds = time.time() - t0
 C = founds[-1]                                                      # the 12-step run's last count, computed in this run, never typed
 tl_effects = [EFFECT_START + (EFFECT_CEILING - EFFECT_START) * (f / C if C else 0.0) for f in tl_counts]
 tl_drop_pts = [round(BASE_COST_PCT - round(BASE_COST_PCT * (1 - e * r), 2), 2) for e, r in zip(tl_effects, tl_rates)]   # the published 2-decimal cost, as the euro block does
-tl_new = [b - a for a, b in zip([0] + patients, patients)]         # new patients in each month
 MATCH_DEF = "opted-in records in the sample with at least one match (k = %d, at least %d shared codes)" % (K, MIN_SHARED)
 if args.ramp == "all_revenue":
     ramp_text = ("patients[m] = half-up(sum of the plan's revenue in months 1 to m, in euros / %d); one paid case is one new patient; "
@@ -128,31 +125,28 @@ timeline = {
 }
 if args.ramp == "per_case_only":
     timeline["patients"]["per_case_k_eur"] = list(funding_plan.CONSERVATIVE_PER_CASE)
-if args.diagnoses:
-    run = 0.0
-    avoided = []
-    for new, e, r in zip(tl_new, tl_effects, tl_rates):
-        run += new * BASE_WRONG_PER_100 / 100 * e * r               # the model's formula on each month's new cases; one case is one visit (an assumption)
-        avoided.append(half_up_dec(run, 1))
-    timeline["diagnoses"] = {"unit": "wrong or missed diagnoses avoided, running total, in the model", "status": args.status,
-                             "method": "new cases x 5 / 100 x effect x match_rate, summed over months 1 to m; one case is one visit (an assumption)",
-                             "formula": "diagnoses[m] = half-up to 1 decimal of the sum over months 1 to m of new_patients x %d / 100 x effect x match_rate" % BASE_WRONG_PER_100,
-                             "values": avoided}
-if args.drop_method:
-    run = 0.0
-    drop_eur = []
-    for n, new, dp in zip(patients, tl_new, tl_drop_pts):
-        if args.drop_method == "patient_months":
-            run += n * dp / 100 * EU27_HEALTH_SPEND_EUR_HAB / 12      # every patient on board keeps the yearly drop, month by month
-        else:
-            run += new * dp / 100 * EU27_HEALTH_SPEND_EUR_HAB         # each paid case counts once, as one patient-year of spending
-        drop_eur.append(half_up(run))
-    methods = {"patient_months": "every patient on board keeps the modelled yearly drop, month by month: sum over months 1 to m of patients x drop_pts / 100 x %s / 12"
-                                 % EU27_HEALTH_SPEND_EUR_HAB,
-               "case_year": "each paid case counts once, as one patient-year of spending: sum over months 1 to m of new_patients x drop_pts / 100 x %s" % EU27_HEALTH_SPEND_EUR_HAB}
-    timeline["drop_eur"] = {"unit": "EUR, running total, modelled drop in cost for the patients in the network", "status": args.status,
-                            "method": args.drop_method, "formula": methods[args.drop_method] + ", half-up to the euro; drop_pts = %d - cost, cost at 2 decimals, as the euro block" % BASE_COST_PCT,
-                            "values": drop_eur}
+# Yearly figures at that month's network size (CEO seat, MIN-4698). Nothing below accumulates over months. Each is built from the published 2-decimal drop, as the euro block is.
+tl_dx_pts = [round(BASE_WRONG_PER_100 - round(BASE_WRONG_PER_100 * (1 - e * r), 2), 2) for e, r in zip(tl_effects, tl_rates)]   # fewer wrong or missed diagnoses per 100 visits
+diagnoses = [half_up_dec(n * dp / 100, 1) for n, dp in zip(patients, tl_dx_pts)]
+drop_eur = [half_up(n * dp / 100 * EU27_HEALTH_SPEND_EUR_HAB) for n, dp in zip(patients, tl_drop_pts)]
+income_year_eur = [half_up(cons[m] * 12 * 1000) for m in range(1, TL_N + 1)]      # the plan's yearly run rate: that month's revenue x 12
+timeline["income_run_rate_eur"] = {
+    "unit": "EUR a year, the plan's run rate at that month", "status": TIMELINE_PLAN_STATUS,
+    "formula": "income_run_rate[m] = half-up(the plan's revenue in month m, in euros x 12); the plan's conservative line; a plan, not a measurement",
+    "values": income_year_eur}
+timeline["diagnoses"] = {
+    "unit": "fewer wrong or missed diagnoses a year at that month's network size, in the model", "status": TIMELINE_MEASURE_STATUS,
+    "method": "year_at_network_size",
+    "assumption": "one visit per patient a year",
+    "formula": "diagnoses[m] = half-up to 1 decimal of patients[m] x drop_per_100[m] / 100; drop_per_100 = %d - wrong_or_missed_per_100 (series 2), at 2 decimals, as published; one visit per patient a year (an assumption)" % BASE_WRONG_PER_100,
+    "drop_per_100": tl_dx_pts, "values": diagnoses}
+timeline["drop_eur"] = {
+    "unit": "EUR a year, modelled drop in cost for the patients in the network at that month", "status": TIMELINE_MEASURE_STATUS,
+    "method": "year_at_network_size",
+    "per_inhabitant_eur": EU27_HEALTH_SPEND_EUR_HAB,
+    "formula": "drop_eur[m] = half-up to the euro of patients[m] x drop_pts[m] / 100 x %s (EUR per inhabitant a year, %s %d); drop_pts = %d - cost (series 3), at 2 decimals, as the euro block; a yearly figure, never a running total"
+               % (EU27_HEALTH_SPEND_EUR_HAB, SPEND_GEO, SPEND_YEAR, BASE_COST_PCT),
+    "drop_pts": tl_drop_pts, "values": drop_eur}
 
 sim = {
     "synthetic": True,
@@ -207,7 +201,5 @@ print("Euro, drop (EUR million, EU-27 %d):   %s -> %s   | per inhabitant %s -> %
       sim["euro"]["drop_eur_per_inhabitant"][0], sim["euro"]["drop_eur_per_inhabitant"][-1]))
 print("Timeline (%s ramp, plan months 1 to %d; the %d matching runs took %.1fs):" % (args.ramp, TL_N, TL_N, tl_seconds))
 for m in (9, 12, 18, 24):
-    print("  month %2d | patients %5d | matches %5d | effect %.3f | income EUR %7d%s%s" % (
-        m, patients[m - 1], tl_counts[m - 1], timeline["effect"][m - 1], income_eur[m - 1],
-        (" | diagnoses %.1f" % timeline["diagnoses"]["values"][m - 1]) if "diagnoses" in timeline else "",
-        (" | drop EUR %d" % timeline["drop_eur"]["values"][m - 1]) if "drop_eur" in timeline else ""))
+    print("  month %2d | patients %5d | matches %5d | effect %.3f | drop EUR %6d a year | income EUR %6d a year | fewer diagnoses %.1f a year | (income so far EUR %d)" % (
+        m, patients[m - 1], tl_counts[m - 1], timeline["effect"][m - 1], drop_eur[m - 1], income_year_eur[m - 1], diagnoses[m - 1], income_eur[m - 1]))
