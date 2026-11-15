@@ -153,7 +153,8 @@ export function SimulateView({ load = defaultLoad, vm = vmJson }: { load?: () =>
     later(() => setPhase('dots'), Math.max(plan ? plan.dotsAt : 0, 150));
   };
 
-  const running = phase === 'machine' || phase === 'dots' || phase === 'stages' || queued !== null;
+  // A queued click holds the button only while the records load: on a load error the button works again (MIN-4736 edge table).
+  const running = phase === 'machine' || phase === 'dots' || phase === 'stages' || (queued !== null && data.state === 'loading');
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
