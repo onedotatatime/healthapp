@@ -40,7 +40,6 @@
 .sim-enter{--i:0;animation:sim-enter var(--dur-step) var(--ease-out) backwards;animation-delay:calc(var(--i) * 60ms)}
 @keyframes sim-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes sim-fade{from{opacity:0}to{opacity:1}}
-@keyframes sim-land{from{transform:scale(.6)}to{transform:scale(1)}}
 @keyframes sim-baseline{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 
 /* The hero: the match field and the euro outcome in one glass card. The edge turns teal when the outcome lands. */
@@ -54,10 +53,9 @@
 .sim-stat-n{font:var(--text-h2);color:var(--color-text)}
 .sim-stat-net .sim-stat-n{font:var(--text-timer)}
 @media (min-width:900px){.sim-stat-net{display:none}}
-.sim-field{--cols:48;display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:2px;max-width:calc(var(--cols) * 10px + (var(--cols) - 1) * 2px)}
-.sim-field i{display:block;aspect-ratio:1;border-radius:2px;background:color-mix(in srgb,var(--field-border) 40%,transparent);opacity:0;transition:opacity var(--dur-land) var(--ease-out),background-color var(--dur-land) var(--ease-out)}
-.sim-field i.on{opacity:1}
-.sim-field i.m{background:var(--color-link);animation:sim-land var(--dur-land) var(--ease-out)}
+.sim-field{margin:0}
+.sim-field canvas{display:block}
+.sim-field-caption{margin:var(--space-2) 0 0;font:var(--text-doctor-body);color:var(--color-muted)}
 .sim-effect{margin:var(--space-2) 0 0;font:var(--text-doctor-body);color:var(--color-muted)}
 .sim-effect strong{font-weight:600;color:var(--color-text)}
 .sim-right p{margin:0}
@@ -80,6 +78,7 @@
 .sim-svg{display:block;width:100%;height:auto}
 .sim-svg text{font:400 11px var(--font);fill:var(--color-muted)}
 .sim-svg .axis{stroke:var(--color-border-strong);stroke-width:1}
+.sim-svg .tick{stroke:var(--color-border-strong);stroke-width:1}
 .sim-svg .grid{stroke:var(--color-border);stroke-width:1}
 .sim-svg .line{fill:none;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
 .sim-svg .line.model{stroke-dasharray:6 4}
