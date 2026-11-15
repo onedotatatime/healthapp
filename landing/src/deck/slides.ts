@@ -68,7 +68,7 @@ const mainSlides: Slide[] = [
       { n: 1, title: 'Photograph', icon: 'photo', text: 'Photograph an exam. Pathien reads every value, unit and range.' },
       { n: 2, title: 'Match', icon: 'match', text: "Name and ID must match the account. Anyone else's exam is refused." },
       { n: 3, title: 'Timeline', icon: 'timeline', text: 'Exams and logged symptoms in date order, in one timeline.' },
-      { n: 4, title: 'Handshake', icon: 'helix', text: "The doctor scans the patient's DNA-shaped code. She approves timed access." },
+      { n: 4, title: 'Handshake', icon: 'helix', text: "The doctor scans the patient's DNA-shaped code. The patient gives the doctor permission, for a set time." },
       { n: 5, title: 'Ask', icon: 'ask', text: 'The doctor asks. Each answer links to the exam it came from.' },
     ],
     links: [{ to: 'A2', label: 'Details, and what the demo runs for real → A2' }],
