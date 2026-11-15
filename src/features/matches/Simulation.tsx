@@ -136,6 +136,12 @@ export function SimulationView({ data, run, reduced, onReplay, at }: { data: Sim
   const hero = Boolean(matches || euro);
   const assumption = modelled ? COPY.simAssumption({ start: formatPct(data.assumption.start), ceiling: formatPct(data.assumption.ceiling) }) : undefined;
   const drop = euro ? shownDrop(euro.drop_pts, frame.idx) : 0;
+  // The timeline card is memoised (MIN-4724): these two props must not change identity on the 30-second clock's frames, or it re-renders at 60 fps.
+  const tie = useMemo(
+    () => (euro ? { amount: formatEuro((shownDrop(euro.drop_pts, n - 1) / 100) * euro.total_mio_eur), geography: euro.geography } : undefined),
+    [euro, n],
+  );
+  const curve = COPY.simAssumption({ start: formatPct(data.assumption.start), ceiling: formatPct(data.assumption.ceiling) });
   const network = xs[networkIndex(frame)];
   // The field: the dots follow the clock, the numbers about them change at step edges only (data-visible, data-matched, the aria-label).
   const edge = effectIndex(frame);
@@ -197,11 +203,7 @@ export function SimulationView({ data, run, reduced, onReplay, at }: { data: Sim
         </div>
       )}
       {data.timeline && (
-        <SimTimeline
-          timeline={data.timeline}
-          tie={euro ? { amount: formatEuro((shownDrop(euro.drop_pts, n - 1) / 100) * euro.total_mio_eur), geography: euro.geography } : undefined}
-          curve={COPY.simAssumption({ start: formatPct(data.assumption.start), ceiling: formatPct(data.assumption.ceiling) })}
-        />
+        <SimTimeline timeline={data.timeline} tie={tie} geography={data.euro?.geography} curve={curve} reduced={reduced} />
       )}
       <div className="sim-grid" data-count={data.series.length}>
         {data.series.map((s, i) => (

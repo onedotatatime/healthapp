@@ -134,17 +134,21 @@ export const TL_MONTHS = 24;
 export const TL_PILOT_FROM = 3;
 /** The x axis is labelled at every third month, ending on the last (spec A13 section 1). */
 export const TL_LABEL_EVERY = 3;
+/** The card's own clock (CTO, MIN-4720 section 2; spec A14 section 6): one month takes this long, linear in time. Time, not data. */
+export const TL_MS_PER_MONTH = 500;
+/** The card starts its run when this share of it is in view (CTO, MIN-4720 section 2). */
+export const TL_VIEW_START = 0.4;
 
 /**
  * The free pilot band and the first-paid marker, derived from the data and never typed: the first paid month is the first month with a
- * patient; the band is the months from the plan's pilot start up to the month before it. No paid month after the pilot start means neither.
+ * patient; the band is the months from the plan's pilot start (the file's `plan.pilot_from`, else `TL_PILOT_FROM`) up to the month before it. No paid month after the pilot start means neither.
  */
-export function pilotBand(patients: number[], months: number[]): { from: number; to: number; firstPaid: number } | null {
+export function pilotBand(patients: number[], months: number[], pilotFrom: number = TL_PILOT_FROM): { from: number; to: number; firstPaid: number } | null {
   const i = patients.findIndex((v) => v > 0);
   if (i < 0) return null;
   const firstPaid = months[i];
-  if (firstPaid <= TL_PILOT_FROM) return null;
-  return { from: TL_PILOT_FROM, to: firstPaid - 1, firstPaid };
+  if (firstPaid <= pilotFrom) return null;
+  return { from: pilotFrom, to: firstPaid - 1, firstPaid };
 }
 
 const nonNegative = (n: number) => z.array(z.number().min(0)).length(n);
@@ -160,7 +164,7 @@ const Unit = z.string().min(1);
 const RawTimeline = z.object({
   label: z.string().min(1),
   x: z.object({ unit: z.string(), values: z.array(z.number()).length(TL_MONTHS) }),
-  plan: z.object({ name: z.string().min(1), status: z.string().min(1), price_eur_per_case: z.number().positive() }),
+  plan: z.object({ name: z.string().min(1), status: z.string().min(1), price_eur_per_case: z.number().positive(), pilot_from: z.number().int().positive().optional() }),
   patients: z.object({ unit: Unit, values: runningTotal(TL_MONTHS), ramp: z.string() }),
   matches: z.object({ count: runningTotal(TL_MONTHS) }),
   income_run_rate_eur: z.object({ unit: Unit, status: z.string().min(1), values: nonNegative(TL_MONTHS) }),
@@ -178,7 +182,7 @@ const Drop = z.object({
 export type SimTimeline = {
   label: string;
   x: number[];
-  plan: { name: string; status: string; priceEurPerCase: number };
+  plan: { name: string; status: string; priceEurPerCase: number; pilotFrom?: number };
   patients: { unit: string; values: number[] };
   matches: { values: number[] };
   /** Our income: the plan's yearly run rate at each month. A plan, not a measurement. */
@@ -211,12 +215,12 @@ export function parseTimeline(raw: unknown): SimTimeline | undefined {
   const d = t.data;
   if (!d.x.values.every((v, i) => v === i + 1)) return undefined;
   if (d.patients.ramp !== 'per_case_only') return undefined;
-  if (!pilotBand(d.patients.values, d.x.values)) return undefined;   // the card's story is the free pilot and the first paid month: a block without them is not this plan
+  if (!pilotBand(d.patients.values, d.x.values, d.plan.pilot_from)) return undefined;   // the card's story is the free pilot and the first paid month: a block without them is not this plan
   if (basisOf(d.income_run_rate_eur.unit) !== 'yearly') return undefined;
   const out: SimTimeline = {
     label: d.label,
     x: d.x.values,
-    plan: { name: d.plan.name, status: d.plan.status, priceEurPerCase: d.plan.price_eur_per_case },
+    plan: { name: d.plan.name, status: d.plan.status, priceEurPerCase: d.plan.price_eur_per_case, ...(d.plan.pilot_from !== undefined ? { pilotFrom: d.plan.pilot_from } : {}) },
     patients: { unit: d.patients.unit, values: d.patients.values },
     matches: { values: d.matches.count },
     income: { unit: d.income_run_rate_eur.unit, status: d.income_run_rate_eur.status, values: d.income_run_rate_eur.values },
@@ -348,14 +352,6 @@ export function formatEuroK(eur: number): string {
   if (r >= 999_500) return `€${(r / 1e6).toFixed(1).replace(/\.0$/, '')}m`;
   return r >= 1000 ? `€${grouped.format(Math.round(r / 1000))}k` : `€${r}`;
 }
-/** A euro axis tick: thousands with at most one decimal, so 2,500 reads €2.5k and never a rounded €3k. */
-export function formatEuroTick(eur: number): string {
-  if (eur < 1000) return `€${+eur.toFixed(2)}`;
-  const k = Math.round((eur / 1000) * 10) / 10;
-  return `€${k}k`;
-}
-/** A tick of a unit-less axis (people, diagnoses): the value with at most two decimals, thousands comma. */
-export const formatTick = (v: number) => (Number.isInteger(v) ? grouped.format(v) : String(+v.toFixed(2)));
 
 /** Axis from zero to a round top at or above the data: 4 or 5 ticks. Never rescaled to make a curve steeper. */
 export function niceAxis(max: number): { top: number; ticks: number[] } {
