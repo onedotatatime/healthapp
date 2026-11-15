@@ -1,22 +1,24 @@
 /**
  * The 30-second simulation screen (MIN-4507; motion and euro outcome MIN-4608, spec docs/design/simulations-motion-spec.md).
- * One linear clock drives the whole screen: matches land one at a time, the counters tick, the two rates and the euro figure
- * move with the data and hold on the outcome frame. The permanent label, the assumption and the sources are static and on
+ * One linear clock drives the whole screen: the network sweeps in and the matches land as a moving front across the dot field
+ * (5,000 dots on one canvas, MIN-4682), the counters tick, the two rates and the euro figure move with the data and hold on the outcome frame. The permanent label, the assumption and the sources are static and on
  * screen the whole run. The chart is a few lines of SVG, no library. Under `prefers-reduced-motion` it shows the finished
  * state, starts no timer and has no replay.
  */
 import { Flask } from '@phosphor-icons/react';
-import { memo, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import simulationJson from '../../../data/synthetic/simulation.json';
 import { COPY } from './copy';
+import { DotField } from './DotField';
+import { labelledTicks } from './field';
 import {
-  clockAt, decimalsOf, effectIndex, formatEuro, formatPct, formatPerInhabitant, formatTotal, hasDropped, isModel, matchesAt,
-  networkIndex, niceAxis, parseSimulation, shownDrop, simDuration, valueAt, visibleCells,
+  SIM_LAND_FADE_MS, clockAt, decimalsOf, effectIndex, formatCount, formatEuro, formatPct, formatPerInhabitant, formatTotal, hasDropped, isModel,
+  matchesAt, networkIndex, niceAxis, parseSimulation, shownDrop, simDuration, valueAt, visibleCells,
   type SimEuro, type SimSeries, type SimulationData,
 } from './simData';
 import './matches.css';
 
-const W = 320, H = 190, L = 38, R = 10, T = 10, B = 34;
+const W = 320, H = 190, L = 38, R = 16, T = 10, B = 34;
 const COLORS: Record<number, string> = { 1: 'var(--color-link)', 2: 'var(--color-info)', 3: 'var(--color-flag-text)' };
 /** The entry stagger (Pix step 1): the position of an element in the order field, chart 1, chart 2, chart 3. */
 const stagger = (i: number) => ({ '--i': i }) as CSSProperties;
@@ -41,16 +43,6 @@ function useClock(duration: number, run: number, still: boolean, at?: number) {
   }, [duration, run, still, at]);
   return t;
 }
-
-/** The match field: a schematic of counts, one cell per synthetic record in the full network. It only changes at step edges, so it is memoised. */
-const Field = memo(function Field({ total, visible, matched }: { total: number; visible: number; matched: number }) {
-  const shown = Math.max(visible, matched);
-  return (
-    <div className="sim-field sim-enter" style={stagger(0)} aria-hidden="true" data-testid="sim-field">
-      {Array.from({ length: total }, (_, i) => <i key={i} className={i < matched ? 'on m' : i < shown ? 'on' : undefined} />)}
-    </div>
-  );
-});
 
 function Chart({ s, xs, xLabel, idx, landed, order, assumption }: {
   s: SimSeries; xs: number[]; xLabel: string; idx: number; landed: boolean; order: number; assumption?: string;
@@ -82,8 +74,8 @@ function Chart({ s, xs, xLabel, idx, landed, order, assumption }: {
           </g>
         ))}
         <line className="axis" x1={L} x2={L} y1={T} y2={H - B} />
-        <text x={L} y={H - B + 16} textAnchor="start">{xs[0]}</text>
-        <text x={W - R} y={H - B + 16} textAnchor="end">{xs[n - 1]}</text>
+        {xs.map((_, i) => <line key={i} className="tick" x1={x(i)} x2={x(i)} y1={H - B} y2={H - B + 4} />)}
+        {labelledTicks(n).map((i) => <text key={i} x={x(i)} y={H - B + 16} textAnchor="middle" data-testid="sim-tick-label">{formatCount(xs[i])}</text>)}
         <text x={(L + W - R) / 2} y={H - 4} textAnchor="middle">{xLabel}</text>
         {model && landed && (
           <g data-testid={`sim-baseline-${s.id}`}>
@@ -144,6 +136,11 @@ export function SimulationView({ data, run, reduced, onReplay, at }: { data: Sim
   const assumption = modelled ? COPY.simAssumption({ start: formatPct(data.assumption.start), ceiling: formatPct(data.assumption.ceiling) }) : undefined;
   const drop = euro ? shownDrop(euro.drop_pts, frame.idx) : 0;
   const network = xs[networkIndex(frame)];
+  // The field: the dots follow the clock, the numbers about them change at step edges only (data-visible, data-matched, the aria-label).
+  const edge = effectIndex(frame);
+  const fieldVisible = matches ? visibleCells(frame, xs) : 0;
+  const fieldMatched = matches ? matchesAt(frame, matches.count) : 0;
+  const fieldTail = matches ? matchesAt(frame, matches.count, SIM_LAND_FADE_MS) : 0;
   return (
     <main className="sim" data-testid="simulation" data-state={done ? 'done' : 'playing'}>
       <p className="sim-label" role="note" data-testid="sim-label">
@@ -158,7 +155,7 @@ export function SimulationView({ data, run, reduced, onReplay, at }: { data: Sim
         </div>
         <p className="sim-clock" data-testid="sim-x">
           <small>{data.x.label}</small>
-          {network}
+          {formatCount(network)}
         </p>
       </header>
       {hero && (
@@ -168,14 +165,25 @@ export function SimulationView({ data, run, reduced, onReplay, at }: { data: Sim
               <div className="sim-stats">
                 <p className="sim-stat sim-stat-net" data-testid="sim-x-hero">
                   <span className="sim-stat-label">{data.x.label}</span>
-                  <span className="sim-stat-n">{network}</span>
+                  <span className="sim-stat-n">{formatCount(network)}</span>
                 </p>
                 <p className="sim-stat" data-testid="sim-matches">
                   <span className="sim-stat-label">{COPY.simMatchesSoFar}</span>{' '}
-                  <span className="sim-stat-n sim-enter" style={stagger(0)}>{matchesAt(frame, matches.count)}</span>
+                  <span className="sim-stat-n sim-enter" style={stagger(0)}>{formatCount(fieldMatched)}</span>
                 </p>
               </div>
-              <Field total={xs[n - 1]} visible={visibleCells(frame, xs)} matched={matchesAt(frame, matches.count)} />
+              <div className="sim-field-block">
+                <div
+                  className="sim-field sim-enter" style={stagger(0)} data-testid="sim-field"
+                  data-visible={xs[edge]} data-matched={matches.count[edge]}
+                >
+                  <DotField
+                    total={xs[n - 1]} visible={fieldVisible} matched={fieldMatched} tail={fieldTail} still={reduced}
+                    label={COPY.simFieldLabel({ matched: matches.count[edge], visible: xs[edge] })}
+                  />
+                </div>
+                <p className="sim-field-caption" data-testid="sim-field-caption">{COPY.simFieldCaption}</p>
+              </div>
               {effect && (
                 <p className="sim-effect" data-testid="sim-effect">
                   {COPY.simEffectOfMatch} <strong>{formatPct(effect[effectIndex(frame)])}</strong>

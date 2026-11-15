@@ -57,4 +57,9 @@ export const COPY = {
   simSourcesPrefix: 'Baselines:',
   simDropped: 'Series not shown: no solid source.',
   simReplay: 'Play again',
+  // Spec A12 (MIN-4680), words by Anna (MIN-4683). A dot counts as one record; where it sits and which dots turn teal are not identity.
+  simFieldLabel: (a: { matched: number; visible: number }) =>
+    `Match field: ${a.matched.toLocaleString('en-US')} of ${a.visible.toLocaleString('en-US')} synthetic records have a match`,
+  simFieldCaption:
+    'One dot, one synthetic record. Teal is a match; position says nothing about who it is.',
 } as const;

@@ -13,7 +13,7 @@ export const SIM_GROW_MS = 400;
 /** Within one step: matches land and the values move between these two moments (ms into the step). */
 export const SIM_MATCH_WINDOW: readonly [number, number] = [400, 2100];
 export const SIM_LANDING_MS = 800;
-/** One match cell landing, and one new cell fading in (the --dur-land token). */
+/** One match dot landing (the --dur-land token): the dots that landed in the last 160 ms are the moving front. */
 export const SIM_LAND_FADE_MS = 160;
 /** Play time for a run of `steps` data points: entry, one step per interval, landing. */
 export const simDuration = (steps: number) => SIM_ENTRY_MS + (steps - 1) * SIM_STEP_MS + SIM_LANDING_MS;
@@ -164,26 +164,37 @@ export function valueAt(values: number[], idx: number): number {
 /** Records in the network at this moment (the x value). It swaps at the start of each interval, with no animation. */
 export const networkIndex = (f: SimFrame) => f.interval;
 
-/** Cells visible: the cells of the new records fade in one after the other over the first 400 ms of an interval. */
+const clamp01 = (v: number) => Math.min(Math.max(v, 0), 1);
+/** The ease of the dot sweep (stands for --ease-out in script, where a CSS curve cannot be used). */
+const easeOut = (p: number) => 1 - (1 - p) ** 3;
+
+/**
+ * Dots visible (spec A12, step 2): the new records of an interval appear as one sweep in reading order over the first 400 ms,
+ * no per-dot fade. At the start of an interval it is the previous step's count, at 400 ms it is the data's.
+ */
 export function visibleCells(f: SimFrame, xs: number[]): number {
   if (f.phase === 'entry') return xs[0];
   const from = xs[f.interval - 1] ?? xs[0];
   const to = xs[f.interval];
-  const added = to - from;
-  if (f.phase !== 'play' || added <= 0) return to;
-  const window = SIM_GROW_MS - SIM_LAND_FADE_MS;
-  return from + Math.min(added, Math.floor((f.tau * (added - 1)) / window) + 1);
+  if (f.phase !== 'play') return to;
+  return from + Math.round((to - from) * easeOut(clamp01(f.tau / SIM_GROW_MS)));
 }
-/** Matches counted so far: the matches of an interval land one at a time, evenly over the match window, in reading order. */
-export function matchesAt(f: SimFrame, counts: number[]): number {
+/**
+ * Matches counted so far (spec A12, step 3): `M(i-1) + floor(DeltaM x g)`, g the same linear progress that drives the values, so the
+ * counter, the dots and the line tips cannot disagree. The matched dots are the first `m` in reading order. `lag` asks for the
+ * count that long ago (ms): the dots between that and now are the moving front.
+ */
+export function matchesAt(f: SimFrame, counts: number[], lag = 0): number {
   if (f.phase === 'entry') return counts[0];
   if (f.phase !== 'play') return counts[f.interval];
   const prev = counts[f.interval - 1];
   const delta = counts[f.interval] - prev;
   const [from, to] = SIM_MATCH_WINDOW;
-  const landed = Math.floor(((f.tau - from) * delta) / (to - from) + 0.5);
-  return prev + Math.min(delta, Math.max(0, landed));
+  const g = lag === 0 ? f.g : clamp01((f.tau - lag - from) / (to - from));
+  return prev + Math.floor(delta * g);
 }
+/** A dot's radius as it lands: from FRONT_R_FROM of full to full, eased, over `SIM_LAND_FADE_MS`; `age` is 0 to 1 over that time. */
+export const landingScale = (age: number, from: number) => from + (1 - from) * easeOut(clamp01(age));
 
 /** The assumed effect shown: the value of the last completed step. */
 export const effectIndex = (f: SimFrame) => (f.phase === 'entry' ? 0 : f.g >= 1 ? f.interval : f.interval - 1);
@@ -192,6 +203,8 @@ export const effectIndex = (f: SimFrame) => (f.phase === 'entry' ? 0 : f.g >= 1 
 export const shownDrop = (drop: number[], idx: number) => +valueAt(drop, idx).toFixed(2);
 
 const grouped = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+/** A count of records or matches, with the thousands comma: 417, 1,250, 5,000. The axis and the figures write it the same way. */
+export const formatCount = (n: number) => grouped.format(Math.round(n));
 /** A euro amount given in millions, in Anna's written form: under one million in euros, then millions, then billions with one decimal. */
 export function formatEuro(mio: number): string {
   if (mio === 0) return '€0';

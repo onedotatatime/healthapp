@@ -34,8 +34,9 @@ N = len(sim["x"]["values"])
 s1, s2, s3 = sim["series"]
 eu, ma, asum = sim["euro"], sim["matches"], sim["assumption"]
 
-# 1. Identical to the base ref, except what the founder's 2026-11-15 decision ("lets go to 1200") changes: the network size.
-#    Changes by decision: cohort_size 400 -> 1200, x (100 ... 1200), series 1 values, the last value of series 2 and 3. Everything else stays.
+# 1. Identical to the base ref, except what the founder's 2026-11-15 decisions ("lets go to 1200", then "increase ... to 5000", MIN-4679) change: the network size.
+#    Changes by decision: cohort_size, x, series 1 values, series 2 and 3 values. Everything else stays. (At 5,000 the first frame is no longer empty,
+#    so series 2 and 3 no longer start at their baselines: MIN-4684 a, which supersedes the first-value check of MIN-4610.)
 try:
     base = json.loads(subprocess.check_output(["git", "-C", HERE, "show", "%s:data/synthetic/simulation.json" % BASE_REF], stderr=subprocess.STDOUT))
 except Exception as e:
@@ -48,18 +49,39 @@ if base is not None:
     for i in (1, 2):
         a, b = sim["series"][i], base["series"][i]
         same = same and all(json.dumps(a[k]) == json.dumps(b[k]) for k in ("id", "key", "label", "unit", "baseline", "sources"))
-        same = same and a["values"][0] == b["values"][0]
-    check("1 identical to %s: top-level keys (not cohort_size, x), series 1 id/key, series 2 and 3 id/key/label/unit/baseline/sources and first value" % BASE_REF, same)
-check("1 network: cohort_size 1200, x = 100 ... 1200 in 12 steps of 100",
-      sim["cohort_size"] == 1200 and sim["x"]["values"] == list(range(100, 1201, 100)) and sim["steps"] == 12)
+    check("1 identical to %s: top-level keys (not cohort_size, x), series 1 id/key, series 2 and 3 id/key/label/unit/baseline/sources" % BASE_REF, same)
+check("1 network: cohort_size 5000, x = round(5000 * i / 12) for i = 1..12, all whole numbers, 12 steps",
+      sim["cohort_size"] == 5000 and sim["steps"] == 12 and N == 12
+      and sim["x"]["values"] == [js_round(5000 * i / 12) for i in range(1, 13)] and all(type(v) is int for v in sim["x"]["values"])
+      and sim["x"]["values"][-1] == 5000)
 
-# 2. matches and the effect curve.
+# 1b. The cohort is the 5,000 records of data/synthetic/run-5000.json (MIN-4684 c): same country, age band, opt-in and codes, record by record.
+sys.path.insert(0, HERE)
+import random
+from generate import make_cohort, SEED as GEN_SEED
+from match import features
+run = json.load(open(os.path.join(D, "run-5000.json")))
+S = run["seeded"]["rare_sarcoid_like"]
+coh = make_cohort(random.Random(GEN_SEED), 5000, S)[0]
+same_coh = len(coh) == len(run["records"]) == 5000
+if same_coh:
+    for r, rec in zip(coh, run["records"]):
+        if not (rec[0] == r["country"] and run["age_bands"][rec[1]] == r["age_band"] and bool(rec[2]) == bool(r["matching_opt_in"])
+                and sorted(run["codes"][j] for j in rec[4]) == sorted(features(r))):
+            same_coh = False
+            break
+check("1b the cohort built with S = run-5000.json seeded.rare_sarcoid_like (%d) equals run-5000.json's 5,000 records (country, age band, opt-in, codes)" % S, same_coh)
+check("1b S is read from run-5000.json, not typed in simulate.py",
+      "run-5000.json" in open(os.path.join(HERE, "simulate.py")).read() and 'make_cohort(random.Random(GEN_SEED), SIM_N, SARCOID)' in open(os.path.join(HERE, "simulate.py")).read())
+
+# 2. matches and the effect curve. At 5,000 the first frame already has matches (107), so neither starts at zero.
 c = ma["count"]
-check("2 matches.count: %d integers, non-decreasing, first 0" % N,
-      len(c) == N and all(isinstance(v, int) for v in c) and all(b >= a for a, b in zip(c, c[1:])) and c[0] == 0)
+check("2 matches.count: %d whole numbers, non-decreasing" % N,
+      len(c) == N and all(type(v) is int for v in c) and all(b >= a for a, b in zip(c, c[1:])) and c[0] > 0)
 eff = asum["effect"]
-check("2 assumption.effect: %d values, first 0.1, last 0.2; start/ceiling/value" % N,
-      len(eff) == N and eff[0] == 0.1 and eff[-1] == 0.2 and asum["start"] == 0.1 and asum["ceiling"] == 0.2 == asum["value"])
+check("2 assumption.effect[k] == round(0.1 + 0.1 * count[k] / count[-1], 3) at all %d steps; last 0.2; start/ceiling/value" % N,
+      len(eff) == N and all(eff[k] == round(0.1 + 0.1 * c[k] / c[-1], 3) for k in range(N)) and eff[-1] == 0.2
+      and asum["start"] == 0.1 and asum["ceiling"] == 0.2 == asum["value"])
 
 # 3. The cost never rises, the euro drop never falls. If this fails: stop and post on MIN-4605, never tweak a constant.
 v3, dm = s3["values"], eu["drop_mio_eur"]
@@ -74,13 +96,17 @@ check("4 every euro array has %d values, 0 where the match count is 0" % N,
       all(len(eu[k]) == N for k in ("drop_pts", "drop_mio_eur", "drop_eur_per_inhabitant", "loss_mio_eur"))
       and all(dm[k] == 0 and eu["drop_eur_per_inhabitant"][k] == 0 for k in range(N) if c[k] == 0))
 
-# 5. The last row at 1,200 records (the CEO's 400-record row was 4.66, 10.26, 0.74, €13.6 billion, €30).
-check("5 last step (1,200 records, 473 matches): series 2 4.56, series 3 10.04, drop_pts 0.96, '€17.6 billion', '€39'",
-      ma["count"][-1] == 473 and s2["values"][-1] == 4.56 and v3[-1] == 10.04 and eu["drop_pts"][-1] == 0.96 and fmt(dm[-1]) == "€17.6 billion"
-      and "€%d" % js_round(eu["drop_eur_per_inhabitant"][-1]) == "€39"
+# 4b. Condition 6 over every 2-decimal drop 0.00 .. 2.00 (MIN-4610): the euro of a drop, as published, equals the formula at the printed total.
+bad = [d for d in range(0, 201) if fmt(round(d / 100 / 100 * 1833973.32, 2)) != fmt(d / 100 / 100 * 1834000)]
+check("4b condition 6 over every 2-decimal drop 0.00 .. 2.00 (201 values)", not bad, str(bad[:5]))
+
+# 5. The last row at 5,000 records (CTO scratch run on MIN-4684: 2,071 matches, 4.54, 9.99, 1.01, "€18.5 billion", "€41"; confirmed by this file's own run).
+check("5 last step (5,000 records, 2,071 matches): series 2 4.54, series 3 9.99, drop_pts 1.01, '€18.5 billion', '€41'",
+      ma["count"][-1] == 2071 and s2["values"][-1] == 4.54 and v3[-1] == 9.99 and eu["drop_pts"][-1] == 1.01 and fmt(dm[-1]) == "€18.5 billion"
+      and "€%d" % js_round(eu["drop_eur_per_inhabitant"][-1]) == "€41"
       and eu["total_mio_eur"] == 1833973.32 and eu["total_eur_per_inhabitant"] == 4074.88 and eu["year"] == 2024 and eu["geography"] == "EU-27")
 
-# 6. The file reproduces byte for byte (simulate.py builds its own 1,200-record cohort; run_all.sh does the same on a fresh run).
+# 6. The file reproduces byte for byte (simulate.py builds its own 5,000-record cohort; run_all.sh does the same on a fresh run).
 with tempfile.TemporaryDirectory() as t:
     subprocess.check_call([sys.executable, os.path.join(HERE, "simulate.py"), t], stdout=subprocess.DEVNULL, cwd=HERE)
     check("6 simulate.py reproduces simulation.json byte for byte", open(os.path.join(t, "simulation.json"), "rb").read() == open(os.path.join(D, "simulation.json"), "rb").read())
