@@ -17,7 +17,7 @@ import {
 } from "./contract.ts";
 import type { AnalysisFields } from "./analysis.ts";
 import { flagOf } from "./extract.ts";
-import type { DraftIn } from "./extract.ts";
+import type { DraftIn, LoincRow } from "./extract.ts";
 import type { IdentityProfile } from "./identity.ts";
 import { readEnv } from "./env.ts";
 import { fail } from "./http.ts";
@@ -175,6 +175,9 @@ export interface Store {
   unconfirm(env: HealthappEnv, patientId: string, docId: string): Promise<DocState | "not_confirmed" | null>;
   /** The owner opened a saved exam: clears `unchecked` on it. False when it was not marked (or not theirs, or not confirmed). */
   markOpened(env: HealthappEnv, patientId: string, docId: string): Promise<boolean>;
+  /** MIN-4689: the LOINC list (healthapp_<env>.lab_loinc), ordered by code. Throws when the table cannot be read; the
+   *  caller then reads without a list. Reference data, never a patient row. */
+  loincCodes(env: HealthappEnv): Promise<LoincRow[]>;
   /** The match keys of the patient's own profile (never sent to a client). */
   identityOf(env: HealthappEnv, uid: string): Promise<IdentityProfile | null>;
   /** Deletes an upload of the caller that is not saved (any status but confirmed). False when there is none. */

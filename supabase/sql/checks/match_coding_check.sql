@@ -1,6 +1,6 @@
 -- Checks for the patient's feature coding (014_match_coding.sql, MIN-4505). Renders with __SCHEMA__ ->
 -- healthapp_<env> (sed, as the other checks). Needs 005, 006 and 014. Writes no row: the coding is checked
--- through match_codes_from, which reads plain values. Synthetic data only.
+-- through match_codes_from, which reads plain values. Synthetic data only. Needs 020 for the LOINC part below.
 -- Output, one row per part (a part passes when failures = 0):
 --   cases    hand-written cases: each of the six markers positive, negative and as text, units, the
 --            extraction's HbA1c-as-haemoglobin key, latest-decides, and negation in English and Greek.
@@ -10,7 +10,13 @@
 --            says the opposite, a newer one that decides nothing, symptoms in words with negated ones mixed in)
 --            and coded back. failures = rows whose SQL codes differ from match.py's.
 -- match_coding_check(n) codes only the first n cohort rows (0 = cases only); the full run takes about a minute.
-create or replace function pg_temp.match_coding_check(cohort_rows integer default 400)
+-- LOINC step 1 (020_lab_loinc.sql, MIN-4689; needs 020 from here on): a lab row may carry a code (`l`). The cases
+-- below the "LOINC" line check that a code decides the test, that a code not on the list or no code keeps 014's
+-- keyword path, and that a code which disagrees with the printed name decides nothing.
+-- match_coding_check(n, coded_pct): coded_pct (0, 50 or 100) is the share of the cohort's lab rows that carry their
+-- code from lab_loinc (100 = every row, 50 = every other row, 0 = none: 014's path); each run must still give
+-- match.py's codes. All 5,000 rows take about 40 s on a laptop Postgres, several minutes on the hosted one.
+create or replace function pg_temp.match_coding_check(cohort_rows integer default 400, coded_pct integer default 0)
 returns table (part text, cases bigint, failures bigint, failed text[])
 language sql as $check$
 with c (name, labs, texts, specs, want) as (values
@@ -83,7 +89,24 @@ with c (name, labs, texts, specs, want) as (values
   -- the seeded persona's record (007), as the extraction stores it: the six codes match.py gives her
   ('Maria 007 record', '[{"o":1,"a":"ALT","k":"alt","n":20.3,"u":"U/L","f":"normal"},{"o":2,"a":"Anti-CCP","k":"anti_ccp","n":41.5,"u":"U/mL","f":"high"},{"o":3,"a":"Haemoglobin","k":"hemoglobin","n":14.2,"u":"g/dL","f":"normal"},{"o":4,"a":"C-reactive protein (CRP)","k":"crp","n":7.6,"u":"mg/L","f":"high"},{"o":5,"a":"Uric acid","k":"uric_acid","n":5.5,"u":"mg/dL","f":"normal"},{"o":6,"a":"ACE","k":"ace","n":42.2,"u":"U/L","f":"normal"},{"o":7,"a":"Rheumatoid factor (RF)","k":"rf","n":25.3,"u":"IU/mL","f":"high"},{"o":8,"a":"Erythrocyte sedimentation rate (ESR)","k":"esr","n":15.8,"u":"mm/h","f":"normal"},{"o":9,"a":"Anti-CCP","k":"anti_ccp","n":5.1,"u":"U/mL","f":"normal"},{"o":10,"a":"Erythrocyte sedimentation rate (ESR)","k":"esr","n":30.1,"u":"mm/h","f":"high"}]',
    '[{"t":"Joint pain and morning stiffness in both hands."}]', '["Rheumatology"]',
-   '{CRP_high,RF_positive,anti_CCP_positive,joint_pain,morning_stiffness,spec_rheumatology}')
+   '{CRP_high,RF_positive,anti_CCP_positive,joint_pain,morning_stiffness,spec_rheumatology}'),
+  -- LOINC (020). The printed names below give no keyword on purpose: only the code can decide them.
+  ('LOINC: a code decides the test (no keyword in the name)', '[{"o":1,"a":"Πρωτεΐνη φλεγμονής","l":"1988-5","n":12,"u":"mg/L","f":"high"}]', '[]', '[]', '{CRP_high}'),
+  ('LOINC: the hs-CRP code is the same test', '[{"o":1,"a":"Πρωτεΐνη φλεγμονής (ευαίσθητη)","l":"30522-7","n":7.5,"u":"mg/L","f":"high"}]', '[]', '[]', '{CRP_high}'),
+  ('LOINC: a code below the threshold decides "normal"', '[{"o":1,"a":"Πρωτεΐνη φλεγμονής","l":"1988-5","n":2,"u":"mg/L","f":"normal"},{"o":2,"a":"C-reactive protein (CRP)","k":"crp","n":40,"u":"mg/L","f":"high"}]', '[]', '[]', '{}'),
+  ('LOINC: the HbA1c mmol/mol code goes through 014''s unit conversion', '[{"o":1,"a":"Δείκτης γλυκαιμικού ελέγχου","l":"59261-8","n":53,"u":"mmol/mol","f":"high"}]', '[]', '[]', '{HbA1c_high}'),
+  ('LOINC: the HbA1c % code', '[{"o":1,"a":"Δείκτης γλυκαιμικού ελέγχου","l":"4548-4","n":5.2,"u":"%","f":"normal"}]', '[]', '[]', '{}'),
+  ('LOINC: a qualitative code read as text (HLA-B27)', '[{"o":1,"a":"Γονότυπος B (PCR)","l":"26043-0","x":"Θετικό"}]', '[]', '[]', '{HLA_B27_positive}'),
+  ('LOINC: an ANA titre code', '[{"o":1,"a":"Ανοσοφθορισμός Hep-2","l":"5048-4","x":"1:320"}]', '[]', '[]', '{ANA_positive}'),
+  ('LOINC: the code wins over the extraction''s key (only 014''s alias names guard)', '[{"o":1,"a":"Ουρικό οξύ","k":"uric_acid","l":"2160-0","n":2.1,"u":"mg/dL","f":"high"}]', '[]', '[]', '{creatinine_high}'),
+  ('LOINC: a code not on the list keeps the keyword path', '[{"o":1,"a":"C-reactive protein (CRP)","k":"crp","l":"99999-9","n":12,"u":"mg/L","f":"high"}]', '[]', '[]', '{CRP_high}'),
+  ('LOINC: a code not on the list and no keyword decides nothing', '[{"o":1,"a":"Πρωτεΐνη φλεγμονής","l":"99999-9","n":12,"u":"mg/L","f":"high"}]', '[]', '[]', '{}'),
+  ('LOINC: a code that disagrees with the printed name decides nothing (HbA1c printed, Hb code)', '[{"o":1,"a":"Glycated haemoglobin (HbA1c)","k":"hemoglobin","l":"718-7","n":6.8,"u":"%","f":"high"}]', '[]', '[]', '{}'),
+  ('LOINC: a disagreeing newer row decides nothing, the older row stands', '[{"o":1,"a":"Glycated haemoglobin (HbA1c)","k":"hemoglobin","l":"718-7","n":5.0,"u":"%","f":"normal"},{"o":2,"a":"HbA1c","n":7.4,"u":"%","f":"high"}]', '[]', '[]', '{HbA1c_high}'),
+  ('LOINC: a code that agrees with the printed name decides (CK)', '[{"o":1,"a":"Creatine kinase (CK)","l":"2157-6","n":640,"u":"U/L","f":"high"}]', '[]', '[]', '{CK_high}'),
+  ('LOINC: a code whose key matching does not use decides nothing (glucose)', '[{"o":1,"a":"Σάκχαρο","k":"glucose","l":"2345-7","n":250,"u":"mg/dL","f":"high"}]', '[]', '[]', '{}'),
+  ('LOINC: a listed code with no key keeps 014''s answer (CTO §4 as written: MCH keyed as haemoglobin)', '[{"o":1,"a":"Mean corpuscular haemoglobin (MCH)","k":"hemoglobin","l":"785-6","n":10,"u":"pg","f":"low"}]', '[]', '[]', '{Hb_low}'),
+  ('LOINC: no code keeps 014 (the same row without l)', '[{"o":1,"a":"Glycated haemoglobin (HbA1c)","k":"hemoglobin","n":6.8,"u":"%","f":"high"}]', '[]', '[]', '{HbA1c_high}')
 ), cases as (
   select c.name, c.want::text[] as want,
          __SCHEMA__.match_codes_from(c.labs::jsonb, c.texts::jsonb, c.specs::jsonb) as got
@@ -171,9 +194,9 @@ words (code, src, ord, en, el) as (values
                        when 'below' then greatest(st.lo - (st.hi - st.lo) * 0.25, st.lo * 0.5)
                        else case when st.unit = 'qual' then 0 else (st.lo + st.hi) / 2 end end as value_old
   from st
-), lab_rows as (
+), lab_rows0 as (
   -- the main (newest deciding) row, printed the way a lab of this kind prints it
-  select val.rn, val.nm || jsonb_build_object('o', 10, 'f', case val.s when 'above' then 'high' when 'below' then 'low' else 'normal' end)
+  select val.rn, val.mi, val.analyte_key, 1 as b, val.nm || jsonb_build_object('o', 10, 'f', case val.s when 'above' then 'high' when 'below' then 'low' else 'normal' end)
          || case
               when val.unit = 'qual' and val.v = 0 then jsonb_build_object('n', val.value, 'u', 'index')
               when val.unit = 'qual' and val.v = 1 then jsonb_build_object('x', case when val.s = 'above'
@@ -193,16 +216,30 @@ words (code, src, ord, en, el) as (values
   from val
   union all
   -- an older result that says the opposite: the newest one decides
-  select val.rn, val.nm || jsonb_build_object('o', 20 + val.mi, 'n', val.value_old, 'u', case when val.unit = 'qual' then 'index' else val.unit end,
+  select val.rn, val.mi, val.analyte_key, 2, val.nm || jsonb_build_object('o', 20 + val.mi, 'n', val.value_old, 'u', case when val.unit = 'qual' then 'index' else val.unit end,
                                               'f', case val.s_old when 'above' then 'high' when 'below' then 'low' else 'normal' end)
   from val where (val.rn + val.mi) % 4 = 0
   union all
   -- a newer result that decides nothing (borderline text, unknown unit, text in place of a number)
-  select val.rn, val.nm || jsonb_build_object('o', 1, 'f', 'unknown')
+  select val.rn, val.mi, val.analyte_key, 3, val.nm || jsonb_build_object('o', 1, 'f', 'unknown')
          || case when val.unit = 'qual' or val.code_above like '%\_positive' then jsonb_build_object('x', 'Equivocal')
                  when val.analyte_key in ('hba1c', 'ceruloplasmin', 'ck', 'ace') then jsonb_build_object('n', 999, 'u', 'mg/kg')
                  else jsonb_build_object('x', 'see comment') end
   from val where (val.rn + val.mi) % 5 = 1
+), kc as (
+  -- 020's codes per key: the mmol/mol code for a row printed in mmol/mol (HbA1c), the others in turn for the rest
+  select l.analyte_key,
+         array_agg(l.loinc order by l.loinc collate "C") filter (where l.ucum is distinct from 'mmol/mol') as pct,
+         array_agg(l.loinc order by l.loinc collate "C") filter (where l.ucum = 'mmol/mol') as mol
+  from __SCHEMA__.lab_loinc l where l.analyte_key is not null group by l.analyte_key
+), lab_rows as (
+  -- coded_pct of the lab rows carry their code (100: all; 50: every other row; 0: none, 014's path)
+  select r0.rn, r0.r || case
+           when coded_pct >= 100 or (coded_pct > 0 and (r0.rn + r0.mi + r0.b) % 2 = 0) then
+             jsonb_build_object('l', case when r0.r->>'u' = 'mmol/mol' then kc.mol[1]
+                                          else kc.pct[1 + ((r0.rn + r0.mi) % cardinality(kc.pct))::int] end)
+           else '{}'::jsonb end as r
+  from lab_rows0 r0 left join kc on kc.analyte_key = r0.analyte_key
 ), w as (
   select co.rn, words.*, words.code = any (co.codes) as present, case when co.rn % 2 = 0 then words.en else words.el end as word,
          row_number() over (partition by co.rn, words.src, words.code = any (co.codes)
@@ -242,7 +279,7 @@ select 'cases', count(*), count(*) filter (where got is distinct from want),
        array_agg(name || ' -> ' || got::text order by name) filter (where got is distinct from want)
 from cases
 union all
-select 'cohort', count(*), count(*) filter (where got is distinct from want),
+select 'cohort codes ' || coded_pct || '%', count(*), count(*) filter (where got is distinct from want),
        (array_agg(id || ' got ' || got::text || ' want ' || want::text order by id) filter (where got is distinct from want))[1:5]
 from agree
 $check$;

@@ -1,9 +1,9 @@
 import { assertEquals } from "jsr:@std/assert@1";
-import { ExtractResponse, FailReason } from "../_shared/contract.ts";
+import { ExtractResponse, FailReason, ResultRow } from "../_shared/contract.ts";
 import { ModelAnalysis } from "../_shared/analysis.ts";
-import type { ModelExtract } from "../_shared/extract.ts";
-import { ModelError } from "../_shared/model.ts";
-import { call, fakeAuth, fakeBlobs, fakeStore, PATIENT, PATIENT2 } from "../_shared/testkit_docs.ts";
+import { EXTRACT_SYSTEM, LOINC_LIST_HEADER, loincListText, ModelExtract } from "../_shared/extract.ts";
+import { ModelError, responseSchemaOf } from "../_shared/model.ts";
+import { call, FAKE_LOINC, fakeAuth, fakeBlobs, fakeStore, PATIENT, PATIENT2 } from "../_shared/testkit_docs.ts";
 import { autoConfirmable, KEEP_REFUSED_DAYS, MAX_READS } from "../_shared/docs.ts";
 import { makeHandler as makeConfirm } from "../healthapp-confirm-doc/handler.ts";
 import { makeHandler as makeUnconfirm } from "../healthapp-unconfirm-doc/handler.ts";
@@ -14,8 +14,8 @@ const GOOD: ModelExtract = {
   printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ", printed_id: "AK123456",
   header_confidence: { exam_date: 0.9, issuer: 0.9, printed_name: 0.95, printed_id: 0.95 },
   results: [
-    { analyte: "CRP", value: "18,4", unit: "mg/L", ref_text: "0 - 5", confidence: 0.95 },
-    { analyte: "Αιμοσφαιρίνη", value: "12,4", unit: "g/dL", ref_text: "12,0 - 16,0", confidence: 0.9 },
+    { analyte: "CRP", value: "18,4", unit: "mg/L", ref_text: "0 - 5", loinc: "1988-5", confidence: 0.95 },
+    { analyte: "Αιμοσφαιρίνη", value: "12,4", unit: "g/dL", ref_text: "12,0 - 16,0", loinc: "", confidence: 0.9 },
   ],
   findings: [],
 };
@@ -30,7 +30,7 @@ function setup(model: ModelExtract | Error = GOOD, analysis: ModelAnalysis | Err
   s.setBlobFiles(() => b.files.keys());
   let modelCalls = 0, analysisCalls = 0;
   /** What the extraction's model call and the analysis's model call were asked (timeout, attempts). */
-  const asked: { read?: { timeoutMs?: number; maxAttempts?: number }; analysis?: { timeoutMs?: number } } = {};
+  const asked: { read?: { timeoutMs?: number; maxAttempts?: number; parts?: unknown[] }; analysis?: { timeoutMs?: number } } = {};
   const tick = { ms: 0 };
   /** Runs before the model answers: a test hooks in here to change the world while the reading is in flight. */
   const hooks: { beforeModel?: () => void } = {};
@@ -44,7 +44,7 @@ function setup(model: ModelExtract | Error = GOOD, analysis: ModelAnalysis | Err
       second ? analysisCalls++ : modelCalls++;
       if (second) asked.analysis = { timeoutMs: c.timeoutMs };
       else {
-        asked.read = { timeoutMs: c.timeoutMs, maxAttempts: c.maxAttempts };
+        asked.read = { timeoutMs: c.timeoutMs, maxAttempts: c.maxAttempts, parts: c.parts };
         hooks.beforeModel?.();
       }
       const answer = second ? analysis : model;
@@ -618,4 +618,100 @@ Deno.test("automatic and manual confirm give the same record hash for the same d
   assertEquals(res.status, 200);
   assertEquals([auto === null, (await res.json()).sha256_record === auto], [false, true]);
   assertEquals([row(t, d.id).status, row(t, d.id).unchecked], ["confirmed", false]); // the patient's own confirm is never marked
+});
+
+// ---------------------------------------------------------------------------------------------
+// MIN-4689: LOINC step 1. The model picks a code from our list (lab_loinc); the server keeps only a code on the list.
+// ---------------------------------------------------------------------------------------------
+const codesSaved = (t: ReturnType<typeof setup>) => t.s.drafts.at(-1)?.results.map((r) => r.loinc);
+
+Deno.test("MIN-4689: a code on the list is kept and saved; an empty string is null; the log carries the counts only", async () => {
+  const t = setup();
+  const d = await newDoc(t);
+  const { doc } = await kick(t, d.id);
+  assertEquals(doc?.document.status, "confirmed");
+  assertEquals(codesSaved(t), ["1988-5", null]);
+  const done = t.logs.find((l) => l.status === "confirmed");
+  assertEquals([done?.loinc_coded, done?.loinc_dropped], [1, 0]);
+  assertEquals(t.logs.some((l) => l.loinc === "unavailable"), false);
+  // no patient answer changes shape: the saved rows the handlers return carry no code (ResultRow has no such field)
+  assertEquals(doc?.results.some((r) => "loinc" in r), false);
+  assertEquals("loinc" in ResultRow.parse({ ...doc!.results[0], loinc: "1988-5" }), false);
+});
+
+Deno.test("MIN-4689: a code that is not on the list is dropped, never stored, and counted", async () => {
+  const t = setup({
+    ...GOOD,
+    results: [
+      { ...GOOD.results[0], loinc: "99999-9" }, // not a code of ours
+      { ...GOOD.results[1], loinc: "2345-7" }, // a real LOINC code, but not on this list
+    ],
+  });
+  const d = await newDoc(t);
+  await kick(t, d.id);
+  assertEquals(codesSaved(t), [null, null]);
+  const done = t.logs.find((l) => l.status === "confirmed");
+  assertEquals([done?.loinc_coded, done?.loinc_dropped], [0, 2]);
+  assertEquals(JSON.stringify(t.logs).includes("99999-9"), false); // the log never carries a code or a word
+});
+
+Deno.test("MIN-4689: a code with spaces around it is trimmed and kept", async () => {
+  const t = setup({ ...GOOD, results: [{ ...GOOD.results[0], loinc: " 1988-5 " }, GOOD.results[1]] });
+  const d = await newDoc(t);
+  await kick(t, d.id);
+  assertEquals(codesSaved(t), ["1988-5", null]);
+});
+
+Deno.test("MIN-4689: the list cannot be read (error or empty): the reading still goes through, no list is sent, every code is null, one log line", async () => {
+  const missing = Object.assign(new Error("relation healthapp_dev.lab_loinc does not exist"), { code: "42P01" });
+  for (const [broken, why] of [[missing, "42P01"], [new TypeError("x"), "TypeError"], [[], "empty"]] as const) {
+    const t = setup();
+    t.s.setLoinc(broken as Error | []);
+    const d = await newDoc(t);
+    const { doc } = await kick(t, d.id);
+    assertEquals(doc?.document.status, "confirmed");
+    assertEquals(codesSaved(t), [null, null]);
+    assertEquals(t.logs.filter((l) => l.loinc === "unavailable"), [{ fn: "extract-exam", loinc: "unavailable", why }]);
+    assertEquals(JSON.stringify(t.logs).includes("does not exist"), false); // the error's message never reaches the log
+    assertEquals(t.asked.read?.parts?.length, 2); // the photo and "Read this document.", no list
+    const done = t.logs.find((l) => l.status === "confirmed");
+    assertEquals([done?.loinc_coded, done?.loinc_dropped], [0, 1]); // the model's CRP code had no list to be on
+  }
+});
+
+Deno.test("MIN-4689: the list goes to the model as one text part after the photo, built from the store's rows", async () => {
+  const t = setup();
+  const d = await newDoc(t);
+  await kick(t, d.id);
+  const parts = t.asked.read?.parts as { text?: string; inline_data?: unknown }[];
+  assertEquals(parts.length, 3);
+  assertEquals("inline_data" in parts[0], true);
+  assertEquals(parts[2].text, loincListText(FAKE_LOINC));
+  assertEquals(parts[2].text?.split("\n")[0], LOINC_LIST_HEADER);
+  for (const r of FAKE_LOINC) assertEquals(parts[2].text?.includes(`${r.loinc} | ${r.name_en} |`), true, r.loinc);
+  assertEquals(t.s.calls.filter((c) => c === "loincCodes").length, 1);
+});
+
+Deno.test("MIN-4689: the response schema has no enum on the code, and the system prompt carries the rule", () => {
+  const js = responseSchemaOf(ModelExtract) as { properties: { results: { items: { properties: Record<string, unknown>; required: string[] } } } };
+  const item = js.properties.results.items;
+  assertEquals(item.properties.loinc, { type: "string" });
+  assertEquals(item.required.includes("loinc"), true);
+  assertEquals(JSON.stringify(item).includes("enum"), false);
+  assertEquals(
+    EXTRACT_SYSTEM.includes("- loinc: for each result, the code from the LOINC list sent with the document whose test is the one printed (same analyte, same specimen, same kind of unit). Empty string when no code on the list fits. Never a code that is not on the list."),
+    true,
+  );
+});
+
+Deno.test("MIN-4689: results.loinc is written by the save's insert only; no update of a result row (confirm, edits) touches it", async () => {
+  const src = await Deno.readTextFile(new URL("../_shared/pgstore.ts", import.meta.url));
+  const updates = [...src.matchAll(/update \$\{[^}]+\}\.results set[^`]*/g)].map((m) => m[0]);
+  assertEquals(updates.length >= 1, true);
+  for (const u of updates) assertEquals(u.includes("loinc"), false, u);
+  // the insert names the column last and fills it, last too, from the draft's own field
+  const insert = src.match(/insert into \$\{S\}\.results \(([^)]*)\)\s*select ([\s\S]*?)\s+from jsonb_array_elements/);
+  const cols = insert?.[1].split(",").map((c) => c.trim()) ?? [];
+  const vals = insert?.[2].split(/,\s*(?![^(]*\))/).map((v) => v.trim()) ?? [];
+  assertEquals([cols.length, cols.at(-1), vals.length, vals.at(-1)], [14, "loinc", 14, "x.v->>'loinc'"]);
 });

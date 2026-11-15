@@ -44,14 +44,27 @@ SYMPTOMS = ["morning_stiffness", "low_back_pain", "joint_pain", "fatigue", "weig
 SPECIALTIES = ["spec_orthopaedics", "spec_rheumatology", "spec_gp", "spec_endocrinology", "spec_cardiology",
                "spec_gastroenterology", "spec_nephrology", "spec_pulmonology", "spec_neurology", "spec_hepatology"]
 IGNORED = {"img_normal"}   # carries no pattern information
+# LOINC step 1 (MIN-4689): LOINC code -> marker, for the codes of supabase/sql/020_lab_loinc.sql whose analyte_key is a
+# LAB_DEFS marker (seed_sql.ANALYTE_KEY). A lab row that carries one of these codes ("loinc") is that marker, whatever
+# its "marker" says; a row without a code, or with a code that is not here, keeps its "marker". The synthetic records
+# carry no code, so every output of this file is unchanged. test_match_loinc.py fails when this map and 020 disagree.
+LOINC = {
+    "2742-5": "ACE", "1742-6": "ALT", "33253-6": "ANA", "5048-4": "ANA", "8061-4": "ANA", "2157-6": "CK",
+    "1988-5": "CRP", "30522-7": "CRP", "2064-4": "Ceruloplasmin", "2160-0": "Creatinine", "30341-2": "ESR",
+    "4537-7": "ESR", "2276-4": "Ferritin", "26043-0": "HLA_B27", "4821-5": "HLA_B27", "17856-6": "HbA1c",
+    "4548-4": "HbA1c", "59261-8": "HbA1c", "718-7": "Hemoglobin", "13457-7": "LDL", "18262-6": "LDL",
+    "2089-1": "LDL", "11572-5": "RF", "11580-8": "TSH", "3016-3": "TSH", "3084-1": "UricAcid", "1989-3": "VitD",
+    "62292-8": "VitD", "26464-8": "WBC", "6690-2": "WBC", "33935-8": "anti_CCP", "53027-9": "anti_CCP",
+}
 
 
 def latest_labs(patient):
-    """Latest result per marker (month/year strings sort correctly)."""
+    """Latest result per marker (month/year strings sort correctly). The marker is the row's LOINC code's, if it has one."""
     best = {}
     for lab in patient["labs"]:
-        if lab["marker"] not in best or lab["date"] > best[lab["marker"]]["date"]:
-            best[lab["marker"]] = lab
+        marker = LOINC.get(lab.get("loinc"), lab["marker"])
+        if marker not in best or lab["date"] > best[marker]["date"]:
+            best[marker] = lab
     return best
 
 

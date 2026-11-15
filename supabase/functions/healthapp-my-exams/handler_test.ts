@@ -9,8 +9,8 @@ const DRAFT: DraftIn = {
   kind: "blood_test", language: "el", exam_date: "2025-05-14", issuer: "Εργαστήριο", printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ",
   printed_id: "AK123456", header_confidence: { exam_date: 0.9, issuer: 0.8, printed_name: 0.95, printed_id: 0.97 },
   results: [
-    { analyte: "CRP", analyte_key: "crp", value_num: 18.4, value_text: null, unit: "mg/L", ref_low: 0, ref_high: 5, ref_text: "0 - 5", flag: "high", confidence: 0.9 },
-    { analyte: "Αιμοσφαιρίνη", analyte_key: "hemoglobin", value_num: 12.4, value_text: null, unit: "g/dL", ref_low: 12, ref_high: 16, ref_text: "12,0 - 16,0", flag: "normal", confidence: 0.9 },
+    { analyte: "CRP", analyte_key: "crp", value_num: 18.4, value_text: null, unit: "mg/L", ref_low: 0, ref_high: 5, ref_text: "0 - 5", flag: "high", confidence: 0.9, loinc: null },
+    { analyte: "Αιμοσφαιρίνη", analyte_key: "hemoglobin", value_num: 12.4, value_text: null, unit: "g/dL", ref_low: 12, ref_high: 16, ref_text: "12,0 - 16,0", flag: "normal", confidence: 0.9, loinc: null },
   ],
   findings: [{ kind: "note", text_original: "Σχόλιο", text_lang: "el", finding_date: "2025-05-14", specialty: null, confidence: 0.8 }],
 };
