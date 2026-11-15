@@ -151,7 +151,6 @@ strong{font-weight:700}
 .fn-step.coral{margin-left:120px;width:580px;background:var(--coral);color:var(--night)}
 .fn-val{display:block;font-size:44px;line-height:1.15;font-weight:700;letter-spacing:-.03em}
 .fn-step p{font-size:26px;line-height:30px;margin:4px 0 8px}
-.fn-tag{display:block;font-size:44px;line-height:1.15;font-weight:700;letter-spacing:-.03em}
 
 /* ---- Chart ---- */
 .ch-card{position:absolute;left:120px;top:250px;width:1060px;height:540px;background:#fff;border-radius:48px;box-shadow:var(--sh)}
@@ -391,7 +390,6 @@ strong{font-weight:700}
 .th-card.accent{background:var(--mint-soft);box-shadow:none;outline:3px solid var(--teal);outline-offset:-3px}
 .th-fig{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 16px}
 .th-fig b{font-size:54px;line-height:60px;font-weight:800;letter-spacing:-.045em;color:var(--teal);white-space:nowrap}
-.th-tag{font-size:54px;line-height:60px;font-weight:500;letter-spacing:-.045em;color:var(--teal);white-space:nowrap}
 .th-unit{font-size:24px;line-height:29px;color:var(--soft);margin-top:4px}
 .th-card ul{list-style:none;margin:22px 0 0;padding:0;display:flex;flex-direction:column;gap:18px}
 .th-card li{font-size:26px;line-height:33px;color:var(--ink)}
