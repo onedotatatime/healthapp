@@ -28,6 +28,7 @@ interface Opts {
   setting?: string | undefined;
   hang?: Hang;
   exitCode?: number; // of the run command
+  mkdirExit?: number;
   badSums?: "script" | "run";
   runText?: string;
   throwOn?: "create" | "remove" | "run" | "lock" | "day" | "release";
@@ -82,7 +83,7 @@ async function setup(o: Opts = {}) {
       execs.push(command);
       if (command[0] === "mkdir") {
         calls.push("mkdir");
-        return { exitCode: 0, stdout: "" };
+        return { exitCode: o.mkdirExit ?? 0, stdout: "" };
       }
       calls.push("run");
       await maybeHang("run");
@@ -384,7 +385,7 @@ Deno.test("no key configured: error, and neither the lock nor the cap is touched
 });
 
 Deno.test("no key and no message in any line or log: a boxd error that carries a key-shaped string is reduced to a name and a code", async () => {
-  const leaky = Object.assign(new Error("401 for key bxd_SECRETSECRET123 on https://boxd.sh"), { name: "AuthenticationError", grpcCode: 16 });
+  const leaky = Object.assign(new Error(`401 for key ${["bxd", "SECRETSECRET123"].join("_")} on https://boxd.sh`), { name: "AuthenticationError", grpcCode: 16 });
   const t = await setup({ throwOn: "create", throwWith: leaky });
   const res = await t.run();
   const text = await res.text();
@@ -401,11 +402,34 @@ Deno.test("no key and no message in any line or log: a boxd error that carries a
   assertEquals(/bxd_/.test(okText + JSON.stringify(ok.logs)), false);
 });
 
+Deno.test("a failed mkdir on the machine: error, nothing uploaded, no run, the machine deleted", async () => {
+  const t = await setup({ mkdirExit: 1 });
+  const l = await lines(await t.run());
+  await t.settle();
+  assertEquals(l.at(-1), { t: "end", live: false, reason: "error" });
+  assertEquals(t.calls, ["create", "ready", "mkdir", "remove"]);
+  assertEquals(t.isHeld(), false);
+});
+
+Deno.test("the limit hits during the final delete: the browser was told timeout, the log says the same, and the machine is still deleted once", async () => {
+  const t = await setup({ hang: "remove", limitMs: 40 });
+  const l = await lines(await t.run());
+  assertEquals(l.map((x) => x.t === "phase" ? x.id : x.t), ["start", "created", "running", "done", "end"]);
+  assertEquals(l.at(-1), { t: "end", live: false, reason: "timeout" });
+  t.release("remove");
+  await t.settle();
+  assertEquals(t.removed, ["m-1"]); // the sequence's own delete finished: no second attempt
+  assertEquals(t.logs.at(-1)?.outcome, "timeout");
+  assertEquals(t.isHeld(), false);
+});
+
 Deno.test("the sources: the handler reads no environment and no database table; index.ts reads two names and logs no value", () => {
   const strip = (f: string) =>
     Deno.readTextFileSync(new URL(f, import.meta.url)).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "").replace(/\s\/\/.*$/gm, "");
   const h = strip("./handler.ts");
   assertEquals(/Deno\.env|console\.|\.rpc\(|\.from\(|healthapp_demo|unsafe\(/.test(h), false);
+  // nothing of the request reaches a command, a name or a key: the handler passes `req` on to sign-in and reads only its method
+  assertEquals(/req\.(headers|json|text|body|url|formData|arrayBuffer)|searchParams/.test(h), false);
   const idx = strip("./index.ts");
   assertEquals([...idx.matchAll(/Deno\.env\.get\("([A-Z_]+)"\)/g)].map((m) => m[1]).sort(), ["HEALTHAPP_BOXD_API_KEY", "HEALTHAPP_SIMULATE_LIVE"]);
   assertEquals(/Deno\.env\.(toObject|has|set)/.test(idx), false);
