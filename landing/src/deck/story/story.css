@@ -1,0 +1,172 @@
+/* The /story deck. Loaded after ../deck.css; the 1920x1080 canvas, tokens and type scale are the deck engine's.
+   Layout: docs/story/layout-spec.md. Motion: --ease-out only, no bounce, no spring, no parallax, no scrub; reduced motion = opacity only, .01s. */
+:root{--ease-out:cubic-bezier(.22,1,.36,1);--dur-fast:.2s;--dur-step:.4s;--dur-reveal:.8s;--faint:#A9BDBC}
+@media (prefers-reduced-motion:reduce){:root{--dur-fast:.01s;--dur-step:.01s;--dur-reveal:.01s}}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---- slides stay mounted (the frames never unmount): the outgoing one fades up, the incoming one rises ---- */
+.story .slide{display:block;visibility:hidden;opacity:0;translate:0 24px;pointer-events:none;
+  transition:opacity var(--dur-step) var(--ease-out),translate var(--dur-step) var(--ease-out),visibility 0s linear var(--dur-step)}
+.story .slide.is-before{translate:0 -24px}
+.story .slide.is-current{visibility:visible;opacity:1;translate:0 0;pointer-events:auto;
+  transition:opacity var(--dur-reveal) var(--ease-out) .2s,translate var(--dur-reveal) var(--ease-out) .2s,visibility 0s}
+.story .slide>[class^='ts-'],.story .slide>[class*=' ts-']{position:absolute;inset:0}
+@media (prefers-reduced-motion:reduce){.story .slide,.story .slide.is-before{translate:none}}
+
+/* ---- blocks fade up 24px once, 0.8 s, 0.1 s apart. Visible by default, so the outgoing slide keeps its content while it fades ---- */
+@keyframes rise-in{from{opacity:0;translate:0 24px}to{opacity:1;translate:0 0}}
+@keyframes rise-fade{from{opacity:0}to{opacity:1}}
+@keyframes rise-photo{from{opacity:0;translate:0 24px;scale:1.04}to{opacity:1;translate:0 0;scale:1}}
+@keyframes rise-paper{from{opacity:0;translate:0 40px;rotate:3deg}to{opacity:1;translate:0 0;rotate:0deg}}
+@keyframes rise-frame{from{opacity:0;translate:0 24px;scale:.98}to{opacity:1;translate:0 0;scale:1}}
+.story .slide.is-current .rise{animation:rise-in var(--dur-reveal) var(--ease-out) calc(var(--i,0) * .1s + .2s) both}
+.story .slide.is-current .rise-photo{animation-name:rise-photo;animation-duration:1.2s}
+.story .slide.is-current .rise-paper{animation-name:rise-paper;animation-delay:calc(var(--i,0) * .15s + .1s)}
+.story .slide.is-current .rise-frame{animation-name:rise-frame}
+@media (prefers-reduced-motion:reduce){
+  .story .slide.is-current .rise,.story .slide.is-current .rise-photo,.story .slide.is-current .rise-paper,.story .slide.is-current .rise-frame{animation-name:rise-fade;animation-delay:0s;animation-duration:.01s}
+}
+
+/* ---- chrome: no counter, no foot lockup; the lockup sits top right ---- */
+.head-lockup-story{width:150px;margin-left:auto}
+.chip{position:absolute;left:24px;bottom:24px;max-width:calc(100% - 48px);padding:8px 18px;border-radius:999px;background:rgba(234,243,242,.92);color:var(--ink);font-size:22px;line-height:1.2;font-weight:600;letter-spacing:0}
+
+/* ---- 1: intro (the cover, with a name, three facts and the portrait) ---- */
+.si-h1{margin:0;white-space:normal}
+.si-sub{position:absolute;left:120px;top:296px;width:1000px;font-size:40px;line-height:48px;font-weight:500;color:var(--ink)}
+.si-facts{position:absolute;left:120px;top:424px;width:900px}
+.si-facts li{margin-bottom:20px;padding-left:22px;border-left:4px solid var(--teal);font-size:28px;line-height:36px;font-weight:500}
+.si-photo{position:absolute;left:1230px;top:110px;width:560px;height:700px;margin:0}
+.si-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 30%;border-radius:32px;box-shadow:var(--sh)}
+
+/* ---- 2: memoir (two hospital photos, two spreadsheets laid on the desk like paper) ---- */
+.sm-h{left:940px;top:122px;width:860px;line-height:58px;text-wrap:balance}
+.sm-body{position:absolute;left:940px;top:282px;width:760px;font-size:28px;line-height:36px;font-weight:400}
+.sm-photo{position:absolute;top:122px;width:360px;height:828px;margin:0}
+.sm-photo-0{left:120px}
+.sm-photo-1{left:500px}
+.sm-photo img{display:block;width:100%;height:100%;object-fit:cover;border-radius:32px;box-shadow:var(--sh)}
+.sm-sheet{position:absolute;width:560px;height:350px;margin:0;background:#fff;border:12px solid #fff;border-radius:6px;
+  box-shadow:var(--sh),0 2px 6px rgba(11,59,61,.12),0 0 0 1px rgba(18,32,31,.08)}
+.sm-sheet img{display:block;width:100%;height:100%;object-fit:cover;object-position:0 0}
+.sm-sheet-0{left:820px;top:450px;transform:rotate(-2.2deg);z-index:1}
+.sm-sheet-1{left:1230px;top:590px;transform:rotate(1.6deg);z-index:2}
+.sm-foot{position:absolute;left:940px;top:958px;width:860px;font-size:22px;line-height:28px;color:var(--soft)}
+
+/* ---- 3 and 5: live frames ---- */
+.sl-support{position:absolute;left:120px;top:198px;width:1680px;height:40px}
+.sl-sup{position:absolute;left:0;top:0;width:1680px;font-size:28px;line-height:36px;color:var(--soft);opacity:0;translate:0 24px;
+  transition:opacity var(--dur-step) var(--ease-out),translate var(--dur-step) var(--ease-out)}
+.sl-sup:first-child:not(.is-on){translate:0 -24px}
+.sl-sup.is-on{opacity:1;translate:0 0;transition:opacity var(--dur-reveal) var(--ease-out) .1s,translate var(--dur-reveal) var(--ease-out) .1s}
+.sl-label{position:absolute;top:244px;line-height:22px;white-space:nowrap}
+.sl-label-l{left:120px}
+.sl-label-r{right:120px;text-align:right}
+.sl-label-solo{left:120px;top:784px;white-space:normal;width:600px}
+.sl-frame-pos{position:absolute}
+.sl-tag{position:absolute;margin:0}
+.sl-tag-duo{left:120px;top:942px}
+.sl-tag-solo{left:120px;top:850px;max-width:640px;border-radius:28px;text-wrap:balance}
+.sl-solo-h{left:120px;top:122px;width:600px;font-size:48px;line-height:52px}
+
+.live-frame{position:relative}
+.lf-browser{display:flex;flex-direction:column;width:max-content;background:#fff;border-radius:24px;overflow:hidden;box-shadow:var(--sh);transition:box-shadow var(--dur-step) var(--ease-out)}
+.lf-browser.is-hot{box-shadow:0 0 0 3px var(--teal),var(--sh)}
+.lf-edge{position:absolute;inset:0;border:2px solid rgba(18,32,31,.08);border-radius:24px;pointer-events:none}
+.lf-bar{display:flex;align-items:center;gap:16px;height:52px;padding:0 16px 0 20px;background:var(--mist);border-bottom:1px solid rgba(18,32,31,.08)}
+.lf-dots{display:flex;gap:10px}
+.lf-dots i{display:block;width:14px;height:14px;border-radius:50%;background:var(--skel)}
+.lf-address{height:36px;padding:0 20px;border-radius:999px;background:#fff;font-size:20px;line-height:36px;color:var(--soft);letter-spacing:0}
+.lf-bar .lf-badge{margin-left:auto}
+.lf-viewport{position:relative;overflow:hidden;background:#fff}
+.lf-shot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:0 0;user-select:none}
+.lf-iframe{position:absolute;left:0;top:0;border:0;background:#fff;transform-origin:0 0;opacity:0;transition:opacity var(--dur-step) ease}
+.lf-iframe.is-shown{opacity:1}
+
+.lf-phone{width:314px;height:656px}
+.lf-phone-body{position:relative;width:314px;height:656px;padding:10px;background:var(--night);border-radius:54px;box-shadow:var(--sh);
+  transition:translate var(--dur-reveal) var(--ease-out),scale var(--dur-reveal) var(--ease-out),box-shadow var(--dur-reveal) var(--ease-out)}
+.lf-phone .lf-viewport{border-radius:44px}
+.lf-phone-body{transform-origin:50% 0}
+.lf-phone.is-hot .lf-phone-body{translate:0 -6px;scale:1.04;box-shadow:0 0 0 3px var(--teal),0 36px 70px -22px rgba(11,59,61,.4)}
+.lf-notch{position:absolute;left:50%;top:20px;width:60px;height:10px;margin-left:-30px;border-radius:5px;background:var(--skel);z-index:2}
+.lf-badge-row{position:absolute;left:0;right:0;top:680px;display:flex;justify-content:center}
+
+.lf-badge{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 16px;border:0;border-radius:999px;background:var(--skel);color:var(--ink);
+  font:700 20px/1 var(--font);letter-spacing:.06em;text-transform:uppercase;transition:background var(--dur-step) ease}
+.lf-badge i{position:relative;display:none;width:10px;height:10px;border-radius:50%}
+.lf-badge.is-ready{background:var(--mist)}
+.lf-badge.is-live{background:var(--mint)}
+.lf-badge.is-live i{display:block;background:var(--teal)}
+.lf-badge.is-ready i{display:block;background:var(--soft)}
+@media (prefers-reduced-motion:no-preference){
+  .lf-badge.is-live i::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--teal);animation:lf-ring 1.6s ease-out infinite}
+}
+@keyframes lf-ring{from{transform:scale(1);opacity:.5}to{transform:scale(1.8);opacity:0}}
+.lf-badge.is-button{cursor:pointer}
+
+/* the Next pill: after a click inside the app the arrow keys go to the app, so the deck keeps a visible way forward */
+.next-pill{position:absolute;right:120px;top:952px;z-index:4;height:44px;min-width:88px;padding:0 24px;border:0;border-radius:999px;background:var(--teal);color:#fff;
+  font:700 20px/1 var(--font);letter-spacing:.04em;cursor:pointer;opacity:0;visibility:hidden;transition:opacity var(--dur-step) ease,visibility 0s linear var(--dur-step)}
+.next-pill.is-on{opacity:1;visibility:visible;transition:opacity var(--dur-step) ease}
+
+/* ---- 4: the question, drawn ---- */
+.sx-svg{position:absolute;left:500px;top:290px;width:920px;height:620px;overflow:visible}
+.sx-t{font-size:26px}
+.sx-spoke line,.sx-link{stroke-dasharray:1;stroke-dashoffset:0}
+@keyframes sx-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes sx-fade{from{opacity:0}to{opacity:1}}
+.story .slide.is-current .sx-spoke line{animation:sx-draw var(--dur-reveal) var(--ease-out) calc(var(--i) * .1s + .4s) both}
+.story .slide.is-current .sx-spoke circle{animation:sx-fade var(--dur-step) ease calc(var(--i) * .1s + 1s) both}
+.story .slide.is-current .sx-link{animation:sx-draw var(--dur-reveal) var(--ease-out) 1.5s both}
+.story .slide.is-current .sx-doctors{animation:sx-fade var(--dur-reveal) var(--ease-out) 1.7s both}
+
+/* ---- 5b: did you know (mint figures on night) ---- */
+.sn-rule{position:absolute;left:959px;top:250px;width:2px;height:650px;background:rgba(127,227,207,.25)}
+.sn-col{position:absolute;top:0;bottom:0}
+.sn-left{left:120px;width:780px}
+.sn-right{left:1020px;width:780px}
+.sn-col>*{position:absolute;margin:0}
+.sn-fig{top:250px;left:0;display:flex;align-items:baseline;gap:16px;white-space:nowrap}
+.sn-num{font-size:240px;line-height:.92;font-weight:700;letter-spacing:-.05em;color:var(--mint);font-variant-numeric:tabular-nums}
+.sn-unit{font-size:96px;line-height:1;font-weight:700;letter-spacing:-.03em;color:#fff}
+.sn-label{top:560px;left:0;width:760px;font-size:36px;line-height:44px;font-weight:600;color:#fff}
+.sn-climax{top:700px;left:0;width:760px;font-size:52px;line-height:58px;font-weight:700;letter-spacing:-.03em;color:#fff}
+.sn-mint{color:var(--mint)}
+.sn-source{top:840px;left:0;width:760px;font-size:22px;line-height:28px;color:var(--faint)}
+.sn-note{position:absolute;left:120px;top:906px;margin:0;font-size:19px;line-height:1.3;color:var(--faint)}
+
+/* ---- 6: close ---- */
+.sc-h{position:absolute;left:120px;top:270px;width:1200px;margin:0;font-size:132px;line-height:130px;font-weight:700;letter-spacing:-.04em;color:#fff}
+.sc-h span{display:block}
+.sc-support{position:absolute;left:120px;top:566px;width:1100px;margin:0;font-size:32px;line-height:40px;font-weight:500;color:#D5E7E5}
+.sc-contact{position:absolute;left:120px;top:664px;display:flex;align-items:center;gap:28px}
+.sc-photo{display:block;width:112px;height:112px;border-radius:50%;object-fit:cover;object-position:50% 30%}
+.sc-name{margin:0;font-size:36px;line-height:44px;font-weight:700;color:#fff}
+.sc-line{margin:0;font-size:28px;line-height:36px;color:var(--faint)}
+.sc-line a{color:var(--mint);text-decoration:none;border-bottom:2px solid rgba(127,227,207,.45)}
+.sc-lockup{position:absolute;left:120px;top:860px;width:300px}
+.sc-qr{position:absolute;left:1560px;top:280px;width:240px;height:240px;margin:0;padding:20px;background:#fff;border-radius:32px;box-shadow:var(--sh)}
+.sc-qr img{display:block;width:100%;height:100%}
+
+/* ---- the teal path: persistent, above the slides, never clickable ---- */
+.rail{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:3;pointer-events:none;--rail:var(--teal);--rail-ink:var(--soft);--rail-on:var(--ink)}
+.rail.is-night{--rail:var(--mint);--rail-ink:var(--faint);--rail-on:var(--mint)}
+.rail line{stroke:var(--rail);stroke-width:6;stroke-linecap:round;transition:stroke var(--dur-step) ease,opacity var(--dur-reveal) var(--ease-out)}
+.rail-dotted{stroke-dasharray:2 16}
+.rail-solid-live{opacity:0}
+.rail.is-live .rail-solid-live{opacity:1}
+.rail.is-live .rail-dotted{opacity:0}
+.rail-dot{fill:var(--coral);transform-box:fill-box;transform-origin:center}
+.rail.is-first .rail-label{opacity:0}
+.rail-label{transition:opacity var(--dur-reveal) var(--ease-out)}
+.rail-label text{font:600 22px var(--font);letter-spacing:.09em;text-transform:uppercase;fill:var(--rail-ink);transition:fill var(--dur-step) ease}
+.rail-tick{fill:var(--rail-ink);transition:fill var(--dur-step) ease}
+.rail-label.is-on text,.rail-label.is-on .rail-tick{fill:var(--rail-on)}
+
+/* ---- print: every slide, no path, no pill ---- */
+@media print{
+  .rail,.next-pill{display:none!important}
+  .story .slide{visibility:visible!important;opacity:1!important;translate:none!important}
+  .story .slide .rise,.story .slide .sx-spoke *,.story .slide .sx-doctors{animation:none!important}
+}
