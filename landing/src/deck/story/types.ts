@@ -3,7 +3,7 @@ import type { Theme } from '../types';
 import type { FrameId } from './config';
 
 export interface StoryBase {
-  /** Hash id of the slide (its first beat): #1 #2 #3 #5 #5b #5c #6. A later beat has its own id: #3b, and #4 (the third beat of slide 3). */
+  /** Hash id of the slide (its first beat): #1 #2 #3 #5 #5b #5c #6. A later beat has its own id: #4 (the second beat of slide 3). */
   id: string;
   theme: Theme;
   /** Eyebrow text. Optional. */
@@ -46,7 +46,7 @@ export interface StoryFrameSpec {
 
 export interface StoryLiveSlide extends StoryBase {
   template: 'story-live';
-  /** duo: a doctor browser frame and a patient phone (slides 3, 3b, 4). solo: headline on the left, one big frame (slide 5). full: one frame as large as the slide allows, no headline (slide 5c). */
+  /** duo: a doctor browser frame and a patient phone (slides 3, 4). solo: headline on the left, one big frame (slide 5). full: one frame as large as the slide allows, no headline (slide 5c). */
   variant: 'duo' | 'solo' | 'full';
   headline: string;
   /** One entry per beat. The frames never remount between beats. */

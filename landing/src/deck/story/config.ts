@@ -36,23 +36,23 @@ export interface FrameConfig {
 }
 
 export const STORY_FRAMES: Record<FrameId, FrameConfig> = {
-  // Slides 3, 3b and 4, left: the doctor's desktop view.
+  // Slides 3 and 4, left: the doctor's desktop view.
   doctor: {
     id: 'doctor',
     kind: 'browser',
     url: `${STORY_APP}/doctor`,
     title: 'Doctor view, live',
-    viewW: 1250, viewH: 644, iframeW: 1280, iframeH: 660,
+    viewW: 1250, viewH: 676, iframeW: 1280, iframeH: 692,
     fallback: '/story/fallback-doctor.webp',
     fallbackAlt: "The doctor's view of a shared record: results outside the printed range, a question box and a chart over time",
   },
-  // Slides 3, 3b and 4, right: the patient's phone view.
+  // Slides 3 and 4, right: the patient's phone view.
   patient: {
     id: 'patient',
     kind: 'phone',
     url: `${STORY_APP_STAGING}/patient`,
     title: 'Patient view, live',
-    viewW: 339, viewH: 734, iframeW: 390, iframeH: 844,
+    viewW: 355, viewH: 768, iframeW: 390, iframeH: 844,
     fallback: '/story/fallback-patient.webp',
     fallbackAlt: 'The patient\'s record on a phone: scan an exam, share with a doctor, and a list of exams',
   },

@@ -6,7 +6,7 @@
 | **Version** | v1, 15 Nov 2026 (Marketing, Anna Lytica). |
 | **Founder's brief** | 15 Nov 2026, verbatim, quoted in full at the end of this file. |
 | **Next** | Ren builds the slides on this branch (`feat/story-deck`). Pix's house rules apply (`docs/brand/brand-guidelines.md`). |
-| **Length** | 8 frames (1, 2, 3a, 3b, 4, 5, 5b, 6). About 3 minutes spoken, plus the live actions on 3b and 5. |
+| **Length** | 7 frames (1, 2, 3, 4, 5, 5b, 6). About 3 minutes spoken, plus the live actions on 3 and 5. (3b merged into 3, 15 Nov.) |
 
 **How to read each slide.** *Headline* is the big line. *Support* is at most one smaller line. *Labels* are every other word that shows on the slide. *Speaker notes* are what he says, about 15 to 30 seconds, in his voice. The founder's own sentences are kept as close to his words as possible; only grammar and rhythm are tidied.
 
@@ -15,7 +15,7 @@
 1. **No diagnosis claims**, from the app or about him. His condition is not named.
 2. **No insurers.** No statistic on any slide except the two on 5b (and the €3.5bn estimate that comes with the second), all from the pitch deck's sources. Dates and the "5,000 synthetic records" label are not statistics.
 3. **Never implied that matching or trials run on real people today.** Slides 4 and 5 are questions ("what if"). The live frame on slide 5 is labelled a simulation on synthetic records.
-4. **His own records are shown by his choice**, and the words say they are his own (slides 2, 3a, 3b).
+4. **His own records are shown by his choice**, and the words say they are his own (slides 2, 3).
 5. No exclamation marks. Pathien has no ™ or ®. Coral is fill only, no red (pitch deck rules 6 and brand note).
 
 ---
@@ -66,12 +66,9 @@
 
 **Headline:** And that's me today, still trying to figure this out.
 
-**Support:** And helping doctors find the answer.
+**Support:** none. *(Deleted 15 Nov 2026, founder: "delete". Was "And helping doctors find the answer.")*
 
-**Labels:**
-- Over the left frame (patient view, "Your record"): **My record · my own exams, since 2019**
-- Over the right frame (doctor view): **My doctor's view · the same exams**
-- Footer, small: *Live app · my own records, shown by my choice.*
+**Labels:** none. *(Deleted 15 Nov 2026, founder: "delete". Were "My record · my own exams, since 2019" and "My doctor's view · the same exams".)*
 
 **Visual note for Pix and Ren:** Two live app frames side by side, the patient view on the left (`/patient`, "Your record"), the doctor view on the right (`/doctor`). The founder showcases them live. Use the build that holds his own records (`https://staging.healthapp-8ui.pages.dev`, or production once it carries them; `docs/deploy.md` §2), never the synthetic twin.
 
@@ -79,15 +76,11 @@
 
 ---
 
-## Slide 3b: Today, the same slide while I act
+## Slide 3b: merged into slide 3 (15 Nov 2026)
 
-**Headline:** And that's me today, still trying to figure this out.
+With the support lines deleted, 3b looked the same as 3, so it is now one beat: `#3b` links to `#3`, and these notes follow 3a's. **Support:** none. *(Deleted, founder: "delete". Was "Now, by giving doctors the tool to analyse all my medical exams, we can finally make the difference.")* **Labels:** none.
 
-**Support (replaces 3a's support line):** Now, by giving doctors the tool to analyse all my medical exams, we can finally make the difference.
-
-**Labels:** the same as 3a.
-
-**Visual note for Pix and Ren:** The same frame as 3a; only the support line changes. Lefteris acts in both frames while he talks. Nothing else moves on the slide.
+**Visual note for Pix and Ren:** The same frame as 3a. Lefteris acts in both frames while he talks. Nothing else moves on the slide.
 
 **Speaker notes (~30 s, said while he acts):** "Let me show you. Here I add an exam to my record. Over here, my doctor sees it arrive, next to every exam before it, over time. And when my doctor asks a question, the answer points to the exam it came from. That's the part I never had in 2019. Now, by giving doctors the tool to analyse all my medical exams, we can finally make the difference."
 
@@ -175,7 +168,7 @@ Source line, small: *OECD, The Economics of Diagnostic Safety, 2025*
 | 1, 6 | Pathien lockup | `docs/brand/logo/pathien-lockup.svg` (light), `pathien-lockup-white.svg` (dark) |
 | 2 | Hospital photo, 2019 | The founder supplies it |
 | 2 | Two spreadsheet screenshots, 2019 | The founder supplies them (crop out names and IDs) |
-| 3a, 3b | Live frames: patient `/patient`, doctor `/doctor` | The build with his own records (`docs/deploy.md` §2) |
+| 3 | Live frames: patient `/patient`, doctor `/doctor` | The build with his own records (`docs/deploy.md` §2) |
 | 5 | Live frame: doctor `/doctor/simulate` | The same build |
 
 ## For questions (not on any slide)
