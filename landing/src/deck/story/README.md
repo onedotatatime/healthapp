@@ -1,6 +1,6 @@
 # /story: the founder's story deck
 
-A second web deck on the same engine as `/deck` (`../Deck.tsx` is untouched; `StoryDeck.tsx` is its sibling, because the story needs beats, a persistent path and live frames).
+A second web deck on the same engine as `/deck` (`../Deck.tsx` is untouched; `StoryDeck.tsx` is its sibling, because the story needs beats and live frames).
 
 - **Words:** `docs/story/story-deck-content.md` (Anna). Slides and notes: `../slides.story.ts`, `../notes.story.ts`. Copy them word for word.
 - **Layout:** `docs/story/layout-spec.md` (Pix). 1920x1080 canvas, tokens from `../deck.css`, extra styles in `story.css`.
@@ -8,8 +8,8 @@ A second web deck on the same engine as `/deck` (`../Deck.tsx` is untouched; `St
 
 ## Slides and keys
 
-`#1 #2 #3 (#3b = its second beat) #4 #5 #5b #6`. Arrows, space, Home/End, click (left third back), `F` fullscreen, `N` notes, `?clean&scale1` for screenshots, as in `/deck`.
-A key press or click on slide 3 moves to its second beat first, then to the next slide. The frames never remount between beats.
+`#1 #2 #3 #3b #4 #5 #5b #5c #6`. Arrows, space, Home/End, click (left third back), `F` fullscreen, `N` notes, `?clean&scale1` for screenshots, as in `/deck`.
+`#3`, `#3b` and `#4` are the three beats of one slide (slide 3): the same doctor browser frame and patient phone, only the header (and the line under it) changes, so the iframes are the same elements and a sign-in survives. `#4` has its own header (the first "what if", Brazil) and no line under it. `#5c` is the live simulation page, after "Did you know" (`#5b`). There is no timeline on any slide.
 
 ## Live frames (the one thing to know)
 
@@ -21,7 +21,7 @@ Every address is in one constant: **`STORY_FRAMES` in `config.ts`**. The CTO's d
 | `/story?live=<PRESENTER_KEY>` | Live frames load (the key is `PRESENTER_KEY` in `config.ts`). Not a secret: it only keeps casual visitors on screenshots. |
 | `/story?live=<PRESENTER_KEY>&static` or `/story?static` | Every frame is a screenshot, nothing is loaded (a bad venue network). `static` wins over the key. |
 
-With the key in the address, the three iframes mount when the deck starts and are never unmounted, so a sign-in survives slide changes. On slides 3, 3b and 5 they are visible and interactive by default, on top of the screenshot. There is **no ready logic and no timeout** (MIN-4733: an 8 s timer that was never cleared on `load` marked every frame failed and hid a working app). A slow app is a white frame for a second.
+With the key in the address, the four iframes mount when the deck starts and are never unmounted, so a sign-in survives slide changes. On slides 3, 3b, 4, 5 and 5c they are visible and interactive by default, on top of the screenshot. There is **no ready logic and no timeout** (MIN-4733: an 8 s timer that was never cleared on `load` marked every frame failed and hid a working app). A slow app is a white frame for a second.
 
 **`L`** switches both frames of the current slide between live and screenshot (the first press goes to the screenshot); clicking a frame's badge switches that one frame. The iframes stay mounted, so switching back keeps the sign-in. `L` does nothing without the key.
 
@@ -31,4 +31,4 @@ Keys: while the mouse is over a live frame the keys go to the app (the frame tak
 
 ## Fallback pictures
 
-`public/story/fallback-doctor.webp`, `fallback-patient.webp`, `fallback-simulate.webp`: synthetic captures (the doctor view of a synthetic patient, the patient home, the "Simulate matching" page on 5,000 synthetic records). They are what the deck shows by default, and when the presenter presses `L`. Replace a file, keep its name.
+`public/story/fallback-doctor.webp`, `fallback-patient.webp`, `fallback-simulate.webp`, `fallback-simulation.webp`: synthetic captures (the doctor view of a synthetic patient, the patient home, the "Simulate matching" page on 5,000 synthetic records, and the public `/simulation` page, captured signed out). They are what the deck shows by default, and when the presenter presses `L`. Replace a file, keep its name.

@@ -27,7 +27,7 @@
   .story .slide.is-current .rise,.story .slide.is-current .rise-photo,.story .slide.is-current .rise-paper,.story .slide.is-current .rise-frame{animation-name:rise-fade;animation-delay:0s;animation-duration:.01s}
 }
 
-/* ---- chrome: no counter, no foot lockup; the lockup sits top right ---- */
+/* ---- chrome: no counter, no foot lockup, no timeline; the lockup sits top right ---- */
 .head-lockup-story{width:150px;margin-left:auto}
 .chip{position:absolute;left:24px;bottom:24px;max-width:calc(100% - 48px);padding:8px 18px;border-radius:999px;background:rgba(234,243,242,.92);color:var(--ink);font-size:22px;line-height:1.2;font-weight:600;letter-spacing:0}
 
@@ -39,35 +39,41 @@
 .si-photo{position:absolute;left:1230px;top:110px;width:560px;height:700px;margin:0}
 .si-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 30%;border-radius:32px;box-shadow:var(--sh)}
 
-/* ---- 2: memoir (two hospital photos, two spreadsheets laid on the desk like paper) ---- */
-.sm-h{left:940px;top:122px;width:860px;line-height:58px;text-wrap:balance}
-.sm-body{position:absolute;left:940px;top:282px;width:760px;font-size:28px;line-height:36px;font-weight:400}
-.sm-photo{position:absolute;top:122px;width:360px;height:828px;margin:0}
-.sm-photo-0{left:120px}
-.sm-photo-1{left:500px}
-.sm-photo img{display:block;width:100%;height:100%;object-fit:cover;border-radius:32px;box-shadow:var(--sh)}
-.sm-sheet{position:absolute;width:560px;height:350px;margin:0;background:#fff;border:12px solid #fff;border-radius:6px;
+/* ---- 2: memoir (headline and words top left, two small hospital photos top right, two big spreadsheets laid on the desk like paper) ---- */
+.sm-h{left:120px;top:122px;width:960px;line-height:58px;text-wrap:balance}
+.sm-body{position:absolute;left:120px;top:276px;width:900px;font-size:28px;line-height:36px;font-weight:400}
+.sm-photo{position:absolute;top:116px;width:320px;height:330px;margin:0}
+.sm-photo-0{left:1130px}
+.sm-photo-1{left:1480px}
+.sm-photo img{display:block;width:100%;height:100%;object-fit:cover;border-radius:28px;box-shadow:var(--sh)}
+.sm-photo .chip{left:16px;bottom:16px;max-width:calc(100% - 32px);padding:6px 14px;font-size:20px}
+.sm-sheet{position:absolute;width:830px;height:474px;margin:0;background:#fff;border:12px solid #fff;border-radius:6px;
   box-shadow:var(--sh),0 2px 6px rgba(11,59,61,.12),0 0 0 1px rgba(18,32,31,.08)}
-.sm-sheet img{display:block;width:100%;height:100%;object-fit:cover;object-position:0 0}
-.sm-sheet-0{left:820px;top:450px;transform:rotate(-2.2deg);z-index:1}
-.sm-sheet-1{left:1230px;top:590px;transform:rotate(1.6deg);z-index:2}
-.sm-foot{position:absolute;left:940px;top:958px;width:860px;font-size:22px;line-height:28px;color:var(--soft)}
+/* the picture is shown 125% large, from just under the toolbar: the numbers read from the back of a room (the source is 1280 px wide) */
+.sm-sheet{overflow:hidden}
+.sm-sheet img{display:block;width:125%;height:125%;max-width:none;margin:-60px 0 0 -8px;object-fit:cover;object-position:0 0}
+.sm-sheet-0{left:120px;top:480px;transform:rotate(-1.1deg);z-index:1}
+.sm-sheet-1{left:970px;top:492px;transform:rotate(1deg);z-index:2}
+.sm-foot{position:absolute;left:120px;top:996px;width:1000px;font-size:22px;line-height:28px;color:var(--soft)}
 
-/* ---- 3 and 5: live frames ---- */
+/* ---- 3 (+3b, +4), 5 and 5c: live frames ---- */
+/* slide 3 (+3b, +4): the headline swaps per beat (a stack of headlines, one on at a time), the frames stay */
+.sl-heads .sl-h{left:0;opacity:0;translate:0 24px;transition:opacity var(--dur-step) var(--ease-out),translate var(--dur-step) var(--ease-out)}
+.sl-heads .sl-h:first-child:not(.is-on){translate:0 -24px}
+.sl-heads .sl-h.is-on{opacity:1;translate:0 0;transition:opacity var(--dur-reveal) var(--ease-out) .1s,translate var(--dur-reveal) var(--ease-out) .1s}
+.sl-heads{position:absolute;left:120px;top:0;width:1680px;height:0}
+.sl-heads .slide-h{left:0}
 .sl-support{position:absolute;left:120px;top:198px;width:1680px;height:40px}
 .sl-sup{position:absolute;left:0;top:0;width:1680px;font-size:28px;line-height:36px;color:var(--soft);opacity:0;translate:0 24px;
   transition:opacity var(--dur-step) var(--ease-out),translate var(--dur-step) var(--ease-out)}
 .sl-sup:first-child:not(.is-on){translate:0 -24px}
 .sl-sup.is-on{opacity:1;translate:0 0;transition:opacity var(--dur-reveal) var(--ease-out) .1s,translate var(--dur-reveal) var(--ease-out) .1s}
-.sl-label{position:absolute;top:244px;line-height:22px;white-space:nowrap}
+.sl-label{position:absolute;top:256px;line-height:22px;white-space:nowrap}
 .sl-label-l{left:120px}
 .sl-label-r{right:120px;text-align:right}
-.sl-label-solo{left:120px;top:784px;white-space:normal;width:600px}
 .sl-frame-pos{position:absolute}
-.sl-tag{position:absolute;margin:0}
-.sl-tag-duo{left:120px;top:942px}
-.sl-tag-solo{left:120px;top:850px;max-width:640px;border-radius:28px;text-wrap:balance}
-.sl-solo-h{left:120px;top:122px;width:600px;font-size:48px;line-height:52px}
+.sl-tag{position:absolute;left:120px;top:1000px;margin:0}
+.sl-solo-h{left:120px;top:122px;width:540px;font-size:48px;line-height:52px}
 
 .live-frame{position:relative}
 .lf-browser{display:flex;flex-direction:column;width:max-content;background:#fff;border-radius:24px;overflow:hidden;box-shadow:var(--sh);transition:box-shadow var(--dur-step) var(--ease-out)}
@@ -105,20 +111,9 @@
 .lf-badge.is-button{cursor:pointer}
 
 /* the Next pill: after a click inside the app the arrow keys go to the app, so the deck keeps a visible way forward */
-.next-pill{position:absolute;left:1160px;top:952px;z-index:4;height:44px;min-width:88px;padding:0 24px;border:0;border-radius:999px;background:var(--teal);color:#fff;
+.next-pill{position:absolute;left:1100px;top:1000px;z-index:4;height:44px;min-width:88px;padding:0 24px;border:0;border-radius:999px;background:var(--teal);color:#fff;
   font:700 20px/1 var(--font);letter-spacing:.04em;cursor:pointer;opacity:0;visibility:hidden;transition:opacity var(--dur-step) ease,visibility 0s linear var(--dur-step)}
 .next-pill.is-on{opacity:1;visibility:visible;transition:opacity var(--dur-step) ease}
-
-/* ---- 4: the question, drawn ---- */
-.sx-svg{position:absolute;left:500px;top:290px;width:920px;height:620px;overflow:visible}
-.sx-t{font-size:26px}
-.sx-spoke line,.sx-link{stroke-dasharray:1;stroke-dashoffset:0}
-@keyframes sx-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
-@keyframes sx-fade{from{opacity:0}to{opacity:1}}
-.story .slide.is-current .sx-spoke line{animation:sx-draw var(--dur-reveal) var(--ease-out) calc(var(--i) * .1s + .4s) both}
-.story .slide.is-current .sx-spoke circle{animation:sx-fade var(--dur-step) ease calc(var(--i) * .1s + 1s) both}
-.story .slide.is-current .sx-link{animation:sx-draw var(--dur-reveal) var(--ease-out) 1.5s both}
-.story .slide.is-current .sx-doctors{animation:sx-fade var(--dur-reveal) var(--ease-out) 1.7s both}
 
 /* ---- 5b: did you know (mint figures on night) ---- */
 .sn-rule{position:absolute;left:959px;top:250px;width:2px;height:650px;background:rgba(127,227,207,.25)}
@@ -148,24 +143,9 @@
 .sc-qr{position:absolute;left:1560px;top:280px;width:240px;height:240px;margin:0;padding:20px;background:#fff;border-radius:32px;box-shadow:var(--sh)}
 .sc-qr img{display:block;width:100%;height:100%}
 
-/* ---- the teal path: persistent, above the slides, never clickable ---- */
-.rail{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:3;pointer-events:none;--rail:var(--teal);--rail-ink:var(--soft);--rail-on:var(--ink)}
-.rail.is-night{--rail:var(--mint);--rail-ink:var(--faint);--rail-on:var(--mint)}
-.rail line{stroke:var(--rail);stroke-width:6;stroke-linecap:round;transition:stroke var(--dur-step) ease,opacity var(--dur-reveal) var(--ease-out)}
-.rail-dotted{stroke-dasharray:2 16}
-.rail-solid-live{opacity:0}
-.rail.is-live .rail-solid-live{opacity:1}
-.rail.is-live .rail-dotted{opacity:0}
-.rail-dot{fill:var(--coral);transform-box:fill-box;transform-origin:center}
-.rail.is-first .rail-label{opacity:0}
-.rail-label{transition:opacity var(--dur-reveal) var(--ease-out)}
-.rail-label text{font:600 22px var(--font);letter-spacing:.09em;text-transform:uppercase;fill:var(--rail-ink);transition:fill var(--dur-step) ease}
-.rail-tick{fill:var(--rail-ink);transition:fill var(--dur-step) ease}
-.rail-label.is-on text,.rail-label.is-on .rail-tick{fill:var(--rail-on)}
-
-/* ---- print: every slide, no path, no pill ---- */
+/* ---- print: every slide, no pill ---- */
 @media print{
-  .rail,.next-pill{display:none!important}
+  .next-pill{display:none!important}
   .story .slide{visibility:visible!important;opacity:1!important;translate:none!important}
-  .story .slide .rise,.story .slide .sx-spoke *,.story .slide .sx-doctors{animation:none!important}
+  .story .slide .rise{animation:none!important}
 }
