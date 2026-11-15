@@ -170,14 +170,19 @@ repo: { branchesOpen, branchesMerged, prsOpen, prsMerged, prsTotal,
   are counted and dropped, never stored or published.
 - **Config** (optional, `hand-set.json`): `config.repo.repoPath`, else `config.branches.repoPath`, else `~/AppDevelopment/healthapp`.
 
-## directions.json (the project goal's five directions, MIN-4497)
-`~/.healthapp-dashboard/directions.json` is a second hand-set file, read at every run (`--directions PATH` overrides). `install.sh` seeds it from
-`directions.sample.json` once (all five `not_started`, the five titles) and never overwrites it. Shape: `{"directions": [{"n": 1..5, "title", "status", "note", "updatedAt"}]}`,
-1 to 5 entries, `n` unique, `status` = `on_track | at_risk | off_track | not_started`, `title` at most 120 characters, `note` at most 300 (may be empty), `updatedAt` an ISO time
-**with an offset**. **Summary text only: no patient data, no exam content, no keys** (a key-shaped string is refused). The snapshot gets a top-level `directions` array sorted
-by `n`. A missing file omits the field (the page says "not reported yet"); a file that cannot be read or fails the check omits it too and puts the reason in
-`blocks.hand.error` (the hand data itself stays fresh), so a typo is never silent. **To set a status, edit the entry's `status`, `note` and `updatedAt` and save: the next run
-(within 3 minutes) carries it.**
+## The five directions, computed from Linear (MIN-4653, CTO decision on MIN-4561)
+No file to edit: `directions.json` and `--directions` are gone (an old file on the Mac is ignored). Each run, inside the `linear` block and from the same fetch, `snapshot.py`
+counts the issues under each direction's **root issues** (`DIRECTION_ROOTS` in `snapshot.py`; `config.directionRoots` in `hand-set.json` has the same shape,
+`[{"n": 1..5, "title", "roots": ["MIN-..."]}]`, and wins when present, so the map changes without a PR). A root may sit in two directions. **New work for a direction is a
+sub-issue under one of its roots**; a new top-level issue for a direction is added to `config.directionRoots`.
+- **Counted:** every issue under the roots (root included), leaves only (an umbrella parent is not one more item), minus state type `canceled`, `duplicate` and `backlog`.
+  Each is exactly one of: done (`completed`), blocked (not done, has an open blocker), in progress (`started`, In Review included), open.
+- **Status, first match wins:** nothing counted, or nothing done / in progress / blocked: `not_started`; all done: `on_track`; blocked and nothing in progress: `off_track`;
+  any blocked, or now at or after the `freeze` with something not done: `at_risk`; otherwise `on_track`.
+- **Note:** `7 of 12 done · 2 in progress · 2 blocked` (the last two only when above 0), `no issues mapped` when nothing is counted. Numbers only.
+- **Feed:** top-level `directions`, `[{n, title, status, note, updatedAt}]`, five entries; `updatedAt` is the time of the Linear read. Key-gated feed only (never the public
+  bundle), counts and no issue ids. When Linear fails, the last good value stays and `blocks.linear.asOf` shows its age; a bad `config.directionRoots` or a failure in the
+  count is a `directions not computed` warning on `blocks.linear` and keeps the last good value; with no Linear data the field is omitted and the page says "not reported yet".
 
 ## hand-set.json fields (copy `hand-set.sample.json`, edit, next run picks it up)
 `deadline`, `buildStart`, `freeze`, `submitBy`: ISO with offset. `current`: milestone id or null (null = first milestone not finished).
@@ -321,7 +326,7 @@ Tests: `dashboard/tests/test_chat_ui.py` (the model run in node, guards on the p
 
 ## The five directions panel (project goal, via coordinator, founder 2026-11-14)
 Direction A, under the clock: a "Project goal" card with five rows. **The page holds no title text** (CTO must-fix F2, MIN-4499): the titles come only from the key-gated
-feed, so they are not in the public page or the Pages bundle. **Feed field** `directions` (hand-set, optional): an array of `{n, title, status, note, updatedAt}`, `n` 1 to 5, `title` one short line (cut at 80 characters),
+feed, so they are not in the public page or the Pages bundle. **Feed field** `directions` (computed from Linear by `snapshot.py`, see above; optional): an array of `{n, title, status, note, updatedAt}`, `n` 1 to 5, `title` one short line (cut at 80 characters),
 `status` one of `on_track`, `at_risk`, `off_track`, `not_started` (spaces, hyphens and capitals are read too), `note` one sentence (cut at 200 characters), `updatedAt` an
 ISO time. A direction the feed does not send, sends with an unknown status, or a feed with no field (the public stub bundle, no key, a missing file), an empty array or
 junk, shows the neutral "Direction N" and "not reported yet" (dashed row, no title); nothing throws. Before the first snapshot the rows say "Loading the feed…", after a failed first read "The feed could not be

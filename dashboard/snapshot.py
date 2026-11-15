@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """snapshot.py — builds one dashboard snapshot (contract v1, MIN-4456) and writes it to a file and/or pushes it.
 
-    snapshot.py [--out PATH] [--push] [--home DIR] [--hand PATH] [--directions PATH] [--rates PATH] [--root DIR] [--now ISO]
+    snapshot.py [--out PATH] [--push] [--home DIR] [--hand PATH] [--rates PATH] [--root DIR] [--now ISO]
 
 Stdlib only (Python 3.9+). Five blocks, each with its own asOf and error:
   linear  Linear GraphQL, READ-ONLY queries (a test fails if this file contains a write operation); also the `forecast` block (MIN-4565)
@@ -10,8 +10,8 @@ Stdlib only (Python 3.9+). Five blocks, each with its own asOf and error:
   hand    ~/.healthapp-dashboard/hand-set.json (credits, demo steps, clean runs, milestone metadata)
   branches  the healthapp repo's branches: local git (read-only: no fetch, no lock, no write) and PRs through one `gh pr list` call (MIN-4460)
   repo      numbers only about the same repo: branches, PRs, commits, lines of code (MIN-4568). Same read-only git and one more `gh pr list`; every field names its source in build_repo
-Besides the blocks, `directions` (the project goal's five directions and their status, MIN-4497) is read from ~/.healthapp-dashboard/directions.json,
-a second hand-set file: summary text only, no patient data. A missing file omits the field; a bad file omits it too and puts the reason in blocks.hand.error.
+Besides the blocks, `directions` (the project goal's five directions and how close each is, MIN-4653) is computed inside the `linear` block from the same
+fetch: DIRECTION_ROOTS (or config.directionRoots in hand-set.json) names the root issues of each direction, and everything under them is counted. Counts only.
 A block that fails keeps its last good value, gets a newer `error`, keeps its old `asOf`; the others stay fresh.
 No key is ever printed, logged or put in the snapshot (see assert_clean).
 """
@@ -33,7 +33,15 @@ BLOCKS = ('linear', 'usage', 'money', 'hand', 'branches', 'repo')
 
 
 DIRECTION_STATUSES = ('on_track', 'at_risk', 'off_track', 'not_started')
-DIRECTIONS_FILE = 'directions.json'
+# The five directions of the project goal and the root issues each one is counted from (CTO decision, MIN-4561). A root may sit in two directions.
+# config.directionRoots in hand-set.json has the same shape and wins when present, so the map changes without a PR.
+DIRECTION_ROOTS = (
+    {'n': 1, 'title': 'Scan \u2192 AI reads', 'roots': ('MIN-4474', 'MIN-4554', 'MIN-4613')},
+    {'n': 2, 'title': 'Store extracted data', 'roots': ('MIN-4474', 'MIN-4477', 'MIN-4554')},
+    {'n': 3, 'title': 'Store + analyse original files (staging and main)', 'roots': ('MIN-4546',)},
+    {'n': 4, 'title': 'Real analysis + projection', 'roots': ('MIN-4547',)},
+    {'n': 5, 'title': 'Real matching', 'roots': ('MIN-4504', 'MIN-4649')},
+)
 
 
 class BlockError(Exception):
@@ -487,6 +495,66 @@ def blockers_of(n):
     return out
 
 
+def direction_roots(cfg):
+    """The direction map: config.directionRoots when present, else DIRECTION_ROOTS. [{n, title, roots}], 1 to 5 entries, n a different whole
+    number 1..5, roots a non-empty list of identifiers. Raises BlockError on a bad one, so a typo is a warning and never a silent wrong map."""
+    items = cfg.get('directionRoots')
+    if items is None:
+        return list(DIRECTION_ROOTS)
+    if not isinstance(items, list) or not 1 <= len(items) <= 5:
+        raise BlockError('config.directionRoots must be a list of 1 to 5 entries')
+    seen = set()
+    for d in items:
+        ok = (isinstance(d, dict) and set(d) == {'n', 'title', 'roots'} and isinstance(d['n'], int) and not isinstance(d['n'], bool) and 1 <= d['n'] <= 5
+              and d['n'] not in seen and isinstance(d['title'], str) and 0 < len(d['title'].strip()) <= 120
+              and isinstance(d['roots'], list) and d['roots'] and all(isinstance(r, str) and r for r in d['roots']))
+        if not ok:
+            raise BlockError('config.directionRoots: every entry needs a different n (1 to 5), a title and a non-empty list of root identifiers')
+        seen.add(d['n'])
+    return sorted(items, key=lambda d: d['n'])
+
+
+def build_directions(nodes, cfg, now, freeze):
+    """[{n, title, status, note, updatedAt}] for the five directions (CTO decision, MIN-4561). Every issue under a direction's roots (root included),
+    leaves only (an umbrella parent is not one more open item), canceled, duplicate and backlog left out. Each counted issue is exactly one of
+    done, blocked, in progress (state type started, In Review included) or open. Numbers only: no issue id and no title leaves this function."""
+    parent = parent_map(nodes)
+    by_id = {n['identifier']: n for n in nodes}
+    out = []
+    for d in direction_roots(cfg):
+        under = set()
+        for r in d['roots']:
+            under |= under_root(nodes, r)
+        counted = {i for i in under if (by_id[i].get('state') or {}).get('type') not in ('canceled', 'duplicate', 'backlog')}
+        parents = {parent[i] for i in counted if i in parent}
+        done = blocked = prog = 0
+        total = 0
+        for i in counted - parents:                                   # leaves
+            n = by_id[i]
+            stype = (n.get('state') or {}).get('type')
+            total += 1
+            if stype == 'completed':
+                done += 1
+            elif blockers_of(n):
+                blocked += 1
+            elif stype == 'started':
+                prog += 1
+        if total == 0 or done == prog == blocked == 0:
+            status = 'not_started'
+        elif done == total:
+            status = 'on_track'
+        elif blocked and not prog:
+            status = 'off_track'
+        elif blocked or now >= freeze:
+            status = 'at_risk'
+        else:
+            status = 'on_track'
+        note = 'no issues mapped' if total == 0 else '%d of %d done' % (done, total) + ''.join(
+            ' \u00b7 %d %s' % (c, label) for c, label in ((prog, 'in progress'), (blocked, 'blocked')) if c)
+        out.append({'n': d['n'], 'title': d['title'].strip(), 'status': status, 'note': note, 'updatedAt': iso(now)})
+    return out
+
+
 def forecast_times(pre_left, post_left, pace, now, freeze):
     """(finish_at, ready_at). Build work (M2 to M5) runs from now; M6 and M7 cannot start before the freeze (MIN-4564)."""
     finish = now + timedelta(hours=pre_left / pace) if pre_left > 0 else now
@@ -861,7 +929,7 @@ def build_branches(bcfg, now, tz, nodes, agents_cfg, role_labels, runner=default
 
 # ----------------------------------------------------------------------------- hand
 
-def build_hand(hand, warning=None):
+def build_hand(hand):
     need = ('deadline', 'buildStart', 'freeze', 'submitBy', 'milestones', 'credits', 'demo')
     miss = [k for k in need if k not in hand]
     if miss:
@@ -874,61 +942,7 @@ def build_hand(hand, warning=None):
     data = dict([(k, hand[k]) for k in ('deadline', 'buildStart', 'freeze', 'submitBy')] +
                 [('milestonesMeta', hand['milestones']), ('credits', hand['credits']), ('demo', hand['demo']),
                  ('current', hand.get('current'))])
-    if warning:                                       # a bad directions.json: the hand data is fresh, and the reason is on the block
-        data['_warning'] = warning
     return data
-
-
-# ----------------------------------------------------------------------------- directions
-
-def check_directions(doc):
-    """The directions of a parsed file, or raises BlockError with the reason. {"directions": [{n, title, status, note, updatedAt}, ...]}, 1 to 5
-    entries, n an integer 1..5 and unique, status one of DIRECTION_STATUSES, updatedAt an ISO time with an offset. Sorted by n. Text only."""
-    items = doc.get('directions') if isinstance(doc, dict) else None
-    if not isinstance(items, list) or not 1 <= len(items) <= 5:
-        raise BlockError('directions.json: "directions" must be a list of 1 to 5 entries')
-    out, seen = [], set()
-    for i, d in enumerate(items):
-        where = 'directions.json entry %d' % (i + 1)
-        if not isinstance(d, dict) or set(d) != {'n', 'title', 'status', 'note', 'updatedAt'}:
-            raise BlockError('%s: needs exactly n, title, status, note, updatedAt' % where)
-        n = d['n']
-        if isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= 5 or n in seen:
-            raise BlockError('%s: n must be a different whole number from 1 to 5' % where)
-        seen.add(n)
-        if not isinstance(d['title'], str) or not d['title'].strip() or len(d['title']) > 120:
-            raise BlockError('%s: title must be 1 to 120 characters' % where)
-        if d['status'] not in DIRECTION_STATUSES:
-            raise BlockError('%s: status must be %s' % (where, ' | '.join(DIRECTION_STATUSES)))
-        if not isinstance(d['note'], str) or len(d['note']) > 300:
-            raise BlockError('%s: note must be text of at most 300 characters' % where)
-        try:
-            if not isinstance(d['updatedAt'], str) or datetime.fromisoformat(d['updatedAt'].replace('Z', '+00:00')).tzinfo is None:
-                raise ValueError('needs text with an offset')           # no offset would be read as UTC, and the page shows "updated N min ago"
-        except Exception:
-            raise BlockError('%s: updatedAt must be an ISO time with an offset, such as 2026-11-14T22:00:00+02:00' % where)
-        if SECRET_RE.search(d['title'] + ' ' + d['note']):
-            raise BlockError('%s: the text looks like it holds a key' % where)
-        out.append({'n': n, 'title': d['title'].strip(), 'status': d['status'], 'note': d['note'], 'updatedAt': d['updatedAt']})
-    return sorted(out, key=lambda x: x['n'])
-
-
-def read_directions(path):
-    """(directions | None, warning | None). A missing file is (None, None): the field is omitted and the page says "not reported yet". A file that
-    cannot be read or fails the check is (None, reason): omitted too, and the reason goes to blocks.hand.error so a typo is never silent."""
-    try:
-        with open(path) as f:
-            raw = f.read()
-    except FileNotFoundError:
-        return None, None
-    except OSError:
-        return None, 'directions.json: the file cannot be read'
-    try:
-        return check_directions(json.loads(raw)), None
-    except BlockError as ex:
-        return None, str(ex)
-    except ValueError:
-        return None, 'directions.json: not valid JSON'
 
 
 # ----------------------------------------------------------------------------- repo numbers (MIN-4568)
@@ -1116,15 +1130,13 @@ def run_block(state, name, fn, now):
                        'error': {'message': clean(ex), 'at': iso(now)}}
 
 
-def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runner=default_runner, gh_bin=None, directions=None):
-    """`directions` is read_directions()'s (list | None, warning | None); omitted means the file does not exist."""
-    dirs, dirs_warning = directions or (None, None)
+def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runner=default_runner, gh_bin=None):
     cfg = dict(hand['config'])
     cfg['_deadline'] = hand['deadline']
     since = parse(hand['buildStart'])
     holder = {}
 
-    run_block(state, 'hand', lambda: build_hand(hand, dirs_warning), now)
+    run_block(state, 'hand', lambda: build_hand(hand), now)
 
     def usage():
         data, rows, U = build_usage(cfg, now, since, root, usage_bin, cfg.get('projectFilter'))
@@ -1148,6 +1160,13 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
             data['forecast'] = build_forecast(nodes, cfg, now, since, parse(hand['freeze']), parse(hand['submitBy']))
         except Exception as ex:
             data['_warning'] = '; '.join(w for w in (data.get('_warning'), 'forecast not computed: %s' % ex) if w)
+        try:                                           # same for the directions; a failure keeps the last good value, whose updatedAt shows its age
+            data['directions'] = build_directions(nodes, cfg, now, parse(hand['freeze']))
+        except Exception as ex:
+            data['_warning'] = '; '.join(w for w in (data.get('_warning'), 'directions not computed: %s' % ex) if w)
+            last = ((state.get('linear') or {}).get('data') or {}).get('directions')
+            if last:
+                data['directions'] = last
         return data
     run_block(state, 'linear', linear, now)
 
@@ -1174,6 +1193,8 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         snap.update({k: lin[k] for k in ('milestones', 'current', 'tasks', 'agents', 'lanes')})
         if lin.get('forecast'):
             snap['forecast'] = lin['forecast']
+        if lin.get('directions'):
+            snap['directions'] = lin['directions']
     elif h:
         snap['milestones'] = h.get('milestonesMeta', [])
     if h.get('current'):
@@ -1184,8 +1205,6 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         snap['money'] = dict(mo, credits=h.get('credits', []))
     if h:
         snap['demo'] = h['demo']
-    if dirs:
-        snap['directions'] = dirs
     if br:
         snap['branches'] = br
     if rp:
@@ -1225,7 +1244,6 @@ def main(argv=None):
     here = os.path.dirname(os.path.abspath(__file__))
     ap.add_argument('--home', default=HOME_DEFAULT)
     ap.add_argument('--hand')
-    ap.add_argument('--directions', help='the five directions of the project goal (default <home>/directions.json); a missing file omits the field')
     ap.add_argument('--rates', default=os.path.join(here, 'rates.json'))
     ap.add_argument('--root', default='~/.claude/projects')
     ap.add_argument('--usage-bin', default=USAGE_BIN_DEFAULT)
@@ -1241,8 +1259,7 @@ def main(argv=None):
     hand = json.load(open(hand_path))
     rates = json.load(open(a.rates))
     state = json.load(open(state_path)) if os.path.isfile(state_path) else {}
-    directions = read_directions(os.path.expanduser(a.directions or os.path.join(home, DIRECTIONS_FILE)))
-    snap = build(now, hand, rates, state, os.path.expanduser(a.root), a.usage_bin, linear_key, directions=directions)
+    snap = build(now, hand, rates, state, os.path.expanduser(a.root), a.usage_bin, linear_key)
     text = json.dumps(snap, separators=(',', ':'), sort_keys=False)
     assert_clean(text)
     tmp = state_path + '.tmp'
