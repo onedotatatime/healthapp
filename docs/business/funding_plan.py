@@ -19,10 +19,11 @@ PILOT_FROM = 3
 def rng(a, b): return range(a, b+1)
 
 
-def revenue(y1, y2, y3):
+def revenue(y1, y2, y3, h=H):
     """Slide 10's yearly totals as months: paid revenue starts at plan month 9 (after the free pilot),
-    climbs in a straight line inside each year, and is held flat after year 3 (no growth assumed)."""
-    r = {m:0.0 for m in rng(1,H)}
+    climbs in a straight line inside each year, and is held flat after year 3 (no growth assumed).
+    h is the last month returned (default H, the plan's own horizon; simulate.py's ten_years block asks for 120, MIN-4748: the same flat hold, further out)."""
+    r = {m:0.0 for m in rng(1,h)}
     k = y1/21.0
     for i in rng(1,6): r[8+i] = k*i
     s = r[14]
@@ -30,7 +31,7 @@ def revenue(y1, y2, y3):
         e = s + (tot - 12*s)/6.5
         for i in rng(1,12): r[start-1+i] = s + (e-s)*i/12
         s = r[start+11]
-    for m in rng(39,H): r[m] = s
+    for m in rng(39,h): r[m] = s
     return r
 
 
