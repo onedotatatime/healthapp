@@ -1,0 +1,86 @@
+# Nightly e2e-live (MIN-4718; CTO decision 5 on MIN-4714; conductor testing-strategy §3 and §5). Docs: docs/nightly.md.
+#
+# What it is: the live browser specs that are safe to repeat, run once a night against the SYNTHETIC dev twin
+# (https://staging-dev.healthapp-8ui.pages.dev). Never a PR gate: it has no pull_request trigger and is not a required check.
+# It never touches the other staging address, the one that reads the founder's real records (MIN-4658): the address below
+# is written here, scripts/nightly-guard.sh fails the run unless it is exactly that string, and nothing in this file names the other one.
+#
+# Specs (5 of 7, through 3 configs, in sequence; each config step still runs if the one before it was red):
+#   playwright.dashboard.config.ts   doctor-dashboard
+#   playwright.glass.config.ts       glass-redesign
+#   playwright.simulation.config.ts  simulate, simulations, recruit
+# Left out on purpose: exam-journey (a real upload and a real Gemini read, a row every night) and doctor-diagnoses (three
+# paid model calls a run). Both break §5 as nightly runs; they stay manual.
+#
+# A red run becomes Linear issues: scripts/nightly-to-linear.mjs reads the Playwright JSON reports and opens ONE issue per
+# failing spec file ("Nightly red · e2e-live/<file> · <date>", label Quality Engineer, Lane B, fixed or deleted within 24
+# hours; E2E has no Linear user, so the assignee is Cron Jobbidis like every other E2E issue). If an open issue with the
+# same "Nightly red · e2e-live/<file> ·" prefix exists, it comments there instead. Only titles, file:line, the project name
+# and the run URL are sent; no error text and no page text. If the Linear call fails the job stays red and the failing
+# specs are listed in the job summary.
+#
+# Secrets (repository secrets, never printed): HEALTHAPP_DEMO_PASSCODE (the DEV demo login) and LINEAR_API_KEY_NIGHTLY.
+# Both are passed only to the steps that need them.
+#
+# GitHub runs `schedule` and `workflow_dispatch` only from the default branch (main). On staging this file is inert; it
+# goes live with the next staging -> main release.
+name: Nightly
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+jobs:
+  e2e-live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HEALTHAPP_LIVE_URL: https://staging-dev.healthapp-8ui.pages.dev
+    steps:
+      # The specs must match the code deployed on staging-dev.
+      - uses: actions/checkout@v4
+        with: { ref: staging }
+      - name: Guard (target and passcode)
+        id: guard
+        env:
+          HEALTHAPP_DEMO_PASSCODE: ${{ secrets.HEALTHAPP_DEMO_PASSCODE }}
+        run: scripts/nightly-guard.sh
+      - name: Self-test of the nightly scripts
+        run: node --test scripts/nightly-scripts.test.mjs
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      # webkit: the dashboard and glass configs run an iPhone project on it.
+      - name: Install browsers
+        id: install
+        run: npx playwright install --with-deps chromium webkit
+      - name: doctor-dashboard
+        if: ${{ !cancelled() && steps.guard.outcome == 'success' && steps.install.outcome == 'success' }}
+        env:
+          HEALTHAPP_DEMO_PASSCODE: ${{ secrets.HEALTHAPP_DEMO_PASSCODE }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/nightly/dashboard.json
+        run: npx playwright test -c playwright.dashboard.config.ts --reporter=list,json
+      - name: glass-redesign
+        if: ${{ !cancelled() && steps.guard.outcome == 'success' && steps.install.outcome == 'success' }}
+        env:
+          HEALTHAPP_DEMO_PASSCODE: ${{ secrets.HEALTHAPP_DEMO_PASSCODE }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/nightly/glass.json
+        run: npx playwright test -c playwright.glass.config.ts --reporter=list,json
+      - name: simulate, simulations, recruit
+        if: ${{ !cancelled() && steps.guard.outcome == 'success' && steps.install.outcome == 'success' }}
+        env:
+          HEALTHAPP_DEMO_PASSCODE: ${{ secrets.HEALTHAPP_DEMO_PASSCODE }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/nightly/simulation.json
+        run: npx playwright test -c playwright.simulation.config.ts --reporter=list,json
+      # Runs after any outcome except a cancel. Green and non-empty: it only writes the summary. Red: it files the issues.
+      # Nothing failed but nothing passed (all skipped, no report): it exits 1, so an empty run is never green.
+      - name: Red specs to Linear and job summary
+        if: ${{ !cancelled() }}
+        env:
+          LINEAR_API_KEY_NIGHTLY: ${{ secrets.LINEAR_API_KEY_NIGHTLY }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/nightly-to-linear.mjs "$RUNNER_TEMP/nightly/dashboard.json" "$RUNNER_TEMP/nightly/glass.json" "$RUNNER_TEMP/nightly/simulation.json"
