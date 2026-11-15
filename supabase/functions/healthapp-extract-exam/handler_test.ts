@@ -286,11 +286,17 @@ Deno.test("MIN-4614: a father's name and no ID is saved name_only; two extra par
   for (const word of ["ΠΑΠΑΔΟΠΟΥΛΟΥ", "ΓΕΩΡΓΙΟΥ", "ΑΙΚΑΤΕΡΙΝΗΣ", "Μαρία", "AK123456"]) assertEquals(everything.includes(word), false, word);
 });
 
-Deno.test("doc 8, her name and another ID: refused id_mismatch, nothing saved", async () => {
-  const { t, doc, x } = await run({ ...GOOD, printed_name: "PAPADOPOULOU MARIA", printed_id: "AK987654" });
-  assertEquals([doc?.document.status, x?.reason], ["refused", "id_mismatch"]);
-  assertEquals(t.s.calls.includes("saveExtraction"), false);
-  assertEquals(JSON.stringify([doc, t.logs]).includes("AK987654"), false);
+Deno.test("MIN-4630: her exact name and a lab code printed as the ID: saved name_only, the file is kept, no refusal in the log", async () => {
+  const { t, d, doc } = await run({ ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ", printed_id: "LAB-0042731" });
+  assertEquals([doc?.document.status, doc?.document.identity_status], ["confirmed", "name_only"]);
+  assertEquals(t.s.calls.includes("saveExtraction"), true);
+  assertEquals(t.b.removed, []); // the upload stays
+  assertEquals(t.b.files.has(d.storage_path as string), true);
+  assertEquals(t.logs.some((l) => l.status === "refused"), false);
+  // a real-looking number that is not hers is ignored the same way
+  const other = await run({ ...GOOD, printed_name: "PAPADOPOULOU MARIA", printed_id: "AK987654" });
+  assertEquals([other.doc?.document.status, other.doc?.document.identity_status], ["confirmed", "name_only"]);
+  assertEquals(other.t.logs.some((l) => l.status === "refused"), false);
 });
 
 Deno.test("doc 7, name and no ID: saved with no tap, marked name_only", async () => {

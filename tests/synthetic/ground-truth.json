@@ -652,14 +652,14 @@
    ],
    "findings": [],
    "expected": {
-    "outcome": "refused",
-    "reason": "id_mismatch"
+    "outcome": "draft",
+    "identity": "name_only"
    },
    "render": {
     "title": "LABORATORY REPORT: BIOCHEMISTRY",
     "blur": 0
    },
-   "note": "Maria's name with a different ID: B1 refusal id_mismatch"
+   "note": "Maria's name with a number that is not hers: the number is ignored, saved name_only (MIN-4630)"
   },
   {
    "n": 9,
