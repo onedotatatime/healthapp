@@ -227,15 +227,17 @@ const ago = (s: number) => new Date(Date.parse(NOW) - s * 1000).toISOString().re
 export const myExams: MyExamsResponse = {
   server_now: NOW,
   exams: [
-    { id: "e1000000-0000-4000-8000-000000000001", status: "queued", reason: null, uploaded_at: ago(5), status_at: ago(5), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false },
-    { id: "e1000000-0000-4000-8000-000000000002", status: "reading", reason: null, uploaded_at: ago(60), status_at: ago(40), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false },
-    { id: IDS.docDraft, status: "draft", reason: null, uploaded_at: ago(300), status_at: ago(240), kind: "blood_test", exam_date: "2026-11-10", values_read: 2, can_retry: false, can_delete: true, unchecked: false },
-    { id: "e1000000-0000-4000-8000-000000000004", status: "refused", reason: "name_mismatch", uploaded_at: ago(600), status_at: ago(560), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false },
-    { id: "e1000000-0000-4000-8000-000000000005", status: "failed", reason: "model_timeout", uploaded_at: ago(900), status_at: ago(820), kind: null, exam_date: null, values_read: null, can_retry: true, can_delete: true, unchecked: false },
-    { id: "e1000000-0000-4000-8000-000000000006", status: "failed", reason: "too_many_attempts", uploaded_at: ago(1200), status_at: ago(1100), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false },
-    { id: IDS.docBlood, status: "confirmed", reason: null, uploaded_at: ago(86400), status_at: ago(86000), kind: "blood_test", exam_date: "2026-11-04", values_read: 4, can_retry: false, can_delete: false, unchecked: false },
+    { id: "e1000000-0000-4000-8000-000000000001", status: "queued", reason: null, uploaded_at: ago(5), status_at: ago(5), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false, file_kept: false },
+    { id: "e1000000-0000-4000-8000-000000000002", status: "reading", reason: null, uploaded_at: ago(60), status_at: ago(40), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false, file_kept: false },
+    { id: IDS.docDraft, status: "draft", reason: null, uploaded_at: ago(300), status_at: ago(240), kind: "blood_test", exam_date: "2026-11-10", values_read: 2, can_retry: false, can_delete: true, unchecked: false, file_kept: false },
+    // MIN-4637: a refused scan whose original is kept for 14 days (Try again offered), and an old refused one with no file
+    { id: "e1000000-0000-4000-8000-000000000004", status: "refused", reason: "name_mismatch", uploaded_at: ago(600), status_at: ago(560), kind: null, exam_date: null, values_read: null, can_retry: true, can_delete: true, unchecked: false, file_kept: true },
+    { id: "e1000000-0000-4000-8000-000000000008", status: "refused", reason: "unreadable", uploaded_at: ago(700), status_at: ago(690), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false, file_kept: false },
+    { id: "e1000000-0000-4000-8000-000000000005", status: "failed", reason: "model_timeout", uploaded_at: ago(900), status_at: ago(820), kind: null, exam_date: null, values_read: null, can_retry: true, can_delete: true, unchecked: false, file_kept: false },
+    { id: "e1000000-0000-4000-8000-000000000006", status: "failed", reason: "too_many_attempts", uploaded_at: ago(1200), status_at: ago(1100), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false, file_kept: false },
+    { id: IDS.docBlood, status: "confirmed", reason: null, uploaded_at: ago(86400), status_at: ago(86000), kind: "blood_test", exam_date: "2026-11-04", values_read: 4, can_retry: false, can_delete: false, unchecked: false, file_kept: false },
     // MIN-4556 addendum: scanned, saved with no tap, and its owner has not opened it yet.
-    { id: "e1000000-0000-4000-8000-000000000007", status: "confirmed", reason: null, uploaded_at: ago(120), status_at: ago(70), kind: "blood_test", exam_date: "2026-11-12", values_read: 3, can_retry: false, can_delete: false, unchecked: true },
+    { id: "e1000000-0000-4000-8000-000000000007", status: "confirmed", reason: null, uploaded_at: ago(120), status_at: ago(70), kind: "blood_test", exam_date: "2026-11-12", values_read: 3, can_retry: false, can_delete: false, unchecked: true, file_kept: false },
   ],
 };
 

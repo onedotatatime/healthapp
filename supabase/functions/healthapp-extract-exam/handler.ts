@@ -3,8 +3,10 @@
 // update (queued/failed -> reading), answers 202 at once, and the whole reading runs after the answer
 // (EdgeRuntime.waitUntil): the model reads the photo once with one retry, the server validates and decides whose
 // document it is, saves the draft, saves it as confirmed with no tap (unchecked until its owner opens it, MIN-4555 addendum:
-// the founder's choice), then runs the file analysis on what is left of the budget. A refusal deletes the
-// file and keeps the reason code only. Logs carry a status, a reason code and timings, never a word of the document.
+// the founder's choice), then runs the file analysis on what is left of the budget. A refusal keeps the reason code and
+// the original photo for 14 days (MIN-4637), nothing of the reading; the photo can be read again ("Try again") or deleted
+// by its owner, and my-exams deletes it once the 14 days have passed. Logs carry a status, a reason code and timings,
+// never a word of the document.
 import { analyseFile } from "../_shared/analysis.ts";
 import { bytesToBase64 } from "../_shared/b64.ts";
 import {
@@ -47,7 +49,8 @@ export interface Deps {
     | "objectMeta"
     | "saveAnalysis"
   >;
-  blobs: Pick<Blobs, "download" | "remove">;
+  /** Read only (MIN-4637): a refusal keeps the original, so this function deletes no file. */
+  blobs: Pick<Blobs, "download">;
   generate<T>(call: JsonCall<T>): Promise<JsonResult<T>>;
   /** Keeps the work alive after the response is sent (EdgeRuntime.waitUntil on the platform). */
   background(work: Promise<unknown>): void;
@@ -122,10 +125,8 @@ async function readInBackground(
     await deps.store.markFailed(env, uid, id, reason);
     deps.log({ fn: "extract-exam", status: "failed", reason, ...extra, ms: deps.now() - started });
   };
-  // A refusal deletes the file first and writes the row second: if the delete fails the row is failed, never
-  // refused with a file still in the bucket.
+  // A refusal writes the row only: the original stays where it is, with a 14-day end set by the store (MIN-4637).
   const refused = async (reason: RefusalReason, extra: Record<string, unknown>) => {
-    if (path && !(await deps.blobs.remove(bucket, path))) return await failed("delete_failed", extra);
     await deps.store.markRefused(env, uid, id, reason);
     deps.log({ fn: "extract-exam", status: "refused", reason, ...extra, ms: deps.now() - started });
   };

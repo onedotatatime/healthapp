@@ -110,3 +110,20 @@ Deno.test("possible matches: one empty answer, nothing below country, nothing be
     "healthapp_set_matches_opt_in",
   ]);
 });
+
+// MIN-4637 criterion 15: the list item is the same in Cron's contract and the frontend copy, field for field
+Deno.test("ExamListItem is identical in both contract copies", () => {
+  const block = (f: string) => {
+    const s = Deno.readTextFileSync(new URL(f, import.meta.url));
+    return s.slice(s.indexOf("export const ExamListItem = z.object({"), s.indexOf("export type ExamListItem"));
+  };
+  const server = block("./contract.ts"), web = block("../../../src/api/contract.ts");
+  assertEquals(server.includes("file_kept: z.boolean(),"), true);
+  assertEquals(web, server);
+});
+
+Deno.test("the list fixture holds one refused row with its file kept and one without", () => {
+  const refused = F.myExams.exams.filter((e) => e.status === "refused");
+  assertEquals(refused.map((e) => [e.file_kept, e.can_retry]).sort(), [[false, false], [true, true]]);
+  assertEquals(F.myExams.exams.filter((e) => e.status !== "refused").every((e) => e.file_kept === false), true);
+});

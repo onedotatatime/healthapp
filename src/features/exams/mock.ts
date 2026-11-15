@@ -76,7 +76,7 @@ const draftFor = (id: string) => ({
 
 const ago = (min: number) => new Date(Date.parse(NOW) - min * 60_000).toISOString();
 const item = (n: number, o: Partial<ExamListItem>): ExamListItem => ({
-  id: uid(n), status: 'queued', reason: null, uploaded_at: ago(5), status_at: ago(5), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false, ...o,
+  id: uid(n), status: 'queued', reason: null, uploaded_at: ago(5), status_at: ago(5), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false, file_kept: false, ...o,
 });
 /** One row per status, newest first. Synthetic: does not count toward the goal. */
 const exams: ExamListItem[] = [

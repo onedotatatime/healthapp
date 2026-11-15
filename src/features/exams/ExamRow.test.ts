@@ -11,7 +11,7 @@ const text = (m: string) => m.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").r
 const U = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const base: ExamListItem = {
   id: U(1), status: 'queued', reason: null, uploaded_at: '2026-11-14T09:30:00.000+00:00', status_at: '2026-11-14T09:30:00.000+00:00',
-  kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false,
+  kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false, file_kept: false,
 };
 const render = (o: Partial<ExamListItem>, extra: Record<string, unknown> = {}) =>
   renderToStaticMarkup(h(MemoryRouter, null, h('ul', null, h(ExamRow, { item: { ...base, ...o }, base: '/patient/exams', onDelete: () => {}, onRetry: () => {}, ...extra }))));

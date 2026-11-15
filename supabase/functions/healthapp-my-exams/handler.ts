@@ -3,13 +3,18 @@
 // (reading over 3 minutes, queued over 10 minutes), which every list call runs first for the caller, and the `unchecked`
 // mark an owner clears by opening a saved exam. A row carries a status, a reason code, once read a kind, a date and a
 // count, and for a saved exam whether it is still unchecked: no value, no name.
-import { DocumentRow, type ExamDraftResponse, MyExamsRequest, type MyExamsResponse } from "../_shared/contract.ts";
-import { type Auth, authenticate, readJson, type Store, toListItem } from "../_shared/docs.ts";
+// MIN-4637: every list call also deletes the caller's kept refused originals whose 14 days have passed (the lazy
+// retention sweep): the object through the storage API first, the row's file columns second, so a failed delete leaves
+// the row pointing at its object for the next call. No SQL ever touches storage's own tables for this.
+import { bucketFor, DocumentRow, type ExamDraftResponse, type HealthappEnv, MyExamsRequest, type MyExamsResponse } from "../_shared/contract.ts";
+import { type Auth, authenticate, type Blobs, readJson, type Store, toListItem } from "../_shared/docs.ts";
 import { fail, headersFor, json } from "../_shared/http.ts";
 
 export interface Deps {
   auth: Auth;
-  store: Pick<Store, "roleOf" | "sweepStuck" | "listOwn" | "getOwn" | "markOpened">;
+  store: Pick<Store, "roleOf" | "sweepStuck" | "listOwn" | "getOwn" | "markOpened" | "expiredKeptFiles" | "dropKeptFile">;
+  /** Delete only, for the retention sweep (MIN-4637). */
+  blobs: Pick<Blobs, "remove">;
   log(line: Record<string, unknown>): void;
   now(): number;
 }
@@ -51,9 +56,25 @@ export function makeHandler(deps: Deps) {
     }
 
     const swept = await deps.store.sweepStuck(who.env, who.uid);
+    const kept = await sweepKeptFiles(deps, who.env, who.uid);
     const rows = await deps.store.listOwn(who.env, who.uid);
-    const out: MyExamsResponse = { exams: rows.map(toListItem), server_now: new Date(deps.now()).toISOString() };
-    deps.log({ fn: "my-exams", status: "list", exams: rows.length, swept, ms: deps.now() - started });
+    const out: MyExamsResponse = { exams: rows.map((r) => toListItem(r)), server_now: new Date(deps.now()).toISOString() };
+    deps.log({
+      fn: "my-exams", status: "list", exams: rows.length, swept, kept_deleted: kept.deleted, kept_not_deleted: kept.not_deleted,
+      ms: deps.now() - started,
+    });
     return json(req, 200, out);
   };
+}
+
+/** The retention sweep for one caller: counts only. A delete the storage refused is left for the next call. Defined after
+ *  makeHandler so the session check is the first thing in the file. */
+async function sweepKeptFiles(deps: Deps, env: HealthappEnv, uid: string): Promise<{ deleted: number; not_deleted: number }> {
+  let deleted = 0, notDeleted = 0;
+  for (const f of await deps.store.expiredKeptFiles(env, uid)) {
+    if (await deps.blobs.remove(bucketFor(env), f.storage_path)) {
+      if (await deps.store.dropKeptFile(env, uid, f.id, f.storage_path)) deleted++;
+    } else notDeleted++;
+  }
+  return { deleted, not_deleted: notDeleted };
 }
