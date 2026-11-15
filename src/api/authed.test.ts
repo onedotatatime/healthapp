@@ -2,9 +2,10 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const auth = vi.hoisted(() => ({ getSession: vi.fn(), refreshSession: vi.fn() }));
+const auth = vi.hoisted(() => ({ getSession: vi.fn(), refreshSession: vi.fn(), signOut: vi.fn() }));
 vi.mock('./client', () => ({ supabase: { auth }, callFunction: null }));
 
+import { AuthApiError, AuthRetryableFetchError } from '@supabase/supabase-js';
 import { authedCall } from './authed';
 import { ApiError } from './call';
 import { isGrantGone } from '../features/assistant/api';
@@ -16,6 +17,7 @@ const unauth = () => new ApiError(401, 'Not signed in.', 'unauthenticated');
 beforeEach(() => {
   auth.getSession.mockReset().mockResolvedValue(session('old'));
   auth.refreshSession.mockReset();
+  auth.signOut.mockReset().mockResolvedValue({ error: null });
 });
 
 describe('authedCall (MIN-4648)', () => {
@@ -46,12 +48,37 @@ describe('authedCall (MIN-4648)', () => {
   });
 
   it('throws session_ended and does not retry when the refresh is refused', async () => {
-    auth.refreshSession.mockResolvedValue({ data: { session: null }, error: { name: 'AuthApiError', status: 400, message: 'session_not_found' } });
+    auth.refreshSession.mockResolvedValue({ data: { session: null }, error: new AuthApiError('session_not_found', 400, 'session_not_found') });
     const run = vi.fn(async () => {
       throw unauth();
     });
     await expect(authedCall(run)).rejects.toMatchObject({ status: 401, code: 'session_ended' });
     expect(run).toHaveBeenCalledTimes(1);
+    expect(auth.signOut).toHaveBeenCalledTimes(1);
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  it.each([400, 401, 403, 404])('a refresh refused with %i signs this device out', async (status) => {
+    auth.refreshSession.mockResolvedValue({ data: { session: null }, error: new AuthApiError('refused', status, 'x') });
+    await expect(authedCall(async () => { throw unauth(); })).rejects.toMatchObject({ code: 'session_ended' });
+    expect(auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+
+  it('a refresh with no session and no error signs this device out', async () => {
+    auth.refreshSession.mockResolvedValue({ data: { session: null }, error: null });
+    await expect(authedCall(async () => { throw unauth(); })).rejects.toMatchObject({ code: 'session_ended' });
+    expect(auth.signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['429 rate limit', new AuthApiError('slow down', 429, 'over_request_rate_limit')],
+    ['409 refresh discarded (another tab)', new AuthApiError('discarded', 409, 'refresh_discarded')],
+    ['5xx', new AuthApiError('boom', 503, 'x')],
+    ['network', new AuthRetryableFetchError('fetch failed', 0)],
+  ])('%s does not sign out and stays status 0', async (_n, error) => {
+    auth.refreshSession.mockResolvedValue({ data: { session: null }, error });
+    await expect(authedCall(async () => { throw unauth(); })).rejects.toMatchObject({ status: 0 });
+    expect(auth.signOut).not.toHaveBeenCalled();
   });
 
   it('keeps a network failure on the refresh as a network error (status 0)', async () => {
@@ -96,6 +123,29 @@ describe('authedCall (MIN-4648)', () => {
     });
     expect(await authedCall(read)).toEqual([{ id: 'd1' }]);
     expect(read).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('doctor reads: supabase.from() returns errors, the callback throws them', () => {
+  const load = async (builder: { maybeSingle: () => Promise<unknown> }) => {
+    vi.doMock('./client', () => ({ supabase: { auth, from: () => ({ select: () => ({ eq: () => builder }) }) }, callFunction: vi.fn() }));
+    vi.resetModules();
+    return (await import('../features/assistant/real')).realAssistantApi;
+  };
+
+  it('fileAnalysis: a 401 result is refreshed and read again', async () => {
+    auth.refreshSession.mockResolvedValue(session('new'));
+    let calls = 0;
+    const api = await load({ maybeSingle: async () => (++calls === 1 ? { data: null, error: { message: 'JWT expired' }, status: 401 } : { data: null, error: null, status: 200 }) });
+    expect(await api.fileAnalysis('doc1')).toBeNull();
+    expect(calls).toBe(2);
+    expect(auth.refreshSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('fileAnalysis: a 403 is grant_expired and is not refreshed', async () => {
+    const api = await load({ maybeSingle: async () => ({ data: null, error: { message: 'no' }, status: 403 }) });
+    await expect(api.fileAnalysis('doc1')).rejects.toMatchObject({ status: 403, code: 'grant_expired' });
+    expect(auth.refreshSession).not.toHaveBeenCalled();
   });
 });
 

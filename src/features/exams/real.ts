@@ -22,9 +22,10 @@ function need() {
   return { supabase, callFunction };
 }
 
-async function read<T>(q: PromiseLike<{ data: unknown; error: { message: string; code?: string } | null }>, schema: z.ZodType<T>): Promise<T> {
-  const { data, error } = await q;
-  if (error) throw new ApiError(error.code === 'PGRST301' ? 401 : 500, error.message);
+async function read<T>(q: PromiseLike<{ data: unknown; error: { message: string; code?: string } | null; status?: number }>, schema: z.ZodType<T>): Promise<T> {
+  const { data, error, status } = await q;
+  // Key on the HTTP status: PostgREST reports an expired JWT as PGRST301 or, in newer versions, PGRST303.
+  if (error) throw new ApiError(status === 401 || error.code === 'PGRST301' || error.code === 'PGRST303' ? 401 : 500, error.message);
   const parsed = schema.safeParse(data);
   if (!parsed.success) throw new ApiError(200, 'Unexpected rows from the database.');
   return parsed.data;

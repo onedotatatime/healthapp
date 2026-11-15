@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { authedCall } from '../../api/authed';
+import { ApiError } from '../../api/call';
 import { callFunction, supabase } from '../../api/client';
 import { GrantStatusResponse } from '../handshake/contract';
 import { EmptyState, ErrorNote, Spinner } from '../../components/Primitives';
@@ -17,8 +18,12 @@ interface Entry {
  *  `grant-status` call (a patient cannot read a doctor's profile row). A row whose name cannot be fetched still shows. */
 async function load(): Promise<Entry[]> {
   if (!supabase || !callFunction) throw new Error('Not configured.');
-  const { data, error } = await authedCall(async () => supabase!.from('grants').select(GRANT_LOG_COLUMNS).order('requested_at', { ascending: false }));
-  if (error) throw new Error(error.message);
+  // The throw is inside the callback so a 401 reaches authedCall's refresh and retry.
+  const { data } = await authedCall(async () => {
+    const r = await supabase!.from('grants').select(GRANT_LOG_COLUMNS).order('requested_at', { ascending: false });
+    if (r.error) throw new ApiError(r.status || 0, r.error.message);
+    return r;
+  });
   const rows = (data ?? []).flatMap((r) => {
     const p = GrantLogRow.safeParse(r);
     return p.success ? [p.data] : [];

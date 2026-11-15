@@ -15,7 +15,7 @@ function need() {
 /** One RLS read: rows of `table` for this patient. RLS decides what the doctor may see; an error is an ApiError. */
 async function rows<T>(table: string, columns: string, patientId: string, schema: z.ZodType<T>): Promise<T[]> {
   const { data, error, status } = await need().supabase.from(table).select(columns).eq('patient_id', patientId);
-  if (error) throw new ApiError(status || 0, error.message, status === 401 || status === 403 ? 'grant_expired' : undefined);
+  if (error) throw new ApiError(status || 0, error.message, status === 403 ? 'grant_expired' : undefined);
   const parsed = z.array(schema).safeParse(data ?? []);
   if (!parsed.success) throw new ApiError(status, `Unexpected rows from ${table}.`);
   return parsed.data;
@@ -38,8 +38,13 @@ export const realAssistantApi: AssistantApi = {
     return authedCall((accessToken) => need().callFunction('doc-photo', { doc_id: docId, grant_id: grantId }, DocPhotoResponse, { accessToken }));
   },
   async fileAnalysis(docId) {
-    const { data, error, status } = await authedCall(async () => need().supabase.from('file_analysis').select(FILE_ANALYSIS_COLUMNS).eq('document_id', docId).maybeSingle());
-    if (error) throw new ApiError(status || 0, error.message, status === 401 || status === 403 ? 'grant_expired' : undefined);
+    // The throw is inside the callback: supabase.from() returns errors, and authedCall retries only what the callback throws.
+    // A 401 is a dead token (refreshed and retried by authedCall), never "grant ended": that is a 403.
+    const { data, status } = await authedCall(async () => {
+      const r = await need().supabase.from('file_analysis').select(FILE_ANALYSIS_COLUMNS).eq('document_id', docId).maybeSingle();
+      if (r.error) throw new ApiError(r.status || 0, r.error.message, r.status === 403 ? 'grant_expired' : undefined);
+      return r;
+    });
     if (!data) return null; // no row: not analysed yet (or the grant ended: the record read reports that)
     const parsed = FileAnalysisRow.safeParse(data);
     if (!parsed.success) throw new ApiError(status, 'Unexpected row from file_analysis.');
