@@ -70,7 +70,7 @@ Second language, alternative headlines, a USD figure for the US, per-condition b
 
 Owner: Marketing (Anna). Candidates checked 15 Nov 2026. Status: **approved by the CEO seat on the founder's behalf, 15 Nov 2026 (MIN-4605), with conditions 1 to 8**.
 
-Source of this section: Anna's MIN-4604 comment 61ae9259 (her sections 1, 4 and 5, as written) and the CEO seat's fills in MIN-4605 comment de26aa96 (section 3). Her comment names the block under "Paste-ready"; that heading is not in the posted text, so this section is assembled from those sections. Anna checks it against her comment.
+Source of this section: Anna's MIN-4604 comment 61ae9259 (her sections 1, 4 and 5, as written) and the CEO seat's fills in MIN-4605 comment de26aa96 (section 3). Her comment names the block under "Paste-ready"; that heading is not in the posted text, so Ren assembled this section from those sections (MIN-4608). Anna checked it against her comment on 15 Nov: it matches what she meant. The filled last-frame figures were refreshed from the 1,200-record file on 15 Nov (MIN-4604); the earlier 400-record values (€13.6 billion, 0.74 points, €30) no longer apply.
 
 ### 6.1 The total the euro figure uses (CEO seat: option A, with C as the second line; Eurostat dataset hlth_sha11_hf, total, updated 4 Nov 2026)
 
@@ -97,7 +97,7 @@ Source URL (A): https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/d
 
 Amount writing: billions with one decimal ("€13.6 billion"), millions with none ("€147 million"), per inhabitant with none ("€30"); the total in the formula with a thousands comma ("€1,834 billion"); "EU-27" as geography; year as four digits; "a year" always present. The word "saved" is deliberately not used: the counter says "drop", not "saved".
 
-Filled for the last frame (CEO seat): "In this model, the cost of wrong or missed diagnoses is €13.6 billion a year lower for EU-27, on 2024 spending." Formula: "0.74 points of health spending × €1,834 billion (EU-27, 2024) = €13.6 billion a year". Second line: "€30 per inhabitant a year". Source line: "Health spending total: Eurostat, current health expenditure, EU-27, 2024." with Anna's link.
+Filled for the last frame, on the 1,200-record file `data/synthetic/simulation.json` (founder: "lets go to 1200"; the values are read from its `euro` block): "In this model, the cost of wrong or missed diagnoses is €17.6 billion a year lower for EU-27, on 2024 spending." Formula: "0.96 points of health spending × €1,834 billion (EU-27, 2024) = €17.6 billion a year". Second line: "€39 per inhabitant a year". Source line: "Health spending total: Eurostat, current health expenditure, EU-27, 2024." with Anna's link.
 
 ### 6.3 Match by match
 
@@ -119,6 +119,6 @@ Notes (Anna): the "Modelled drop so far" counter shows the drop at the current n
 
 4. The euro figure is on screen only together with series 3's chart (axis from zero), the formula line, the source line and the permanent label.
 5. The euro sentence has "model" or "assumption" in it. Never "saved", "saves", "savings" or "will". The 10% follows the same rule as the 20%: never without "assume", "assumed" or "assumption" in the same sentence, and no study attached.
-6. The arithmetic on screen checks out at the precision shown: the euro values come from the published two-decimal cost (0.74 × €1,834 billion = €13.6 billion).
+6. The arithmetic on screen checks out at the precision shown: the euro values come from the published two-decimal cost (0.96 × €1,834 billion = €17.6 billion).
 7. Nothing says the matching software learns today. Asked "does it learn?": "Not in this prototype. The curve is our assumption of what a learning matcher would do. A pilot with doctors would measure it."
 8. The cost caption "In the model, each step lowers the cost more than the one before." is false on the data and is not shown.
