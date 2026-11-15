@@ -56,4 +56,10 @@ Also flagged: deck slide 5c iframes production /simulation (`STORY_APP`), so the
 - (D) Cron's all-Greece limit check, €200,680,637
 - (E) the flip, plus the pin at test line 269
 
+**Part 8 (MIN-4744 delta, 2026-11-15, comment 24259be9 + PR #166): PASS at 753814b.** Fixes A to E were done. The guards were green on the head and on its merge with staging aef99a7. Year-10 totals: 1,668 diagnoses, €7.0M drop, €6.3M income.
+
+Lessons from part 8:
+- In zsh, `$c` does not word-split. Loop the commands from a bash script, otherwise every one fails with exit 127.
+- The rate card does have a claude-opus-5-5 row: $4 / $20 / $0.20 cache read (conductor migration 0057). Grep the rate card before you write "estimated".
+
 Lesson: check the build against the CEO seat's ruling text as well as my own contract. Ren built to my contract, and the CEO's additions (totals, assumption lines) were missed. Also, a constant switch ships its other branch's strings, so check the dormant variants against the wording rules too.

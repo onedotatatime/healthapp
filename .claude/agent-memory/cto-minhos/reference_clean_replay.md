@@ -14,3 +14,5 @@ A clean replay of a local head works like this. It takes about 1 minute (MIN-458
 
 **Why:** the brief requires no `.env.local` and the founder's dev server must stay up.
 **How to apply:** every post-build review where the head is local or unpushed. See also [[project_stacked_pr_merge_sim]].
+
+**Trap (MIN-4769 p2):** the scratchpad is shared across sessions. A `replay/` folder left by an earlier run held stale untracked files (SimTimeline.tsx), and `mkdir -p` + `tar -x` merged into it. typecheck went red falsely. Always export into a new, uniquely named folder, check it does not exist first, and remove it after.
