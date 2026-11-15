@@ -8,8 +8,8 @@ A second web deck on the same engine as `/deck` (`../Deck.tsx` is untouched; `St
 
 ## Slides and keys
 
-`#1 #2 #3 #4 #5 #5b #5c #6` (`#3b` is an old link and lands on `#3`). Arrows, space, Home/End, click (left third back), `F` fullscreen, `N` notes, `?clean&scale1` for screenshots, as in `/deck`.
-`#3` and `#4` are the two beats of one slide (slide 3): the same doctor browser frame and patient phone, only the header changes, so the iframes are the same elements and a sign-in survives. `#4` has its own header (the first "what if", Brazil). No line under the headline and no frame labels on slide 3 or 4 (founder, 15 Nov: "delete"). `#5c` is the live simulation page, after "Did you know" (`#5b`). There is no timeline on any slide.
+`#1 #2 #3 #4 #4b #5 #5b #5c #6` (`#3b` is an old link and lands on `#3`). Arrows, space, Home/End, click (left third back), `F` fullscreen, `N` notes, `?clean&scale1` for screenshots, as in `/deck`.
+`#3` and `#4` are the two beats of one slide (slide 3): the same doctor browser frame and patient phone, only the header changes, so the iframes are the same elements and a sign-in survives. `#4` has its own header (the first "what if", Brazil). No line under the headline and no frame labels on slide 3 or 4 (founder, 15 Nov: "delete"). `#4b` is the emergency "what if" (a jungle in Brazil): its own slide after the 3/4 group, no iframe, a rainforest photo under a scrim, a phone and a rescuer's tablet drawn in HTML (`templates/StoryEmergency.tsx`, `.s4b-` styles); the badge is plain text, never Apple's artwork. `#5c` is the live simulation page, after "Did you know" (`#5b`). There is no timeline on any slide.
 
 ## Live frames (the one thing to know)
 

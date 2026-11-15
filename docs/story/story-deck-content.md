@@ -3,10 +3,10 @@
 | | |
 |---|---|
 | **What** | A personal story deck, told by Lefteris in the first person. It sits next to the pitch deck (`docs/deck/deck-content.md`, v4.9) and does not replace it. |
-| **Version** | v1, 15 Nov 2026 (Marketing, Anna Lytica). |
+| **Version** | v1.1, 15 Nov 2026: new slide 4b, the emergency "what if" (MIN-4731; founder's words quoted on the slide). v1, 15 Nov 2026 (Marketing, Anna Lytica). |
 | **Founder's brief** | 15 Nov 2026, verbatim, quoted in full at the end of this file. |
 | **Next** | Ren builds the slides on this branch (`feat/story-deck`). Pix's house rules apply (`docs/brand/brand-guidelines.md`). |
-| **Length** | 7 frames (1, 2, 3, 4, 5, 5b, 6). About 3 minutes spoken, plus the live actions on 3 and 5. (3b merged into 3, 15 Nov.) |
+| **Length** | 8 frames (1, 2, 3, 4, 4b, 5, 5b, 6). About 3 minutes 20 spoken, plus the live actions on 3 and 5. (3b merged into 3, 15 Nov.) |
 
 **How to read each slide.** *Headline* is the big line. *Support* is at most one smaller line. *Labels* are every other word that shows on the slide. *Speaker notes* are what he says, about 15 to 30 seconds, in his voice. The founder's own sentences are kept as close to his words as possible; only grammar and rhythm are tidied.
 
@@ -14,9 +14,10 @@
 
 1. **No diagnosis claims**, from the app or about him. His condition is not named.
 2. **No insurers.** No statistic on any slide except the two on 5b (and the €3.5bn estimate that comes with the second), all from the pitch deck's sources. Dates and the "5,000 synthetic records" label are not statistics.
-3. **Never implied that matching or trials run on real people today.** Slides 4 and 5 are questions ("what if"). The live frame on slide 5 is labelled a simulation on synthetic records.
+3. **Never implied that matching or trials run on real people today.** Slides 4, 4b and 5 are questions ("what if"). Slide 4b never claims the emergency link works today: it is a question, and the app carries the "Soon on the App Store" badge. The live frame on slide 5 is labelled a simulation on synthetic records.
 4. **His own records are shown by his choice**, and the words say they are his own (slides 2, 3).
-5. No exclamation marks. Pathien has no ™ or ®. Coral is fill only, no red (pitch deck rules 6 and brand note).
+5. **Apple:** "App Store" appears only as plain text in the badge. Never Apple's logo or Apple's official badge artwork.
+6. No exclamation marks. Pathien has no ™ or ®. Coral is fill only, no red (pitch deck rules 6 and brand note).
 
 ---
 
@@ -102,6 +103,29 @@ With the support lines deleted, 3b looked the same as 3, so it is now one beat: 
 
 ---
 
+## Slide 4b: What if, an accident far from home
+
+Founder, 15 Nov 2026, verbatim: *"One more slide after slide 4 [...] We need to showcase clearly the \"what if I am in a jungle in Brazil and have a serious accicent?\" Visualize \"Along with the emergency call from my phone our APP (add a soon available on applestore) san share a link with my folder to the emergency services that will come for rescue\""*
+
+**Headline:** And what if I'm in a jungle in Brazil, and I have a serious accident?
+
+**Support:** none. The question is the slide.
+
+**Labels (three steps, in order, on the visual):**
+1. **I make the emergency call from my phone.**
+2. **Alongside it, Pathien sends the rescue team a link to my folder.** Small, under it: *For a set time, and logged.*
+3. **The team coming to rescue me can open my history.**
+
+**Badge (on the phone, small):** Soon on the App Store
+
+**Visual note for Pix and Ren:** One phone, left, mid-call. From it, one thin line to a small folder card (the link), and on to a rescue team mark, right. Green jungle shapes in the background are fine; no blood, no injury, no ambulance siren, no medical values on the folder card. The badge is plain text in a rounded outline, our type and colours: never Apple's logo or Apple's badge artwork. No "connected" or "sent" state and no "not built" tag: the question and the badge say it is not here yet. Coral as fill only, no red (rule 6).
+
+**Speaker notes (~20 s):** "One more what if. What if I'm in a jungle in Brazil, and I have a serious accident? Along with the emergency call from my phone, our app, soon on the App Store, shares a link to my folder with the emergency services coming to rescue me. For a set time, and logged. They reach me with my history."
+
+**Consistency:** the pitch deck's Vault slide (5b) uses the same access model: a link or code, access for a set time, every grant written to the patient's log. Pathien is not an emergency service: it travels alongside the call and never replaces it.
+
+---
+
 ## Slide 5: What if, a clinical trial
 
 **Headline:** And what if people with similar symptoms could finally find a cure, with their doctors, by taking part in a clinical trial?
@@ -175,6 +199,7 @@ Source line, small: *OECD, The Economics of Diagnostic Safety, 2025*
 
 - *"Is that your real data?"* Yes, my own exams, shown by my choice. Everything else in the product is tested on synthetic data.
 - *"Does the matching or the trial search work on real patients?"* Not today. Slide 5 is a simulation on 5,000 synthetic records. Slides 4 and 5 are the questions we want to answer next.
+- *"Does the emergency link on slide 4b work today?"* Not yet. It is a question, and the app is coming to the App Store. It goes alongside the emergency call, never instead of it, and the access ends by itself and is logged.
 - *"Does the app tell you what you have?"* No. The patient side never interprets results. The doctor reads the history and decides.
 
 ## Founder's brief, 15 Nov 2026, verbatim

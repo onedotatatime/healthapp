@@ -16,6 +16,9 @@ export const N: Record<string, string[]> = {
   '4': [
     "Rare cases are rare everywhere. The one doctor who has seen a case like mine might be on the other side of the world. So: what if my doctor could find rare cases similar to mine, and cross-check with another doctor in Brazil?",
   ],
+  '4b': [
+    "One more what if. What if I'm in a jungle in Brazil, and I have a serious accident? Along with the emergency call from my phone, our app, soon on the App Store, shares a link to my folder with the emergency services coming to rescue me. For a set time, and logged. They reach me with my history.",
+  ],
   '5': [
     "And one more question. What if people with similar symptoms could finally find a cure, with their doctors, by taking part in a clinical trial? This is the doctor's side. I press simulate. What you see is a simulation on five thousand synthetic records, not real people. It shows how matches grow as more people join.",
   ],

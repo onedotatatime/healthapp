@@ -73,9 +73,25 @@ export interface StoryCloseSlide extends StoryBase {
   photo: { src: string; alt: string };
 }
 
+/** Slide 4b: the emergency "what if" (a jungle in Brazil). No iframe: the phone and the rescuer's tablet are drawn in HTML and SVG. */
+export interface StoryEmergencySlide extends StoryBase {
+  template: 'story-emergency';
+  headline: string;
+  /** The three steps, in order. `small` is the quiet line under a step. */
+  steps: { text: string; small?: string }[];
+  /** Plain text in a pill. Never Apple's logo or badge artwork. */
+  badge: string;
+  background: { src: string };
+  /** Words on the phone screen (synthetic, no medical values). */
+  phone: { callTitle: string; callStatus: string; app: string; title: string; link: string; active: string; expires: string; logged: string };
+  /** Words on the rescuer's tablet. */
+  tablet: { top: string; live: string; title: string; folder: string; folderMeta: string; opened: string };
+}
+
 export type StorySlide =
   | StoryIntroSlide
   | StoryMemoirSlide
   | StoryLiveSlide
+  | StoryEmergencySlide
   | StoryNumbersSlide
   | StoryCloseSlide;
