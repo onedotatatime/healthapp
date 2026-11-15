@@ -12,7 +12,7 @@
 - [Doctor simulate page](project_doctor_simulate.md) — MIN-4504: no live boxd VM, recorded run replayed, browser matching on 5,000 synthetic, persona-rare, S from 6, consent before data
 - [Simulation timeline](project_simulation_timeline.md) — MIN-4699/4720 one plot (PASS f84486e); MIN-4744 GO slider, 120 months, plateau past 5,000, Greece base
 - [Simulation at 5,000](project_simulation_5000.md) — MIN-4684: part 1 GO, part 2 PASS (spec line 233 + Ren actuals); load long task is app boot; generator tests are scripts
-- [Clean replay](reference_clean_replay.md) — git archive + cp -c node_modules for Lane B jobs; check:static needs git, run it in the worktree
+- [Clean replay](reference_clean_replay.md) — git archive into a NEW uniquely named dir (shared scratchpad has stale replay/), cp -c node_modules; check:static in the worktree
 - [Doctor dashboard decision](project_doctor_dashboard_decision.md) — MIN-4660/4666: diagnoses fn off per env; 2a M1/M2; 2b approved (rebase, drop pending skip); demo yes on 4 conditions
 - [One-off real-row delete](project_oneoff_real_row_delete.md) — MIN-4629: gate only the delete window, hdb scan counts are schema-wide, founder scans live; his confirmed rows lack files
 - [Identity name-only](project_identity_name_only.md) — MIN-4630: printed ID never refuses (A passed 58d0207); ground-truth.json feeds live smokes; B keeps refused files 14 days
@@ -24,3 +24,4 @@
 - [Nightly and timeline follow-ups](project_nightly_and_followups.md) — MIN-4714: PILOT_FROM in funding_plan, absent = no card; nightly Cron/Lane C, main-only; part 2 PASS 42a7b4d, v4 fixture waits for MIN-4724
 - [Recruit search at 50,000](project_recruit_50000.md) — 2026-11-15: committed file, deterministic parser, must+some, k=5; review PASS 921aef0; faint shot = fade mid-way
 - [Nightly review](project_nightly_review.md) — MIN-4714 p3: PR #149 at 38f37e8 changes needed (B1 reds not reaching Linear, B2 self-test in static); PW load error aborts config
+- [Simulation reach](project_simulation_reach.md) — MIN-4769: share slider Greece/EU-27/Global, reach block; part 2 PASS f15f275, Anna owns pending strings + "today's match rate"
