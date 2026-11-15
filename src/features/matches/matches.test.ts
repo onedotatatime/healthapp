@@ -8,7 +8,8 @@ import { OptInState, PossibleMatches } from './contract';
 import { COPY } from './copy';
 import { createMockMatchesApi, EMPTY_RESULT, MARIA_RESULT } from './mock';
 import { countryName, featureLabel } from './pattern';
-import { isEmpty, MatchesView, type PanelState } from './PossibleMatchesPanel';
+import { MatchesContext } from './context';
+import { isEmpty, MatchesView, PossibleMatchesPanel, type PanelState } from './PossibleMatchesPanel';
 import { toApiError } from './real';
 import { SimulationUnavailable, SimulationView } from './Simulation';
 import {
@@ -72,7 +73,9 @@ describe('pattern words', () => {
 
 describe('F2 panel: the permanent label is in every state', () => {
   const states: [string, PanelState][] = [
-    ['loading', { status: 'loading' }],
+    ['idle', { status: 'idle' }],
+    ['running', { status: 'loading' }],
+    ['access ended', { status: 'ended' }],
     ['error', { status: 'error' }],
     ['empty', { status: 'ready', result: EMPTY_RESULT }],
     ['populated', { status: 'ready', result: MARIA_RESULT }],
@@ -89,13 +92,38 @@ describe('F2 panel: the permanent label is in every state', () => {
     expect(out).toContain('Greece');
     expect(out).not.toMatch(/name|birth|age|sex/i);
   });
-  it('the empty text is the same whatever the cause, and carries no count or hint', () => {
+  it('the empty text is the same whatever the cause: it names all three causes and never which one it was', () => {
     const zero = html({ status: 'ready', result: { match_count: 0, groups: [] } });
     const noGroups = html({ status: 'ready', result: { match_count: 3, groups: [] } });
     expect(isEmpty({ match_count: 3, groups: [] })).toBe(true);
-    expect(zero).toBe(noGroups);
+    expect(zero).toBe(noGroups); // the markup cannot depend on the count or the cause
     expect(zero).toContain('No matches in the seeded data.');
-    expect(words(zero)).not.toMatch(/fewer|too few|opt|consent|\d/i);
+    expect(words(zero)).toContain('Shown when the patient has not turned matching on, when no pattern is shared, or when fewer than 5 records share it.');
+    expect(words(zero)).not.toMatch(/\b3\b/); // the real count the server sent is never shown
+  });
+  it('idle: the run button and the sentence, no group and no count; running: the button is disabled and busy', () => {
+    const idle = html({ status: 'idle' });
+    expect(idle).toContain('data-state="idle"');
+    expect(words(idle)).toContain('Run the matching');
+    expect(idle).not.toContain('data-testid="match-group"');
+    const running = html({ status: 'loading' });
+    expect(running).toContain('data-state="running"');
+    expect(running).toMatch(/<button[^>]*disabled=""[^>]*aria-busy="true"/);
+  });
+  it('populated: the total line and Run again; error: Try again; access ended: a plain sentence', () => {
+    const out = html({ status: 'ready', result: MARIA_RESULT });
+    expect(words(out)).toContain(COPY.matchTotal(MARIA_RESULT.match_count, MARIA_RESULT.groups.length));
+    expect(words(out)).toContain('Run again');
+    expect(words(html({ status: 'error' }))).toContain('Try again');
+    expect(words(html({ status: 'ended' }))).toContain('Access to this record has ended. Nothing was compared.');
+    expect(COPY.matchTotal(1, 1)).toBe('1 seeded synthetic records share a pattern with this record, in 1 group.');
+  });
+  it('a workspace that opens makes no call: the first state is idle and the mock server has been asked nothing', () => {
+    let calls = 0;
+    const api = { ...createMockMatchesApi(true), possibleMatches: async () => { calls++; return MARIA_RESULT; } };
+    const markup = renderToStaticMarkup(createElement(MatchesContext.Provider, { value: api }, createElement(PossibleMatchesPanel, { patientId: 'x' })));
+    expect(markup).toContain('data-state="idle"');
+    expect(calls).toBe(0);
   });
   it('the mock behaves like the server: off gives the empty answer, on gives Maria, for the same call', async () => {
     const api = createMockMatchesApi(false);
@@ -109,7 +137,7 @@ describe('F2 panel: the permanent label is in every state', () => {
 
 describe('wording rules', () => {
   it('never says "anonymous" anywhere in the matches copy', () => {
-    const all = JSON.stringify(Object.values(COPY).map((v) => (typeof v === 'function' ? v(1 as never) : v)));
+    const all = JSON.stringify(Object.values(COPY).map((v) => (typeof v === 'function' ? (v as (...a: number[]) => string)(1, 1) : v)));
     expect(all).not.toMatch(/anonym/i);
   });
   it('the simulation label in the JSON is the CTO\'s wording, word for word', () => {

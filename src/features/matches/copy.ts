@@ -11,6 +11,13 @@ export const COPY = {
   panelError: 'Could not look for matches just now.',
   panelRetry: 'Try again',
   panelEmpty: 'No matches in the seeded data.', // identical for: not opted in, no match, fewer than 5
+  // MIN-4664 (CTO decision MIN-4660 section 2): the server answers the same for three cases, so the screen says all three and never which one.
+  panelEmptyWhy: 'Shown when the patient has not turned matching on, when no pattern is shared, or when fewer than 5 records share it.',
+  panelIdle: 'Compare the pattern in this record with the seeded records.',
+  panelRun: 'Run the matching',
+  panelRunAgain: 'Run again',
+  panelEnded: 'Access to this record has ended. Nothing was compared.',
+  matchTotal: (n: number, g: number) => `${n} seeded synthetic records share a pattern with this record, in ${g} ${g === 1 ? 'group' : 'groups'}.`,
   panelHelper: 'A match is a shared pattern in the seeded data. It is not a person and not a diagnosis.',
   matchLine: (n: number) => `${n} seeded synthetic records share this pattern.`,
   patternLabel: 'Shared pattern',
