@@ -19,3 +19,4 @@
 - [Matches timeout and 5,000](project_matches_timeout_5000.md) — MIN-4649: 018 live; 019 passed at 117cc88 (49 KB DO block, fingerprint raise, one-call rollback); one-query replay
 - [Token refresh 401](project_token_refresh_401.md) — MIN-4648: session_not_found from global signOut; auth-js 2.119 keeps the session on a refused refresh (no SIGNED_OUT), probe the library
 - [Staging real data](project_staging_real_data.md) — MIN-4658: branch `staging` builds as demo, tests on twin `staging-dev`; real exams 20 on patient.demo (+10 synthetic), 3 on founder.demo; cleanup direction on hold
+- [Doctor simulate page](project_doctor_simulate.md) — MIN-4670: founder overrode MIN-4504; live boxd machine at the click (SDK /web entry), recorded run is the fallback; MIN-4676 pass, e2e-live specs were not mocked
