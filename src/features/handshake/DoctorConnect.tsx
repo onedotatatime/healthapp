@@ -148,7 +148,7 @@ export function DoctorWorkspace({ feed, children }: { feed: ReturnType<typeof us
     <ActiveGrantContext.Provider value={{ grant: g, onEmptyRead: feed.onEmptyRead }}>
       <div data-testid="doctor-workspace">
         <AccessTimer surface="doctor" expiresAt={localDeadlineIso(g.expires_at!, feed.offsetMs)} totalSeconds={grantSeconds(g)} />
-        <main className="page doctor">
+        <main className="page doctor dash">
           <h1>{whoLine(g.patient)}</h1>
           {children ?? (
             <Suspense fallback={<Spinner label="Loading the record" />}>

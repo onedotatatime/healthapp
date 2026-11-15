@@ -92,3 +92,11 @@
 .sim-foot a{color:var(--color-link)}
 .sim-foot ul{margin:0;padding:0 0 0 var(--space-4)}
 .sim-actions{margin-top:var(--space-4)}
+
+/* MIN-4664 "Run the matching" (Pix, docs/design/min-4659/dashboard.css) */
+.mx-run{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3) var(--space-4);margin:var(--space-2) 0 0}
+.mx-run p{margin:0;flex:1 1 260px}
+.mx-total{font:600 20px/1.4 var(--font);margin:0 0 var(--space-3)}
+.mx-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-3);margin-top:var(--space-3)}
+.mx-foot p{margin:0;flex:1 1 280px}
+.mx-run .btn{min-width:0}
