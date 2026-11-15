@@ -31,7 +31,7 @@
 
 ## 2. How it would work, with the patient's consent
 
-1. **The patient opts in to trial matching.** A separate switch and a separate consent from care and from "possible matches" (slide 7). Off by default, and withdrawable at any time.
+1. **The patient opts in to trial matching.** A separate switch and a separate consent from care and from "possible matches" (slide 6). Off by default, and withdrawable at any time.
 2. **Criteria come from public registries.** ClinicalTrials.gov (US National Library of Medicine, which has a public API) and the EU's Clinical Trials Information System (CTIS), whose public search is "Clinical Trials in the EU" under the Clinical Trials Regulation (EU) No 536/2014. Eligibility there is mostly free text, so each trial's criteria are turned into rules and **a person reviews those rules** before they run.
 3. **The patient's structured record is checked against them:** labs, values against ranges, dates, document kinds, and the written findings. Each criterion comes back as **met, not met or unknown**, with the source document cited. "Unknown" is the honest default for anything our documents do not say.
 4. **The result goes to the patient's doctor, or to the trial site, as "possibly eligible, to be confirmed by the investigator".** Never a diagnosis, never an automatic enrolment. Until the patient agrees to be contacted, a site sees at most an unnamed count.
@@ -69,7 +69,7 @@
 
 ## 6. Fit with the goal
 
-This is direction 5's most concrete use. "Possible matches" (slide 7) connects a patient to doctors with similar cases; trial matching connects the same consenting patient to a study, and it has a buyer. The payer would be **sponsors and CROs, never the patient**: a service fee per matched study is the model in our buyer research (`buyers.md` §1.10). A price is proposed in section 8 (assumptions, to be validated with a sponsor). Our funding plan funds the consent design for direction 5 this round, not a matching product (`team-and-funding-plan.md`), so trials would be the reason to fund the next step, not this one.
+This is direction 5's most concrete use. "Possible matches" (slide 6) connects a patient to doctors with similar cases; trial matching connects the same consenting patient to a study, and it has a buyer. The payer would be **sponsors and CROs, never the patient**: a service fee per matched study is the model in our buyer research (`buyers.md` §1.10). A price is proposed in section 8 (assumptions, to be validated with a sponsor). Our funding plan funds the consent design for direction 5 this round, not a matching product (`team-and-funding-plan.md`), so trials would be the reason to fund the next step, not this one.
 
 ## 7. Risks
 
@@ -122,7 +122,7 @@ The founder, verbatim: *"Pricing -> show different in 3 cards / * The current si
 | 1. Today | **about €36,000**: what one day of delay costs one trial to run | $40,000 a day (row 1) ÷ 1.10 = €36,364, rounded down | our estimate |
 | 2. With Pathien | **about €180,000 saved per trial** | 5 days sooner to full enrolment (assumption; about 1.4% of ASPE's year of recruitment) × €36,000 = €180,000. Below ASPE's lowest modelled phase 3 saving from EHR-based recruitment, $0.46M ≈ €418,000 (row 11) | our estimate |
 | 2, second line | about 6 fewer failed screenings per trial | 50 referrals × (36.3% − 24.2%), if a third fewer of our referrals fail screening (assumption; row 5) | assumption |
-| 3. How we charge | **about €24,000 per trial** | €5,000 + 19 × €1,000 (both assumptions). Sponsor keeps €180,000 − €24,000 = **€156,000**. 10 trials a year: about €240,000 (assumption, not in slide 11) | our estimate |
+| 3. How we charge | **about €24,000 per trial** | €5,000 + 19 × €1,000 (both assumptions). Our fee is about 13% of the €180,000 saving (24 ÷ 180). Sponsor keeps €180,000 − €24,000 = **€156,000**. 5 trials a year: about €120,000 (assumption, not in slide 10; the funding plan uses the same five a year) | our estimate |
 
 ### Pricing model
 
@@ -139,7 +139,7 @@ The founder, verbatim: *"Pricing -> show different in 3 cards / * The current si
 | Set-up fee, per trial and country | €5,000 | assumption |
 | Success fee, per randomised patient | **€1,000** (range €750 to €1,500; v3.9 had €1,500) | assumption. Lowered in v4.0: rows 11 and 12 put the recruitment line at about $500 to $700 per participant and row 8's vendor average is $1,379, so €1,500 (about $1,650) sat above both. €1,000 (about $1,100) stays under the vendor average and is about 2.7% of the median $41,117 per patient (row 7). The value case rests on days saved, not on the fee |
 | Referrals the site accepts, per trial | 50 | assumption |
-| Screen failure at the site | 36.3% | secondary (row 5). The revenue keeps today's rate; slide 7c's "a third fewer" is an assumption shown as people screened, not as money |
+| Screen failure at the site | 36.3% | secondary (row 5). The revenue keeps today's rate; slide 6c's "a third fewer" is an assumption shown as people screened, not as money |
 | Share of patients who pass screening and are randomised | 60% | assumption |
 | Cost of one day of delay to the sponsor | about $40,000 (≈ €36,000 at $1.10 to €1, rounded down; deck v4.5) | verified (row 1); the euro figure is our estimate |
 | Days sooner to full enrolment, per trial | 5 | assumption (v4.0) |
@@ -147,9 +147,9 @@ The founder, verbatim: *"Pricing -> show different in 3 cards / * The current si
 
 **Worked example, one trial in one country** *(our estimate)*: 50 accepted referrals × (1 − 36.3%) = about 32 pass screening × 60% = about 19 randomised. Revenue: €5,000 + 19 × €1,000 = **about €24,000** (v3.9, at €1,500: about €33,500). For the sponsor that is less than the direct cost of one day of delay (row 1).
 
-**Slide 11.** The trial revenue is **not** added as a line D. Slide 11 projects the hospital wedge (per case, per seat, labs); trial pre-screening has no volume history and no sponsor pilot, and the funding plan funds direction 5's consent design this round, not a matching product. Slide 11 names it under "Not counted", and slide 7c (since v4.0; 7b in v3.9) carries the unit, the price and the example. Totals unchanged: €26k / €180k / €560k (conservative) and €258k / €1,705k / €4,850k (upside).
+**Slide 10** (revenue; slide 11 before deck v4.2). The trial revenue is **not** added as a line D. Slide 10 projects the hospital wedge (per case, per seat, labs); trial pre-screening has no volume history and no sponsor pilot, and the funding plan funds direction 5's consent design this round, not a matching product. Slide 10 names it under "Not counted", and slide 6c (7c from v4.0 until the v4.2 renumbering; 7b in v3.9) carries the unit, the price and the example. For planning only, the funding plan counts one trial in months 19 to 24 and then five a year (about €120,000 a year): break-even one quarter sooner, month 28 instead of 31 (`funding-model.py` v4). Totals unchanged: €26k / €180k / €560k (conservative) and €258k / €1,705k / €4,850k (upside).
 
-**Topic 3, patient experience.** Deck v3.9 also puts Topic 3 on slide 7b (cut to two lines in v4.0, founder: "Reduct the content of patient selection and patient experience"): the symptom diary in the patient's words and lab values as a series over time, shared with the trial team with consent. The verdict in section 1 ("partly") stands: the diary is not a validated patient-reported outcome instrument and detects no side effects. It has no separate price; it is part of what a sponsor gets for a randomised patient.
+**Topic 3, patient experience.** Deck v3.9 also put Topic 3 on slide 7b, now 6b (cut to two lines in v4.0, founder: "Reduct the content of patient selection and patient experience"): the symptom diary in the patient's words and lab values as a series over time, shared with the trial team with consent. The verdict in section 1 ("partly") stands: the diary is not a validated patient-reported outcome instrument and detects no side effects. It has no separate price; it is part of what a sponsor gets for a randomised patient.
 
 ## Sources
 
