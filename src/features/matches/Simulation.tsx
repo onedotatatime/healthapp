@@ -1,16 +1,16 @@
 /**
- * /simulation (MIN-4749): the permanent label and one diagram with a plan-month slider over ten years for Greece (SimDiagram.tsx).
- * Nothing on the page moves unless the viewer drags the slider. The data is `ten_years` in data/synthetic/simulation.json (Cron, MIN-4748).
- * If that block cannot be read, the label stays and one sentence says so: no diagram, no placeholder.
+ * /simulation (MIN-4774): the permanent label and ONE loss card with a Greece / Europe (EU-27) / Global switch and a share slider (SimReach.tsx).
+ * Nothing on the page moves unless the viewer moves the slider or the switch. The data is the `reach` block of data/synthetic/simulation.json (Cron, MIN-4773).
+ * If that block cannot be read, the label stays and one sentence says so: no card, no placeholder.
  */
 import { Flask } from '@phosphor-icons/react';
 import simulationJson from '../../../data/synthetic/simulation.json';
 import { COPY } from './copy';
-import { SimDiagram } from './SimDiagram';
-import { parseSimulation, type TenYears } from './tenYears';
+import { parseReach, type Reach } from './reach';
+import { SimReach } from './SimReach';
 import './matches.css';
 
-const PARSED = parseSimulation(simulationJson);
+const PARSED = parseReach(simulationJson);
 
 const Label = () => (
   <p className="sim-label" role="note" data-testid="sim-label">
@@ -19,19 +19,19 @@ const Label = () => (
   </p>
 );
 
-/** `initialMonth` freezes the slider for tests and review; the screen itself never passes it. */
-export function SimulationView({ model, initialMonth }: { model: TenYears; initialMonth?: number }) {
+/** `initialGeo` and `initialShare` freeze the card for tests and review; the screen itself never passes them. */
+export function SimulationView({ model, initialGeo, initialShare }: { model: Reach; initialGeo?: string; initialShare?: number }) {
   return (
     <main className="sim" data-testid="simulation">
       <Label />
       <div className="sim-inner">
-        <SimDiagram model={model} initialMonth={initialMonth} />
+        <SimReach model={model} initialGeo={initialGeo} initialShare={initialShare} />
       </div>
     </main>
   );
 }
 
-/** The data could not be read: the label stays, one card with the sentence, no diagram. */
+/** The data could not be read: the label stays, one sentence, no card. */
 export function SimulationUnavailable() {
   return (
     <main className="sim" data-testid="simulation">
