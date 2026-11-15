@@ -320,7 +320,7 @@ Link: Details → A5
 
 v4.2 (founder, 15 Nov 2026, verbatim): *"bussiness model / We need hospitals, governments, private clinics"*.
 
-**Headline:** The patient never pays. Hospitals, health systems and private clinics do.
+**Headline:** Hospitals, health systems and private clinics pay.
 
 **Body (three buyer groups):**
 
@@ -334,7 +334,7 @@ Also, one line, small: clinical-trial sponsors pay per randomised patient (slide
 
 Link: Details → A6 · Market size → A7
 
-**Visual note for Pix:** Three equal cards or a three-row table, one per buyer group: the name large, who they are and how they pay one line each. Hospitals carries the accent: international-patient departments are the first wedge. "The patient never pays" visible in the headline, not a footer. No prices on this slide. The links bottom-right.
+**Visual note for Pix:** Three equal cards or a three-row table, one per buyer group: the name large, who they are and how they pay one line each. Hospitals carries the accent: international-patient departments are the first wedge. The headline names who pays, in the headline, not a footer. No prices on this slide. The links bottom-right.
 
 **Speaker notes (~25 s):** "The patient is free. Three groups pay. Hospitals, public and private, pay per case or per doctor seat; the first are the ones that treat patients from abroad, whose records arrive in other languages, on paper, or not at all. Governments and national health systems license it, through a tender or a sandbox, as a patient-held layer next to the national record. Private clinics, chains, diagnostic centres and telehealth pay per doctor seat. Research use, if ever, is opt-in and never a data sale."
 

@@ -183,7 +183,7 @@ const mainSlides: Slide[] = [
   },
   {
     id: '9', template: 'table', theme: 'air', roomy: true, no: '09', kicker: 'Business model, who pays', notes: N['9'],
-    headline: 'The patient never pays. Hospitals, health systems and private clinics do.',
+    headline: 'Hospitals, health systems and private clinics pay.',
     cols: '470px 760px 1fr',
     head: ['Who pays', 'Who they are', 'How they pay'],
     rows: [
