@@ -67,27 +67,41 @@ describe('k = 5 and the one empty answer', () => {
   });
 });
 
-describe('the simulate module is offline (MIN-4594)', () => {
+describe('the simulate module is offline, except live.ts (MIN-4594, MIN-4675)', () => {
   const dir = __dirname;
   const files = readdirSync(dir).filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith('.test.ts'));
+  const read = (f: string) => readFileSync(join(dir, f), 'utf8');
+  const code = (f: string) => read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1'); // comments out
   const specifiers = (src: string) => [...src.matchAll(/(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g)].map((m) => m[1]);
+  const others = files.filter((f) => f !== 'live.ts');
 
   it('has the files it should', () => {
-    expect(files).toEqual(expect.arrayContaining(['matcher.ts', 'Simulate.tsx', 'copy.ts']));
+    expect(files).toEqual(expect.arrayContaining(['matcher.ts', 'Simulate.tsx', 'copy.ts', 'live.ts', 'MachineCard.tsx']));
   });
 
-  it('imports nothing from src/api, matches/real, supabase or any URL', () => {
+  it('imports nothing from supabase, matches/real or any URL, in any file', () => {
     for (const f of files) {
-      for (const s of specifiers(readFileSync(join(dir, f), 'utf8'))) {
-        expect(s, `${f} imports ${s}`).not.toMatch(/(^|\/)api(\/|$)|matches\/real|supabase|^https?:/);
-      }
+      for (const s of specifiers(read(f))) expect(s, `${f} imports ${s}`).not.toMatch(/matches\/real|supabase|^https?:/);
     }
   });
 
-  it('makes no network call and writes or sends nothing', () => {
-    for (const f of files) {
-      const src = readFileSync(join(dir, f), 'utf8');
-      expect(src, f).not.toMatch(/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|indexedDB|\.rpc\(/);
+  it('live.ts is the only file that imports from src/api or src/lib/env, and it takes only the session and the env header', () => {
+    for (const f of others) {
+      for (const s of specifiers(read(f))) expect(s, `${f} imports ${s}`).not.toMatch(/(^|\/)api(\/|$)|lib\/env/);
     }
+    expect(specifiers(read('live.ts')).filter((s) => /(^|\/)api(\/|$)|lib\/env/.test(s)).sort()).toEqual(['../../api/authed', '../../api/call', '../../lib/env']);
+  });
+
+  it('makes no network call and writes or sends nothing, in any file', () => {
+    for (const f of files) {
+      expect(code(f), f).not.toMatch(/\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|localStorage|sessionStorage|indexedDB|\.rpc\(/);
+    }
+  });
+
+  it('only live.ts reaches the function, and it reaches exactly one: simulate-live', () => {
+    for (const f of others) expect(code(f), f).not.toMatch(/makeStream|authedCall|requestLive|simulate-live/);
+    const live = code('live.ts');
+    expect(live.match(/makeStream\(/g)).toHaveLength(1);
+    expect(live.match(/['"`]simulate-live['"`]/g)).toHaveLength(1);
   });
 });

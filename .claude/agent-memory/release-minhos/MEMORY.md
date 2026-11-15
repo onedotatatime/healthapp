@@ -6,3 +6,5 @@
 - [Dashboard Pages edge cache](project_dashboard_pages_edge_cache.md) — prod host keeps removed files 7 days (s-maxage); curl prod and hash URL after deploy
 - [Dashboard Pages curls](project_dashboard_pages_curls.md) — index.html 308s, use -L; local 8765 sync is ff-only pull of healthapp-dashboard-live
 - [Release audit cleanup](feedback_release_audit_cleanup.md) — merged = mergeCommit on main + Pages check; leased atomic remote deletes; lsof for live cwd; batch branch -D refused
+- [feedback_quoted_heredoc](feedback_quoted_heredoc.md) — Never build a PR body or comment with an unquoted heredoc; backticks in markdown run as commands in the shell'
+- [project_healthapp_live_function_checks](project_healthapp_live_function_checks.md) — How Release calls a deployed healthapp edge function for real as the dev doctor, proves a boxd machine is gone

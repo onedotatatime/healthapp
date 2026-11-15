@@ -1,4 +1,5 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import type { Browser, Page } from '@playwright/test';
+import { expect, mockSimulateLive, test } from './helpers/simulate-live';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
@@ -69,6 +70,7 @@ test('G2 doctor: profile, sign out, and /doctor/simulate renders and matches', a
   await page.getByTestId('simulate-link').click();
   await expect(page).toHaveURL(/\/doctor\/simulate$/);
   await expect(page.getByTestId('sim-page-label')).toBeVisible();
+  await mockSimulateLive(page); // MIN-4677: the Run click would create a real boxd machine
   await page.getByTestId('sim-run').click();
   await expect(page.getByTestId('sim-matches'), 'matching ran in the browser').toBeVisible({ timeout: 60_000 });
   await shot(page, 'g2-simulate', ti);

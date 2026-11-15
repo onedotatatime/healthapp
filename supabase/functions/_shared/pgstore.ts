@@ -381,3 +381,27 @@ export async function allowTry(env: HealthappEnv, key: string, max: number, wind
     return true;
   });
 }
+
+/** MIN-4674: the one-run-at-a-time lock of healthapp-simulate-live. A row in healthapp_dev.rate_events whatever
+ *  environment calls (the boxd credit is one pool). kind = 'demo_login' only because the table's check allows nothing
+ *  else; rename after the submission. The row stops counting after `ttlSeconds` on its own, so a crashed run never
+ *  blocks anyone for longer. Returns the row id to release, or null when a run holds the lock. */
+export const SIMULATE_LOCK_KEY = "simulate-live:lock";
+export async function takeSimulateLock(ttlSeconds: number): Promise<number | null> {
+  const S = schema("dev");
+  return await db().begin(async (tx) => {
+    await tx.unsafe(`select pg_advisory_xact_lock(hashtext($1))`, [`demo_login:${SIMULATE_LOCK_KEY}`]);
+    const c = await tx.unsafe(
+      `select count(*)::int as n from ${S}.rate_events where kind = 'demo_login' and key = $1 and at > now() - make_interval(secs => $2::int)`,
+      [SIMULATE_LOCK_KEY, ttlSeconds],
+    );
+    if (c[0].n > 0) return null;
+    const r = await tx.unsafe(`insert into ${S}.rate_events (kind, key) values ('demo_login', $1) returning id`, [SIMULATE_LOCK_KEY]);
+    return Number(r[0].id);
+  });
+}
+
+/** Deletes only the row this run took (by id), so a run that outlived its ttl never frees a later run's lock. */
+export async function releaseSimulateLock(id: number): Promise<void> {
+  await db().unsafe(`delete from ${schema("dev")}.rate_events where id = $1 and key = $2`, [id, SIMULATE_LOCK_KEY]);
+}
