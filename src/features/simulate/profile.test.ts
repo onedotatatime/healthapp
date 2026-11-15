@@ -281,6 +281,8 @@ describe('where the sections sit in the result block', () => {
     expect((one.match(/data-testid="recruit-profile" /g) ?? []).length).toBe(1);
     expect(one).not.toContain('recruit-common');
     expect(one).not.toContain('What they have in common');
+    expect(one).toContain('The 1 selected record<');
+    expect(one).not.toContain('The 1 selected records');
   });
 
   it('no number (RA): every fitting record is a card source; 20 on screen; "of N" over all of them', () => {
@@ -313,6 +315,12 @@ describe('the words', () => {
     const h = renderToStaticMarkup(createElement(Profiles, { file: FILE, cond: cond('rheumatoid_arthritis'), rows }));
     expect(h).toContain('(specialty on the record)');
     expect(h).not.toMatch(/(^|[>,] )(Rheumatology|Cardiology|Gp|Endocrinology)(,|<)/);
+  });
+  it('every code of the file reads as words: no "Gp", no "HLA B27", no "VitD" (MIN-4757)', () => {
+    expect(codeText('spec_gp')).toBe('General practice (specialty on the record)');
+    expect(codeLabel('HLA_B27_positive')).toBe('HLA-B27 positive');
+    expect(codeLabel('vitD_low')).toBe('Vitamin D low');
+    for (const c of FILE.codes) expect(codeText(c), c).not.toMatch(/^Gp\b|HLA B27|VitD|_/);
   });
   it('no string says the machine produced the profiles or the counts, and the old "Country only" claim is gone', () => {
     const h = view(cond('rheumatoid_arthritis'), 40);

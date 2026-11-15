@@ -91,7 +91,7 @@ export const RECRUIT_COPY = {
   twoConditions: (used: string) => `Your sentence names two conditions. This search reads one, so it used ${used}. Search again for the other.`,
 
   // 9. Profiles of the selected records (MIN-4756, MIN-4758). Words by Anna Lytica, pasted as written.
-  profilesTitle: (n: string) => `The ${n} selected records, one by one`,
+  profilesTitle: (n: string) => (n === '1' ? 'The 1 selected record' : `The ${n} selected records, one by one`),
   recordLabel: (n: string) => `Record ${n}`,
   countryLabel: 'Country',
   ageBandLabel: 'Age band',
