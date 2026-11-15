@@ -91,7 +91,7 @@ const mainSlides: Slide[] = [
     body: 'For privacy-first patients: a small device holds the full record, encrypted by our own software, not in the cloud.',
     stepsTitle: "How it's used",
     steps: [
-      'The patient is abroad or at a hospital, not in a serious condition.',
+      'The patient is abroad or at a hospital, possibly in a serious condition.',
       'The doctor scans the code on the Vault.',
       'The code opens the Pathien doctor page.',
       'A Pathien support person calls the hospital to verify the situation, then gives the doctor access for a set time.',
@@ -139,11 +139,11 @@ const mainSlides: Slide[] = [
     id: '6c', counter: '6c', template: 'threecards', theme: 'air', kicker: 'Clinical trials', notes: N['6c'],
     headline: 'Recruitment is slow and costly. We make it faster, and charge only per patient.',
     cards: [
-      { title: 'Today, what recruitment costs', figure: { value: '$360M', mark: '*', unit: 'Recruitment budget of industry trials recruiting in the EU now.' } },
-      { title: 'With Pathien, how much cheaper', figure: { value: '$200,000', mark: '*', unit: 'Saved per trial if enrolment finishes 5 days sooner.' } },
-      { title: 'How we charge, and our revenue', accent: true, figure: { value: '€24,000', mark: '*', unit: 'Our revenue per trial: set-up plus €1,000 per randomised patient.' } },
+      { title: 'Today, what a day of delay costs', figure: { value: '€36,000', mark: '*', unit: 'What one day of delay costs one trial to run.' } },
+      { title: 'With Pathien, what one trial saves', figure: { value: '€180,000', mark: '*', unit: 'Saved per trial if enrolment ends 5 days sooner: 5 × €36,000.' } },
+      { title: 'How we charge, and what the sponsor keeps', accent: true, figure: { value: '€24,000', mark: '*', unit: 'Our fee per trial, out of that saving. The sponsor keeps €156,000.' } },
     ],
-    note: '* Our estimate on sourced inputs; prices and volumes are assumptions. Not a result.',
+    note: '* Our estimate for one trial in one country, in euros at $1.10 to €1. Days saved and prices are assumptions. Not a result.',
     links: [{ to: 'A3', label: 'Details → A3' }],
   },
   {

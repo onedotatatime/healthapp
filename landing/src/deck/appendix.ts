@@ -108,10 +108,10 @@ The two points:
 Footer: An option for privacy-first patients. The core business is unchanged.
 
 **For questions: the support call.**
-1. **The patient can't take the call.** Access falls back to a contact the patient named at setup. If that contact can't be reached either, there is no access. The Vault never opens by default.
+1. **The hospital can't confirm.** The support person verifies the situation with the hospital, not with the patient. If the hospital can't be reached or the details don't match, there is no access. The Vault never opens by default.
 2. **Someone tries to talk their way in.** The support person calls the hospital to verify the situation before anything: the doctor's and the hospital's details, and the request from the doctor page, must match the call. Every call and every grant is written to the patient's signed log (slide 5), so the patient sees who asked, who approved and for how long.
 3. **The support person never reads the record.** They approve or refuse a time-limited grant. The record stays encrypted on the Vault, and access ends by itself when the time runs out.
-4. **A serious condition or an emergency.** The flow is for a patient who can take part. Emergencies follow the hospital's own procedures; the Vault is not an emergency service.
+4. **A serious condition.** This is the case the Vault is for: a patient who may not be able to open the phone or the app. It is still not an emergency service. Support verifies with the hospital, not the patient, and the grant is time-limited and logged. Life-threatening emergencies follow the hospital's own procedures.
 5. **Is it built?** No. It is designed, on the same rules as the working app. Say so plainly if asked (rule 8 is waived for the slide, not for the answer).
 
 **Sources:** PRD.md sections 4, 6 and 7; S20; S3; founder's words on slide 5b.`,
@@ -147,23 +147,24 @@ Footer: An option for privacy-first patients. The core business is unchanged.
     columns: [
       `**1. The cards, in full:**
 
-Card 1: Today, what recruitment costs
-- Big number: **about $360M** *(our estimate)*: the recruitment budget of the trials recruiting in the EU today.
-- 1,497 industry phase 2 and 3 trials are recruiting in the EU, planning 776,650 participants. *(ClinicalTrials.gov, 15 Nov 2026, S31, verified)*
-- Recruiting one participant costs about **$500 to $700**. *(ASPE, S29 and S30, our estimate)*
+All three cards: one trial in one country, in euros at $1.10 to €1 *(assumption)*.
 
-Card 2: With Pathien, how much cheaper
-- Big number: **about $200,000 saved per trial** *(our estimate)*: 5 days sooner to full enrolment *(assumption)* × $40,000 a day of delay *(S23, verified)*.
-- Fewer failed screenings: today 36.3% fail *(S26, secondary)*. If a third fewer of our referrals fail, the site screens about 6 fewer people per trial *(assumption)*.
-- Across the 1,497 trials: about **$300M** *(our estimate, if each saved 5 days)*.`,
-      `Card 3: How we charge, and our revenue
+Card 1: Today, what a day of delay costs
+- Big number: **about €36,000** *(our estimate)*: what one day of delay costs one trial to run.
+- About $40,000 a day in direct costs to run a phase 2 or 3 trial *(Tufts CSDD, S23, verified)*. ÷ 1.10 = €36,364, rounded down to €36,000. Lost sales not counted.
+
+Card 2: With Pathien, what one trial saves
+- Big number: **about €180,000 saved per trial** *(our estimate)*: 5 days sooner to full enrolment *(assumption)* × €36,000 = €180,000.
+- Below ASPE's lowest modelled saving from EHR-based recruitment, $0.46M ≈ €418,000 per phase 3 study *(S29, verified)*.
+- Fewer failed screenings: today 36.3% fail *(S26, secondary)*. If a third fewer of our referrals fail, the site screens about 6 fewer people per trial *(assumption)*.`,
+      `Card 3: How we charge, and what the sponsor keeps
 - Big number: **about €24,000 per trial** *(our estimate)*: €5,000 set-up + €1,000 per randomised patient *(assumptions)* × about 19 randomised.
-- The sponsor keeps about **€158,000** per trial after our fee *(our estimate, at $1.10 to €1, assumption)*.
+- The sponsor keeps €180,000 − €24,000 = **about €156,000** per trial *(our estimate)*.
 - 10 trials a year: about €240,000 *(assumption; not in slide 10's totals)*. Never the patient.
 
 Footer: Prices, volumes, days saved and the exchange rate are assumptions. "Our estimate" is our arithmetic on sourced inputs, not a result. Consent only. Never a data sale.
 
-**3.** **The worked example** *(our estimate; do not read out)*: one trial, one country. 50 referrals the site accepts (assumption) × (1 − 36.3% screen failure, S26) = about 32 pass screening × 60% randomised (assumption) = about 19 randomised. Revenue: €5,000 + 19 × €1,000 = **about €24,000**. Saving: 5 days (assumption) × $40,000 (S23) = $200,000 ≈ €181,800 at $1.10 to €1 (assumption). Sponsor keeps €181,800 − €24,000 ≈ **€158,000**. The revenue counts screen failure at today's 36.3%, so a lower screen failure among our referrals does not raise our revenue here. Screen failures avoided: 50 × (36.3% − 24.2%) ≈ 6 (a third fewer, assumption).`,
+**3.** **The worked example** *(our estimate; do not read out)*: one trial, one country. 50 referrals the site accepts (assumption) × (1 − 36.3% screen failure, S26) = about 32 pass screening × 60% randomised (assumption) = about 19 randomised. Revenue: €5,000 + 19 × €1,000 = **about €24,000**. Saving: 5 days (assumption) × €36,000 a day ($40,000, S23, at $1.10 to €1, assumption, rounded down) = **€180,000**. Sponsor keeps €180,000 − €24,000 = **€156,000**. The revenue counts screen failure at today's 36.3%, so a lower screen failure among our referrals does not raise our revenue here. Screen failures avoided: 50 × (36.3% − 24.2%) ≈ 6 (a third fewer, assumption).`,
       `**4. Answers for questions, slide 6b:**
 - *"What runs today?"* The extraction into a fixed schema (values, units, printed ranges, dates), the symptom diary, values as a series over time, the opt-in and the time-limited access, on synthetic data. Trial matching itself (criteria into rules, the matching engine, sharing with a trial team) is not in the demo and has no results yet. Many criteria (diagnosis codes, medications, staging) are not in our documents, so they come back "unknown". Never say "used by", "validated" or a result.
 - *"Is the diary a validated outcome measure?"* No. It keeps the patient's words, the time and a 1 to 10 severity, and never says what a symptom might be.
@@ -182,9 +183,11 @@ Footer: Prices, volumes, days saved and the exchange rate are assumptions. "Our 
     columns: [
       `**2. How each big number is built, and answers for questions, slide 6c:**
 - *"Where does $500 to $700 come from?"* ASPE's cost model (Sertkaya et al., 2014, Medidata data) puts patient recruitment at $161,140 per phase 2 study and $308,672 per phase 3 study (S29). ASPE's 2024 update counts 235 patients per phase 2 trial and 630 per phase 3 (S30). $161,140 ÷ 235 ≈ $690; $308,672 ÷ 630 ≈ $490. Two reports, different years, 2014 dollars not inflated: our estimate. It is the recruitment line only (adverts, outreach); staff time for screening sits in other lines. A recruitment vendor publishes $577 to $2,000 per randomised patient in its own campaigns (S28, vendor claim).
-- *"Where does $360M come from?"* 710 phase 2 trials × $161,140 + 787 phase 3 trials (81 of them phase 2/3) × $308,672 ≈ $357M (S29, S31). It covers the life of those trials, not one year. Enrolment counts are global for trials with at least one EU site.
-- *"Why 5 days?"* ASPE assumes about a year of recruitment per phase (S29), so 5 days is about 1.4% of it. ASPE also modelled EHR-based recruitment: 35.9% lower recruitment cost per patient, and $0.46M to $2.5M saved per phase 3 study (3.1% to 8.8% of its cost) (S29, verified). Our $200,000 sits below ASPE's lowest phase 3 figure on purpose. An assumption, to be tested with a sponsor.`,
-      `- *"Why €1,000 a randomised patient, not €1,500?"* v3.9 had €1,500. ASPE puts the recruitment line at about $500 to $700 per participant (S29, S30), and the vendor average is $1,379 (S28): €1,500 (about $1,650) would sit above both. €1,000 (about $1,100) stays under the vendor average and is paid only when the patient is randomised. The value case rests on days saved, not on the fee. Q38 is open: the founder decides.
+- *"How big is the market?"* Context, not on the slide, and not comparable with the cards: 1,497 industry phase 2 and 3 trials are recruiting in the EU, planning 776,650 participants (S31; global enrolment). Their recruitment budget: 710 × $161,140 + 787 (81 of them phase 2/3) × $308,672 ≈ $357M ≈ €325M over the life of those trials, not one year (S29, S31, our estimate). If each finished 5 days sooner: 1,497 × €180,000 ≈ €270M of running cost (our estimate). A different budget line from the recruitment budget: never set side by side.
+- *"Why the cost of a day, not the recruitment budget per trial?"* $357M ÷ 1,497 ≈ $240,000 per trial is the whole trial's recruitment line, worldwide. On that line alone, ASPE's 35.9% lower cost per patient (S29) on our about 19 patients saves under €5,000 (our estimate), less than our fee. A sponsor's value is the days, so the cards use the cost of a day.
+- *"Why €36,000 a day?"* The phase 2 and 3 blend (S23), rounded down. Phase 2: about €21,600 a day, 5 days ≈ €108,000. Phase 3: about €50,700, 5 days ≈ €253,000.`,
+      `- *"Why 5 days?"* ASPE assumes about a year of recruitment per phase (S29), so 5 days is about 1.4% of it. ASPE also modelled EHR-based recruitment: 35.9% lower recruitment cost per patient, and $0.46M to $2.5M saved per phase 3 study (3.1% to 8.8% of its cost) (S29, verified). Our €180,000 (about $198,000) sits below ASPE's lowest phase 3 figure on purpose. An assumption, to be tested with a sponsor.
+- *"Why €1,000 a randomised patient, not €1,500?"* v3.9 had €1,500. ASPE puts the recruitment line at about $500 to $700 per participant (S29, S30), and the vendor average is $1,379 (S28): €1,500 (about $1,650) would sit above both. €1,000 (about $1,100) stays under the vendor average and is paid only when the patient is randomised. The value case rests on days saved, not on the fee. Q38 is open: the founder decides.
 - *"Why a set-up fee?"* Each trial's criteria are turned into rules, and a person reviews those rules before they run. €5,000 per trial and country is an assumption.
 - *"Trial clinics pay?"* Sponsors and CROs fund recruitment and pay sites per patient. We bill the sponsor or CRO, or the site where the sponsor's recruitment budget runs through it. Never the patient. A recruitment service fee, never a data sale.
 - *"How hard is recruitment?"* About 11% of sites in a typical trial enrol no patient and 37% under-enrol (S24, secondary, old). 19% of phase 2 and 3 trials closed in 2011 ended early for poor accrual or below 85% of target (S25, verified).`,
