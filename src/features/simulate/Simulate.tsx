@@ -19,6 +19,7 @@ import { RING_MAX, brightFraction, stageOfStep, STAGE_IDS, type StageId } from '
 import { afterReveal, answerFor, prepare, replayPlan, search, type Answer, type OkRequest, type Prepared } from './flow';
 import { codeLabel, countryName } from './format';
 import { MachineCard, type MachineView } from './MachineCard';
+import { CommonView, Profiles } from './Profiles';
 import { parseRecruitFile, type RecruitCondition, type RecruitFile, type RecruitResult } from './recruit';
 import './recruit.css';
 import './simulate.css';
@@ -283,7 +284,7 @@ export function Records({ sectionRef, id, file, request, prepared, field, step, 
         onRevealed={onRevealed}
       />
       {prepared.shown && <Steps prepared={prepared} step={step} />}
-      <Ending file={file} cond={request.condition} asked={request.asked} prepared={prepared} step={step} done={done} />
+      <Ending id={id} file={file} cond={request.condition} asked={request.asked} prepared={prepared} step={step} done={done} />
     </section>
   );
 }
@@ -349,8 +350,8 @@ function Steps({ prepared, step }: { prepared: Prepared; step: number }) {
   );
 }
 
-/** The "Compared" line from the fit stage on; after the last stage the result. Under 5 only the one sentence: no count, no countries. */
-function Ending({ file, cond, asked, prepared, step, done }: { file: RecruitFile; cond: RecruitCondition; asked: number | null; prepared: Prepared; step: number; done: boolean }) {
+/** The "Compared" line from the fit stage on; after the last stage the result, the profiles and what they share (MIN-4756). Under 5 only the one sentence: no count, no countries, no profile. */
+function Ending({ id, file, cond, asked, prepared, step, done }: { id: number; file: RecruitFile; cond: RecruitCondition; asked: number | null; prepared: Prepared; step: number; done: boolean }) {
   const must = cond.must.map(codeLabel).join(', ');
   const some = cond.some.map(codeLabel).join(', ');
   const compared = cond.some.length === 0 ? T.comparedOnlyMust(must) : T.compared(must, some, String(cond.min_some));
@@ -376,6 +377,8 @@ function Ending({ file, cond, asked, prepared, step, done }: { file: RecruitFile
             </>
           )}
           <p data-testid="recruit-countries">{T.countries(res.countries.map(countryName).sort((a, b) => a.localeCompare(b)).join(', '))}</p>
+          <Profiles key={id} file={file} cond={cond} rows={res.rows} />
+          {prepared.common && <CommonView common={prepared.common} />}
           <p className="muted sm-small">{T.groupNote}</p>
         </div>
       )}

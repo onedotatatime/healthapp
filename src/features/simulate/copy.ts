@@ -27,7 +27,7 @@ export const COPY = {
   machineStates: { created: 'Created', running: 'Running', done: 'Done', deleted: 'Deleted' },
 
   recordsTitle: (total: string) => `The ${total} records`,
-  recordsBody: 'One dot each. Country only, no names or ID. The place of a dot means nothing.',
+  recordsBody: 'One dot each, without name or ID. The place of a dot means nothing.',
   canvasLabel: (total: string, stage: string) => `${total} synthetic records, one dot each. ${stage}`,
   canvasStage: {
     all: 'All records shown.',
@@ -89,6 +89,29 @@ export const RECRUIT_COPY = {
   emptyBox: 'The box is empty. Write a number and a condition, for example the sentence shown.',
   tooMany: (total: string) => `That number is more than the ${total} records in this search. Ask for ${total} or fewer.`,
   twoConditions: (used: string) => `Your sentence names two conditions. This search reads one, so it used ${used}. Search again for the other.`,
+
+  // 9. Profiles of the selected records (MIN-4756, MIN-4758). Words by Anna Lytica, pasted as written.
+  profilesTitle: (n: string) => `The ${n} selected records, one by one`,
+  recordLabel: (n: string) => `Record ${n}`,
+  countryLabel: 'Country',
+  ageBandLabel: 'Age band',
+  /** Wrap any specialty code with this. It reads as a field on the record, never as a finding. */
+  specialtyOn: (name: string) => `${name} (specialty on the record)`,
+  showing: (a: string, n: string) => `Showing ${a} of ${n}`,
+  /** k = how many the click adds: 100, or what is left when fewer remain. */
+  showMore: (k: string) => `Show ${k} more`,
+  /** Fixed by the CTO, word for word. Plain small text, not a bordered pill. Do not edit. */
+  profilesNote: 'Shown one by one because these records are synthetic. On real records the matching answers in groups, never one record at a time.',
+
+  // 10. What they have in common
+  commonTitle: 'What they have in common',
+  commonBasis: (n: string) => `Counted over the ${n} selected records.`,
+  allHave: (n: string) => `All ${n} have`,
+  halfHave: 'At least half have',
+  xOfN: (x: string, n: string) => `${x} of ${n}`,
+  /** list: "40-49: 18, 50-59: 22" built from the file's age-band strings and the counts. */
+  ageBands: (list: string) => `Age bands: ${list}.`,
+  commonNothingMore: 'No other coded feature is on at least half of these records.',
 
 } as const;
 

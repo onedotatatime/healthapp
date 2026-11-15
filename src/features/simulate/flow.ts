@@ -9,6 +9,7 @@ import { vmOffsets } from './format';
 import { PHASE_IDS, type PhaseId, type VmBlock } from './matcher';
 import { ELIGIBLE, OPTED, RING_MAX, SELECTED, STAGE_IDS, type StageId } from './dots';
 import { SM_FADE_MS, ringsTotal, stepAt } from './motion';
+import { commonOf, type Common } from './profile';
 import { parseRequest, recruit, type ParsedRequest, type RecruitFile, type RecruitResult } from './recruit';
 
 export type OkRequest = Extract<ParsedRequest, { kind: 'ok' }>;
@@ -40,6 +41,8 @@ export interface Prepared {
   many: boolean;
   /** The stages the animation draws: all four, or only the first two under 5 (the "fit" stage is never drawn). */
   stages: StageId[];
+  /** What the selected records share (MIN-4756), counted once here over every selected row. Null when nothing is shown or fewer than 2 are selected. */
+  common: Common | null;
 }
 
 /** Step 1 of the click: the search itself. One recruit() call; cheap enough to run inside the click. */
@@ -63,7 +66,7 @@ export function prepare(file: RecruitFile, parsed: OkRequest, res: RecruitResult
     }
   }
   if (!res.shown) {
-    return { res, shown: false, counts: null, optedIn, cls, selected: [], many: false, stages: STAGE_IDS.slice(0, 2) };
+    return { res, shown: false, counts: null, optedIn, cls, selected: [], many: false, stages: STAGE_IDS.slice(0, 2), common: null };
   }
   const all = recruit(file, parsed.condition, null);
   if (!all.shown || all.eligible !== res.eligible || res.optedIn !== optedIn) throw new Error('flow: two recruit() calls disagree');
@@ -81,6 +84,7 @@ export function prepare(file: RecruitFile, parsed: OkRequest, res: RecruitResult
     selected: res.rows,
     many: res.selected > RING_MAX,
     stages: [...STAGE_IDS],
+    common: commonOf(file, parsed.condition, res.rows),
   };
 }
 
