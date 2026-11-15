@@ -91,7 +91,7 @@ const mainSlides: Slide[] = [
     body: 'For privacy-first patients: a small device holds the full record, encrypted by our own software, not in the cloud.',
     stepsTitle: "How it's used",
     steps: [
-      'The patient is abroad or at a hospital, not in a serious condition.',
+      'The patient is abroad or at a hospital, possibly in a serious condition.',
       'The doctor scans the code on the Vault.',
       'The code opens the Pathien doctor page.',
       'A Pathien support person calls the hospital to verify the situation, then gives the doctor access for a set time.',
