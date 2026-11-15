@@ -439,6 +439,8 @@ You asked for light and dark. Nothing in `src/` switches theme, and A12 left a d
 
 ## A14. Addendum: one plot, five lines, animated (MIN-4722, parent MIN-4696)
 
+**Superseded by A15 (MIN-4747, founder 2026-11-15: one diagram with a slider, not animated).** Sections 1 to 4 (the scale rule, the line table, the plot geometry, heads) are kept in A15 where A15 says so; the clock, the month readout, Replay and the head labels in sections 4 to 7 are gone. Patients are tagged Plan, not Computed (CTO ruling on MIN-4720), in the section 2 table below.
+
 Founder, 2026-11-15, verbatim: "no no no. We said one diagram with all the lines on the same showing how while the users are growing so as the matches how the other numbers are growing", then "animated". The contract is the CTO's on MIN-4720 (comment 6fba2571): one plot, five lines, one scale per unit (people against patients; euros against income; diagnoses on their own), linear from zero, gridlines at 0, half and the reference, no unit tick values, the scale fixed from the first frame, straight segments, every real value visible at a line head (or in a five-row readout on a phone), the card on its own clock. This section settles only what the CTO left to design. Goal: supports directions 4 and 5 (patients, matches and money growing together on the page that sells them).
 
 **Verified:** the mock `docs/design/min-4722/timeline-mock.html` loads the repo's token files, holds the real `timeline` block of `data/synthetic/simulation.json` (synthetic records and a plan) and Anna's section 8 strings; rendered in headless Chrome at 1280 and 390 (iframe, so the phone layout is real), final frame, month 14, month 6. Measured from the DOM: no horizontal overflow at either width (`scrollWidth` equals the viewport), phone readout rows 53 to 61 px high, label stack at 1280 contiguous and inside the plot. The greyscale render of the 1280 final frame (`shots/1280-final-greyscale.png`) still tells solid, dash-dot and dashed apart, and the five marker shapes apart. **Not verified:** the frame budget (the mock redraws head shapes with `innerHTML`; Ren builds them once and moves them), touch, a real phone, reduced motion in a real browser (the mock only honours `?still=1` and the media query), contrast numbers re-measured (A13 section 7 pairs are reused: same tokens, same grounds), the IntersectionObserver start on a scrolled page. Figma: no file touched; the mock and renders are the record for this issue.
@@ -524,6 +526,124 @@ Every axis from zero and the three gridlines at `y(0)`, `y(.5)`, `y(1)`; every p
 2. **The leaders cross the not-yet-drawn region mid-run** (the labels stay in the right column). They are quiet 1 px lines but long at month 6 to 12. The alternative, labels that travel with the heads, collides with the lines. Kept the column; flagging it.
 3. **A zero money value reads "€0"** (not "€0k"); the one formatter for the page covers it. Anna: confirm "€0 a year" at the flat months.
 4. **Left out:** a legend, hover or tap values, a label on the half gridline, any second axis, an area fill, a count-up between months, a dark view (the app has no dark theme).
+
+## A15. Addendum: one diagram, a plan-year slider, nothing moves (MIN-4747, parent MIN-4696). Supersedes A14.
+
+Founder, 2026-11-15, verbatim: "We just need one fucking diagram with all the numbers not animated but with a slider showing in 10 years the money can be saved in greece while we grow the correct diagnoses". About the EU hero: "wtf is this number? asking again." Back's acceptance: one diagram, one card, nothing moves unless the viewer drags the slider. The hero card (dot field and the EU-27 figure), the three small charts and the animated card (A14) are all replaced by this one card; the permanent label "Simulation on synthetic data. A model, not a measurement" stays. Words: Anna, MIN-4723 comment 9e14b7f0. Rules: the CTO's one-scale-per-unit contract (MIN-4720 comment 6fba2571), still in force until the CTO's MIN-4744 ruling says otherwise. Goal: supports directions 4 and 5 (a doctor or investor sees what real matching and the patient analysis could change in Greece over ten years, as a model and not a promise).
+
+**What survives from A14:** the five lines, the pattern-is-kind rule, the markers, the kind tags, the scale rule and its sentences, the permanent label, the notes. **What dies:** the clock, the playhead, the clip reveal, the month readout, Replay, head labels and leaders, the 24 monthly points, the 500 ms per month. Nothing in this card is animated: no transition, no easing, no timer, no `requestAnimationFrame`, no IntersectionObserver. The only thing that changes is what the viewer's slider causes, and it changes in the same frame as the input event. Reduced motion needs no branch.
+
+**Verified:** the mock `docs/design/min-4747/slider-mock.html` loads the repo's token files and renders at 1280 and 390 (iframe, so the phone layout is real) at plan year 3 and 10 (and 1, and the variants in section 9). Measured from the DOM: no horizontal overflow at either width (`scrollWidth` equals the viewport); the slider thumb's centre x equals the year marker's x to the tenth of a pixel at both widths; slider 44 px high; readout rows 57 to 61 px (the diagnoses row 114 with its one-line help); at 390 the card top to the slider's bottom is 587 px. Contrast pairs computed from the token hexes: ink on peach 12.78, ink on mist 14.86, the three line colours on mist (the assumed band) 4.85 to 10.90 (all above the 3:1 non-text floor), the slider track `--field-border` on white 4.38, the thumb on white 5.47. A greyscale render (`shots/1280-year3-greyscale-crop.png`) tells solid, dashed and dash-dot apart. **Not verified:** a real phone and touch (the drag, the 44 px target by thumb), keyboard in Safari and Firefox (only Chrome rendered; the Firefox thumb rules are written and unrun), a screen reader reading `aria-valuetext`, the hero and rows with real numbers (all numbers in the mock are placeholders, section 11), the card on the real page below the real hero stub. Figma: no file touched; the mock and renders are the record, as in A14.
+
+### 1. The card, top to bottom
+
+| # | Block | 1280 | 390 |
+|---|---|---|---|
+| 1 | Title (`gTitle`, `--text-lead`) | full width | full width |
+| 2 | Caption (`gCaption`, `--text-doctor-body`, `--color-muted`, max 70ch) | under the title | **moves below the readout rows** (it is five lines; it must not push the slider down) |
+| 3 | The money readout (the hero number) | right column, top | first block, above the plot |
+| 4 | The plot with the slider under it | left column, spans the readout's height | full width |
+| 5 | The other four readout rows | right column, under the money | under the slider |
+| 6 | The notes (section 8) and "Show the values" | full width, under | full width, under |
+
+Grid: wide is two columns, `minmax(0,1fr)` and 320 px, gap 24, areas `plot money` / `plot list`; narrow is one column, gap 8, areas `money` / `plot` / `list`. The caption and notes sit outside the grid and change position with CSS `order` only (one element each, no duplicate text). The card keeps A14's surface (`--glass-card`, `--glass-edge`, `--radius-card`, `--shadow-soft`, padding 12/16 at 390, 16/24 from 900). Between 481 and 899 px: the 390 layout, the plot as wide as the column.
+
+### 2. The plot (one SVG, built at its measured width, 1 unit = 1 CSS px)
+
+| | 1280 (card 1120) | 390 (card 358) |
+|---|---|---|
+| SVG width | 726 (the left column) | 324 |
+| Insets `L`, `R`, `T`, `B` | 28, 20, 46, 40 | 28, 20, 54, 40 |
+| Plot height `H` | 320 | 160 |
+| Year step | 75.3 px | 30.7 px |
+| Plot block height | 406 | 254 |
+
+`x(y) = L + (y - first) * (W - L - R) / (last - first)` (`y` a year; with 10 years, `first` 1, `last` 10), `yy(f) = T + H * (1 - f)`, `f` = value / the unit's reference (the maximum of the unit's lines over every year in the file). The scale never changes with the slider. Layers, bottom to top: the assumed band (section 6); vertical hairlines at every year (`--color-border`); gridlines at 1 (dotted `2 3`, `--color-border-strong`, the ceiling), at 0.5 and at 0 (the axis); year ticks and numbers 1 to 10 (11 px, `--color-muted`) and the axis title "Plan year" (`gSliderLabel`); the five straight polylines; the current-year line; the five markers at that year. **No label on any line and no value on the plot.** Every value is in the readout, which is also the legend (glyph = the line's pattern plus its marker). Direct labels at the right end were dropped: patients, income and diagnoses all end at the same point, and a value on a line that the slider moves would repeat the readout.
+
+The y axis wording (CTO rule 5): `0` left of the zero line, and `tlScaleTop` "Top: the largest value in the unit" above the top gridline at `L`; no tick values, no label on the half gridline. The two scale sentences `tlScale` and `tlScaleMore` sit with the notes (section 8), always visible, never in a disclosure.
+
+**The current year.** A 1.5 px vertical line in `--color-text` from the top gridline to the axis, at `x(year)`, and one marker per line on it (shape and size in section 3). It jumps from year to year; there is no tween. The slider's thumb centre is at the same x (section 5), so the line and the thumb read as one control.
+
+### 3. The five lines
+
+| Line (readout order) | Kind tag | Pattern | Colour token | Marker | Stroke |
+|---|---|---|---|---|---|
+| Money in Greece: "Modelled drop in cost in Greece" (or "Money saved in Greece", section 9) | Model | dashed `6 4` | `--color-flag-text` | diamond, r 7.5 | **4.5 px** (the only heavy line) |
+| Our income | Plan | dash-dot `12 4 2 4`, dash offset 11 | `--color-info` | triangle up, r 6 | 3 px |
+| Patients in the network | **Plan** | dash-dot `12 4 2 4` | `--color-info` | square, r 6 | 3 px |
+| Records with a match | Computed on synthetic records | solid | `--color-link` | circle, r 6 | 3 px |
+| Correct diagnoses gained | Model | dashed `6 4` | `--color-flag-text` | triangle down, r 6 | 3 px |
+
+Patients is **Plan** (CTO ruling MIN-4720, fix B; the A14 table said Computed and was wrong). The pattern says the kind, the marker says the line, colour repeats the kind and is never the only cue. Draw order, bottom to top: diagnoses, matches, patients, income, money, so the money line is always on top. Patients and income share a pattern and a colour: the 11 px dash offset on income makes their dashes interleave where they overlap, and the markers and the readout separate them. Straight segments, `stroke-linejoin: round`, butt caps. Markers have a 2 px `--color-surface` stroke.
+
+### 4. The readout (the five values at the slider's year)
+
+**The money block (most prominent).** A card inside the card: `--color-surface-quiet` fill, 1 px `--color-border-strong`, `--radius-sm`, padding 8/16/12. Inside: the line's glyph (36 x 14) and the head name (`--text-label` at 16 px, `--color-text`); the value (600, **40 px at 1280, 36 px at 390**, `--color-text`, tabular numerals); under it "a year" (`--text-label` 16 px, `--color-muted`; at 390 it sits on the value's line, at 1280 on the next); the kind tag "Model" (`--text-label`, `--color-muted`); and `gHelp.money` (14 px, `--color-muted`). Measured: 188 px high at 1280 (at year 3), 146 px at 390.
+
+**The four rows**, in this order and never reordered: Our income, Patients in the network, Records with a match, Correct diagnoses gained (euros, then people, then diagnoses, as A14 grouped by unit). Each row: a 36 px glyph column, the head name over the kind tag (both `--text-label`; name `--color-text`, tag `--color-muted`), and the value at the right (`--text-h2`, `--color-text`, tabular numerals, nowrap) with its suffix under it (`--text-label`, `--color-muted`: "a year, plan", "a year, in the model"; none for the two people rows). Minimum row height 56 (measured 57 to 61); a 1 px `--color-border` rule between rows. Diagnoses carries `gHelp.dx` as one extra line (14 px, `--color-muted`).
+
+**Number format (one formatter for the page, Anna to confirm):** euros under €1,000 whole ("€640"); under €1 million in thousands ("€121k"); from €1 million with one decimal ("€1.3 million"); people as a whole number with thousands separators; diagnoses one decimal under 10, whole from 10. A value that changes the displayed unit (€999k to €1.0 million) is allowed to jump; it is a different year.
+
+### 5. The slider
+
+A native `<input type="range">`, `min` first year, `max` last year, `step` 1, no JavaScript widget. Label (`gSliderLabel`, "Plan year", `--text-label` at 16 px) at the left and the year text at the right of one row above it ("Year 3 of 10", `gSliderValue`, 600 16 px, tabular numerals), then the track. **Height 44 px (`--target-min`): the whole 44 px band is the touch target, not only the thumb.** Track: 8 px, `--radius-pill`, `--color-border-strong` (4.38:1 on white). Thumb: 32 px circle, `--color-link` fill, 3 px `--color-surface` ring, 1.5 px `--color-link` outer ring (5.47:1). Focus: `--focus-ring` / `--focus-offset` on the thumb (`:focus-visible` only). No filled "progress" track: the value is read from the marker, not the fill.
+
+**Alignment:** the input's left margin is `L - 16` and its width `(W - L - R) + 32`, so the thumb's centre is exactly `x(year)` (measured: equal to the marker to 0.1 px at both widths). The 16 is half the thumb; Firefox's 26 px thumb needs `L - 13` and `+ 26`; Ren sets both from one constant.
+
+**Keyboard and assistive technology:** arrows move one year, Home and End go to the first and last year, Page keys are the browser default; nothing to build. `aria-valuetext` is "Year 3 of 10, plan" or "Year 7 of 10, assumed growth", set on every input. The SVG is `aria-hidden`. **No `aria-live`:** the slider's value text is the announcement; the card's description (`gDesc`) is rewritten on every input and is read when the card is read, not announced. "Show the values" (a `details` with a ten-row table) stays as the accessible version of the whole chart.
+
+**Reading under the finger:** at 390 the money number is above the plot and the slider is below it, with 587 px between the card's top and the slider's bottom (so the number, the plot and the thumb are on one 664 px screen under a 72 px label bar only if the card is scrolled to its top; 659 of 664, tight, see open question 6).
+
+### 6. Years past the plan must look like an assumption
+
+The plan covers years 1 to 3 (`plan_last`); everything after is an assumed growth rate. Three cues, all on at once, none colour-only:
+
+1. **A hatched band** behind the plot from half a year after the last plan year to the right edge (`x(plan_last + 0.5)`): `--color-surface-quiet` with 45 degree hairlines 9 px apart (`--color-border-strong` at 55% opacity, 1.5 px), a 1.5 px dashed ink edge on its left (`4 3`, `--color-text`). The hatch is decoration only; every line and marker has at least 4.85:1 against the band.
+2. **Two labels above the plot**, 11 px (12 from 900) 600 `--color-text`, each over its own region, top aligned to the card's edge of the SVG: "Plan: years 1 to 3" (NEW `gBandPlan`) over the plan region and "Assumed growth, not in the plan: 40% a year" (NEW `gBandAssumed`, the rate from the file) over the assumed region. At 390 both wrap to two lines (a reserved 30 px strip, T = 54). They are above the plot, not on it: a label on the band hid the lines at years 9 and 10 in the first render.
+3. **A state line under the slider** with a fixed 26 px height so the slider never moves: for plan years the words "In the plan" (NEW `gStatePlan`, `--text-label`, `--color-muted`); for assumed years a pill with "Assumed growth, not in the plan" (NEW `gStateAssumed`: `--color-caution-bg` fill, ink text 12.78:1, 1 px `--color-flag-text` edge, `--radius-pill`, `--text-label`). The slider's `aria-valuetext` says the same.
+
+The lines themselves are drawn the same way in both regions (a different stroke would claim two different kinds of line); the band is what says "assumed". Patients and income keep the kind tag "Plan" in the readout in every year; the state line and the band carry the assumption.
+
+### 7. So that either answer fits (CTO MIN-4744, CEO seat MIN-4746)
+
+One constant block, nothing else in the layout changes: `DG = { first, last, unit: 'year' | 'month', planLast, step, assumedRate }`.
+
+- **Horizon, yearly 1 to 10 (as drawn) or monthly to 120.** The plot is one polyline per line between the file's points; `x()` and the ticks use `first`/`last`; ticks and numbers are always one per year (a month horizon labels every 12th month as the year), so 120 points change no layout. The slider's `max` is `last` and `step` 1; at 120 the thumb moves 5.6 px per step at 1280 and 2.4 px at 390, which is below a finger's precision; for a monthly file keep `step` 1 for the keyboard and let the pointer snap to every month (nothing more to design). The year text becomes `gSliderValue` with "Month {n} of {last}" (Anna's second key) or, preferably, "Year {y}, month {m}". The band's left edge is `x(planLast + 0.5)` either way.
+- **Growth assumption.** The rate is read from the file and printed in `gBandAssumed` and `gAssumeGrowth`. If the CTO or the CEO seat chooses a different rule per line (not one rate), the band and the labels do not change; the label reads "Assumed growth, not in the plan" without a number, and `gAssumeGrowth` carries the rules in words.
+- **"Saved" or "modelled drop" (the CEO seat rules).** Only the money line's head name, the card title, the caption and the table column change (Anna's columns M and S). The block and the readout are the same size in both: "Money saved in Greece" is shorter than "Modelled drop in cost in Greece", so M is the longer string and the one the layout is checked with. `?saved=1` in the mock shows S (`shots/1280-year10-saved-wording.png`).
+- **Cumulative money.** If the CEO seat wants "added up over {n} years" it is one more row under the money block (`--text-h2`, same grammar, its own tag "Model"), never a new line on the plot (the plot's scale rule has no running total). Not drawn; Anna's `gDesc` has no string for it.
+
+### 8. Notes under the card (Anna's strings, unchanged), in this order
+
+`tlScale`, `tlScaleMore` (`--color-muted`, 14 px), then the scale fact "For scale: Greece spent {total} on health in {year}, {perInhabitant} for each inhabitant." (`--text-label` at 16 px; Anna's recommended A; it replaces the EU-27 figure), then `gAssumeEffect`, `gAssumeVisits`, `gAssumeShare`, `gAssumeGrowth`, `gIncomePlan`, `gBase`, `gFormula` (rewritten at the slider's year), `gSource` (`--color-muted`), then "Show the values" and its table. Nothing in this list is cut at 390 (the CEO seat's conditions); the card is 2,013 px high at 390 with them. "Years 1 and 2 in the table and the plot are the file's months 12 and 24" is Cron's note, not on screen.
+
+### 9. States, variants, deleted
+
+| State | What shows |
+|---|---|
+| First paint | Slider at plan year 3 (`plan_last`, the last year the plan covers), the readout and the marker for year 3, no scroll or timer needed |
+| Any year | Every value, the marker and the state line change in the input event's frame |
+| `timeline` (or its yearly series) missing or invalid | No card; the page head and the rest of the page as today (A13 section 5 rule) |
+| An optional line absent (diagnoses) | Its line, marker and row go; its unit's reference is the maximum of what remains; the readout closes up; `tlScaleMore` needs Anna's variant |
+| Reduced motion, server render | The same card; there is no motion to remove |
+
+Variants for the open questions, kept in the mock only (`?plot=euro`, `?money=own`): see section 11. **Deleted from the page:** the hero card and its dot field and EU-27 figure, the three small charts (`sim-grid`), the animated timeline card with its clock, `TP_*` motion constants, Replay, and every string only they used (`tlMonth`, `tlReplay`, `tlReplayAria`, `tlHead.*`, head-label and readout-row keys from A14 section 4). Tokens used: `--color-link`, `--color-info`, `--color-flag-text`, `--color-text`, `--color-muted`, `--color-surface`, `--color-surface-quiet`, `--color-border`, `--color-border-strong`, `--color-caution-bg`, `--glass-card`, `--glass-edge`, `--radius-card`, `--radius-sm`, `--radius-pill`, `--shadow-soft`, `--target-min`, `--focus-ring`, `--focus-offset`, `--text-lead`, `--text-h2`, `--text-label`, `--text-doctor-body`. No new token and no new colour.
+
+### 10. Checks Ren can measure
+
+Every axis from zero and the three gridlines at `yy(0)`, `yy(.5)`, `yy(1)`; every point inverts to value / reference within 0.5 px; the plot is identical for every slider value (only the current-year line, the markers, the readout, the state line and `aria-valuetext` differ); the thumb centre equals the marker's x within 1 px at every year at 390 and 1280; the slider is 44 px high; keyboard Home, End and arrows move the year and the readout; at every year each readout value equals the file's value (the unit tests are the CTO's); no `transition`, `animation`, `requestAnimationFrame` or `setInterval` in the card's CSS and code; no horizontal overflow at 390 and 1280; readout rows at least 44 px; the band and both labels present only for the file's `plan_last`; the card's permanent label is present and sticky as today.
+
+### 11. The mock, and open questions
+
+`docs/design/min-4747/slider-mock.html` (`?y=<1..10>`, `?saved=1`, `?rate=`, `?plot=euro`, `?money=own`). **Every number is a placeholder:** years 1 and 2 follow the synthetic file's months 12 and 24 (money rescaled to Greece's base by 0.47: €1,915.30 against €4,074.88), year 3 is typed (8,200 patients, 3,400 matches, €560k income as Anna's plan, €121k drop, 29 diagnoses) and years 4 to 10 grow at a typed 40% a year. The yearly series is Cron's to produce, not typed in the app. Renders in `docs/design/min-4747/shots/`: `1280-year3`, `1280-year10`, `1280-year1`, `390-year3`, `390-year10`, `1280-year10-saved-wording`, `1280-year10-variant-money-own-scale`, `1280-year10-variant-euro-plot`, `1280-year3-greyscale-crop`. A reference, not code to ship: it types its strings.
+
+1. **After plan year 3 the lines collapse, and the mock shows it.** With one growth rate for every line, patients, income and diagnoses are the same curve once each is drawn as a share of its own unit's maximum, and matches and the drop are the same curve at about 40% and 21% of it. Five lines read as two. This is what the CTO's rule produces (nothing is wrong in the drawing), and the readout carries the real numbers, but a viewer will ask why three lines lie on top of each other. The honest ways out are the CTO's call: (a) give each line its own assumed growth (then they separate for a reason); (b) draw only the euro unit on a true euro axis with tick values (`?plot=euro`), which lifts the CTO's "no unit tick values" ban for one unit, shows money and income against each other at their real ratio (the drop ends at about 21% of income) and leaves the other three as readout rows only; (c) keep five lines and accept the overlap. **My recommendation is (b), because it is the one that shows the founder's number, the money in Greece, on a line he can read.** The layout is the same for (a), (b) and (c).
+2. **The money line is small beside income.** On the shared euro scale the Greek money figure ends at about 21% of income's height and gets lost under it. `?money=own` draws it on its own scale (it then climbs to the top and hides the other lines; shown, not recommended: it breaks "no per-line scaling inside one unit" and would read as larger than income). Option (b) above is the cleaner answer.
+3. **The yearly figures after year 3 need an owner.** Anna's open question 1 (what grows the patients and income after the plan's third year) decides what the band says. Design needs only a rate per line, or one rate, in the file.
+4. **"Saved" in the title.** The mock's default is the modelled-drop wording (Anna's M); S is rendered. The founder's own word is "saved"; the CEO seat rules.
+5. **A running total is not drawn.** The founder's "in 10 years the money can be saved" can mean a total over ten years. Section 7 shows where it would go; it needs the CEO seat's yes and Anna's wording first.
+6. **The 390 fit is close.** The money number, the plot and the thumb need 587 px of card plus the label bar (72 px on the page, 65 in the mock) against a 664 px screen: 652 to 659 px. It fits only with the card scrolled to its title; if Ren's measurement on the real page is over, the first thing to give is the money helper line (`gHelp.money`) at 390, which moves under the rows.
+7. **Left out:** a legend (the readout is the legend), hover or tap values on the plot (the slider is the one input), a second axis, an area fill, a count-up, a dark view (the app has none), the EU-27 figure anywhere.
 
 ---
 
