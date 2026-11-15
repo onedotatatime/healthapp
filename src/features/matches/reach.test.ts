@@ -213,20 +213,20 @@ describe('the card, as markup', () => {
       const html = render(id, 100);
       const c = cp(id, 100);
       expect(text(html, 'sim-value-loss'), `${title} loss`).toBe(rule(c.loss_eur));
-      expect(text(html, 'sim-value-drop'), `${title} drop`).toBe(`−${rule(c.drop_eur)}`);
-      expect(text(html, 'sim-drop-pct'), `${title} drop pct`).toBe('(−9.2%)');
+      expect(text(html, 'sim-value-drop'), `${title} drop`).toBe(rule(c.drop_eur));
+      expect(text(html, 'sim-drop-pct'), `${title} drop pct`).toBe('(9.2%)');
       expect(text(html, 'sim-value-matches'), `${title} matches`).toBe(count(c.matched));
       expect(text(html, 'sim-value-dx'), `${title} dx`).toBe(count(c.fewer_dx));
       expect(text(html, 'sim-state'), title).toBe(COPY.rState.full);
     }
-    expect(text(render('greece', 100), 'sim-value-drop')).toBe('−€201 million');
+    expect(text(render('greece', 100), 'sim-value-drop')).toBe('€201 million');
   });
 
   it('at 50% and 0.1% too, and the plan row and marker carry the plan\'s own figures', () => {
     const half = render('greece', 50);
     expect(text(half, 'sim-value-loss')).toBe(rule(cp('greece', 50).loss_eur));
     expect(text(half, 'sim-share')).toBe('50% of Greece');
-    expect(text(render('greece', 0.1), 'sim-value-drop')).toBe(`−${rule(cp('greece', 0.1).drop_eur)}`);
+    expect(text(render('greece', 0.1), 'sim-value-drop')).toBe(rule(cp('greece', 0.1).drop_eur));
     for (const g of M.geos) {
       const html = render(g.id, 0);
       const plan = cp(g.id, g.planSharePct);
@@ -261,7 +261,7 @@ describe('the card, as markup', () => {
       expect(text(html, 'sim-straight'), g.id).toBe('A straight line because the match rate and its effect are held at the 5,000-record values (synthetic). They are not measured at this size.');
       expect(text(html, 'sim-assumption'), g.id).toContain('46% of opted-in synthetic records found a match');
       expect(text(html, 'sim-help-loss'), g.id).toContain('11% of');
-      expect(text(html, 'sim-same-rates'), g.id).toContain('Only the spending differs');
+      expect(text(html, 'sim-same-rates'), g.id).toContain('Only the spending base differs');
       expect(html, g.id).not.toContain('41.4');
       expect(html, g.id).not.toMatch(/saved|savings|\bwill\b/i);
       expect(html, g.id).toContain('Simulation on synthetic data. A model, not a measurement');
@@ -273,7 +273,7 @@ describe('the card, as markup', () => {
     expect(text(w, 'sim-title')).toContain('Health systems worldwide lose about');
     expect(text(w, 'sim-base')).toContain('Global, 2023');
     expect(text(w, 'sim-fx')).toBe(
-      `Converted from US$${sig(geo('world').original.total / 1e12)} trillion (US$1,317 a head, 8.06 billion people, 2023) at the ECB's 2023 average, US$ 1.0813 per €1.`,
+      `Converted to euros from US$${sig(geo('world').original.total / 1e12)} trillion (US$1,317 a head × 8.06 billion people, 2023) at the ECB's 2023 average rate, US$1.0813 per €1.`,
     );
     expect(text(w, 'sim-share-note')).toContain('applied here to the world as an assumption');
     expect(text(w, 'sim-share-note')).toContain('Read it as a scale, not a measurement.');
@@ -294,7 +294,7 @@ describe('the card, as markup', () => {
     const html = render('greece', 0);
     expect([...html.matchAll(/data-testid="sim-values-row-(\d+)"/g)].map((m) => Number(m[1]))).toEqual([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
     expect(text(html, 'sim-values-row-50')).toContain(rule(cp('greece', 50).loss_eur));
-    expect(text(html, 'sim-values-row-100')).toContain('−€201 million');
+    expect(text(html, 'sim-values-row-100')).toContain('€201 million');
   });
 
   it('the plot is one SVG that starts at zero: three ticks, today\'s loss on the top of the line, no second axis', () => {
