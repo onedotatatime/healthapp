@@ -12,7 +12,7 @@ export default defineConfig({
   // No trace, no video: the passcode is typed into a field and must not be recorded.
   use: { baseURL: process.env.HEALTHAPP_LIVE_URL ?? 'https://staging-dev.healthapp-8ui.pages.dev', trace: 'off', video: 'off', screenshot: 'off' },
   projects: [
-    { name: 'desktop-1280', testMatch: /simulat(e|ions)\.spec\.ts/, use: { browserName: 'chromium', viewport: { width: 1280, height: 900 } } },
+    { name: 'desktop-1280', testMatch: /(simulat(e|ions)|recruit)\.spec\.ts/, use: { browserName: 'chromium', viewport: { width: 1280, height: 900 } } },
     { name: 'phone-390', testMatch: /simulations\.spec\.ts/, use: { browserName: 'chromium', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true } },
   ],
 });
