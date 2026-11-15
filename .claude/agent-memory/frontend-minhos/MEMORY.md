@@ -4,3 +4,4 @@
 - [healthapp dev server 5185](project_healthapp_dev_server_5185.md) — founder's local server; phone needs --host; mock backend for patient screens
 - [Glass tab bar: three tabs only](project_healthapp_glass_tabbar_and_harness.md) — four tabs clip at 390; header photo link instead; how to run the mocked phone harness
 - [Assistant tests and preview setup](project_healthapp_assistant_test_and_preview_setup.md) — node-only vitest, no jsdom; .state.ts naming; ?dx= preview switches
+- [healthapp worktree and test setup](feedback_healthapp_worktree_and_tests.md) — edit hook = session worktree only; no jsdom (SSR markup tests); harness recipe

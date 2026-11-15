@@ -15,3 +15,4 @@
 - [healthapp function download-diff](project_healthapp_function_download_diff.md) — one folder per function (shared files overwrite); verify_jwt check; smoke scripts in scratchpad
 - [healthapp squash release conflicts](project_healthapp_squash_release_conflicts.md) — staging→main conflicts after a squash; prove main ⊂ staging, release branch + merge -s ours
 - [healthapp /health from the bundle](project_healthapp_health_check_bundle.md) — /health is client-rendered: read env+sha from chunks; staging=demo, staging-dev=dev twin
+- [Prod release checks](project_healthapp_prod_release_checks.md) — secret by digest, function by download+cmp, re-join staging by merge, pin merge to head
