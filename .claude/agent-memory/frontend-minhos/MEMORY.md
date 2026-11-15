@@ -8,3 +8,4 @@
 - [Shared worktree: data files](feedback_shared_worktree_data_files.md) — never overwrite tracked data for review; swap the import with a scratch vite config
 - [Assigned worktree blocked: commit plumbing](feedback_assigned_worktree_blocked_commit_plumbing.md) — hook blocks other worktrees; temp-index commit onto the branch tip; perf/shots harness
 - [Playwright evidence scripts](feedback_playwright_evidence_scripts.md) — throwaway script, smoke.invalid mock, block service worker, CDP CPU throttle
+- [Global CSS class collisions](feedback_global_css_class_collision.md) — exams.css .bar animated my bars; prefix classes, grep first, look at every bar
