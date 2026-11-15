@@ -289,6 +289,8 @@ Per-dot fade, per-dot landing scale for the whole matched block, group hues and 
 
 ## A13. Addendum: the timeline diagram (MIN-4700, parent MIN-4696)
 
+**SUPERSEDED by A14 (MIN-4722, 2026-11-15).** The founder rejected the three stacked lanes. Everything in A13 about lanes, lane heights, lane keys, per-lane axes and the lane states is void; build from A14. What survives from A13: the card chrome (section 3), the kind colours and tokens, the pilot band and the first-paid marker geometry, the values table, the contrast pairs (section 7), and the text alternative. The lane renderer is deleted, not kept behind a toggle (CTO, MIN-4720).
+
 Founder, 2026-11-15, verbatim: "this diagrams dont seems so optimistic. It was supposed. ... maybe to have one diagram with all the numbers inside showing how having onboard patients and growing our model and getting everyday more and more correct diagnoses how the money saved and our income grow". Goal: supports direction 5 and 4 (the one picture that shows patients, matches, diagnoses and money growing together). Everything on it is synthetic or a plan, and the card says so.
 
 **Inputs that fix the shape (not reopened here):** the CTO's decision on MIN-4699 (comment 8b038e47): add under the hero, static, inline SVG, no library, one shared month axis 1 to 24, stacked lanes, every y axis from zero, no second y axis, no indexed, log or cropped axis; the data block `timeline` (24 values per measure, running totals, index `i` is the end of plan month `i + 1`). Anna's strings (MIN-4697, part 1, placeholders until she signs). The CEO seat's conditions (`docs/simulation-copy.md` section 6.4). Which optional measures show is the CEO seat's call on MIN-4698; this section says what changes for each.
@@ -434,6 +436,94 @@ An area fill under the lines (overlapping fills in one lane blur the kinds, and 
 ### 12. Dark view (proposal; the app has no dark theme)
 
 You asked for light and dark. Nothing in `src/` switches theme, and A12 left a dark mode out, so this ships only if someone builds the theme. The card is written with role tokens only, so a theme change reaches it without edits. The mapping the mock uses (`html.inverse`) takes the existing brand palette only: ground `--teal-night`, text `--white`, computed `--mint`, model `--peach`, plan `--white`. Two derived mixes are not in the palette and need approval if it ships: the card (`--white` 6% over `--teal-night`) and muted text (`--white` 72% over `--teal-night`). Computed on the dark card (about `#264749`): mint 6.78, peach 7.87, white 10.33, muted text 6.01, `border-strong` mix 4.07, mint on the band 6.00. Same patterns, markers and tags, so the kinds are told apart the same way.
+
+## A14. Addendum: one plot, five lines, animated (MIN-4722, parent MIN-4696)
+
+Founder, 2026-11-15, verbatim: "no no no. We said one diagram with all the lines on the same showing how while the users are growing so as the matches how the other numbers are growing", then "animated". The contract is the CTO's on MIN-4720 (comment 6fba2571): one plot, five lines, one scale per unit (people against patients; euros against income; diagnoses on their own), linear from zero, gridlines at 0, half and the reference, no unit tick values, the scale fixed from the first frame, straight segments, every real value visible at a line head (or in a five-row readout on a phone), the card on its own clock. This section settles only what the CTO left to design. Goal: supports directions 4 and 5 (patients, matches and money growing together on the page that sells them).
+
+**Verified:** the mock `docs/design/min-4722/timeline-mock.html` loads the repo's token files, holds the real `timeline` block of `data/synthetic/simulation.json` (synthetic records and a plan) and Anna's section 8 strings; rendered in headless Chrome at 1280 and 390 (iframe, so the phone layout is real), final frame, month 14, month 6. Measured from the DOM: no horizontal overflow at either width (`scrollWidth` equals the viewport), phone readout rows 53 to 61 px high, label stack at 1280 contiguous and inside the plot. The greyscale render of the 1280 final frame (`shots/1280-final-greyscale.png`) still tells solid, dash-dot and dashed apart, and the five marker shapes apart. **Not verified:** the frame budget (the mock redraws head shapes with `innerHTML`; Ren builds them once and moves them), touch, a real phone, reduced motion in a real browser (the mock only honours `?still=1` and the media query), contrast numbers re-measured (A13 section 7 pairs are reused: same tokens, same grounds), the IntersectionObserver start on a scrolled page. Figma: no file touched; the mock and renders are the record for this issue.
+
+### 1. What the CTO's scale rule does to the picture (so Ren is not surprised)
+
+References (from the file): people 2,806, euros €228,923 a year, diagnoses 9.8. At month 24 patients, income and diagnoses all end at the top gridline; matches end at 40.5% of that height and the modelled drop at 38.5%. Months 1 to 8 are flat on the zero line by plan. Matches and the drop end 2% of the plot apart (about 7 px at 1280): they cross-read as one pair, which is the truth (both are about 40% of their reference), and the labels, markers and patterns keep them apart.
+
+### 2. Telling five lines apart without colour (settled)
+
+**Pattern says the kind. Marker shape says the line. The label says both in words.** Colour repeats the kind and is never the only cue.
+
+| Line | Kind tag (Anna 8.1) | Pattern | Colour token | Marker |
+|---|---|---|---|---|
+| Patients | Computed on synthetic records | solid | `--color-link` | square |
+| With a match | Computed on synthetic records | solid | `--color-link` | circle |
+| Income, plan | Plan | dash-dot `12 4 2 4` | `--color-info` | triangle up |
+| Diagnoses, model | Model | dashed `6 4` | `--color-flag-text` | triangle down |
+| Cost drop, model | Model | dashed `6 4` | `--color-flag-text` | diamond |
+
+Line 3 px, straight segments (`stroke-linejoin: round`, butt caps: a round cap blurs a dash). Small markers (radius 3.6 px, 2 px `--color-surface` stroke) sit on every line at months 12 and 18, inside the revealed group, so a line is identifiable in the middle of the plot, not only at its head. The head marker is radius 6 and is not in the clipped group (it slides with the head). Where two lines share a pattern and colour (patients and matches; diagnoses and the drop) the markers and the labels are what separate them: this is the weakest point of the design, see open question 1.
+
+### 3. The plot (one SVG, built at its measured width, 1 unit = 1 CSS px)
+
+| | 1280 (card 1120, padding 24) | 390 (card 358, padding 12/16) |
+|---|---|---|
+| SVG width | 1072: plot 812 + label column 260 | 324 |
+| Insets `L`, `R`, `T`, `B` | 24, 12, 26, 44 | 24, 12, 24, 40 |
+| Plot height `H` | 340 | 240 |
+| Month step | 33.7 px | 12.5 px |
+| Card height (final) | about 988 | about 1,674 |
+
+`x(m) = L + (m - 1) * (Wp - L - R) / 23` (`Wp` = SVG width minus the label column), `y(f) = T + H * (1 - f)` where `f` = value / the unit's reference (the maximum of the unit's lines in the file; unit tests are the CTO's). Layers, bottom to top: pilot band (months 3 to 8, `--color-surface-quiet`, `x(2.5)` to `x(8.5)`, full height; label `tlBand` as an HTML overlay top-left in the band, 600 11/12 px); vertical hairlines at months 3, 6, ... 24; gridlines at 1 (dotted `2 3`, `--color-border-strong`, so the reference reads as the ceiling), at 0.5 (`.grid`) and 0 (`.axis`); the playhead (below); the first-paid line at `x(9)` and its label `tlFirstPaid` (SVG text, 600, with a 3 px `--color-surface` paint-order halo so the playhead never cuts it); month ticks (24), month labels every third and "Plan month"; the clipped lines group; the head markers; the leaders.
+
+**The y axis wording (the CTO's first slot).** Left of the zero line: `0` (`tlScaleBase`), 11 px, `--color-muted`. Above the top gridline, left-aligned at `L`: `tlScaleTop` "Top: the largest value in the unit", 11 px, `--color-muted`, one instance (the three unit groups share the one top gridline, so Anna's "once per unit group" collapses to once). **No label on the half gridline and no tick values.** Under the plot, always visible, never inside a disclosure: `tlScale` (full ink, `--text-doctor-body`, `--color-text`) and under it `tlScaleMore` (`--text-label` at weight 400, `--color-muted`). Those two sentences are the contract with the reader that heights compare only inside a unit.
+
+### 4. Heads, label collisions and the phone readout (settled)
+
+**1280.** The labels live in the right column (248 px wide, 12 px gap), not on the plot, because three lines end at the same point. Each label is 68 px tall (a fixed constant, so no measuring in the frame loop): a 22 px marker column, then the value (600 24/28, `--color-text`; the "a year" suffix `--text-label`, `--color-muted`), the short head name (`tlHead.*`, `--text-label`, `--color-text`), the kind tag (`--text-label`, `--color-muted`). A 1 px leader in the line's colour runs from the head marker to the right, horizontally, to 10 px past the plot, then diagonally to the label's first line. De-collision, every frame, arithmetic only: sort the five heads by head y (ties by the fixed order patients, income, diagnoses, matches, drop); each label's top is `max(head y - 14, 0, previous top + 68 + 6)`; then a back pass pulls the stack up if the last label would pass the plot's bottom. Final frame: the top three labels stack at 0, 74 and 148, matches at 222, drop at 296 (all inside the 410 px SVG). **The three heads coincide at the top at month 24:** their markers overlap there and the last drawn (diagnoses) shows on top. This is intended; the three leaders fan out to three labels whose own markers are separate.
+
+**390.** No head labels and no leaders. The five head markers stay on the lines. Under the plot a readout of five rows (a `ul`), fixed order patients, with a match, income, cost drop, diagnoses (people, then euros, then diagnoses, so the order never jumps and rows of one unit sit together): a 36 x 14 glyph (the line's pattern and its marker), the head name over the kind tag, the value at the right (`--text-h2`, tabular numerals, the "a year" suffix on a line below in `--text-label`, `--color-muted`). Row min height 52 px (measured 53 to 61). The rows change at month edges with the heads' labels. Between 481 and 899 px: the 390 layout, the plot as wide as the column.
+
+### 5. The month readout and Replay (settled)
+
+`tlMonth` "Month {n} of {last}" at `--text-label` 16 px, `--color-text`, tabular numerals, and the Replay button (`tlReplay`, `aria-label` `tlReplayAria`) side by side, in one row of 44 px minimum. **1280:** top right of the card, level with the title, the title block and the caption left (the caption max 70ch). **390:** its own row between the caption and the plot, readout left, Replay right. Replay is a pill (1.5 px `--color-link` border, `--glass-card` fill, `--color-link` text, 16 px label), min 96 x 44. It is present but `disabled` while the run is going (border `--color-border-strong`, text `--color-muted`), and enabled at the end of the run; it restarts this card's clock only. Not sticky. The readout steps with the values at month edges.
+
+### 6. Motion (speed settled)
+
+- **500 ms a month.** The month position is `mc = min(24, 1 + t / 500)`; the displayed month `n = floor(mc)`; the run ends at `t = 12,000 ms`, which is `mc = 24` at 11.5 s and a 0.5 s hold on the final frame. The 400 to 600 ms band was weighed: at 400 ms the run is 9.6 s and the flat pilot is 2.8 s, but the first paid month (9) arrives at 3.2 s, before a reader has read the band; at 600 ms the run is 14.4 s and the flat stretch is 4.8 s of nothing. 500 ms puts month 9 at 4.0 s, month 11 (first matches) at 5.0 s, and keeps the whole story under the 12 s the CTO costed.
+- **Start:** once, when 40% of the card is in view; if it is already in view at first paint, then. The frame before the start is the empty chart: axes, band, labels and the readout "Month 1 of 24", all values 0.
+- **Draw:** a clip rectangle's width follows `x(mc) + 1` (width attribute, no reflow); a 1 px playhead (`--color-border-strong`) at `x(mc)` from the top gridline to the zero line, hidden when `mc` is 24, shows where the run is. The head markers sit at `x(mc)` on the straight segment between months `n` and `n + 1` (so they slide); **the number in a label or row shows month `n`'s value and changes only at month edges**, so a displayed number is always a value from the file, never a tween. The heads' labels slide with their heads by `transform` (label height is a constant, no layout reads); leaders are 5 path `d` writes. React state changes 24 times; everything else per frame is written through refs (CTO, MIN-4720 section 3).
+- **Reduced motion:** the finished chart at once (clip at full width, no playhead, labels in place), the readout "Month 24 of 24", **no Replay element**, no timer. The same for a server render.
+- **No `aria-live`** during the run; the SVG is `aria-hidden`; the card keeps the aria text (`tlDescLead` with the five lines) and the values table.
+
+### 7. States
+
+| State | What shows |
+|---|---|
+| Not started (off screen) | The empty chart at month 1; Replay disabled |
+| Running | As section 6; Replay disabled |
+| Finished | The final frame; Replay enabled |
+| Reduced motion, server render, `at` beyond the end | The finished chart, no Replay |
+| `timeline` missing or invalid | No card (A13 section 5, unchanged); the hero and charts as today |
+| Optional line absent (diagnoses, drop) | The line, its head, its label and row go; the unit's reference is the maximum of what remains; the label stack closes up; `tlScaleMore` needs Anna's variant |
+
+### 8. Notes under the card, order (all Anna's, unchanged)
+
+Right under the scale sentences, in this order: `tlRampPerCase`, `tlAssumeDx`, `tlIncomePlan`, `tlEuroNote`, `tlFormula`, `tlTie` (the last in `--color-muted`), then "Show the values" and its table (five rows, months 12 and 24). The permanent label bar stays sticky as today. At 390 these notes are most of the card's height; if the page must be cut, nothing in this list is cut (the CEO seat's conditions); cut the diagnoses line and its note instead.
+
+### 9. Tokens and constants
+
+No new colour, no new type token, no new string: every word is in `docs/simulation-copy.md` section 8. New constants beside `simData.ts`: `TP_GEOM = { wide: { L: 24, R: 12, T: 26, H: 340, B: 44, labelCol: 260 }, narrow: { L: 24, R: 12, T: 24, H: 240, B: 40, labelCol: 0 } }`, `TP_LABEL_H = 68`, `TP_LABEL_GAP = 6`, `TP_MS_PER_MONTH = 500`, `TP_VIEW_START = 0.4`. Tokens used: `--color-link`, `--color-info`, `--color-flag-text`, `--color-surface`, `--color-surface-quiet`, `--color-border`, `--color-border-strong`, `--color-text`, `--color-muted`, `--glass-card`, `--glass-edge`, `--radius-card`, `--radius-pill`, `--shadow-soft`, `--target-min`, `--text-lead`, `--text-h2`, `--text-label`, `--text-doctor-body`. Reduce `matches.css` accordingly: the `.tl-lane*`, `.tl-keys`, `.tl-key*` rules go with the lanes.
+
+### 10. Checks Ren can measure
+
+Every axis from zero and the three gridlines at `y(0)`, `y(.5)`, `y(1)`; every point `y` inverts to value / reference within 0.5 px, and the scale is identical at `t` = 0, 6,000 and 12,000 ms; at month 24 matches/patients and drop/income heights equal the true ratios (0.405, 0.385); every head carries (or its readout row carries) the month's real value; reduced motion has no Replay and the final chart; no horizontal overflow at 390 and 1280; phone rows at least 44 px; 1280 labels at least 6 px apart and inside the plot; the three patterns (`none`, `6 4`, `12 4 2 4`) and five marker shapes present; frame budget as the CTO set.
+
+### 11. The mock, and open questions
+
+`docs/design/min-4722/timeline-mock.html` (`?t=6500` freezes month 14, `?still=1` the finished chart, `?ms=400..600`). Renders in `docs/design/min-4722/shots/`: `1280-final`, `1280-month14`, `1280-month6`, `390-final`, `390-month14`, `390-month6`, and the greyscale check. It is a reference, not code to ship: it types its strings and redraws shapes with `innerHTML`.
+
+1. **Patients and matches look alike** (solid teal, differ by square and circle plus the label); the same for diagnoses and the drop. Anna's kind tags make this so. If the CTO or the CEO seat wants a pattern per line, a fourth and fifth pattern would break the "pattern = kind" rule; I did not add them. Decision for the CTO.
+2. **The leaders cross the not-yet-drawn region mid-run** (the labels stay in the right column). They are quiet 1 px lines but long at month 6 to 12. The alternative, labels that travel with the heads, collides with the lines. Kept the column; flagging it.
+3. **A zero money value reads "€0"** (not "€0k"); the one formatter for the page covers it. Anna: confirm "€0 a year" at the flat months.
+4. **Left out:** a legend, hover or tap values, a label on the half gridline, any second axis, an area fill, a count-up between months, a dark view (the app has no dark theme).
 
 ---
 
