@@ -14,14 +14,16 @@ GitHub starts `schedule` and `workflow_dispatch` only from the default branch (`
 |---|---|
 | checkout `ref: staging` | The specs match the code deployed on staging-dev. |
 | `scripts/nightly-guard.sh` | Fails the run unless the target is exactly `https://staging-dev.healthapp-8ui.pages.dev` and the passcode is not empty. |
-| `node --test scripts/nightly-scripts.test.mjs` | The guard, the reporter and the shape of the workflow tested against a Linear stub. A few seconds. |
+| `node --test scripts/nightly-scripts.test.mjs` | The guard, the reporter and the shape of the workflow tested against a Linear stub, after `setup-node`. A few seconds. The same file also runs in the PR `static` job (`pr.yml`), because the nightly runs the guard and the reporter from the `staging` checkout and any PR can change them. |
 | `npm ci`, `npx playwright install --with-deps chromium webkit` | webkit because the dashboard and glass configs run an iPhone project. |
-| `playwright.dashboard.config.ts` | `doctor-dashboard` (asserts no paid call on open, ends its grant in `afterAll`). |
-| `playwright.glass.config.ts` | `glass-redesign`. |
-| `playwright.simulation.config.ts` | `simulate`, `simulations`, `recruit`. |
-| `scripts/nightly-to-linear.mjs` | Job summary, and Linear issues for red specs. |
+| `playwright.dashboard.config.ts` (step limit 5 min) | `doctor-dashboard` (asserts no paid call on open, ends its grant in `afterAll`). |
+| `playwright.glass.config.ts` (step limit 5 min) | `glass-redesign`. |
+| `playwright.simulation.config.ts` (step limit 12 min) | `simulate`, `simulations`, `recruit`. |
+| `scripts/nightly-to-linear.mjs` | Job summary, and Linear issues for red specs and for a red run. |
 
 Each config step runs even if the one before was red, but not after a failed guard or a failed install. A cancelled run does nothing further.
+
+Each config step has its own `timeout-minutes` (5, 5 and 12, 22 in all, plus about 4 minutes of setup, under the 27 that leave room below the job's 30). A hang therefore ends as a failed step and not as a cancelled job, and the reporter (`if: !cancelled()`) still runs and files the run issue. The checkout uses `persist-credentials: false`.
 
 ### Not in the nightly
 
@@ -50,11 +52,12 @@ Trace, video and screenshots are off in every config, and the JSON reports stay 
 `scripts/nightly-to-linear.mjs` reads the Playwright JSON reports (`--reporter=list,json`, one file per config).
 
 - One issue per failing spec file: `Nightly red · e2e-live/<file> · <date>`. Team minhOS, project "Health app — hackathon prototype", label Quality Engineer. E2E has no Linear user, so the assignee is Cron Jobbidis, like every other E2E issue of the project.
+- **One more issue per run**, `Nightly red · e2e-live/run · <date>`, when a report is missing or unreadable (the step was red, timed out or did not run), a report carries a run-level error (a spec or its config failed to load, so Playwright aborted it), or nothing passed. It names the report files (base names) and counts, never error text, and the script exits 1. Without it those reds would reach Linear only as a red job. It is filed next to the per-spec issues, and the same comment-if-open rule applies.
 - If an open issue (not completed, not canceled) already starts with `Nightly red · e2e-live/<file> ·`, the script comments on it instead.
 - The text holds the failing test titles with `file:line` and the project name, the run URL, and "Lane B, fixed or deleted within 24 hours". No error message, no page text, no values.
 - A test that passed only on retry counts as red (§3: a flip is deleted).
 - If the Linear call fails, nothing is hidden: the job stays red and the failing specs and tests are written to the job summary.
-- A run where nothing failed but nothing passed (everything skipped, or no report) is red too.
+- A run where nothing failed but nothing passed (everything skipped, or no report) is red too, and files the run issue.
 
 The owner of the red issues is E2E. Within 24 hours the test is fixed or deleted. No known-failures list, no baseline.
 
