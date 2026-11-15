@@ -1,5 +1,5 @@
 // Speaker notes for the /story deck, by slide id, copied word for word from docs/story/story-deck-content.md (v1, 15 Nov 2026).
-// One string per paragraph. Slide 3 has one entry per beat: "3" (beat a) and "3b" (beat b). Shown with N.
+// One string per paragraph. Slide 3 has one entry per beat: "3" (beat a), "3b" (beat b) and "4" (the first "what if", the third beat of slide 3). "5c" is the live simulation slide. Shown with N.
 export const N: Record<string, string[]> = {
   '1': [
     "Hi, I'm Lefteris. I'm a product builder, based here in Athens. I run a small design studio, onedotatatime.design, and I've been designing digital products since 2009. This weekend I built something with a team of AI agents. But this is not a story about software. It's a story about me.",
@@ -21,6 +21,9 @@ export const N: Record<string, string[]> = {
   ],
   '5b': [
     "Did you know? In Europe, people with a rare disease wait four point seven years, on average, for a diagnosis. And diagnostic error costs seventeen and a half percent of health spending. In Greece alone, on our estimate, that's about three and a half billion euros a year.",
+  ],
+  '5c': [
+    "Here is the simulation, live.",
   ],
   '6': [
     "That's my story so far. Come and find me after this, and I'll show you live, on my own record. Thank you.",

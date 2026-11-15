@@ -13,7 +13,7 @@ export const STORY_APP_STAGING = 'https://staging.healthapp-8ui.pages.dev';
 /** The presenter key. Open /story?live=<this> to turn the live frames on. */
 export const PRESENTER_KEY = 'live-athens-2026';
 
-export type FrameId = 'doctor' | 'patient' | 'simulate';
+export type FrameId = 'doctor' | 'patient' | 'simulate' | 'simulation';
 
 export interface FrameConfig {
   id: FrameId;
@@ -36,23 +36,23 @@ export interface FrameConfig {
 }
 
 export const STORY_FRAMES: Record<FrameId, FrameConfig> = {
-  // Slide 3, left: the doctor's desktop view.
+  // Slides 3, 3b and 4, left: the doctor's desktop view.
   doctor: {
     id: 'doctor',
     kind: 'browser',
     url: `${STORY_APP}/doctor`,
     title: 'Doctor view, live',
-    viewW: 1200, viewH: 566, iframeW: 1280, iframeH: 604,
+    viewW: 1250, viewH: 644, iframeW: 1280, iframeH: 660,
     fallback: '/story/fallback-doctor.webp',
     fallbackAlt: "The doctor's view of a shared record: results outside the printed range, a question box and a chart over time",
   },
-  // Slide 3, right: the patient's phone view.
+  // Slides 3, 3b and 4, right: the patient's phone view.
   patient: {
     id: 'patient',
     kind: 'phone',
     url: `${STORY_APP_STAGING}/patient`,
     title: 'Patient view, live',
-    viewW: 316, viewH: 685, iframeW: 390, iframeH: 844,
+    viewW: 339, viewH: 734, iframeW: 390, iframeH: 844,
     fallback: '/story/fallback-patient.webp',
     fallbackAlt: 'The patient\'s record on a phone: scan an exam, share with a doctor, and a list of exams',
   },
@@ -62,9 +62,19 @@ export const STORY_FRAMES: Record<FrameId, FrameConfig> = {
     kind: 'browser',
     url: `${STORY_APP}/doctor/simulate`,
     title: 'Simulate matching, live',
-    viewW: 1000, viewH: 738, iframeW: 1280, iframeH: 945,
+    viewW: 1100, viewH: 812, iframeW: 1280, iframeH: 945,
     fallback: '/story/fallback-simulate.webp',
     fallbackAlt: 'Simulate matching on 5,000 records: a seeded synthetic data banner and a button to run the simulation',
+  },
+  // Slide 5c: the public /simulation page (the timeline plot), as large as the slide allows. It needs no sign-in.
+  simulation: {
+    id: 'simulation',
+    kind: 'browser',
+    url: `${STORY_APP}/simulation`,
+    title: 'Simulation, live',
+    viewW: 1600, viewH: 910, iframeW: 1280, iframeH: 728,
+    fallback: '/story/fallback-simulation.webp',
+    fallbackAlt: 'The simulation page: five lines over time, matches growing as more people join',
   },
 };
 

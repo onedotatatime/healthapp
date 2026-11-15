@@ -1,18 +1,33 @@
 import type { StoryLiveSlide } from '../types';
 import { STORY_FRAMES } from '../config';
 import { LiveFrame } from '../LiveFrame';
-import { Headline, typo } from '../../util';
+import { headlineSize, rich, typo } from '../../util';
 import { ri, type FrameCtx } from './shared';
 
-/** Slides 3 and 5: the app in a browser frame and a phone frame. Beats change the words and who has the mouse; the frames never remount. */
+/**
+ * The slides with the app in a frame: slide 3 (+3b, +4), slide 5 and slide 5c.
+ * Beats change the words and who has the mouse; the frames never remount. A beat may have a header of its own (slide 4 is the third beat of
+ * slide 3: the same two iframes, only the header swaps).
+ */
 export function StoryLive({ s, beat, ctx }: { s: StoryLiveSlide; beat: number; ctx: FrameCtx }) {
   const hot = beat >= s.hotFromBeat;
   const allShown = s.frames.every((f) => ctx.isLive(f.frame));
-  const duo = s.variant === 'duo';
+  const { variant } = s;
+  const duo = variant === 'duo';
+
+  const headOf = (i: number) => s.beats[i].headline ?? s.headline;
+  const heads = [...new Set(s.beats.map((_, i) => headOf(i)))];
 
   return (
-    <div className={`ts-live v-${s.variant}`} data-beat={beat}>
-      {duo ? <Headline text={s.headline} /> : <h2 className="slide-h sl-solo-h rise" style={ri(0)}>{typo(s.headline)}</h2>}
+    <div className={`ts-live v-${variant}`} data-beat={beat}>
+      {duo && (
+        <div className="sl-heads">
+          {heads.map((h) => (
+            <h2 key={h} className={`slide-h ${headlineSize(h)} sl-h ${h === headOf(beat) ? 'is-on' : ''}`} aria-hidden={h !== headOf(beat)}>{rich(h)}</h2>
+          ))}
+        </div>
+      )}
+      {variant === 'solo' && <h2 className="slide-h sl-solo-h rise" style={ri(0)}>{typo(s.headline)}</h2>}
 
       {duo && (
         <div className="sl-support rise" style={ri(1)}>
@@ -26,11 +41,11 @@ export function StoryLive({ s, beat, ctx }: { s: StoryLiveSlide; beat: number; c
         const cfg = STORY_FRAMES[f.frame];
         const label = ctx.isLive(f.frame) ? f.label : f.labelStatic;
         const pos = duo
-          ? (cfg.kind === 'phone' ? { left: 1464, top: 276 } : { left: 120, top: 276 })
-          : { left: 800, top: 150 };
+          ? (cfg.kind === 'phone' ? { left: 1800 - (cfg.viewW + 20), top: 288 } : { left: 120, top: 288 })
+          : variant === 'solo' ? { left: 700, top: 120 } : { left: 160, top: 30 };
         return (
           <div key={f.frame}>
-            <p className={`sl-label sl-label-${duo ? (cfg.kind === 'phone' ? 'r' : 'l') : 'solo'} caps rise`} style={ri(2 + i)}>{typo(label)}</p>
+            {label && <p className={`sl-label sl-label-${cfg.kind === 'phone' ? 'r' : 'l'} caps rise`} style={ri(2 + i)}>{typo(label)}</p>}
             <div className="sl-frame-pos rise rise-frame" style={{ ...pos, ...ri(3 + i) }}>
               <LiveFrame
                 cfg={cfg}
@@ -45,7 +60,7 @@ export function StoryLive({ s, beat, ctx }: { s: StoryLiveSlide; beat: number; c
         );
       })}
 
-      <p className={`sl-tag demo-tag rise ${duo ? 'sl-tag-duo' : 'sl-tag-solo'}`} style={ri(6)}>{typo(allShown ? s.tag : s.tagStatic)}</p>
+      {s.tag && <p className="sl-tag demo-tag rise" style={ri(6)}>{typo(allShown ? s.tag : (s.tagStatic ?? s.tag))}</p>}
     </div>
   );
 }

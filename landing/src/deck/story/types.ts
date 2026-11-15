@@ -3,13 +3,11 @@ import type { Theme } from '../types';
 import type { FrameId } from './config';
 
 export interface StoryBase {
-  /** Hash id: #1 #2 #3 (#3b is its second beat) #4 #5 #5b #6. */
+  /** Hash id of the slide (its first beat): #1 #2 #3 #5 #5b #5c #6. A later beat has its own id: #3b, and #4 (the third beat of slide 3). */
   id: string;
   theme: Theme;
   /** Eyebrow text. Optional. */
   eyebrow?: string;
-  /** Explicit counter label ("5b"): not counted in "n / 6". */
-  counter?: string;
   notes: string[];
 }
 
@@ -31,33 +29,35 @@ export interface StoryMemoirSlide extends StoryBase {
   footer: string;
 }
 
-export interface StoryBeat { support: string; notes: string[] }
+export interface StoryBeat {
+  /** Hash id of this beat. Default: the slide id for the first beat, the slide id + "b" for the second. */
+  id?: string;
+  /** A header of its own for this beat. The frames never change: only the header (and the words under it) swap. Default: the slide's headline. */
+  headline?: string;
+  support: string;
+  notes: string[];
+}
 
 export interface StoryFrameSpec {
   frame: FrameId;
-  /** The label over the frame when it is live, and when it is a picture. */
-  label: string;
-  labelStatic: string;
+  /** The label over the frame when it is live, and when it is a picture. No label: nothing is printed over the frame. */
+  label?: string;
+  labelStatic?: string;
 }
 
 export interface StoryLiveSlide extends StoryBase {
   template: 'story-live';
-  variant: 'duo' | 'solo';
+  /** duo: a doctor browser frame and a patient phone (slides 3, 3b, 4). solo: headline on the left, one big frame (slide 5). full: one frame as large as the slide allows, no headline (slide 5c). */
+  variant: 'duo' | 'solo' | 'full';
   headline: string;
   /** One entry per beat. The frames never remount between beats. */
   beats: StoryBeat[];
   frames: StoryFrameSpec[];
-  /** The peach pill under the frames: when live, and when the frames are pictures. */
-  tag: string;
-  tagStatic: string;
+  /** The peach pill under the frames: when live, and when the frames are pictures. Optional. */
+  tag?: string;
+  tagStatic?: string;
   /** The beat from which the frames take clicks and keys. 0 on both live slides: with the presenter key the founder acts in the app from the start. */
   hotFromBeat: number;
-}
-
-export interface StoryMatchesSlide extends StoryBase {
-  template: 'story-matches';
-  headline: string;
-  labels: { pattern: string; doctorHere: string; doctorThere: string };
 }
 
 export interface StoryNumbersSlide extends StoryBase {
@@ -82,6 +82,5 @@ export type StorySlide =
   | StoryIntroSlide
   | StoryMemoirSlide
   | StoryLiveSlide
-  | StoryMatchesSlide
   | StoryNumbersSlide
   | StoryCloseSlide;

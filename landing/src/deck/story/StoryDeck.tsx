@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Lockup, typo } from '../util';
 import { readMode, type FrameId } from './config';
-import { PathRail } from './PathRail';
 import type { StorySlide } from './types';
 import { StoryClose } from './templates/StoryClose';
 import { StoryIntro } from './templates/StoryIntro';
 import { StoryLive } from './templates/StoryLive';
-import { StoryMatches } from './templates/StoryMatches';
 import { StoryMemoir } from './templates/StoryMemoir';
 import { StoryNumbers } from './templates/StoryNumbers';
 import type { FrameCtx } from './templates/shared';
@@ -18,23 +16,24 @@ const beatsOf = (s: StorySlide) => (s.template === 'story-live' ? s.beats.length
 const notesOf = (s: StorySlide, beat: number) => (s.template === 'story-live' ? s.beats[beat].notes : s.notes);
 const framesOf = (s: StorySlide): FrameId[] => (s.template === 'story-live' ? s.frames.map((f) => f.frame) : []);
 
-// Hash = slide id, plus "b" for the second beat of a slide with beats: #3 (beat a), #3b (beat b), #5b is its own slide.
+// Every stop of the deck is a slide or a beat of a slide, and has a hash id: #1 #2 #3 #3b #4 #5 #5b #5c #6.
+// #3, #3b and #4 are the three beats of slide 3 (same frames, so the iframes never remount); a beat with no id of its own is the slide id + "b".
+const beatId = (s: StorySlide, beat: number) => (s.template === 'story-live' && s.beats[beat].id) || (beat > 0 ? `${s.id}b` : s.id);
 function parseHash(slides: StorySlide[]): { index: number; beat: number } {
   const h = window.location.hash.replace('#', '').toLowerCase();
-  const exact = slides.findIndex((s) => s.id.toLowerCase() === h);
-  if (exact >= 0) return { index: exact, beat: 0 };
-  if (h.endsWith('b')) {
-    const i = slides.findIndex((s) => s.id.toLowerCase() === h.slice(0, -1));
-    if (i >= 0 && beatsOf(slides[i]) > 1) return { index: i, beat: 1 };
+  for (let index = 0; index < slides.length; index++) {
+    for (let beat = 0; beat < beatsOf(slides[index]); beat++) {
+      if (beatId(slides[index], beat).toLowerCase() === h) return { index, beat };
+    }
   }
   return { index: 0, beat: 0 };
 }
-const hashOf = (s: StorySlide, beat: number) => `#${s.id}${beat > 0 ? 'b' : ''}`;
+const hashOf = (s: StorySlide, beat: number) => `#${beatId(s, beat)}`;
 
 export function StoryDeck({ slides }: { slides: StorySlide[] }) {
   const n = slides.length;
-  const numbered = slides.filter((s) => !s.counter);
-  const total = numbered.length;
+  // "n / 6" counts the numbered stops (1 2 3 4 5 6); 3b, 5b and 5c show their own id.
+  const total = useMemo(() => slides.reduce((c, s) => c + Array.from({ length: beatsOf(s) }, (_, b) => beatId(s, b)).filter((id) => /^\d+$/.test(id)).length, 0), [slides]);
   const mode = useMemo(() => readMode(), []);
   const pinned = new URLSearchParams(window.location.search).has('scale1');
 
@@ -45,7 +44,6 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
   const [hud, setHud] = useState(true);
   const hudTimer = useRef<number>(0);
   const [off, setOff] = useState<Set<FrameId>>(() => new Set());
-  const [pulse, setPulse] = useState(1);
 
   const cur = slides[index];
 
@@ -68,18 +66,13 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
   useEffect(() => {
     const target = hashOf(cur, beat);
     if (window.location.hash !== target) window.history.replaceState(null, '', target + '');
-    document.title = `Pathien | Story | ${cur.counter ?? cur.id}${beat ? 'b' : ''}`;
+    document.title = `Pathien | Story | ${beatId(cur, beat)}`;
   }, [cur, beat]);
   useEffect(() => {
     const onHash = () => setPos(parseHash(slides));
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, [slides]);
-
-  // the dot pulses once on slide 1, on slide 3 beat b, and when slide 6 lands
-  useEffect(() => {
-    if ((cur.id === '3' && beat === 1) || cur.id === '6' || cur.id === '1') setPulse((v) => v + 1);
-  }, [cur.id, beat]);
 
   // fit 16:9 into any viewport, letterboxed
   useEffect(() => {
@@ -173,7 +166,8 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
     else forward();
   };
 
-  const counterFor = (s: StorySlide) => (s.counter ? s.counter : `${numbered.indexOf(s) + 1} / ${total}`);
+  const labelNow = beatId(cur, beat);
+  const counterNow = /^\d+$/.test(labelNow) ? `${labelNow} / ${total}` : labelNow;
 
   // a frame has the mouse and keys: show the "Next" pill, because after a click inside the app the arrow keys go to the app
   const hotNow = cur.template === 'story-live' && beat >= cur.hotFromBeat && framesOf(cur).some((id) => isLive(id));
@@ -184,21 +178,20 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
         {slides.map((s, i) => (
           <StorySlideView key={s.id} s={s} i={i} index={index} beat={i === index ? beat : 0} ctx={ctx} />
         ))}
-        <PathRail slideId={cur.id} theme={cur.theme} pulse={pulse} />
         <button type="button" className={`next-pill ${hotNow ? 'is-on' : ''}`} onClick={(e) => { e.stopPropagation(); forward(); }} tabIndex={hotNow ? 0 : -1} aria-hidden={!hotNow}>
           Next
         </button>
       </div>
 
       <div className={`hud ${hud ? 'on' : ''}`} aria-live="polite" hidden={!hud}>
-        <span className="hud-count">{counterFor(cur)}{beat ? 'b' : ''}</span>
+        <span className="hud-count">{counterNow}</span>
         <span className="hud-keys">← → space · F fullscreen · N notes{mode.armed ? ' · L live / screenshot' : ''}{mode.staticMode ? ' · static' : ''}</span>
       </div>
 
       {notes && (
         <aside className="notes" role="complementary" aria-label="Speaker notes">
           <header>
-            <b>Speaker notes · slide {cur.counter ?? cur.id}{beat ? 'b' : ''}</b>
+            <b>Speaker notes · slide {labelNow}</b>
             <button type="button" onClick={() => setNotes(false)} aria-label="Close notes">Close (N)</button>
           </header>
           {notesOf(cur, beat).map((p, i) => <p key={i}>{typo(p)}</p>)}
@@ -211,9 +204,9 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
 function StorySlideView({ s, i, index, beat, ctx }: { s: StorySlide; i: number; index: number; beat: number; ctx: FrameCtx }) {
   const current = i === index;
   const state = current ? 'is-current' : i < index ? 'is-before' : 'is-after';
-  const showHead = s.template !== 'story-intro' && s.template !== 'story-close';
+  const showHead = s.template !== 'story-intro' && s.template !== 'story-close' && !(s.template === 'story-live' && s.variant === 'full');
   return (
-    <section className={`slide theme-${s.theme} ts-${s.template}-slide ${state}`} aria-hidden={!current} aria-label={`Slide ${s.counter ?? s.id}`}>
+    <section className={`slide theme-${s.theme} ts-${s.template}-slide ${state}`} aria-hidden={!current} aria-label={`Slide ${s.id}`}>
       {showHead && (
         <header className="slide-head">
           {s.eyebrow ? <span className="eyebrow rise">{s.eyebrow}</span> : <span />}
@@ -223,7 +216,6 @@ function StorySlideView({ s, i, index, beat, ctx }: { s: StorySlide; i: number; 
       {s.template === 'story-intro' && <StoryIntro s={s} />}
       {s.template === 'story-memoir' && <StoryMemoir s={s} />}
       {s.template === 'story-live' && <StoryLive s={s} beat={beat} ctx={ctx} />}
-      {s.template === 'story-matches' && <StoryMatches s={s} />}
       {s.template === 'story-numbers' && <StoryNumbers s={s} current={current} />}
       {s.template === 'story-close' && <StoryClose s={s} />}
     </section>
