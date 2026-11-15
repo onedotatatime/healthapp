@@ -309,3 +309,37 @@ Notes for Ren:
 ### 8.3 Wording check
 
 No "saved", "saves", "savings", "will", "result", "proves", "anonymous" and no exclamation mark in the table of 8.1 (checked by regex). "Assume" or "assumption" is in `tlIncomePlan`, `tlRampPerCase`, `tlAssumeDx`; the 10% and the 20% are not restated in this block, and where they appear (section 6.3) "assumption" stays in the same sentence. "Income: our plan, not a measurement" and the two assumption lines stay on the card. The label "Plan months on synthetic records. A plan and a model, not a measurement" (`label` in the file) stays. Money appears only as a yearly figure ("a year"), never a running total (condition 10); the € line is `income_run_rate_eur`, never `income_eur`.
+
+## 9. `/simulation` as one diagram with a plan-month slider (MIN-4749; spec A15)
+
+Source: Anna, MIN-4723 comment 9e14b7f0 (the `g*` table, column M unless marked), Pix's A15 for the four band and state keys, the CTO's one line on MIN-4744. The page reads every figure from `ten_years` in `data/synthetic/simulation.json`; the strings below take them as arguments. Section 8 (`tl*`) is retired with the animated card. Code: `src/features/matches/copy.ts` (`g*`), the diagram `SimDiagram.tsx`. Not yet confirmed by Anna: every row marked **Ren, confirm**.
+
+| Key | String | Status |
+|---|---|---|
+| `gTitle.drop` / `.saved` | What matching could change in Greece, year by year / What matching could save Greece, year by year | Anna. The CEO seat picks (MIN-4746); the code switch is `DIAGRAM.money` |
+| `gCaption.drop` | Plan years {first} to {last}, on synthetic records and a plan. Move the slider to see, at any month, how many patients have joined, how many records find a match, how many diagnoses go right instead of wrong or missed, what that is worth in Greek health spending in the model, and our planned income. | Anna's text; "for one year" became "at any month" because the slider moves by month. **Ren, confirm** |
+| `gCaption.saved` | the same, ending "…how much money it could have saved in Greek health spending, in the model, and our planned income." | as above |
+| `gSliderLabel` | Plan year | Anna |
+| `gSliderValue` | Year {year}, month {month} | CTO (aria-valuetext) and Pix; also the `<output>` text |
+| `gSliderAria` | Plan year, from {first} to {last}. The numbers below show that point in the plan. | Anna's text, "that year" became "that point in the plan". **Ren, confirm** |
+| `gHead.patients`, `.matches`, `.dx`, `.income` | Patients in the network, Records with a match, Correct diagnoses gained, Our income | Anna |
+| `gHead.money.drop` / `.saved` | Modelled drop in cost in Greece / Money saved in Greece | Anna; CEO seat picks |
+| `gTag.*` | Plan, Model, Computed on synthetic records | Anna. Records with a match reads "Computed on synthetic records" up to `measured_until_month` and "Model" after it (CTO MIN-4744 section 1) |
+| `gSuffix.yearly.*` | a year, plan (income), a year, in the model (diagnoses), a year (money) | Anna |
+| `gSuffix.total.*`, `gHelp.dx.total`, `gCol*.total` | in total since the start, plan / in the model | **Ren, confirm**; used only if the CEO seat picks the running total (`DIAGRAM.basis = 'total'`) |
+| `gHelp.dx.yearly`, `gHelp.money` | Fewer wrong or missed diagnoses a year, in the model. / Cost of wrong or missed diagnoses that the model removes, on {year} spending. | Anna |
+| `gBandPlan` | Plan: years 1 to {planYears} | Pix (NEW key) |
+| `gBandAssumed` | After plan year {planYears}: income held flat, not in the plan | **Ren, confirm.** Pix's text was "Assumed growth, not in the plan: 40% a year"; the CTO's rule on MIN-4744 holds revenue flat, so there is no growth rate to print |
+| `gStatePlan` | In the plan | Pix (NEW key) |
+| `gStateAssumed` | After the plan: income held flat | **Ren, confirm** (same reason) |
+| `gScale`, `gScaleMore`, `gScaleTop` | the three sentences of 8.1 (`tlScale`, `tlScaleMore`, `tlScaleTop`), unchanged | Anna |
+| `gScaleEuro` | The plot shows euros only, on one scale that starts at zero. Patients, records with a match and diagnoses are in the list. | **Ren, confirm**; used only if the CTO picks the euro-only plot (`DIAGRAM.plot = 'euro'`) |
+| `gFact` | For scale: {geography} spent {total} on health in {year}, {perInhabitant} for each inhabitant. | Anna's recommended A; it replaces the EU-27 figure |
+| `gAssumeVisits`, `gIncomePlan`, `simAssumption` | the existing lines (6.3, `tlAssumeDx`, `tlIncomePlan`) | unchanged |
+| `gAssumeShare` | The cost share is an OECD model estimate for a typical OECD country, about {share} of health spending. It is not a Greek measurement. | Anna. `{share}` is read from the file's formula for series 3 |
+| `gPlateau` | Past {records} records (month {month}) the matches and their effect are held at the {records}-record values; past year {planYears} the plan's revenue is held flat. | CTO, MIN-4744 section 1, word for word |
+| `gBase`, `gFormula` | Spending base: {geography}, {year}, {perInhabitant} per inhabitant, {total} a year in all. / {points} points × {perInhabitant} × {patients} patients = {amount} a year | Anna. The formula is always the yearly figure at the slider's month |
+| `gSourceLead`, `gBaselines` | Health spending: {link}. Baselines applied: {links}. | **Ren, confirm.** Anna's single `gSource` sentence is split so each source is a link read from the file |
+| `gShowValues`, `gTableCaption`, `gCol*` | Show the values; Every plan year, at its last month, the same figures as the diagram.; column heads | **Ren, confirm** (table of ten rows) |
+| `gDesc` | One diagram, plan year {year}, month {month}, synthetic model. Patients: {n}. … A model and a plan, not a measurement. | Anna's text with the month added |
+| `simLabel` | Simulation on synthetic data. A model, not a measurement | fixed by the CTO, never rewritten |

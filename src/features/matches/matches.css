@@ -23,74 +23,12 @@
 .mx-switch[aria-checked='true'] .mx-knob{transform:translateX(22px);background:var(--white)}
 .mx-switch-label{font:var(--text-label);font-size:16px;letter-spacing:0}
 
-/* Simulation screen (MIN-4507; motion and euro outcome MIN-4608). Tokens only. Motion tokens are in src/styles/tokens.css. */
+/* Simulation screen (MIN-4507; one diagram with a slider, MIN-4749). Tokens only. Motion tokens are in src/styles/tokens.css. */
 .sim{min-height:100dvh}
 .sim-inner{max-width:1120px;margin:0 auto;padding:0 var(--space-4) var(--space-6)}
 .sim-label{position:sticky;top:0;z-index:10;margin:0;padding:var(--space-3) max(var(--space-4),calc((100% - 1120px) / 2 + var(--space-4)));background:var(--color-info);color:var(--white);font:var(--text-label);font-size:16px;line-height:24px;display:flex;align-items:center;gap:var(--space-2)}
-.sim-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:var(--space-3) var(--space-5);margin:var(--space-5) 0 var(--space-4)}
-.sim-head h1{margin:0 0 var(--space-2)}
-.sim-head p{margin:0;max-width:62ch;color:var(--color-muted);font:var(--text-doctor-body)}
-@media (max-width:480px){.sim-head h1{font:var(--text-h2)}}
-.sim-clock{font:var(--text-timer);color:var(--color-text)}
-.sim-clock small{display:block;font:var(--text-label);color:var(--color-muted)}
-@media (max-width:899px){.sim-clock{display:none}}
 .sim-error{margin:var(--space-5) 0;padding:var(--space-4);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft);font:var(--text-doctor-body);color:var(--color-text)}
 
-/* The entry: opacity and 8 px, one stagger step of 60 ms per element in the order field, chart 1, chart 2, chart 3. Never on a label, a heading, a formula, a source or an assumption line. */
-.sim-enter{--i:0;animation:sim-enter var(--dur-step) var(--ease-out) backwards;animation-delay:calc(var(--i) * 60ms)}
-@keyframes sim-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-@keyframes sim-fade{from{opacity:0}to{opacity:1}}
-@keyframes sim-baseline{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-
-/* The hero: the match field and the euro outcome in one glass card. The edge turns teal when the outcome lands. */
-.sim-hero{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--space-3) var(--space-5);margin:0 0 var(--space-4);padding:var(--space-4);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft);transition:border-color var(--dur-reveal) var(--ease-inout)}
-.sim-hero[data-landed='true']{border-color:var(--color-link)}
-@media (min-width:900px){.sim-hero{padding:var(--space-5) var(--space-5) 20px}.sim-hero[data-cols='2']{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}}
-.sim-left,.sim-right{min-width:0}
-.sim-stats{display:flex;gap:var(--space-5);margin:0 0 var(--space-3)}
-.sim-stat{margin:0;display:flex;flex-direction:column}
-.sim-stat-label{font:var(--text-label);color:var(--color-muted)}
-.sim-stat-n{font:var(--text-h2);color:var(--color-text)}
-.sim-stat-net .sim-stat-n{font:var(--text-timer)}
-@media (min-width:900px){.sim-stat-net{display:none}}
-.sim-field{margin:0}
-.sim-field canvas{display:block}
-.sim-field-caption{margin:var(--space-2) 0 0;font:var(--text-doctor-body);color:var(--color-muted)}
-.sim-effect{margin:var(--space-2) 0 0;font:var(--text-doctor-body);color:var(--color-muted)}
-.sim-effect strong{font-weight:600;color:var(--color-text)}
-.sim-right p{margin:0}
-.sim-kicker{margin-top:0;font:var(--text-doctor-value);color:var(--color-muted)}
-.sim-fig{font:var(--text-outcome);letter-spacing:-.02em;color:var(--color-text);white-space:nowrap}
-.sim-year{font:var(--text-lead);color:var(--color-text)}
-.sim-perhab{font:var(--text-doctor-body);color:var(--color-muted)}
-.sim-right .sim-outcome{margin-top:var(--space-3);padding-top:var(--space-3);border-top:1px solid var(--color-border);font:var(--text-doctor-body);color:var(--color-text)}
-.sim-formula,.sim-source{margin-top:var(--space-2);font:var(--text-doctor-body);color:var(--color-muted)}
-.sim-source a{color:var(--color-link);text-underline-offset:3px}
-.sim-assume{margin:var(--space-3) 0 0;font:var(--text-doctor-body);color:var(--color-text)}
-
-/* Charts */
-.sim-grid{display:grid;gap:var(--space-4);grid-template-columns:minmax(0,1fr)}
-@media (min-width:900px){.sim-grid[data-count='2']{grid-template-columns:repeat(2,minmax(0,1fr))}.sim-grid[data-count='3']{grid-template-columns:repeat(3,minmax(0,1fr))}}
-.sim-chart{margin:0;padding:var(--space-3) var(--space-4) var(--space-3);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft)}
-.sim-chart h2{font:var(--text-label);font-size:16px;margin:0}
-.sim-unit{margin:0;font:var(--text-label);color:var(--color-muted)}
-.sim-value{margin:var(--space-2) 0 0;font:600 32px/40px var(--font);color:var(--color-text)}
-.sim-svg{display:block;width:100%;height:auto}
-.sim-svg text{font:400 11px var(--font);fill:var(--color-muted)}
-.sim-svg .axis{stroke:var(--color-border-strong);stroke-width:1}
-.sim-svg .tick{stroke:var(--color-border-strong);stroke-width:1}
-.sim-svg .grid{stroke:var(--color-border);stroke-width:1}
-.sim-svg .line{fill:none;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
-.sim-svg .line.model{stroke-dasharray:6 4}
-.sim-svg .tip{stroke:var(--color-surface);stroke-width:2}
-.sim-svg .baseline{fill:var(--color-border-strong);transform-box:fill-box;transform-origin:left center;animation:sim-baseline var(--dur-reveal) var(--ease-inout) both}
-.sim-svg .delta{font:600 16px var(--font);fill:var(--color-text);animation:sim-fade var(--dur-step) var(--ease-out) var(--dur-step) both}
-.sim-foot{margin-top:var(--space-4);display:grid;gap:var(--space-2)}
-.sim-foot p{margin:0;font:var(--text-doctor-body);color:var(--color-text)}
-.sim-foot .muted{color:var(--color-muted)}
-.sim-foot a{color:var(--color-link)}
-.sim-foot ul{margin:0;padding:0 0 0 var(--space-4)}
-.sim-actions{margin-top:var(--space-4)}
 
 /* MIN-4664 "Run the matching" (Pix, docs/design/min-4659/dashboard.css) */
 .mx-run{display:flex;flex-wrap:wrap;align-items:center;gap:var(--space-3) var(--space-4);margin:var(--space-2) 0 0}
@@ -100,60 +38,63 @@
 .mx-foot p{margin:0;flex:1 1 280px}
 .mx-run .btn{min-width:0}
 
-/* The timeline: one plot, five lines, animated (MIN-4724, spec A14 and mock docs/design/min-4722/timeline-mock.html). Role tokens only; no new colour.
-   There is no CSS motion at all: the card's clock moves the lines through refs (timelinePaint.ts), and reduced motion shows the finished chart with no timer. */
-.tl{--tl-computed:var(--color-link);--tl-model:var(--color-flag-text);--tl-plan:var(--color-info);margin:0 0 var(--space-4);padding:var(--space-3) var(--space-4) var(--space-4);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft)}
-@media (min-width:900px){.tl{padding:var(--space-4) var(--space-5) var(--space-5)}}
-.tl h2{margin:0 0 var(--space-1);font:var(--text-lead);color:var(--color-text)}
-.tl-cap{margin:0 0 var(--space-3);max-width:70ch;font:var(--text-doctor-body);color:var(--color-muted)}
-.tl-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-.tl-top{display:flex;flex-direction:column;gap:var(--space-2)}
-@media (min-width:900px){.tl-top{flex-direction:row;align-items:flex-start;justify-content:space-between;gap:var(--space-4)}}
-.tl-ctl{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);min-height:var(--target-min);margin:0 0 var(--space-2);flex:none}
-@media (min-width:900px){.tl-ctl{margin:0;justify-content:flex-end}}
-.tl-month{font:var(--text-label);font-size:16px;color:var(--color-text);font-variant-numeric:tabular-nums;white-space:nowrap}
-.tl-replay{min-height:var(--target-min);min-width:96px;padding:0 20px;font:var(--text-label);font-size:16px;border-radius:var(--radius-pill);border:1.5px solid var(--color-link);background:var(--glass-card);color:var(--color-link);cursor:pointer}
-.tl-replay[disabled]{border-color:var(--color-border-strong);color:var(--color-muted);cursor:default}
-.tl-plot{position:relative;min-width:0}
-.tl-svg{display:block;overflow:visible}
-.tl-svg text{font:400 11px var(--font);fill:var(--color-muted)}
-.tl-svg .axis,.tl-svg .tick{stroke:var(--color-border-strong);stroke-width:1}
-.tl-svg .grid{stroke:var(--color-border);stroke-width:1}
-.tl-svg .gridtop{stroke:var(--color-border-strong);stroke-width:1;stroke-dasharray:2 3}
-.tl-svg .band{fill:var(--color-surface-quiet)}
-.tl-svg .first{stroke:var(--color-border-strong);stroke-width:1.5}
-.tl-svg .line{fill:none;stroke-width:3;stroke-linejoin:round;stroke-linecap:butt}
-.tl-svg .play{stroke:var(--color-border-strong);stroke-width:1}
-.tl-svg .lead{fill:none;stroke-width:1}
-.tl-svg .mk{font:600 11px var(--font);fill:var(--color-text);paint-order:stroke;stroke:var(--color-surface);stroke-width:3px}
-@media (min-width:900px){.tl-svg .mk{font-size:12px}}
-.tl-band{position:absolute;margin:0;padding:4px 3px;box-sizing:border-box;font:600 11px/1.3 var(--font);color:var(--color-text);overflow-wrap:anywhere}
-@media (min-width:900px){.tl-band{font-size:12px;padding:4px 8px}}
-.tl-glyph{display:block;flex:none}
-.tl-heads{position:absolute;top:0;right:0;width:248px}
-.tl-head{position:absolute;left:0;right:0;top:0;display:grid;grid-template-columns:22px minmax(0,1fr);column-gap:var(--space-2);align-content:start;will-change:transform}
-.tl-head .g{grid-row:1/4;padding-top:7px}
-.tl-head .v{font:600 24px/28px var(--font);color:var(--color-text);white-space:nowrap}
-.tl-head .n{font:var(--text-label);color:var(--color-text)}
-.tl-head .k{font:var(--text-label);color:var(--color-muted)}
-.tl small{font:var(--text-label);color:var(--color-muted)}
-.tl-head .v small{margin-left:4px}
-.tl-rows{display:grid;margin:var(--space-3) 0 0;padding:0;list-style:none;border-top:1px solid var(--color-border)}
-.tl-row{display:grid;grid-template-columns:36px minmax(0,1fr) auto;column-gap:var(--space-2);align-items:center;min-height:52px;border-bottom:1px solid var(--color-border)}
-.tl-row .n{display:block;font:var(--text-label);color:var(--color-text)}
-.tl-row .k{display:block;font:var(--text-label);color:var(--color-muted)}
-.tl-row .v{font:var(--text-h2);color:var(--color-text);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
-.tl-row .v small{display:block}
-.tl-scale{margin:var(--space-3) 0 0;max-width:70ch;font:var(--text-doctor-body);color:var(--color-text)}
-.tl-more{margin:var(--space-1) 0 0;max-width:70ch;font:var(--text-label);font-weight:400;color:var(--color-muted)}
-.tl-notes{margin:0}
-.tl-note{margin:var(--space-2) 0 0;font:var(--text-doctor-body);color:var(--color-text)}
-.tl-note.muted{color:var(--color-muted)}
-.tl-unit{display:block;font:var(--text-label);font-weight:400;color:var(--color-muted)}
-.tl-values{margin-top:var(--space-3)}
-.tl-values summary{min-height:var(--target-min);display:flex;align-items:center;font:var(--text-label);font-size:16px;color:var(--color-link);cursor:pointer}
-.tl-values table{width:100%;border-collapse:collapse;font:var(--text-doctor-body)}
-.tl-values th,.tl-values td{padding:var(--space-2);text-align:right;border-top:1px solid var(--color-border);font-weight:400}
-.tl-values th:first-child,.tl-values td:first-child{text-align:left}
-.tl-values thead th{font:var(--text-label);color:var(--color-muted)}
-@media (max-width:480px){.tl-values table{font-size:14px}.tl-values th,.tl-values td{padding:var(--space-2) 4px}}
+
+/* The one diagram (MIN-4749, spec A15 and mock docs/design/min-4747/slider-mock.html). Role tokens only, no new colour.
+   There is no CSS motion at all: no transition, no animation. The slider's input event is the only thing that changes anything. */
+.dg{--k-plan:var(--color-info);--k-model:var(--color-flag-text);--k-computed:var(--color-link);display:flex;flex-direction:column;margin:var(--space-4) 0 0;padding:var(--space-3) var(--space-4) var(--space-4);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft)}
+@media (min-width:900px){.dg{padding:var(--space-4) var(--space-5) var(--space-5)}}
+.dg h1{order:0;margin:0 0 var(--space-1);font:var(--text-lead);color:var(--color-text)}
+.dg-main{order:1}.dg-cap{order:2}.dg-notes{order:3}.dg details{order:4}
+@media (min-width:900px){.dg-cap{order:1}.dg-main{order:2}}
+.dg-cap{margin:var(--space-3) 0 var(--space-3);max-width:70ch;font:var(--text-doctor-body);color:var(--color-muted)}
+.dg-main{display:grid;gap:var(--space-2);grid-template-areas:"money" "plot" "list"}
+@media (min-width:900px){.dg-main{grid-template-columns:minmax(0,1fr) 320px;column-gap:var(--space-5);row-gap:var(--space-3);grid-template-areas:"plot money" "plot list";grid-template-rows:auto 1fr}}
+.dg-plot{grid-area:plot;min-width:0}.dg-money{grid-area:money}.dg-list{grid-area:list}
+.dg-hero{margin:0;padding:var(--space-2) var(--space-4) var(--space-3);background:var(--color-surface-quiet);border-radius:var(--radius-sm);border:1px solid var(--color-border-strong)}
+.dg-hero .hn{display:flex;align-items:center;gap:var(--space-2);font:var(--text-label);font-size:16px;color:var(--color-text)}
+.dg-hero .hv{margin:var(--space-1) 0 0;font:600 36px/1.15 var(--font);color:var(--color-text);font-variant-numeric:tabular-nums}
+@media (min-width:900px){.dg-hero .hv{font-size:40px}}
+.dg-hero .hv small{font:var(--text-label);font-size:16px;color:var(--color-muted)}
+@media (min-width:900px){.dg-hero .hv small{display:block}}
+.dg-hero .hk{margin:0;font:var(--text-label);color:var(--color-muted)}
+.dg-hero .hh{margin:2px 0 0;font:400 14px/1.35 var(--font);color:var(--color-muted)}
+.dg-rows{margin:0;padding:0;list-style:none;border-top:1px solid var(--color-border)}
+.dg-row{display:grid;grid-template-columns:36px minmax(0,1fr) auto;column-gap:var(--space-2);align-items:center;min-height:56px;border-bottom:1px solid var(--color-border)}
+.dg-row .n{display:block;font:var(--text-label);color:var(--color-text)}.dg-row .k{display:block;font:var(--text-label);color:var(--color-muted)}
+.dg-row .v{font:var(--text-h2);color:var(--color-text);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}.dg-row .v small{display:block;font:var(--text-label);color:var(--color-muted)}
+.dg-row .h{grid-column:2/4;margin:0 0 var(--space-2);font:400 14px/1.4 var(--font);color:var(--color-muted)}
+.dg-box{position:relative}.dg-box svg{display:block;overflow:visible}
+.dg-box svg text{font:400 11px var(--font);fill:var(--color-muted)}
+.dg-box .axis,.dg-box .tick{stroke:var(--color-border-strong);stroke-width:1}
+.dg-box .grid{stroke:var(--color-border);stroke-width:1}.dg-box .gridtop{stroke:var(--color-border-strong);stroke-width:1;stroke-dasharray:2 3}
+.dg-box .line{fill:none;stroke-linejoin:round;stroke-linecap:butt}
+.dg-box .cur{stroke:var(--color-text);stroke-width:1.5}
+.dg-box .shape{stroke:var(--color-surface);stroke-width:2}
+.dg-box .edge{stroke:var(--color-text);stroke-width:1.5;stroke-dasharray:4 3}
+.dg-band{position:absolute;top:0;margin:0;padding:4px 6px;box-sizing:border-box;font:600 11px/1.3 var(--font);color:var(--color-text)}
+@media (min-width:900px){.dg-band{font-size:12px;padding:4px 8px}}
+.dg-ctl{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin:var(--space-1) 0 0;min-height:28px}
+.dg-ctl label{white-space:nowrap;font:var(--text-label);font-size:16px;color:var(--color-text)}
+.dg-yr{font:var(--text-label);font-size:16px;font-weight:600;color:var(--color-text);font-variant-numeric:tabular-nums}
+.dg-state{margin:var(--space-1) 0 0;min-height:26px;display:flex;align-items:center;font:var(--text-label);color:var(--color-muted)}
+.dg-state .chip{display:inline-block;padding:2px 10px;border-radius:var(--radius-pill);background:var(--color-caution-bg);color:var(--color-text);border:1px solid var(--color-flag-text);font:var(--text-label)}
+.dg input[type=range]{display:block;height:var(--target-min);margin-top:0;margin-bottom:0;padding:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+.dg input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:var(--radius-pill);background:var(--color-border-strong)}
+.dg input[type=range]::-moz-range-track{height:8px;border-radius:var(--radius-pill);background:var(--color-border-strong)}
+.dg input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;margin-top:-12px;border-radius:50%;background:var(--color-link);border:3px solid var(--color-surface);box-shadow:0 0 0 1.5px var(--color-link)}
+.dg input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--color-link);border:3px solid var(--color-surface);box-shadow:0 0 0 1.5px var(--color-link)}
+.dg input[type=range]:focus-visible{outline:none}
+.dg input[type=range]:focus-visible::-webkit-slider-thumb{outline:var(--focus-ring);outline-offset:var(--focus-offset)}
+.dg input[type=range]:focus-visible::-moz-range-thumb{outline:var(--focus-ring);outline-offset:var(--focus-offset)}
+.dg-notes{margin:var(--space-3) 0 0}
+.dg-notes p{margin:var(--space-2) 0 0;max-width:70ch;font:var(--text-doctor-body);color:var(--color-text)}
+.dg-notes p.m{color:var(--color-muted)}.dg-notes p.f{font:var(--text-label);font-weight:400;color:var(--color-muted)}
+.dg-notes p.fact{font:var(--text-label);font-size:16px}
+.dg-notes a{color:var(--color-link);text-underline-offset:3px}
+.dg details{margin-top:var(--space-3)}.dg summary{min-height:var(--target-min);display:flex;align-items:center;font:var(--text-label);font-size:16px;color:var(--color-link);cursor:pointer}
+.dg .tw{overflow-x:auto}.dg table{width:100%;border-collapse:collapse;font:var(--text-doctor-body)}
+.dg th,.dg td{padding:var(--space-2);text-align:right;border-top:1px solid var(--color-border);font-weight:400;white-space:nowrap}
+.dg th:first-child,.dg td:first-child{text-align:left}
+.dg thead th,.dg caption{font:var(--text-label);color:var(--color-muted)}
+.dg caption{text-align:left;padding:0 0 var(--space-2)}
+@media (max-width:480px){.dg table{font-size:14px}.dg th,.dg td{padding:var(--space-2) 4px}}
