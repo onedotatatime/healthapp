@@ -17,7 +17,7 @@ const mainSlides: Slide[] = [
   {
     id: '1', template: 'cover', theme: 'air', notes: N['1'],
     eyebrow: 'Gen AI Summit Hackathon · Biotech & AI · Athens LifeTech Park',
-    headline: 'Maria asks Google what her pain means. Her doctors each see one page of her history.',
+    headline: 'Your medical history,\nin one place.',
     tagline: 'The whole history in front of the doctor, so the first decision is the right one.',
     background: '/img/bg-hero.webp',
     photo: { src: '/img/problem.webp', alt: 'A worn envelope of exams, an X-ray and loose letters on a table' },

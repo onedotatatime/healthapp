@@ -57,7 +57,7 @@ strong{font-weight:700}
 /* ---- Cover ---- */
 .t-cover{background-size:cover;background-position:center}
 .cover-eyebrow{position:absolute;left:120px;top:70px;font-size:24px;font-weight:600;letter-spacing:.02em;text-transform:uppercase;color:#0f2f2c}
-.cover-h1{position:absolute;left:120px;top:186px;width:1030px;font-size:86px;line-height:80px;font-weight:700;letter-spacing:-.045em;color:#12201F}
+.cover-h1{position:absolute;left:120px;top:186px;width:1030px;font-size:86px;line-height:80px;font-weight:700;letter-spacing:-.045em;color:#12201F;white-space:pre-line}
 .cover-photo{position:absolute;left:1230px;top:110px;width:560px;height:700px;object-fit:cover;border-radius:32px;box-shadow:var(--sh)}
 .cover-foot{position:absolute;left:120px;top:796px;width:1000px}
 .cover-lockup{width:360px}
