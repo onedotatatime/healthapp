@@ -62,16 +62,26 @@ export const COPY = {
     `Match field: ${a.matched.toLocaleString('en-US')} of ${a.visible.toLocaleString('en-US')} synthetic records have a match`,
   simFieldCaption:
     'One dot, one synthetic record. Teal is a match; position says nothing about who it is.',
-  // The timeline diagram (MIN-4702, spec A13). Final strings: docs/simulation-copy.md section 7.1 (Anna, MIN-4697 part 2), the keys as she lists them.
-  // No number is typed here: months, counts, euros, points and the price come from the data as arguments.
-  tlTitle: 'What a growing network could change, month by month',
+  // The timeline: one plot, five lines, animated (MIN-4724, spec A14). Final strings: docs/simulation-copy.md section 8.1 (Anna, MIN-4723), the keys as she lists them.
+  // No number is typed here: months, counts, euros, points, the price and the geography come from the data as arguments.
+  tlTitle: 'As patients join, the other numbers grow with them',
   tlCaption: (a: { first: number; last: number }) =>
-    `Plan months ${a.first} to ${a.last}, on synthetic records. As more patients join, more records find a match; the model then shows fewer wrong or missed diagnoses, a lower cost for those patients, and our planned income.`,
+    `Plan months ${a.first} to ${a.last}, on synthetic records. In this model, as patients join, the records with a match, the modelled drop in cost, the fewer wrong or missed diagnoses and our planned income grow along with them.`,
   tlTie: (a: { amount: string; geography: string }) =>
     `The ${a.amount} a year above applies this same model to all ${a.geography} health spending. This chart counts only the patients in the network, so its figures are far smaller.`,
+  // The axis sentences: always on screen, never behind a tap (CEO seat condition 11). The reader compares heights only inside a unit.
+  tlScale: 'Each unit has its own scale: people, euros, diagnoses. Compare heights only inside a unit. Across units, compare how the lines grow.',
+  tlScaleMore: 'Patients and records with a match share one scale. Income and the modelled drop share another. Diagnoses have their own. Every scale starts at zero.',
+  tlScaleTop: 'Top: the largest value in the unit',
+  tlScaleBase: '0',
+  tlMonth: (a: { n: number; last: number }) => `Month ${a.n} of ${a.last}`,
+  tlReplay: 'Replay',
+  tlReplayAria: (a: { first: number }) => `Replay the chart from month ${a.first}`,
   tlXAxis: 'Plan month',
   tlBand: 'Free pilot: no patients counted',
   tlFirstPaid: 'First paid cases',
+  // The short label at a line's head (and in the phone readout), then the full name (the values table), the unit and the kind.
+  tlHead: { patients: 'Patients', matches: 'With a match', income: 'Income, plan', drop: 'Cost drop, model', dx: 'Diagnoses, model' },
   tlName: {
     patients: 'Patients in the network',
     matches: 'Records with a match',
@@ -79,17 +89,23 @@ export const COPY = {
     drop: 'Modelled drop in cost',
     income: 'Our income',
   },
+  tlUnit: {
+    patients: 'patients, running total',
+    matches: 'records, running total',
+    income: '€ a year, plan',
+    drop: '€ a year, model',
+    dx: 'a year, model',
+  },
   tlTag: { plan: 'Plan', model: 'Model', computed: 'Computed on synthetic records' },
-  tlLaneTitle: { people: 'People', euro: 'Euros', dx: 'Diagnoses' },
-  tlUnitPeople: 'Patients and records, running total',
-  tlUnitEuro: '€ a year, one scale for both lines',
-  tlUnitDx: 'A year, across these patients, in the model',
+  // Anna's tlVal.eur and tlVal.dx are "{amount} a year": the value and the suffix are two elements here so the suffix can be small, and this is the suffix.
+  tlPerYear: 'a year',
   tlAssumeDx: 'Assumption: one visit per patient a year.',
   tlRampPerCase: (a: { price: string; from: number; to: number }) =>
     `Assumption: each paid case is one new patient in the network, at ${a.price} a case. Months ${a.from} to ${a.to} are a free pilot with no patients counted. Doctor-seat fees are income, not patients.`,
   tlIncomePlan: 'Income: our plan, not a measurement. Every price and volume is an assumption.',
-  tlEuroNote: (a: { price: string; perPatient: string; last: number }) =>
-    `Each case is paid once, at ${a.price}. The modelled drop is a yearly figure for the patients in the network (${a.perPatient} per patient a year at month ${a.last}). In this model it counts only the direct cost of wrong or missed diagnoses, on the EU-27 average spending per inhabitant.`,
+  // `geography` is `euro.geography` of the file; with no euro block the sentence says nothing about a geography rather than a wrong one.
+  tlEuroNote: (a: { price: string; perPatient: string; last: number; geography?: string }) =>
+    `Each case is paid once, at ${a.price}. The modelled drop is a yearly figure for the patients in the network (${a.perPatient} per patient a year at month ${a.last}). In this model it counts only the direct cost of wrong or missed diagnoses, on the average spending per inhabitant${a.geography ? ` for ${a.geography}` : ''}.`,
   tlFormula: (a: { points: string; perInhabitant: string; patients: string; amount: string }) =>
     `${a.points} points × ${a.perInhabitant} × ${a.patients} patients = ${a.amount} a year`,
   tlShowValues: 'Show the values',
@@ -97,7 +113,8 @@ export const COPY = {
   tlColMonth: (month: number) => `Month ${month}`,
   tlTableCaption: (a: { first: number; second: number }) => `Plan months ${a.first} and ${a.second}, the same figures as the chart.`,
   // The text alternative, filled from the data. Every money and diagnoses figure is "a year" (CEO seat condition 10: no running total on screen or in the aria text).
-  tlDescLead: (a: { first: number; last: number }) => `Chart, plan months ${a.first} to ${a.last}, synthetic model.`,
+  tlDescLead: (a: { first: number; last: number; lines: number }) =>
+    `One chart with ${({ 3: 'three', 4: 'four', 5: 'five' } as Record<number, string>)[a.lines] ?? a.lines} lines, plan months ${a.first} to ${a.last}, synthetic model. Each unit has its own scale, so heights are compared only inside a unit.`,
   tlDescPatients: (a: { paid: number | null; last: number; n: string }) =>
     a.paid === null ? `Patients in the network: ${a.n} at month ${a.last}.` : `Patients in the network: none until month ${a.paid}, ${a.n} at month ${a.last}.`,
   tlDescMatches: (a: { n: string; last: number }) => `Records with a match: ${a.n} at month ${a.last}.`,

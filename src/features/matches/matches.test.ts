@@ -14,12 +14,12 @@ import { toApiError } from './real';
 import { SimulationUnavailable, SimulationView } from './Simulation';
 import { SimTimeline } from './SimTimeline';
 import {
-  TL_DASH, TL_KEY_GAP, buildLanes, firstMonthAbove, formatValue, labelledMonths, laneGeometry, pilotBand, placeKeys,
+  TL_DASH, TL_LABEL_GAP, TL_LABEL_H, TL_LABEL_LIFT, buildModel, formatValue, leaderPath, placeLabels, shareOf, shouldStartRun, tlFrame, tlGeometry, tlRunMs, unitReference,
 } from './timeline';
 import { BUILD_CHUNK, DOT_R, FIELD_NARROW_MAX, FIELD_PITCH, TICK_EVERY, fieldGeometry, labelledTicks, pitchFor, rangeRects } from './field';
 import {
   SIM_GROW_MS, SIM_LANDING_MS, SIM_LAND_FADE_MS, clockAt, decimalsOf, effectIndex, formatCount, formatEuro, formatPct, formatPerInhabitant, formatTotal, hasDropped, matchesAt, niceAxis, parseSimulation,
-  TL_MONTHS, dropFromInputs, formatEuroCents, formatEuroK, formatEuroTick, formatEuroWhole, parseTimeline, type SimEuro, type SimTimeline as SimTimelineData,
+  TL_MONTHS, TL_PILOT_FROM, pilotBand, dropFromInputs, formatEuroCents, formatEuroK, formatEuroWhole, parseTimeline, type SimEuro, type SimTimeline as SimTimelineData,
   shownDrop, SIM_DURATION_MS, SIM_ENTRY_MS, SIM_MATCH_WINDOW, SIM_STEP_MS, simDuration, valueAt, visibleCells, type SimulationData,
 } from './simData';
 
@@ -651,8 +651,11 @@ const tl = (mutate?: (r: ReturnType<typeof tlRaw>) => void): SimTimelineData => 
   return t;
 };
 const CURVE = 'Assumption, not a finding: each match lowers the chance of a wrong or missed diagnosis by 10%, rising to 20% as matches accumulate.';
-const card = (t: SimTimelineData, layout = { wide: true, width: 818 }, tie?: { amount: string; geography: string }) =>
-  renderToStaticMarkup(createElement(SimTimeline, { timeline: t, curve: CURVE, layout, tie }));
+const WIDE = { wide: true, width: 1072 };
+const NARROW = { wide: false, width: 324 };
+type CardExtra = { geography?: string; reduced?: boolean; at?: number };
+const card = (t: SimTimelineData, layout: { wide: boolean; width: number } = WIDE, tie?: { amount: string; geography: string }, extra: CardExtra = { geography: EURO.geography }) =>
+  renderToStaticMarkup(createElement(SimTimeline, { timeline: t, curve: CURVE, layout, tie, ...extra }));
 /** textContent of the first element carrying this test id (any tag). */
 const byId = (markup: string, id: string) => {
   const m = markup.match(new RegExp(`data-testid="${id}"[^>]*>([\\s\\S]*?)</(?:p|span|div|text|caption)>`));
@@ -660,9 +663,9 @@ const byId = (markup: string, id: string) => {
 };
 /** The points of a plotted line as [x, y] pairs, read from the markup. */
 const linePoints = (markup: string, id: string): [number, number][] => {
-  const m = markup.match(new RegExp(`<path[^>]*d="([^"]+)"[^>]*data-line="${id}"`));
+  const m = markup.match(new RegExp(`<polyline[^>]*data-line="${id}"[^>]*points="([^"]+)"`));
   if (!m) throw new Error(`no line ${id}`);
-  return m[1].split(/(?=[ML])/).map((c) => c.slice(1).trim().split(' ').map(Number) as [number, number]);
+  return m[1].split(' ').map((p) => p.split(',').map(Number) as [number, number]);
 };
 const rest = (data: SimulationData) => sim({ ...data, timeline: undefined });
 
@@ -676,6 +679,19 @@ describe('the timeline block parser (MIN-4702)', () => {
     expect(t.drop?.values).toEqual(TLX.drop);
     expect(t.diagnoses?.values).toEqual(TLX.dx);
     expect(t.plan.priceEurPerCase).toBe(40);
+  });
+  it('the pilot band starts at plan.pilot_from when the file has it, and at TL_PILOT_FROM when it does not (MIN-4724 fix C)', () => {
+    const withIt = tlRaw(); (withIt.plan as { pilot_from?: number }).pilot_from = 2;
+    const a = parseTimeline(withIt)!;
+    expect(a.plan.pilotFrom).toBe(2);
+    expect(pilotBand(a.patients.values, a.x, a.plan.pilotFrom)?.from).toBe(2);
+    const without = tlRaw(); delete (without.plan as { pilot_from?: number }).pilot_from;
+    const b = parseTimeline(without)!;
+    expect(b.plan.pilotFrom).toBeUndefined();
+    expect(pilotBand(b.patients.values, b.x, b.plan.pilotFrom)).toEqual({ from: TL_PILOT_FROM, to: b.x[b.patients.values.findIndex((v) => v > 0)] - 1, firstPaid: b.x[b.patients.values.findIndex((v) => v > 0)] });
+    // a pilot that starts after the first paid month is no pilot: no block
+    const late = tlRaw(); (late.plan as { pilot_from?: number }).pilot_from = 12;
+    expect(parseTimeline(late)).toBeUndefined();
   });
   it('an invalid or missing block gives no timeline, and parseSimulation leaves everything else as it was', () => {
     const broken: [string, (r: ReturnType<typeof tlRaw>) => void][] = [
@@ -740,202 +756,408 @@ describe('the timeline block parser (MIN-4702)', () => {
 });
 
 describe('the timeline formatters mirror the arithmetic at the precision shown', () => {
-  it('euros: whole thousands for the key, whole euros for the table, ticks never rounded up to a wrong figure', () => {
+  it('euros: whole thousands at a head, whole euros in the table', () => {
     expect(formatEuroK(228923)).toBe('€229k');
     expect(formatEuroK(88043)).toBe('€88k');
     expect(formatEuroK(164352)).toBe('€164k');
     expect(formatEuroK(61825)).toBe('€62k');
     expect(formatEuroK(500)).toBe('€500');
+    expect(formatEuroK(0)).toBe('€0');
     expect(formatEuroK(999500)).toBe('€1m');
     expect(formatEuroWhole(228923)).toBe('€228,923');
-    expect(formatEuroTick(0)).toBe('€0');
-    expect(formatEuroTick(2500)).toBe('€2.5k');
-    expect(formatEuroTick(100000)).toBe('€100k');
   });
   it('a value prints as the data prints it', () => {
-    const lanes = buildLanes(tl());
-    const find = (id: string) => lanes.flatMap((l) => l.measures).find((m) => m.id === id)!;
-    expect(formatValue(find('patients'), 2806, 'key')).toBe('2,806');
-    expect(formatValue(find('dx'), 9.8, 'key')).toBe('9.8');
+    const { lines } = buildModel(tl());
+    const find = (id: string) => lines.find((l) => l.id === id)!;
+    expect(formatValue(find('patients'), 2806, 'head')).toBe('2,806');
+    expect(formatValue(find('dx'), 9.8, 'head')).toBe('9.8');
     expect(formatValue(find('dx'), 7, 'exact')).toBe('7.0');
     expect(formatValue(find('drop'), 88043, 'exact')).toBe('€88,043');
+    expect(formatValue(find('drop'), 0, 'head')).toBe('€0');
   });
 });
 
-describe('the timeline geometry: every axis from zero, one linear y per lane, no second axis', () => {
+// ---------------------------------------------------------------------------------------------------------------------------
+// MIN-4724: one plot, five lines, animated. Contract: CTO, MIN-4720 comment 6fba2571 (one scale per unit, the card's clock, the render budget);
+// CEO seat conditions 9 to 16 on MIN-4721; spec A14. The fixture above is a TEST-ONLY copy of a generator run (synthetic records and a plan).
+// ---------------------------------------------------------------------------------------------------------------------------
+const MS = 500;
+const RUN = 24 * MS;
+const LINE_ARRAYS = { patients: TLX.patients, matches: TLX.matches, income: TLX.income, drop: TLX.drop, dx: TLX.dx } as const;
+const REFS = { people: Math.max(...TLX.patients, ...TLX.matches), euro: Math.max(...TLX.income, ...TLX.drop), dx: Math.max(...TLX.dx) };
+
+describe('the timeline plot: one scale per unit (CTO, MIN-4720 section 1)', () => {
   const t = tl();
-  const lanes = buildLanes(t);
-  it('three lanes in the fixed order; a lane with no measure is absent', () => {
-    expect(lanes.map((l) => l.id)).toEqual(['people', 'euro', 'dx']);
-    expect(buildLanes(tl((r) => { delete (r as { diagnoses?: unknown }).diagnoses; })).map((l) => l.id)).toEqual(['people', 'euro']);
-    expect(buildLanes(tl((r) => { delete (r as { drop_eur?: unknown }).drop_eur; })).find((l) => l.id === 'euro')!.measures.map((m) => m.id)).toEqual(['income']);
+  const model = buildModel(t);
+  const g = tlGeometry(WIDE, t.x);
+  const line = (id: string) => model.lines.find((l) => l.id === id)!;
+
+  it('the five lines in the fixed order, each unit\'s reference is the maximum of its lines over all months, taken from the file', () => {
+    expect(model.lines.map((l) => l.id)).toEqual(['patients', 'income', 'dx', 'matches', 'drop']);
+    expect(model.refs).toEqual(REFS);
+    expect(unitReference(model.lines, 'people')).toBe(Math.max(...TLX.patients));
+    // the reference is a maximum, not "the last month": a drop that peaks mid-run and falls still sets its unit's reference
+    const humped: SimTimelineData = { ...t, drop: { ...t.drop!, values: t.drop!.values.map((v, i) => (i === 12 ? 10 * REFS.euro : v)) } };
+    expect(buildModel(humped).refs.euro).toBe(10 * REFS.euro);
+    expect(buildModel(humped).refs.people).toBe(REFS.people);
+    // an absent optional line: its unit's reference is the maximum of what remains, and the order closes up
+    const noDx = buildModel(tl((r) => { delete (r as { diagnoses?: unknown }).diagnoses; }));
+    expect(noDx.lines.map((l) => l.id)).toEqual(['patients', 'income', 'matches', 'drop']);
+    expect(noDx.refs.dx).toBe(0);
+    const noDrop = buildModel(tl((r) => { delete (r as { drop_eur?: unknown }).drop_eur; }));
+    expect(noDrop.refs.euro).toBe(Math.max(...TLX.income));
   });
-  for (const layout of [{ wide: true, width: 786 }, { wide: false, width: 324 }]) {
-    it(`${layout.wide ? 'wide' : 'narrow'}: the bottom tick is 0 at the plot's bottom, the top tick is at or above the lane's maximum`, () => {
-      lanes.forEach((lane, i) => {
-        const g = laneGeometry(lane, layout, t.x, i === lanes.length - 1);
-        const max = Math.max(...lane.measures.flatMap((m) => m.values));
-        expect(g.axis.ticks[0]).toBe(0);
-        expect(g.y(0)).toBeCloseTo(g.bottom, 9);
-        expect(g.axis.ticks.at(-1)).toBe(g.axis.top);
-        expect(g.axis.top).toBeGreaterThanOrEqual(max);
-        expect(g.y(g.axis.top)).toBeCloseTo(g.T, 9);
-      });
-    });
-    it(`${layout.wide ? 'wide' : 'narrow'}: all 24 points of every line are a linear function of the value alone, and invert to the data`, () => {
+  it('real comparisons survive inside a unit: matches end at their true share of patients, the drop at its true share of income', () => {
+    const share = (id: string, i: number) => shareOf(model, line(id), i);
+    expect(share('patients', 23)).toBe(1);
+    expect(share('income', 23)).toBe(1);
+    expect(share('dx', 23)).toBe(1);
+    expect(share('matches', 23)).toBeCloseTo(TLX.matches[23] / TLX.patients[23], 12);
+    expect(share('drop', 23)).toBeCloseTo(TLX.drop[23] / TLX.income[23], 12);
+    for (let i = 0; i < 24; i++) {
+      expect(share('matches', i) * REFS.people, `month ${i + 1} matches`).toBeCloseTo(TLX.matches[i], 9);
+      expect(share('drop', i) * REFS.euro, `month ${i + 1} drop`).toBeCloseTo(TLX.drop[i], 9);
+      expect(share('matches', i), `month ${i + 1}: matches never above patients`).toBeLessThanOrEqual(share('patients', i));
+    }
+  });
+  it('the scale is linear from zero and the same at every moment of the run (t = 0, midway, the end, and every frame between)', () => {
+    expect(g.y(0)).toBe(g.T + g.H);
+    expect(g.y(1)).toBe(g.T);
+    expect(g.y(0.5)).toBeCloseTo((g.y(0) + g.y(1)) / 2, 9);
+    for (let at = 0; at <= RUN; at += 125) {
+      const f = tlFrame(at, model, g);
+      for (const h of f.heads) {
+        // the head's y inverts, through the one fixed scale, to the file's share at the (fractional) position of the clock
+        const l = line(h.id);
+        const i = Math.min(23, Math.floor(f.pos));
+        const j = Math.min(23, i + 1);
+        const want = shareOf(model, l, i) + (shareOf(model, l, j) - shareOf(model, l, i)) * (f.pos >= 23 ? 0 : f.pos - i);
+        expect((g.y(0) - h.y) / g.H, `${h.id} at ${at} ms`).toBeCloseTo(want, 9);
+        expect(h.y).toBeGreaterThanOrEqual(g.y(1) - 1e-9);
+        expect(h.y).toBeLessThanOrEqual(g.y(0) + 1e-9);
+      }
+    }
+    // a different width moves the x only, never the y
+    expect(tlGeometry(NARROW, t.x).y(0.5) - tlGeometry(NARROW, t.x).y(1)).toBeCloseTo((tlGeometry(NARROW, t.x).H) / 2, 9);
+  });
+  it('the markup: three gridlines at y(0), y(half) and y(1), one top label, no unit tick values, and every point inverts to value / reference within half a pixel', () => {
+    for (const layout of [WIDE, NARROW]) {
+      const geo = tlGeometry(layout, t.x);
       const html = card(t, layout);
-      lanes.forEach((lane, i) => {
-        const g = laneGeometry(lane, layout, t.x, i === lanes.length - 1);
-        for (const m of lane.measures) {
-          const pts = linePoints(html, m.id);
-          expect(pts).toHaveLength(24);
-          pts.forEach(([px, py], k) => {
-            expect(Math.abs(px - g.x(t.x[k])), `${m.id} x ${k}`).toBeLessThanOrEqual(0.05);
-            const back = g.axis.top * (1 - (py - g.T) / g.plotH);
-            expect(Math.abs(back - m.values[k]), `${m.id} month ${k + 1}`).toBeLessThanOrEqual((0.05 / g.plotH) * g.axis.top + 1e-9);
-          });
-        }
-        // one y axis per lane: exactly one set of tick labels, one vertical axis line
-        const svg = html.split('data-testid="sim-tl-plot-' + lane.id + '"')[1].split('</svg>')[0];
-        expect((svg.match(/data-testid="sim-tl-ytick"/g) ?? []).length).toBe(g.axis.ticks.length);
-        expect((svg.match(/<line class="axis" x1="(\d+)" x2="\1"/g) ?? []).length).toBe(1);
-      });
-    });
-  }
-  it('the month labels: every third month ending on the last; wide only on the last lane, narrow on every lane', () => {
-    expect(labelledMonths(t.x)).toEqual([3, 6, 9, 12, 15, 18, 21, 24]);
-    const count = (html: string) => (html.match(/data-testid="sim-tl-month"/g) ?? []).length;
-    expect(count(card(t, { wide: true, width: 786 }))).toBe(8);
-    expect(count(card(t, { wide: false, width: 324 }))).toBe(24);
+      const ys = [...html.matchAll(/<line class="(?:gridtop|grid|axis)"[^>]*y1="([\d.]+)"[^>]*data-grid="([\d.]+)"/g)].map((m) => [m[2], Number(m[1])]);
+      expect(Object.fromEntries(ys)).toEqual({ '1': geo.y(1), '0.5': geo.y(0.5), '0': geo.y(0) });
+      expect((html.match(/data-testid="sim-tl-scale-top"/g) ?? []).length).toBe(1);
+      expect(byId(html, 'sim-tl-scale-top')).toBe('Top: the largest value in the unit');
+      expect(byId(html, 'sim-tl-scale-base')).toBe('0');
+      const svg = html.split('data-testid="sim-tl-plot"')[1].split('</svg>')[0];
+      const texts = [...svg.matchAll(/<text[^>]*>([^<]*)</g)].map((m) => m[1]);
+      for (const tx of texts) expect(tx, 'no unit tick value in the plot\'s text').not.toMatch(/€|\d,\d{3}/);
+      expect(texts.filter((tx) => /^\d+$/.test(tx) && !(t.x as number[]).includes(Number(tx)) && tx !== '0')).toEqual([]); // the only numbers are month labels and the zero
+      for (const l of model.lines) {
+        const pts = linePoints(html, l.id);
+        expect(pts).toHaveLength(24);
+        pts.forEach(([px, py], k) => {
+          expect(Math.abs(px - geo.x(t.x[k])), `${l.id} x ${k}`).toBeLessThanOrEqual(0.05);
+          const back = model.refs[l.unit] * (1 - (py - geo.T) / geo.H);
+          expect(Math.abs(back - l.values[k]), `${l.id} month ${k + 1}`).toBeLessThanOrEqual((0.5 / geo.H) * model.refs[l.unit]);
+        });
+      }
+    }
   });
-  it('the free pilot and the first paid month come from the data', () => {
-    expect(pilotBand(TLX.patients, MONTHS)).toEqual({ from: 3, to: 8, firstPaid: 9 });
-    expect(pilotBand(TLX.patients.map((v, i) => (i < 11 ? 0 : v + 1)), MONTHS)).toEqual({ from: 3, to: 11, firstPaid: 12 });
-    expect(pilotBand(new Array(24).fill(0), MONTHS)).toBeNull();
-    expect(firstMonthAbove(TLX.matches, MONTHS)).toBe(11);
-    const g = laneGeometry(lanes[0], { wide: true, width: 786 }, t.x, false);
-    // the band spans month cells 3 to 8 (x(2.5) to x(8.5)) and the first-paid line sits at x(9), in the markup
-    const html = card(t, { wide: true, width: 786 });
-    expect(g.x(8.5) - g.x(2.5)).toBeCloseTo(6 * ((786 - 44 - 12) / 23), 6);
-    expect(html).toContain(`<rect class="band" x="${g.x(2.5)}"`);
-    expect(html).toContain(`<line class="first" x1="${g.x(9)}" x2="${g.x(9)}"`);
+  it('lines are straight segments between monthly points: a polyline, no curve command anywhere', () => {
+    const html = card(t);
+    expect(html).not.toMatch(/<path[^>]* d="[^"]*[CcSsQqTtAa]/);
+    expect((html.match(/<polyline/g) ?? []).length).toBe(5);
   });
-  it('keys in the wide column: none overlaps another, each starts near its tip, the stack stays in the lane', () => {
-    expect(placeKeys([77, 157], [70, 70], TL_KEY_GAP, 214)).toEqual([37, 117]);
-    // two keys of 90 px that would end below the lane are pulled up together, still 8 px apart
-    expect(placeKeys([77, 157], [90, 90], TL_KEY_GAP, 214)).toEqual([26, 124]);
-    // two tips close together: the lower one is pushed down by the first one's measured height plus the gap
-    const close = placeKeys([60, 70], [100, 100], 8, 300);
-    expect(close[1] - close[0]).toBeGreaterThanOrEqual(108);
-    // a stack that would leave the lane is pulled back, never above 0 and never over the key above
-    const low = placeKeys([210, 212], [90, 90], 8, 214);
+});
+
+describe('the timeline clock: 500 ms a month, linear, the numbers change at month edges only', () => {
+  const t = tl();
+  const model = buildModel(t);
+  const g = tlGeometry(WIDE, t.x);
+  it('the month steps at the 500 ms edges; the run is 12 s and holds the finished chart for the last half month', () => {
+    expect(tlRunMs(t.x)).toBe(RUN);
+    const at = (ms: number) => tlFrame(ms, model, g);
+    expect([at(0).month, at(499).month, at(500).month, at(999).month, at(1000).month]).toEqual([1, 1, 2, 2, 3]);
+    expect(at(6500).month).toBe(14); // 6 s of 12 s: the status screenshots are taken here
+    expect(at(11499).month).toBe(23);
+    expect(at(11500).month).toBe(24);
+    expect(at(11999).done).toBe(false);
+    expect(at(12000).done).toBe(true);
+    expect(at(99999).month).toBe(24);
+    expect(at(-50).month).toBe(1);
+    // linear in time, with no easing: the position and the head's x are proportional to the clock, and the months with no patients are not skipped
+    for (let ms = 0; ms <= 11500; ms += 250) {
+      expect(at(ms).pos).toBeCloseTo(ms / MS, 12);
+      expect(at(ms).heads[0].x).toBeCloseTo(g.px(ms / MS), 9);
+    }
+    expect(at(0).showPlay).toBe(true);
+    expect(at(11500).showPlay).toBe(false);
+  });
+  it('a head carries the file\'s value for the month shown, at every month and for every line', () => {
+    for (let k = 0; k < 24; k++) {
+      for (const ms of [k * MS, k * MS + 250, k * MS + 499]) {
+        const f = tlFrame(ms, model, g);
+        expect(f.month, `at ${ms}`).toBe(k + 1);
+        f.heads.forEach((h) => expect(h.value, `${h.id} month ${k + 1}`).toBe(LINE_ARRAYS[h.id][k]));
+      }
+    }
+  });
+  it('months 1 to 8 are flat on the zero line, not skipped or sped up: no patients until month 9', () => {
+    const at = (ms: number) => tlFrame(ms, model, g);
+    for (const ms of [0, 1000, 2000, 3500]) at(ms).heads.forEach((h) => expect(h.y).toBeCloseTo(g.y(0), 9)); // flat through month 8; the rise starts leaving it
+    expect(at(4000).heads.find((h) => h.id === 'patients')!.value).toBe(TLX.patients[8]);
+    expect(at(4000).month).toBe(9);
+  });
+  it('the clip follows the clock and ends at the last month; the finished chart is the frame at the end of the run', () => {
+    expect(tlFrame(0, model, g).clipW).toBeCloseTo(g.x(1) + 1, 9);
+    expect(tlFrame(6000, model, g).clipW).toBeCloseTo(g.px(12) + 1, 9);
+    expect(tlFrame(RUN, model, g).clipW).toBeCloseTo(g.x(24) + 1, 9);
+  });
+  it('a card starts when 40% of it is in view, or, on a screen too short for that, when it fills most of the screen', () => {
+    expect(shouldStartRun(0.4, 0, 800)).toBe(true);
+    expect(shouldStartRun(0.39, 100, 800)).toBe(false);
+    expect(shouldStartRun(0.2, 500, 800)).toBe(true);
+    expect(shouldStartRun(0.2, 100, 800)).toBe(false);
+    expect(shouldStartRun(0, 0, 0)).toBe(false);
+  });
+});
+
+describe('the label stack (spec A14 section 4): arithmetic only, no overlap, always inside', () => {
+  const t = tl();
+  const model = buildModel(t);
+  const g = tlGeometry(WIDE, t.x);
+  it('at every frame the five labels are at least the gap apart and inside the plot; the final frame stacks the three heads at the top', () => {
+    for (let ms = 0; ms <= RUN; ms += 100) {
+      const f = tlFrame(ms, model, g);
+      const tops = [...f.tops!].sort((a, b) => a - b);
+      expect(tops[0], `at ${ms}`).toBeGreaterThanOrEqual(0);
+      for (let i = 1; i < tops.length; i++) expect(tops[i] - tops[i - 1], `at ${ms}`).toBeGreaterThanOrEqual(TL_LABEL_H + TL_LABEL_GAP - 1e-9);
+      expect(tops[tops.length - 1] + TL_LABEL_H, `at ${ms}`).toBeLessThanOrEqual(g.height + 1e-9);
+    }
+    const end = tlFrame(RUN, model, g);
+    // the three heads share the top gridline, so their labels stack from `T - lift` in the fixed line order; matches and the drop follow
+    const first = g.T - TL_LABEL_LIFT;
+    expect([...end.tops!].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4].map((k) => first + k * (TL_LABEL_H + TL_LABEL_GAP)));
+    expect(model.lines.map((l, i) => [l.id, end.tops![i]])).toEqual([
+      ['patients', first], ['income', first + 74], ['dx', first + 148], ['matches', first + 222], ['drop', first + 296],
+    ]);
+  });
+  it('placeLabels pulls a stack that would leave the plot back up, never above 0 and never over the label above', () => {
+    expect(placeLabels([100, 300], 68, 6, 14, 410)).toEqual([86, 286]);
+    const low = placeLabels([400, 402], 68, 6, 14, 410);
     expect(low[0]).toBeGreaterThanOrEqual(0);
-    expect(low[1] + 90).toBeLessThanOrEqual(214);
-    expect(low[1] - (low[0] + 90)).toBeGreaterThanOrEqual(8 - 1e-9);
-    // returned in the order of the tips given
-    expect(placeKeys([157, 77], [70, 70], 8, 214)).toEqual([117, 37]);
+    expect(low[1] + 68).toBeLessThanOrEqual(410);
+    expect(low[1] - low[0]).toBeGreaterThanOrEqual(74 - 1e-9);
+    expect(placeLabels([20, 20, 20], 68, 6, 14, 410)).toEqual([6, 80, 154]);
+  });
+  it('a leader runs from its head past the plot to its label', () => {
+    const f = tlFrame(RUN, model, g);
+    expect(f.leaders).toHaveLength(5);
+    expect(f.leaders![0]).toBe(leaderPath(f.heads[0], f.tops![0], g));
+    expect(f.leaders![0]).toMatch(/^M[\d.]+ [\d.]+H[\d.]+L[\d.]+ [\d.]+$/);
+    expect(tlFrame(RUN, model, tlGeometry(NARROW, t.x)).tops).toBeNull();
   });
 });
 
 describe('the timeline card on the screen', () => {
   const t = tl();
-  const wide = card(t, { wide: true, width: 786 }, TIE);
-  it('every end value is the file\'s last value; the table holds the exact numbers', () => {
+  const wide = card(t, WIDE, TIE);
+  const narrow = card(t, NARROW, TIE);
+  const MONTH_NOW = (md: string) => byId(md, 'sim-tl-month');
+
+  it('every head value is the file\'s last value when finished; the table holds the exact numbers', () => {
     expect(byId(wide, 'sim-tl-value-patients')).toBe(formatCount(TLX.patients[23]));
     expect(byId(wide, 'sim-tl-value-matches')).toBe(formatCount(TLX.matches[23]));
     expect(byId(wide, 'sim-tl-value-income')).toBe(formatEuroK(TLX.income[23]));
     expect(byId(wide, 'sim-tl-value-drop')).toBe(formatEuroK(TLX.drop[23]));
     expect(byId(wide, 'sim-tl-value-dx')).toBe(TLX.dx[23].toFixed(1));
     const row = (m: string) => (wide.match(new RegExp(`<tr data-measure="${m}">([\\s\\S]*?)</tr>`)) ?? [])[1]?.replace(/<[^>]+>/g, '|').replace(/\|+/g, '|');
-    expect(row('income')).toBe(`|Our income|${formatEuroWhole(TLX.income[11])}|${formatEuroWhole(TLX.income[23])}|`);
-    expect(row('drop')).toBe(`|Modelled drop in cost|${formatEuroWhole(TLX.drop[11])}|${formatEuroWhole(TLX.drop[23])}|`);
-    expect(row('patients')).toBe(`|Patients in the network|${formatCount(TLX.patients[11])}|${formatCount(TLX.patients[23])}|`);
-    expect(row('dx')).toBe(`|Fewer wrong or missed diagnoses|${TLX.dx[11].toFixed(1)}|${TLX.dx[23].toFixed(1)}|`);
+    expect(row('income')).toBe(`|Our income|€ a year, plan|${formatEuroWhole(TLX.income[11])}|${formatEuroWhole(TLX.income[23])}|`);
+    expect(row('drop')).toBe(`|Modelled drop in cost|€ a year, model|${formatEuroWhole(TLX.drop[11])}|${formatEuroWhole(TLX.drop[23])}|`);
+    expect(row('patients')).toBe(`|Patients in the network|patients, running total|${formatCount(TLX.patients[11])}|${formatCount(TLX.patients[23])}|`);
+    expect(row('matches')).toBe(`|Records with a match|records, running total|${formatCount(TLX.matches[11])}|${formatCount(TLX.matches[23])}|`);
+    expect(row('dx')).toBe(`|Fewer wrong or missed diagnoses|a year, model|${TLX.dx[11].toFixed(1)}|${TLX.dx[23].toFixed(1)}|`);
     expect(wide).toContain('Plan months 12 and 24, the same figures as the chart.');
   });
-  it('three kinds, told apart without colour: three dash patterns, three marker shapes, a tag on every key', () => {
+  it('no leader is visible while the run plays; they show at the end and under reduced motion (MIN-4724 fix A)', () => {
+    const lead = (html: string) => [...html.matchAll(/<path[^>]*class="lead"[^>]*>/g)].map((m) => m[0]);
+    const playing = lead(card(t, WIDE, TIE, { geography: EURO.geography, reduced: false, at: 3000 }));
+    expect(playing).toHaveLength(5);
+    for (const p of playing) expect(p).toContain('display:none');
+    const finished = lead(wide);
+    expect(finished).toHaveLength(5);
+    for (const p of finished) expect(p).not.toContain('display');
+    const still = lead(card(t, WIDE, TIE, { geography: EURO.geography, reduced: true }));
+    for (const p of still) expect(p).not.toContain('display');
+    // the frame loop writes the same rule through the ref
+    expect(readFileSync(join(__dirname, 'timelinePaint.ts'), 'utf8')).toMatch(/lead\.style\.display = f\.showPlay \? 'none' : ''/);
+  });
+  it('the same numbers on a phone: five rows in the fixed order, no head labels, no leaders', () => {
+    expect([...narrow.matchAll(/<li class="tl-row" data-measure="(\w+)"/g)].map((m) => m[1])).toEqual(['patients', 'matches', 'income', 'drop', 'dx']);
+    expect(byId(narrow, 'sim-tl-value-patients')).toBe(formatCount(TLX.patients[23]));
+    expect(byId(narrow, 'sim-tl-value-drop')).toBe(formatEuroK(TLX.drop[23]));
+    expect(narrow).not.toContain('class="tl-heads"');
+    expect(narrow).not.toContain('class="lead"');
+    expect(wide).not.toContain('class="tl-rows"');
+    expect((wide.match(/class="lead"/g) ?? []).length).toBe(5);
+    expect((wide.match(/class="tl-head"/g) ?? []).length).toBe(5);
+    // five head markers on the lines at both widths
+    expect((narrow.match(/data-head="/g) ?? []).length).toBe(5);
+    // the "a year" suffix follows every euro and diagnoses value, and no people value
+    expect((narrow.match(/<small>a year<\/small>/g) ?? []).length).toBe(3);
+  });
+  it('three kinds, told apart without colour: three dash patterns, five marker shapes, a tag on every line', () => {
     expect(new Set(Object.values(TL_DASH)).size).toBe(3);
     const dashOf = (id: string) => (wide.match(new RegExp(`data-line="${id}" data-dash="([^"]*)"`)) ?? [])[1];
+    expect(dashOf('patients')).toBe('12 4 2 4');   // patients are the plan's revenue / 40, so the plan's pattern (MIN-4724 fix B)
     expect(dashOf('matches')).toBe('none');
+    expect(dashOf('income')).toBe('12 4 2 4');
     expect(dashOf('drop')).toBe('6 4');
     expect(dashOf('dx')).toBe('6 4');
-    expect(dashOf('patients')).toBe('12 4 2 4');
-    expect(dashOf('income')).toBe('12 4 2 4');
     expect(byId(wide, 'sim-tl-tag-patients')).toBe('Plan');
+    expect(byId(wide, 'sim-tl-tag-matches')).toBe('Computed on synthetic records');
     expect(byId(wide, 'sim-tl-tag-income')).toBe('Plan');
     expect(byId(wide, 'sim-tl-tag-drop')).toBe('Model');
     expect(byId(wide, 'sim-tl-tag-dx')).toBe('Model');
-    expect(byId(wide, 'sim-tl-tag-matches')).toBe('Computed on synthetic records');
-    // end markers: one circle (computed), diamonds (rotated squares, model) and squares (plan) in the plots
-    const plots = wide.split('class="tl-lines"').slice(1).map((x) => x.split('</g>')[0]).join('');
-    expect((plots.match(/<circle/g) ?? []).length).toBe(1);
-    expect((plots.match(/<rect[^>]*transform="rotate\(45/g) ?? []).length).toBe(2);
-    expect((plots.match(/<rect(?![^>]*transform)/g) ?? []).length).toBe(2);
+    // the five head markers are five different shapes (square, circle, triangle up, triangle down, diamond)
+    const heads = [...wide.matchAll(/<g[^>]*data-head="(\w+)"[^>]*>(.*?)<\/g>/g)].map((m) => m[2].replace(/ (cx|cy|x|y)="[^"]*"/g, '').replace(/ fill="[^"]*"/g, '').replace(/ d="M[^"]*"/g, (d) => ` d="${d.replace(/[\d.-]+/g, 'n')}"`));
+    expect(heads).toHaveLength(5);
+    const shapes = [...wide.matchAll(/data-head="\w+"[^>]*>(<(?:circle|rect|path)[^>]*>)/g)].map((m) => m[1]);
+    expect(shapes.some((s) => s.startsWith('<circle'))).toBe(true);
+    expect(shapes.some((s) => s.startsWith('<rect'))).toBe(true);
+    expect(shapes.filter((s) => s.startsWith('<path')).length).toBe(3);
+    expect(new Set(shapes.filter((s) => s.startsWith('<path')).map((s) => ((s.match(/ d="([^"]*)"/) ?? [])[1] ?? '').replace(/[\d.]+/g, 'n').replace(/n n/g, 'n'))).size).toBeGreaterThanOrEqual(2);
+    // the small markers in the middle of every line, at months 12 and 18
+    expect((wide.match(/data-testid="sim-tl-lines"[\s\S]*?<\/g><\/g>/)![0].match(/<(?:circle|rect|path)/g) ?? []).length).toBe(5 * 2);
   });
-  it('the assumption lines travel with their lane; income is marked a plan, the ramp an assumption, the diagnoses lane carries its own', () => {
+  it('the axis sentences and the notes are on the card, always visible, in the order of the spec; income is marked a plan', () => {
+    expect(byId(wide, 'sim-tl-scale')).toBe('Each unit has its own scale: people, euros, diagnoses. Compare heights only inside a unit. Across units, compare how the lines grow.');
+    expect(byId(wide, 'sim-tl-scale-more')).toBe('Patients and records with a match share one scale. Income and the modelled drop share another. Diagnoses have their own. Every scale starts at zero.');
+    expect(wide).not.toMatch(/<details[^>]*>[^]*sim-tl-scale"/); // never behind a disclosure
+    const order = ['sim-tl-scale"', 'sim-tl-scale-more"', 'sim-tl-ramp', 'sim-tl-dx-assumption', 'sim-tl-income', 'sim-tl-drop-note', 'sim-tl-formula', 'sim-tl-curve', 'sim-timeline-tie', 'sim-tl-values'];
+    const at = order.map((k) => wide.indexOf(`data-testid="${k.replace('"', '')}"`));
+    expect(at.every((i) => i > -1), JSON.stringify(at)).toBe(true);
+    expect([...at].sort((a, b) => a - b)).toEqual(at);
     expect(byId(wide, 'sim-tl-ramp')).toBe('Assumption: each paid case is one new patient in the network, at €40 a case. Months 3 to 8 are a free pilot with no patients counted. Doctor-seat fees are income, not patients.');
     expect(byId(wide, 'sim-tl-income')).toBe('Income: our plan, not a measurement. Every price and volume is an assumption.');
     expect(byId(wide, 'sim-tl-dx-assumption')).toBe('Assumption: one visit per patient a year.');
-    // each note is a sibling of its plot, in its own lane element
-    for (const lane of ['people', 'euro', 'dx']) expect(wide).toContain(`data-testid="sim-tl-note-${lane}"`);
-    expect(wide.split('data-testid="sim-tl-note-people"')[1]).toContain('sim-tl-ramp');
-    expect(wide.split('data-testid="sim-tl-note-euro"')[1].split('data-testid="sim-tl-note-dx"')[0]).toContain('sim-tl-income');
-    expect(wide.split('data-testid="sim-tl-note-dx"')[1]).toContain('sim-tl-dx-assumption');
+    expect(byId(wide, 'sim-tl-curve')).toBe(CURVE);
   });
-  it('the formula under the euro lane gives the figure on screen at the precision shown (points x base x patients)', () => {
+  it('the label, the plan mark and the pilot band are on the card from the first frame, not only at the end', () => {
+    for (const html of [card(t, WIDE, TIE, { geography: EURO.geography, reduced: false, at: 0 }), card(t, NARROW, TIE, { geography: EURO.geography, reduced: false, at: 0 })]) {
+      expect(byId(html, 'sim-tl-income')).toContain('Income: our plan, not a measurement');
+      expect(byId(html, 'sim-tl-tag-income')).toBe('Plan');
+      expect(byId(html, 'sim-tl-band')).toBe('Free pilot: no patients counted');
+      expect(byId(html, 'sim-tl-first-label')).toBe('First paid cases');
+    }
+  });
+  it('the formula gives the figure on screen at the precision shown, and names one month (the last)', () => {
     expect(byId(wide, 'sim-tl-formula')).toBe(`0.77 points × ${formatEuroCents(PER)} × 2,806 patients = €88k a year`);
     expect(byId(wide, 'sim-tl-drop-note')).toBe(
-      'Each case is paid once, at €40. The modelled drop is a yearly figure for the patients in the network (€31.38 per patient a year at month 24). In this model it counts only the direct cost of wrong or missed diagnoses, on the EU-27 average spending per inhabitant.',
+      'Each case is paid once, at €40. The modelled drop is a yearly figure for the patients in the network (€31.38 per patient a year at month 24). In this model it counts only the direct cost of wrong or missed diagnoses, on the average spending per inhabitant for EU-27.',
     );
-    expect(wide).toContain(`>${formatEuroK(TLX.drop[23])}<`);
     expect(formatEuroK(dropFromInputs(0.77, PER, 2806))).toBe(byId(wide, 'sim-tl-value-drop'));
+    // the geography is the file's, never typed; with none, the sentence claims no geography
+    expect(byId(card(t, WIDE, TIE, { geography: 'XX-1' }), 'sim-tl-drop-note')).toContain('per inhabitant for XX-1.');
+    expect(byId(card(t, WIDE, TIE, {}), 'sim-tl-drop-note')).toMatch(/per inhabitant\.$/);
   });
-  it('the tie to the hero is there with the drop line and leaves with it', () => {
+  it('the tie to the hero is there with the drop line and leaves with it; the drop line, its head and its row leave together', () => {
     expect(byId(wide, 'sim-timeline-tie')).toBe(`The ${TIE.amount} a year above applies this same model to all ${TIE.geography} health spending. This chart counts only the patients in the network, so its figures are far smaller.`);
-    const noDrop = card(tl((r) => { delete (r as { drop_eur?: unknown }).drop_eur; }), { wide: true, width: 786 }, TIE);
+    const noDrop = card(tl((r) => { delete (r as { drop_eur?: unknown }).drop_eur; }), WIDE, TIE);
     expect(noDrop).not.toContain('sim-timeline-tie');
     expect(noDrop).not.toContain('sim-tl-formula');
-    expect(noDrop).not.toContain('sim-tl-key-drop');
-    expect(noDrop).toContain('sim-tl-key-income');
+    expect(noDrop).not.toContain('sim-tl-head-drop');
+    expect(noDrop).toContain('sim-tl-head-income');
     expect(noDrop).not.toContain('Modelled drop');
+    expect((noDrop.match(/class="tl-head"/g) ?? []).length).toBe(4);
+    expect(byId(noDrop, 'sim-timeline-desc')).toContain('four lines');
     expect(card(t)).not.toContain('sim-timeline-tie');
   });
-  it('without diagnoses: no third lane, no lane title, no assumption line, no diagnoses sentence in the description', () => {
+  it('without diagnoses: no diagnoses head, no assumption line, no diagnoses sentence in the description', () => {
     const noDx = card(tl((r) => { delete (r as { diagnoses?: unknown }).diagnoses; }));
-    expect(noDx).not.toContain('sim-tl-lane-dx');
+    expect(noDx).not.toContain('sim-tl-head-dx');
     expect(noDx).not.toContain('one visit per patient');
     expect(noDx).not.toContain('Fewer wrong or missed diagnoses');
     expect(byId(noDx, 'sim-timeline-desc')).not.toContain('diagnoses');
-    // the month labels move to the last lane left
-    expect((noDx.match(/data-testid="sim-tl-month"/g) ?? []).length).toBe(8);
+    expect((noDx.match(/data-head="/g) ?? []).length).toBe(4);
   });
-  it('the text alternative is real text, filled from the data, with no running total', () => {
+  it('the text alternative is real text, filled from the data, with no running total; the SVG is hidden and nothing announces during the run', () => {
     const d = byId(wide, 'sim-timeline-desc')!;
     expect(d).toBe(
-      'Chart, plan months 1 to 24, synthetic model. Patients in the network: none until month 9, 2,806 at month 24. Records with a match: 1,137 at month 24. Modelled fewer wrong or missed diagnoses: 9.8 a year. Modelled drop in cost: €88,043 a year. Planned income: €228,923 a year, plan. A model and a plan, not a measurement.',
+      'One chart with five lines, plan months 1 to 24, synthetic model. Each unit has its own scale, so heights are compared only inside a unit. Patients in the network: none until month 9, 2,806 at month 24. Records with a match: 1,137 at month 24. Modelled fewer wrong or missed diagnoses: 9.8 a year. Modelled drop in cost: €88,043 a year. Planned income: €228,923 a year, plan. A model and a plan, not a measurement.',
     );
     expect(d).not.toMatch(/so far|running|total/i);
     expect(wide).toMatch(/<section[^>]*aria-labelledby="[^"]+"[^>]*aria-describedby="[^"]+"/);
-    expect((wide.match(/<svg class="tl-svg"[^>]*aria-hidden="true"/g) ?? []).length).toBe(3);
-  });
-  it('the unit lines say a year for every money and diagnoses figure, and one scale for both euro lines', () => {
-    expect(byId(wide, 'sim-tl-unit-euro')).toBe('€ a year, one scale for both lines');
-    expect(byId(wide, 'sim-tl-unit-dx')).toBe('A year, across these patients, in the model');
-    expect(byId(wide, 'sim-tl-unit-people')).toBe('Patients and records, running total');
+    expect((wide.match(/<svg class="tl-svg"[^>]*aria-hidden="true"/g) ?? []).length).toBe(1);
+    expect(wide).not.toContain('aria-live');
     expect(words(wide)).not.toMatch(/saved|saves|savings|\bwill\b|proves|anonymous|!/i);
+    // the money on screen is never a running total: every euro and diagnoses value carries "a year"
+    expect(words(narrow)).not.toMatch(/running total of (money|income|euro)/i);
   });
-  it('the card is static: no animation or transition in its code or its CSS, so reduced motion shows the same finished state', () => {
+  it('the states: finished (reduced motion, a server render, or past the end) has no Replay; not started and running have it disabled; the end of the run enables it', () => {
+    const done = card(t);
+    expect(MONTH_NOW(done)).toBe('Month 24 of 24');
+    expect(done).not.toContain('sim-tl-replay');
+    expect(done).toContain('data-done="true"');
+    expect(card(t, WIDE, TIE, { geography: EURO.geography, reduced: true })).not.toContain('sim-tl-replay');
+    const start = card(t, WIDE, TIE, { geography: EURO.geography, reduced: false, at: 0 });
+    expect(MONTH_NOW(start)).toBe('Month 1 of 24');
+    expect(start).toMatch(/<button[^>]*disabled=""[^>]*data-testid="sim-tl-replay"/);
+    expect(start).toContain('aria-label="Replay the chart from month 1"');
+    expect(byId(start, 'sim-tl-value-patients')).toBe('0');
+    expect(byId(start, 'sim-tl-value-income')).toBe('€0');
+    const mid = card(t, WIDE, TIE, { geography: EURO.geography, reduced: false, at: 6500 });
+    expect(MONTH_NOW(mid)).toBe('Month 14 of 24');
+    expect(byId(mid, 'sim-tl-value-patients')).toBe(formatCount(TLX.patients[13]));
+    expect(byId(mid, 'sim-tl-value-matches')).toBe(formatCount(TLX.matches[13]));
+    expect(byId(mid, 'sim-tl-value-drop')).toBe(formatEuroK(TLX.drop[13]));
+    expect(byId(mid, 'sim-tl-value-dx')).toBe(TLX.dx[13].toFixed(1));
+    expect(mid).toMatch(/<button[^>]*disabled=""[^>]*data-testid="sim-tl-replay"/);
+    const end = card(t, WIDE, TIE, { geography: EURO.geography, reduced: false, at: RUN });
+    expect(MONTH_NOW(end)).toBe('Month 24 of 24');
+    expect(end).toMatch(/<button(?![^>]*disabled)[^>]*data-testid="sim-tl-replay"/);
+    expect(end).toContain('Replay');
+  });
+  it('the first frame is the empty chart at month 1 and the clip grows with the clock; the finished frame is clipped at the last month', () => {
+    const g = tlGeometry(WIDE, t.x);
+    const clipOf = (html: string) => Number((html.match(/<clipPath[^>]*><rect[^>]* width="([\d.]+)"/) ?? [])[1]);
+    expect(clipOf(card(t, WIDE, TIE, { reduced: false, at: 0 }))).toBeCloseTo(g.x(1) + 1, 2);
+    expect(clipOf(card(t, WIDE, TIE, { reduced: false, at: 6000 }))).toBeCloseTo(g.px(12) + 1, 2);
+    expect(clipOf(card(t, WIDE, TIE, {}))).toBeCloseTo(g.x(24) + 1, 2);
+    expect(card(t, WIDE, TIE, { reduced: false, at: 6000 })).toContain('class="play"');
+    expect(card(t, WIDE, TIE, {})).toMatch(/class="play"[^>]*style="display:none"/);
+  });
+});
+
+describe('the timeline code holds its render budget (CTO, MIN-4720 section 3)', () => {
+  const src = (f: string) => readFileSync(join(__dirname, f), 'utf8');
+  const LAYOUT_READS = /getBoundingClientRect|offsetWidth|offsetHeight|offsetTop|offsetLeft|clientWidth|clientHeight|scrollWidth|scrollHeight|getComputedStyle|innerWidth|getClientRects/;
+  it('the frame loop writes through refs and reads no layout: its only module has no layout read, and the component reads the width once, on resize', () => {
+    expect(src('timelinePaint.ts')).not.toMatch(LAYOUT_READS);
+    expect(src('timeline.ts')).not.toMatch(LAYOUT_READS);
+    expect((src('SimTimeline.tsx').match(/getBoundingClientRect/g) ?? []).length).toBe(1);
+    expect(src('SimTimeline.tsx')).not.toMatch(/offsetHeight|offsetWidth|clientHeight|clientWidth|getComputedStyle/);
+  });
+  it('the component is memoised, takes no scroll listener, and has no CSS animation or transition (the clock moves it)', () => {
+    expect((SimTimeline as unknown as { $$typeof: symbol }).$$typeof).toBe(Symbol.for('react.memo'));
+    expect(src('SimTimeline.tsx')).not.toMatch(/addEventListener\(\s*['"]scroll/);
+    expect(src('SimTimeline.tsx')).not.toMatch(/useState<[^>]*Frame|setT\(/);
     const css = readFileSync(join(__dirname, 'matches.css'), 'utf8');
-    const tlCss = css.slice(css.indexOf('The timeline diagram (MIN-4702'));
+    const tlCss = css.slice(css.indexOf('The timeline: one plot'));
     expect(tlCss.length).toBeGreaterThan(500);
-    expect(tlCss).not.toMatch(/animation|transition|@keyframes/);
-    for (const f of ['SimTimeline.tsx', 'timeline.ts']) expect(readFileSync(join(__dirname, f), 'utf8'), f).not.toMatch(/requestAnimationFrame|setInterval|setTimeout|animate/);
+    expect(tlCss).not.toMatch(/@keyframes|animation:|transition:/);
+  });
+  it('React state changes twice per month edge at most: the month and the done flag are the only state a run touches', () => {
+    const body = src('SimTimeline.tsx');
+    const states = [...body.matchAll(/const \[(\w+)(?:, set\w+)?\] = useState/g)].map((m) => m[1]);
+    expect(states.sort()).toEqual(['autoStill', 'done', 'index', 'measured', 'replays'].sort());
   });
 });
 
 describe('the timeline on /simulation', () => {
   const data = () => ({ ...real(), timeline: tl() });
-  it('sits directly under the hero and above the three small charts; the hero, the charts and the clock are untouched', () => {
+  it('sits directly under the hero and above the three small charts; the hero, the charts and the 30-second clock are untouched', () => {
     const base = real();
     const withCard = sim(data());
     const heroAt = withCard.indexOf('data-testid="sim-hero"');
@@ -950,6 +1172,8 @@ describe('the timeline on /simulation', () => {
     expect(stripped).toBe(rest(base));
     expect(SIM_DURATION_MS).toBe(30_000);
     expect(simDuration(base.x.values.length)).toBe(30_000);
+    // one card, one plot: no lane survives
+    expect(withCard).not.toMatch(/tl-lane|data-lane|sim-tl-plot-|sim-tl-lane|sim-tl-key-|sim-tl-unit-/);
   });
   it('the tie sentence carries the hero\'s own euro figure when the file has the euro block and the drop line', () => {
     const d = data();
@@ -958,25 +1182,30 @@ describe('the timeline on /simulation', () => {
     const hero = text(out, 'sim-euro-figure');
     expect(text(out, 'sim-timeline-tie') ?? byId(out, 'sim-timeline-tie')).toContain(hero ?? 'x');
   });
-  it('at every moment of the run the card shows the same finished state (it is not on the clock)', () => {
+  it('the card is on its own clock, not the hero\'s: at every moment of the 30-second run it shows the same chart (the start, or the finished one under reduced motion)', () => {
     const d = data();
     const cardOf = (m: string) => m.match(/<section class="tl"[\s\S]*?<\/details><\/section>/)![0];
-    const final = cardOf(sim(d));
-    for (const at of [0, 700, 5_000, 15_000, 29_999]) expect(cardOf(simAt(d, at))).toBe(final);
+    const start = cardOf(simAt(d, 0));
+    for (const at of [0, 700, 5_000, 15_000, 29_999]) expect(cardOf(simAt(d, at))).toBe(start);
+    expect(start).toContain('Month 1 of 24');
+    expect(cardOf(sim(d))).toContain('Month 24 of 24'); // reduced motion: finished at once
   });
-  it('the committed file, when it carries the block, parses with every measure the screen draws', () => {
+  it('the committed file, when it carries the block, parses with every line the screen draws, and reads the geography from the euro block', () => {
     const raw = (simulationJson as { timeline?: unknown }).timeline;
     if (raw === undefined) return;
     const parsedTl = parseTimeline(raw);
     expect(parsedTl, 'the committed timeline block must parse').toBeDefined();
     expect(parsedTl!.x).toHaveLength(TL_MONTHS);
+    expect(buildModel(parsedTl!).lines.length).toBeGreaterThanOrEqual(3);
+    const out = sim(real());
+    if (EURO.geography) expect(byId(out, 'sim-tl-drop-note') ?? '').toContain(`for ${EURO.geography}.`);
   });
 });
 
 describe('no figure of the timeline block is typed in the code', () => {
   const src = (f: string) => readFileSync(join(__dirname, f), 'utf8');
   it('no value of the fixture, and no month or euro figure, appears in the timeline code or its strings', () => {
-    const files = ['SimTimeline.tsx', 'timeline.ts', 'copy.ts', 'Simulation.tsx'].map(src).join('\n');
+    const files = ['SimTimeline.tsx', 'timeline.ts', 'timelinePaint.ts', 'copy.ts', 'Simulation.tsx'].map(src).join('\n');
     const figures = ['2806', '2,806', '1137', '1,137', '88043', '88,043', '228923', '228,923', String(PER), formatEuroCents(PER).slice(1), '0.77', '9.8', '31.38', '14857', '1189', '24 months'];
     for (const f of figures) expect(files, f).not.toContain(f);
   });
@@ -987,11 +1216,13 @@ describe('no figure of the timeline block is typed in the code', () => {
     for (const k of tlKeys) {
       const v = (COPY as Record<string, unknown>)[k];
       if (typeof v === 'function') continue;
+      if (k === 'tlScaleBase') continue; // the axis's zero label is not a data figure
       for (const str of flat(v)) expect(str, k).not.toMatch(/\d/);
     }
     // the functions put the arguments in and nothing else: a sentinel in, a sentinel out
     expect(COPY.tlRampPerCase({ price: 'PRICE', from: 777, to: 888 })).toContain('PRICE a case. Months 777 to 888');
-    expect(COPY.tlEuroNote({ price: 'PRICE', perPatient: 'PER', last: 999 })).toContain('at PRICE. The modelled drop');
+    expect(COPY.tlEuroNote({ price: 'PRICE', perPatient: 'PER', last: 999, geography: 'GEO' })).toContain('at PRICE. The modelled drop');
+    expect(COPY.tlEuroNote({ price: 'PRICE', perPatient: 'PER', last: 999, geography: 'GEO' })).toContain('per inhabitant for GEO.');
     expect(COPY.tlCaption({ first: 111, last: 222 })).toContain('Plan months 111 to 222,');
   });
 });
