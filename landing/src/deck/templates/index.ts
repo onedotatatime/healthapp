@@ -12,3 +12,5 @@ export { Appendix } from './Appendix';
 export { Hero } from './Hero';
 export { TwoColumn } from './TwoColumn';
 export { ThreeCards } from './ThreeCards';
+export { Spend } from './Spend';
+export { Detail } from './Detail';

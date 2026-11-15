@@ -3,7 +3,7 @@ import { Headline, rich } from '../util';
 
 export function Table({ s }: { s: TableSlide }) {
   return (
-    <div className={`t-table ${s.bar ? 'has-bar' : ''}`}>
+    <div className={`t-table ${s.bar ? 'has-bar' : ''} ${s.roomy ? 'roomy' : ''}`}>
       <Headline text={s.headline} />
       {s.intro && <p className="tb-intro">{rich(s.intro)}</p>}
       <div className="tb" style={{ ['--cols' as string]: s.cols }}>
@@ -16,6 +16,7 @@ export function Table({ s }: { s: TableSlide }) {
           </div>
         ))}
       </div>
+      {s.after && <p className="tb-after">{rich(s.after)}</p>}
       {s.bar && (
         <div className="tb-bar-wrap">
           <h4 className="tb-bar-title">{s.bar.title}</h4>

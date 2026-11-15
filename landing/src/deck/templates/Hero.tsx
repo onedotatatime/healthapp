@@ -8,9 +8,11 @@ export function Hero({ s }: { s: HeroSlide }) {
       <div className="hero-col">
         <Headline text={s.headline} />
         <p className="hero-body">{typo(s.body)}</p>
-        <ul className="hero-points">
-          {s.points.map((p, i) => <li key={i}>{withAccent(p)}</li>)}
-        </ul>
+        {s.points && s.points.length > 0 && (
+          <ul className="hero-points">
+            {s.points.map((p, i) => <li key={i}>{withAccent(p)}</li>)}
+          </ul>
+        )}
         {s.steps && (
           <div className="hero-steps">
             {s.stepsTitle && <h3>{s.stepsTitle}</h3>}

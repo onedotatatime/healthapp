@@ -10,22 +10,28 @@ export type HeroTag = 'Concept render';
 export type Theme = 'air' | 'mist' | 'night';
 
 export interface SlideBase {
-  /** Stable id, used in the URL hash (#1 ... #16). */
+  /** Stable id, used in the URL hash (#1 ... #14, #5b, #6b, #6c, #A1 ... #A9). */
   id: string;
-  /** Eyebrow number, e.g. "02". Omit on the cover. Use "Appendix A" style text for backups. */
+  /** Eyebrow number, e.g. "02". Omit on the cover. Appendix slides use "Appendix A2" style text. */
   no?: string;
   /** Eyebrow label, e.g. "Problem". */
   kicker?: string;
   theme: Theme;
-  /** Small line at the bottom-left of the slide. */
+  /** Required statement at the bottom-left of the slide, body-adjacent size (24px). Rules that must stay readable, e.g. "Named organisations are targets". */
   footer?: string;
+  /** The one small footnote line (about 19px, ink-soft) that carries the "*" of an estimate: what the number is, and that it is not a result. Replaces the old same-size "(our estimate)" label. */
+  note?: string;
+  /** "Details → A_" links, bottom-right. `to` is a slide id; the link is a hash link (#A2) and works with the keyboard. */
+  links?: DeckLink[];
+  /** Appendix slides: "Back to slide N" links, top-right. */
+  back?: DeckLink[];
   /** Speaker notes, one string per paragraph. Shown with N. */
   notes: string[];
-  /** Explicit counter label (e.g. "6b") for an inserted slide. It is not counted in "n / total" and the others keep their numbers. */
+  /** Explicit counter label ("5b", "6b", "6c", "A1", "A3b") for an inserted or appendix slide. It is not counted in "n / total" and the others keep their numbers. */
   counter?: string;
-  /** Backup slides show "Backup" instead of n / total and are not counted. */
-  backup?: boolean;
 }
+
+export interface DeckLink { to: string; label: string }
 
 export interface Rich { text: string }
 
@@ -35,7 +41,7 @@ export interface HeroSlide extends SlideBase {
   headline: string;
   body: string;
   /** Text supports **bold** and [[accent]] (teal bold, e.g. "(assumption)"). */
-  points: string[];
+  points?: string[];
   /** Optional "how it's used" list: a small heading and numbered steps (numbers in teal). */
   stepsTitle?: string;
   steps?: string[];
@@ -74,8 +80,8 @@ export type StatementSide =
       kind: 'compare';
       title: string;
       bars: { label: string; value: string; tone: 'deep' | 'mint'; gap?: string }[];
-      clockTitle: string;
-      clock: { when: string; what: string }[];
+      clockTitle?: string;
+      clock?: { when: string; what: string }[];
     }
   | { kind: 'notice'; tag?: DemoTag; blocks: { label: string; text: string }[] }
   | { kind: 'phone'; caption: string; tag?: DemoTag; crossed?: string }
@@ -96,9 +102,9 @@ export interface FunnelSlide extends SlideBase {
   headline: string;
   big: { number: string; label: string };
   points: string[];
-  muted: string;
+  muted?: string;
   funnelTitle: string;
-  steps: { value: string; text: string; tag?: string; tone: 'deep' | 'mint' | 'coral' }[];
+  steps: { value: string; text: string; tone: 'deep' | 'mint' | 'coral' }[];
 }
 
 /* ---------- Chart (stacked bars from data) ---------- */
@@ -110,9 +116,9 @@ export interface ChartSlide extends SlideBase {
   series: { key: string; label: string }[];
   /** Each group has bars; each bar has a total label and one value per series. */
   groups: { label: string; bars: { label: string; total: string; values: number[] }[] }[];
-  callout: { title: string; items: { number: string; label: string }[]; note: string };
-  strip: { caption: string; value: string; tag: string }[];
-  stripNote: string;
+  callout: { title: string; items: { number: string; label: string }[] };
+  /** One second number under the chart, with its explanation. */
+  strip: { value: string; text: string };
 }
 
 /* ---------- Table ---------- */
@@ -126,6 +132,10 @@ export interface TableSlide extends SlideBase {
   rows: { cells: string[]; emphasis?: 'wedge' | 'muted' }[];
   /** Index of a column rendered in the accent colour. */
   accentCol?: number;
+  /** One small line under the rows (e.g. "Also: ..."). */
+  after?: string;
+  /** Taller, larger rows for a table with only a few rows. */
+  roomy?: boolean;
   bar?: { title: string; parts: { pct: number; value: string; label: string; tone: 'deep' | 'soft' | 'quiet' | 'outline' }[] };
 }
 
@@ -134,7 +144,7 @@ export interface ProductSlide extends SlideBase {
   template: 'product';
   headline: string;
   steps: { n: number; title: string; icon: 'photo' | 'match' | 'timeline' | 'helix' | 'ask'; tag?: DemoTag; text: string }[];
-  under: { label: string; badges?: string[]; lines: string[] }[];
+  under?: { label: string; badges?: string[]; lines: string[] }[];
 }
 
 /* ---------- Compare (positioning map + cards) ---------- */
@@ -148,9 +158,10 @@ export interface CompareSlide extends SlideBase {
     axisX: string;
     low: string;
     high: string;
-    note: string;
+    /** Optional small line under the map. */
+    note?: string;
   };
-  rows: { name: string; well: string; not: string; hero?: boolean }[];
+  rows: { name: string; line?: string; well?: string; not?: string; hero?: boolean }[];
 }
 
 /* ---------- Steps (timeline or ascending cards) ---------- */
@@ -186,10 +197,10 @@ export interface TwoColumnSlide extends SlideBase {
 /* ---------- ThreeCards (three equal cards: title, short lines, one big number; the last can be accented) ---------- */
 export interface ThreeCard {
   title: string;
-  /** The big figure and an optional honesty label at the same size, e.g. "(our estimate)". Put a short descriptor in `unit`. */
-  figure: { value: string; tag?: string; unit?: string };
-  /** Two or three short lines. **bold** and [[teal label]] markers work. */
-  lines: string[];
+  /** The big figure. `mark` is a small "*" or "†" set on the number (an estimate); the one footnote line is `note` on the slide. `unit` is the one explanation line. */
+  figure: { value: string; mark?: string; unit?: string };
+  /** Optional extra short lines. **bold** and [[teal label]] markers work. */
+  lines?: string[];
   /** Accent the card (light teal band, teal outline). */
   accent?: boolean;
 }
@@ -204,9 +215,8 @@ export interface TeamAskSlide extends SlideBase {
   template: 'teamask';
   headline: string;
   team: { label: string; name: string; role: string; agents: string; partner: { title: string; text: string } };
-  ask: { label: string; amount: string; line: string; sub: string };
-  gates: { head: string[]; rows: { gate: string; amount: string; buys: string }[] };
-  contact: { label: string; link: string; email: string; qr: string };
+  ask: { label: string; amount: string; mark?: string; line: string; sub?: string };
+  gates: { head: string[]; rows: { gate: string; amount: string; buys?: string }[] };
 }
 
 /* ---------- Appendix (nested circles + table) ---------- */
@@ -218,6 +228,28 @@ export interface AppendixSlide extends SlideBase {
   head: string[];
   rows: { cells: string[]; total?: boolean }[];
   lines: string[];
+}
+
+/* ---------- Spend (one big bar in four parts, the contact line) ---------- */
+export interface SpendSlide extends SlideBase {
+  template: 'spend';
+  headline: string;
+  /** One line under the headline. */
+  line: string;
+  parts: { pct: number; value: string; label: string; accent?: boolean }[];
+  contact: { label: string; link: string; email: string; qr: string };
+}
+
+/* ---------- Detail (appendix page: columns of small markdown, tables where the content is tabular) ---------- */
+export interface DetailSlide extends SlideBase {
+  template: 'detail';
+  headline: string;
+  /** CSS grid-template-columns for the columns, e.g. "1fr 1fr". */
+  grid: string;
+  /** Body type size in px (default 19). Pages with room get a larger size; tables use size minus 2. */
+  fs?: number;
+  /** One markdown string per column: **bold**, *label*, - and 1. lists, | tables |, a lone **bold line** as a sub-heading. */
+  columns: string[];
 }
 
 export type Slide =
@@ -234,4 +266,6 @@ export type Slide =
   | TwoColumnSlide
   | ThreeCardsSlide
   | TeamAskSlide
+  | SpendSlide
+  | DetailSlide
   | AppendixSlide;
