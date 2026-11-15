@@ -60,7 +60,7 @@ describe('the founder\'s sentence, stage by stage', () => {
   it('step 0: the dots are in, nothing lit, no count and no result', () => {
     const { html } = view(FOUNDER, 0, false);
     expect(html).toContain('<h2 id="sm-h2"><b>2</b> The 50,000 records</h2>');
-    expect(html).toContain('One dot each. Country only, no names or ID. The place of a dot means nothing.');
+    expect(html).toContain('One dot each, without name or ID. The place of a dot means nothing.');
     expect(html).toContain('aria-label="50,000 synthetic records, one dot each. All records shown."');
     expect(html).toContain('data-on="false"');
     expect(html.match(/<li class=""/g)).toHaveLength(4);
