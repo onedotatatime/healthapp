@@ -3,3 +3,4 @@
 - [Possible diagnoses history](project_possible_diagnoses_history.md) — E3 cut 2026-11-14 (MIN-4489), back as slice 2 of MIN-4659; PRD §8 flag 3 is the precedent
 - [Measuring a run in healthapp](reference_measuring_a_run_in_healthapp.md) — extract-runs.py needs --transcript (subagents/agent-*.jsonl) and --window here
 - [Simulation: scaled money finding](project_simulation_scaled_money_finding.md) — modelled drop per patient (€41/yr) is about the €40 case price; size derived figures first (MIN-4696)
+- [One diagram means one plot](feedback_one_diagram_means_one_plot.md) — founder rejected stacked lanes and static; put the form in acceptance (MIN-4720 to MIN-4726)

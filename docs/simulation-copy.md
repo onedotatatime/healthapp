@@ -138,14 +138,16 @@ Notes (Anna): the "Modelled drop so far" counter shows the drop at the current n
 
 Everything here is synthetic data or a plan, in English only. Words by Anna. The CEO seat's decision (MIN-4698, on the founder's behalf) is applied: per-case ramp, both money lines in "€ a year" on one euro axis, "saved" stays banned, income is the plan's conservative line marked as a plan.
 
+> **Superseded in part by section 8 (MIN-4723, 15 Nov 2026).** The founder rejected the three-lane card ("no no no. We said one diagram with all the lines on the same...", then "animated"). Struck rows in 7.1 (title, caption, the three lane titles, the unit lines, the euro note, the aria lead) are replaced by section 8. Everything else in section 7 still applies: line names, kind tags, band, first-paid marker, ramp and income assumption lines, formula, tie, the values table, aria lines per measure, and 7.3 to 7.6.
+
 ### 7.1 Final strings (keys are for `src/features/matches/copy.ts`; Ren owns that file)
 
 No number, month or price is typed in a string: every `{...}` comes from the data file. Placeholders are in braces.
 
 | Key | Final string |
 |---|---|
-| `tlTitle` | What a growing network could change, month by month |
-| `tlCaption` | Plan months {first} to {last}, on synthetic records. As more patients join, more records find a match; the model then shows fewer wrong or missed diagnoses, a lower cost for those patients, and our planned income. |
+| `tlTitle` | ~~What a growing network could change, month by month~~ superseded by section 8 |
+| `tlCaption` | ~~Plan months {first} to {last}, on synthetic records. As more patients join, more records find a match; the model then shows fewer wrong or missed diagnoses, a lower cost for those patients, and our planned income.~~ superseded by section 8 |
 | `tlXAxis` | Plan month |
 | `tlBand` | Free pilot: no patients counted |
 | `tlFirstPaid` | First paid cases |
@@ -157,25 +159,25 @@ No number, month or price is typed in a string: every `{...}` comes from the dat
 | `tlTag.plan` | Plan |
 | `tlTag.model` | Model |
 | `tlTag.computed` | Computed on synthetic records |
-| `tlLaneTitle.people` | People |
-| `tlLaneTitle.euro` | Euros |
-| `tlLaneTitle.dx` | Diagnoses |
-| `tlUnitPeople` | Patients and records, running total |
-| `tlUnitEuro` (one string, both lines) | € a year, one scale for both lines |
-| `tlUnitDrop` (key end value, if a unit shows with it) | € a year, for these patients, in the model |
-| `tlUnitIncome` (key end value) | € a year, plan |
-| `tlUnitDx` | A year, across these patients, in the model |
+| `tlLaneTitle.people` | ~~People~~ superseded by section 8 |
+| `tlLaneTitle.euro` | ~~Euros~~ superseded by section 8 |
+| `tlLaneTitle.dx` | ~~Diagnoses~~ superseded by section 8 |
+| `tlUnitPeople` | ~~Patients and records, running total~~ superseded by section 8 |
+| `tlUnitEuro` (one string, both lines) | ~~€ a year, one scale for both lines~~ superseded by section 8 |
+| `tlUnitDrop` (key end value, if a unit shows with it) | ~~€ a year, for these patients, in the model~~ superseded by section 8 |
+| `tlUnitIncome` (key end value) | ~~€ a year, plan~~ superseded by section 8 |
+| `tlUnitDx` | ~~A year, across these patients, in the model~~ superseded by section 8 |
 | `tlAssumeDx` (under lane 3) | Assumption: one visit per patient a year. |
 | `tlRampPerCase` | Assumption: each paid case is one new patient in the network, at {price} a case. Months {from} to {to} are a free pilot with no patients counted. Doctor-seat fees are income, not patients. |
 | `tlIncomePlan` | Income: our plan, not a measurement. Every price and volume is an assumption. |
-| `tlEuroNote` (the new sentence, under lane 2) | Each case is paid once, at {price}. The modelled drop is a yearly figure for the patients in the network ({perPatient} per patient a year at month {last}). In this model it counts only the direct cost of wrong or missed diagnoses, on the EU-27 average spending per inhabitant. |
+| `tlEuroNote` (the new sentence, under lane 2) | ~~Each case is paid once, at {price}. The modelled drop is a yearly figure for the patients in the network ({perPatient} per patient a year at month {last}). In this model it counts only the direct cost of wrong or missed diagnoses, on the EU-27 average spending per inhabitant.~~ superseded by section 8 |
 | `tlFormula` (under lane 2, for month {last}) | {points} points × {perInhabitant} × {patients} patients = {amount} a year |
 | `tlTie` | The {amount} a year above applies this same model to all {geography} health spending. This chart counts only the patients in the network, so its figures are far smaller. |
 | `tlShowValues` (the `<details>` summary) | Show the values |
 | `tlColMeasure` | Measure |
 | `tlColMonth` | Month {n} |
 | `tlTableCaption` | Plan months {a} and {b}, the same figures as the chart. |
-| `tlDescLead` | Chart, plan months {first} to {last}, synthetic model. |
+| `tlDescLead` | ~~Chart, plan months {first} to {last}, synthetic model.~~ superseded by section 8 |
 | `tlDescPatients` | Patients in the network: none until month {paid}, {n} at month {last}. |
 | `tlDescMatches` | Records with a match: {n} at month {last}. |
 | `tlDescDx` | Modelled fewer wrong or missed diagnoses: {n} a year. |
@@ -235,3 +237,115 @@ Conditions 4 to 8 hold unchanged: the euro figure appears only with the formula,
 ### 7.6 Wording check (run on the strings in 7.1)
 
 No "saved", "saves", "savings", "will", "result", "proves", "anonymous" and no exclamation mark in the table of 7.1 (a regex over its 38 string rows found none). Diagnoses appear only as a yearly count for the network, never toward a patient. English only; Greek n/a.
+
+## 8. One plot, five lines, animated (MIN-4723, parent MIN-4696; MIN-4716 folded in; meaning fixed by the CTO on MIN-4720, comment 6fba2571)
+
+Everything here is synthetic data or a plan, in English only. Words by Anna. Founder, 15 Nov 2026: "no no no. We said one diagram with all the lines on the same showing how while the users are growing so as the matches how the other numbers are growing", then "animated". The scale rule is the CTO's: one scale per unit (people against patients, euros against income, diagnoses on their own), linear from zero, no unit tick values, fixed from the first frame. No number is typed in a string: every `{...}` comes from `simulation.json` (`timeline` block, `euro.geography`).
+
+### 8.1 Final strings (keys for `src/features/matches/copy.ts`; Ren owns that file)
+
+| Key | Final string |
+|---|---|
+| `tlTitle` | As patients join, the other numbers grow with them |
+| `tlCaption` | Plan months {first} to {last}, on synthetic records. In this model, as patients join, the records with a match, the modelled drop in cost, the fewer wrong or missed diagnoses and our planned income grow along with them. |
+| `tlScale` (axis caption, always visible, next to the plot) | Each unit has its own scale: people, euros, diagnoses. Compare heights only inside a unit. Across units, compare how the lines grow. |
+| `tlScaleMore` (small print under `tlScale`) | Patients and records with a match share one scale. Income and the modelled drop share another. Diagnoses have their own. Every scale starts at zero. |
+| `tlScaleTop` (label of the top gridline, once per unit group) | Top: the largest value in the unit |
+| `tlScaleBase` (bottom gridline) | 0 |
+| `tlMonth` (readout) | Month {n} of {last} |
+| `tlReplay` | Replay |
+| `tlReplayAria` | Replay the chart from month {first} |
+| `tlHead.patients` (short label at the line head) | Patients |
+| `tlHead.matches` | With a match |
+| `tlHead.income` | Income, plan |
+| `tlHead.drop` | Cost drop, model |
+| `tlHead.dx` | Diagnoses, model |
+| `tlName.patients` (full, legend and table; unchanged) | Patients in the network |
+| `tlName.matches` | Records with a match |
+| `tlName.income` | Our income |
+| `tlName.drop` | Modelled drop in cost |
+| `tlName.dx` | Fewer wrong or missed diagnoses |
+| `tlUnit.patients` | patients, running total |
+| `tlUnit.matches` | records, running total |
+| `tlUnit.income` | € a year, plan |
+| `tlUnit.drop` | € a year, model |
+| `tlUnit.dx` | a year, model |
+| `tlTag.computed` (patients and matches; unchanged wording) | Computed on synthetic records |
+| `tlTag.plan` (income) | Plan |
+| `tlTag.model` (drop and diagnoses) | Model |
+| `tlVal.count` (value at a head, patients and matches) | {n} |
+| `tlVal.eur` (income and drop) | {amount} a year |
+| `tlVal.dx` | {n} a year |
+| `tlReadoutRow` (phone, five rows under the plot, one per line: `tlHead` + value) | {head}: {value} |
+| `tlBand`, `tlFirstPaid`, `tlXAxis` | unchanged from 7.1 |
+| `tlRampPerCase` | unchanged from 7.1 |
+| `tlIncomePlan` | unchanged from 7.1: Income: our plan, not a measurement. Every price and volume is an assumption. |
+| `tlAssumeDx` | unchanged from 7.1: Assumption: one visit per patient a year. |
+| `tlEuroNote` (replaces 7.1; MIN-4716) | Each case is paid once, at {price}. The modelled drop is a yearly figure for the patients in the network ({perPatient} per patient a year at month {last}). In this model it counts only the direct cost of wrong or missed diagnoses, on the average spending per inhabitant for {geography}. |
+| `tlFormula` | unchanged from 7.1: {points} points × {perInhabitant} × {patients} patients = {amount} a year |
+| `tlTie` | unchanged from 7.1 |
+| `tlShowValues`, `tlColMeasure`, `tlColMonth`, `tlTableCaption` | unchanged from 7.1 (the values table stays, and is the accessible version) |
+| `tlDescLead` (card aria, first sentence; replaces 7.1) | One chart with five lines, plan months {first} to {last}, synthetic model. Each unit has its own scale, so heights are compared only inside a unit. |
+| `tlDescPatients`, `tlDescMatches`, `tlDescDx`, `tlDescDrop`, `tlDescIncome`, `tlDescClose` | unchanged from 7.1 |
+
+Notes for Ren:
+- `{geography}` is `euro.geography` (today "EU-27"); the string no longer types it. `{price}` is `plan.price_eur_per_case`, `{perPatient}` the file's per-patient figure at month {last}, as before. `{first}` and `{last}` come from `x.values`.
+- **Delete** the lane keys: `tlLaneTitle.people`, `.euro`, `.dx`, `tlUnitPeople`, `tlUnitEuro`, `tlUnitDrop`, `tlUnitIncome`, `tlUnitDx` (replaced by `tlUnit.*` and `tlScale`).
+- `tlMonth` changes only at month edges, with the values (CTO MIN-4720 section 2). No `aria-live` during the run; the values table is the accessible version. With reduced motion the finished chart shows at once, so the readout reads "Month {last} of {last}" and there is no `tlReplay`.
+- The scale strings say nothing about month {last}: the top of each unit is its largest value in the file, which the code takes as a maximum, so the sentence stays true if a series ever stops rising.
+
+### 8.2 Sentences checked against `data/synthetic/simulation.json` (`timeline`), 15 Nov 2026
+
+| Sentence | Check |
+|---|---|
+| `tlCaption`: records with a match, the modelled drop, fewer diagnoses and planned income grow with the patients | The counts and the money do not fall in any month: patients 0 to 2,806; matches 0 to 1,137 (4 at month 11); drop €175 (month 11) to €88,043; diagnoses 0.2 (month 12) to 9.8; income run rate €14,857 (month 9) to €228,923. "Grow along with them" is about direction, as a model, and does not say the match **rate** rises: it dips once, 39.9% of patients in month 19 (563 of 1,410) to 39.8% in month 20 (657 of 1,651). Months 1 to 8 are flat (the free pilot, no patients counted), which `tlBand` shows; the caption says "as patients join", which starts at month 9, and does not say every month adds patients. |
+| `tlScale`, `tlScaleMore`: three scales | People: patients and matches against the patients' maximum (2,806). Euros: income run rate and drop against income's maximum (€228,923). Diagnoses: its own maximum (9.8). That is the CTO's rule; no sentence says the lines share one scale. |
+| Real ratios that survive inside a unit (for the readout, not typed) | Matches end at 1,137 / 2,806 = 40.5% of the patients' height; the drop ends at 88,043 / 228,923 = 38.5% of income's height. |
+| `tlEuroNote`: "Each case is paid once" | Plan: one paid case is one new patient (file `patients.formula`, per-case only). |
+| `tlEuroNote`: "average spending per inhabitant for {geography}" | `euro.total_eur_per_inhabitant` = 4,074.88; `euro.geography` = "EU-27"; `drop_eur.per_inhabitant_eur` = 4,074.88. Filled: "…on the average spending per inhabitant for EU-27." |
+| `tlFormula` at month 24 | 0.77 points ÷ 100 × €4,074.88 × 2,806 patients = €88,043 (0.0077 × 4,074.88 × 2,806 = 88,042.7; file 88,043). |
+| `tlDescPatients`, `tlDescDx`, `tlDescDrop`, `tlDescIncome` at month 24 | 2,806 patients; 9.8 a year; €88,043 a year; €228,923 a year (plan). |
+
+### 8.3 Wording check
+
+No "saved", "saves", "savings", "will", "result", "proves", "anonymous" and no exclamation mark in the table of 8.1 (checked by regex). "Assume" or "assumption" is in `tlIncomePlan`, `tlRampPerCase`, `tlAssumeDx`; the 10% and the 20% are not restated in this block, and where they appear (section 6.3) "assumption" stays in the same sentence. "Income: our plan, not a measurement" and the two assumption lines stay on the card. The label "Plan months on synthetic records. A plan and a model, not a measurement" (`label` in the file) stays. Money appears only as a yearly figure ("a year"), never a running total (condition 10); the € line is `income_run_rate_eur`, never `income_eur`.
+
+## 9. `/simulation` as one diagram with a plan-month slider (MIN-4749; spec A15)
+
+Source: Anna, MIN-4723 comment 9e14b7f0 (the `g*` table, column M unless marked), Pix's A15 for the four band and state keys, the CTO's one line on MIN-4744. The page reads every figure from `ten_years` in `data/synthetic/simulation.json`; the strings below take them as arguments. Section 8 (`tl*`) is retired with the animated card. Code: `src/features/matches/copy.ts` (`g*`), the diagram `SimDiagram.tsx`. Not yet confirmed by Anna: every row marked **Ren, confirm**.
+
+| Key | String | Status |
+|---|---|---|
+| `gTitle.drop` / `.saved` | What matching could change in Greece, year by year / What matching could save Greece, year by year | Anna. The CEO seat picks (MIN-4746); the code switch is `DIAGRAM.money` |
+| `gCaption.drop` | Plan years {first} to {last}, on synthetic records and a plan. Move the slider to see, at any month, how many patients have joined, how many records find a match, how many diagnoses go right instead of wrong or missed, what that is worth in Greek health spending in the model, and our planned income. | Anna's text; "for one year" became "at any month" because the slider moves by month. **Ren, confirm** |
+| `gCaption.saved` | the same, ending "…how much money it could have saved in Greek health spending, in the model, and our planned income." | as above |
+| `gSliderLabel` | Plan year | Anna |
+| `gSliderValue` | Year {year}, month {month} | CTO (aria-valuetext) and Pix; also the `<output>` text |
+| `gSliderAria` | Plan year, from {first} to {last}. The numbers below show that point in the plan. | Anna's text, "that year" became "that point in the plan". **Ren, confirm** |
+| `gHead.patients`, `.matches`, `.dx`, `.income` | Patients in the network, Records with a match, Correct diagnoses gained, Our income | Anna |
+| `gHead.money.drop` / `.saved` | Modelled drop in cost in Greece / Money that could be saved in Greece, in the model | Anna; CEO seat picks. The `saved` head and column carry "in the model" (CTO fix C, ruling 3: "saved" is never bare) |
+| `gTag.*` | Plan, Model, Computed on synthetic records | Anna. Records with a match reads "Computed on synthetic records" up to `measured_until_month` and "Model" after it (CTO MIN-4744 section 1) |
+| `gSuffix.yearly.*` | a year, plan (income), a year, in the model (diagnoses), a year (money) | Anna |
+| `gSuffix.total.*`, `gHelp.dx.total`, `gCol*.total` | in total since the start, plan / in the model | **Ren, confirm**; used only if the CEO seat picks the running total (`DIAGRAM.basis = 'total'`) |
+| `gHelp.dx.yearly`, `gHelp.money` | Fewer wrong or missed diagnoses a year, in the model. / Cost of wrong or missed diagnoses that the model removes, on {year} spending. | Anna |
+| `gBandPlan` | Plan: years 1 to {planYears} | Pix (NEW key) |
+| `gBandAssumed` | After plan year {planYears}: income held flat, not in the plan | **Ren, confirm.** Pix's text was "Assumed growth, not in the plan: 40% a year"; the CTO's rule on MIN-4744 holds revenue flat, so there is no growth rate to print |
+| `gStatePlan` | In the plan | Pix (NEW key) |
+| `gStateAssumed` | After the plan: income held flat | **Ren, confirm** (same reason) |
+| `gScale`, `gScaleMore`, `gScaleTop` | the three sentences of 8.1 (`tlScale`, `tlScaleMore`, `tlScaleTop`), unchanged | Anna |
+| `gScaleEuro` | The plot shows euros only, on one scale that starts at zero. Patients, records with a match and diagnoses are in the list. | **Ren, confirm**; used only if the CTO picks the euro-only plot (`DIAGRAM.plot = 'euro'`) |
+| `gFact` | For scale: {geography} spent {total} on health in {year}, {perInhabitant} for each inhabitant. | Anna's recommended A; it replaces the EU-27 figure |
+| `gAssumeVisits`, `simAssumption` | the existing lines (6.3, `tlAssumeDx`) | unchanged |
+| `gIncomePlan` | Income: our plan to year {planYears}, then held flat. Not a forecast. | CEO seat, MIN-4746 comment 88b0c07c (condition 12); replaces "Income: our plan, not a measurement. Every price and volume is an assumption." Anna confirms after staging (MIN-4745) |
+| `gAssumeStay` (NEW) | Assumption: no patient leaves the network, and the effect applies every year. | CEO seat, same comment (condition 15); sits next to `gAssumeVisits`, visible without a tap |
+| `gTotal.money` / `.dx` | {value} added up since month {first}, in the model | CEO ruling 4, CTO fix A. Under the money, diagnoses figures; read from `ten_years.*.total.values`. Money keeps this wording when `DIAGRAM.money = 'saved'` ("saved" is never put on a total). Not shown when `DIAGRAM.basis = 'total'` |
+| `gTotal.income` | {value} added up since month {first}, plan | as above |
+| `gColDxTotal`, `gColMoneyTotal`, `gColIncomeTotal` | Diagnoses added up, Modelled drop added up, Income added up | CTO fix A: the three total columns of the values table |
+| `gColMoney.saved` | Could be saved a year, in the model / Modelled drop in total | CTO fix C; the bare "Saved a year" / "Saved in total" are gone |
+| `gAssumeShare` | The cost share is an OECD model estimate for a typical OECD country, about {share} of health spending. It is not a Greek measurement. | Anna. `{share}` is read from the file's formula for series 3 |
+| `gPlateau` | Past {records} records (month {month}) the matches and their effect are held at the {records}-record values; past year {planYears} the plan's revenue is held flat. | CTO, MIN-4744 section 1, word for word |
+| `gBase`, `gFormula` | Spending base: {geography}, {year}, {perInhabitant} per inhabitant, {total} a year in all. / {points} points × {perInhabitant} × {patients} patients = {amount} a year | Anna. The formula is always the yearly figure at the slider's month |
+| `gSourceLead`, `gBaselines` | Health spending: {link}. Baselines applied: {links}. | **Ren, confirm.** Anna's single `gSource` sentence is split so each source is a link read from the file |
+| `gShowValues`, `gTableCaption`, `gCol*` | Show the values; Every plan year, at its last month, the same figures as the diagram.; column heads | **Ren, confirm** (table of ten rows) |
+| `gDesc` | One diagram, plan year {year}, month {month}, synthetic model. Patients: {n}. … A model and a plan, not a measurement. | Anna's text with the month added |
+| `simLabel` | Simulation on synthetic data. A model, not a measurement | fixed by the CTO, never rewritten |

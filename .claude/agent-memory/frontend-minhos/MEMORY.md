@@ -7,3 +7,4 @@
 - [healthapp worktree and test setup](feedback_healthapp_worktree_and_tests.md) — edit hook = session worktree only; no jsdom (SSR markup tests); harness recipe
 - [Shared worktree: data files](feedback_shared_worktree_data_files.md) — never overwrite tracked data for review; swap the import with a scratch vite config
 - [Playwright evidence scripts](feedback_playwright_evidence_scripts.md) — throwaway script, smoke.invalid mock, block service worker, CDP CPU throttle
+- [Global CSS class collisions](feedback_global_css_class_collision.md) — exams.css .bar animated my bars; prefix classes, grep first, look at every bar
