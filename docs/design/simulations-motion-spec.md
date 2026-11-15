@@ -226,6 +226,67 @@ Longest string must fit 390 without truncation: the figure stays on one line at 
 - Any annotation of series 1 beyond its tip and value: the field already shows it.
 - Per-cell shadow, blur or glow; sound; a dark mode; a tooltip on hover.
 
+## A12. Addendum: the field at 5,000 records (MIN-4680, parent MIN-4679)
+
+Founder, 2026-11-15, verbatim: "can we increase the https://healthapp-8ui.pages.dev/simulation to 5000?" Goal: supports direction 5 (the field is what shows the network growing; at 5,000 it must still be read in one look). Synthetic data throughout; the label, the assumption lines and the clock (12 steps, `SIM_STEP_MS` 2600, 30 s) do not change. This addendum **supersedes** A2's field rows (48 x 9 and 27 x 15 cells), A3 steps 2 and 3 where they say "one cell per record, one landing at a time" and A6's "400 cells". Everything else in A stands. Not verified: nothing is built; heights below are computed from the current CSS and `DotCanvas.tsx`, Ren measures (tolerance ±8 px).
+
+**Decision: `/simulation` has its own canvas field in `src/features/matches/` (`DotField.tsx`, `field.ts`), following the `DotCanvas` look and pattern and importing nothing from `src/features/simulate/`; it differs from `DotCanvas` in three ways.** A DOM grid of 5,000 `<i>` is rejected (5,000 nodes, 417+ style writes per step on a phone).
+
+| | `DotCanvas.tsx` today | `/simulation` field |
+|---|---|---|
+| Dot pitch | 8 px (5 px under 520) | **5 px from 481 px up; 3 px at 480 and below** (5 px at 390 would be 385 px tall and push the euro figure to y 730, outside the 664 budget) |
+| Dot radius | 0.36 x pitch | unmatched 0.36 x pitch; **matched 0.46 x pitch** (a slightly larger teal dot, so matched reads at 2 px pitch) |
+| Padding, rings, numbers, group colours | PAD 12, rings, group hues | **none**: PAD 0, no rings, no numbers, two colours only |
+
+Colours (no new token; Ren resolves both once per mount from the tokens, as `DotCanvas` does for `--ink`): unmatched = `--field-border` at 40% on the card (as A5), matched = `--color-link` (teal-600). Pair ratios as A5 (3.32 graphic). At 3 px pitch the dots anti-alias, so the matched or unmatched state is also carried by the counter text and the aria text below; the colour is never the only carrier.
+
+### Size
+
+`cols = floor(W / pitch)`, `rows = ceil(5000 / cols)`, `height = rows x pitch`, W = the field column's width.
+
+| Viewport | W | Pitch | Cols x rows | Field height | Dot diameter (unmatched / matched) |
+|---|---|---|---|---|---|
+| 390 | 326 | 3 | 108 x 47 | **141 px** | 2.2 / 2.8 px |
+| 768 (one column) | about 704 | 5 | 140 x 36 | 180 px | 3.6 / 4.6 px |
+| 1280 (7/12 column) | about 593 | 5 | 118 x 43 | **215 px** | 3.6 / 4.6 px |
+| 1440 (7/12 column) | about 628 | 5 | 125 x 40 | 200 px | 3.6 / 4.6 px |
+
+Hero card at 1280 and 1440 stays about 310 high (the right column is still the taller one). **At 390 the field sits at y 361 to 502 (was 361 to 541)**: kicker 518 to 542, euro figure **542 to 586** (was 581 to 625), unit line 586 to 614. The figure is inside the 390 x 664 viewport with 50 px of slack, so A2's rule still holds. The last row is partial (5,000 is not a multiple of cols); dots fill in reading order, left to right.
+
+### Steps 2 and 3 at hundreds per window
+
+All of it is derived from the one clock `t` (A3 rules unchanged). `n(i)` and `M(i)` are the data's (`x.values`, `matches.count[]`). Per interval, `tau` = ms into it.
+
+| # | What changes | Rule |
+|---|---|---|
+| 2 | Network grows | The new dots `n(i-1)` to `n(i)` (about 417) appear as **one sweep in reading order**, not per-dot fades: visible count = `n(i-1) + round((n(i) - n(i-1)) x easeOut(clamp(tau / 400)))`, `--ease-out`, `tau` 0 to 400. Full opacity, no per-dot alpha (same as the `DotCanvas` reveal). The `sim-x` figure swaps at `T_i` as before |
+| 3 | Matches land | Matched count `m(t) = M(i-1) + floor(DeltaM x g)`, `g` = A3's linear progress over `tau` 400 to 2100 (the same `g` that drives the line tips, the counter and the euro figure, so they cannot disagree). The matched dots are the **first `m` dots in reading order** (a teal block that grows across the rows, so it reads as the share of the network). At `DeltaM` of hundreds the landings are 4 to 8 ms apart, below one frame, so they are drawn as a **moving front**: the dots that landed in the last `--dur-land` (160 ms) draw at radius `lerp(.6, 1)` and `easeOut`; every earlier matched dot is at full size. That is about 9 to 40 dots per frame for `DeltaM` 100 to 450, drawn individually. Design for `DeltaM` up to 1,000 per interval; `DeltaM = 0` lands nothing |
+| 4, 5 | Unchanged | Values interpolate with `g`; read pause 500 ms |
+
+`data-testid="sim-field"` stays on the field's wrapper. It carries `data-visible` and `data-matched`, written **only at step edges** (`T_i + 2100`, and at done), so tests read counts without a per-frame write. The old cell-count assertion (400 `<i>`) becomes `data-visible = n` and `data-matched = M`.
+
+### Cost (no long task over 50 ms at 390)
+
+Per-frame budget: script under 8 ms p95 at 4x CPU throttle. The pattern that meets it (Ren's or the CTO's call, any pattern that passes the gate is fine): draw all 5,000 dots **once per width** into two off-screen layers (unmatched, matched), in chunks of about 1,000 dots per frame at entry so no chunk is a long task; then each frame only `drawImage`s the visible region (full rows plus one partial row) and the matched region from the layers, plus the 9 to 40 front dots as arcs. No `Path2D` rebuilt per frame. Resize redraws the layers in chunks, then once. If Ren measures the `DotCanvas`-style bucketed fills (about 42 fills a frame) under the budget at 390, `DotField.tsx` may use that pattern instead (re-implemented in `matches/`, not imported). **Gate:** at 390, 4x CPU throttle, zero `longtask` entries over a full play and the p95 above; a screenshot per state saved as evidence.
+
+### Axis ticks (charts 1 to 3)
+
+The x values are the data's `x.values` (12 of them, 417, 833, 1250 ... 5000), shown as written with thousands separators, rounded to a whole number only if the file carries a fraction (ask Cron for whole numbers). **A tick mark at all 12 positions; a label only at the 3rd, 6th, 9th and 12th** (1,250, 2,500, 3,750, 5,000), at every width: four 11 px labels of about 30 px fit a 326 px plot, twelve do not. The rule is "every third value, ending on the last"; Ren types no value. The first value (417) is in the hero's "records in the network" figure at `t = 0`.
+
+### Reduced motion, and the text for a screen reader
+
+- **Reduced-motion frame (replaces A6's "400 cells"):** `data-state="done"` from the first render; one draw of all 5,000 dots with `M(11)` matched in reading order; no `requestAnimationFrame` loop, no layer-build chunks visible (draw once after the layers are ready). Everything else as A6.
+- **Text for the field:** the canvas is `role="img"` with `aria-label` built from the data: total records, matches so far at the current step (updated at step edges only, not per frame, and once at done), and the word "synthetic". Wrapper keeps `aria-hidden` off; the visible caption below is the longer description. Words are Anna's (placeholders): label `(placeholder)` "Match field: {matched} of {visible} synthetic records have a match", caption `(placeholder)` below.
+- **Caption rule, updated.** Old rule: "a cell is not a record". New: **a dot counts as one record, but where a dot sits and which dots turn teal are not records' identities.** Placeholder caption (Anna to reword, keep both halves): "One dot per synthetic record in the network. Dots turn teal, in reading order, as the number of matches grows. A dot's position is not a person." It sits under the field in `--text-doctor-body`, ink-soft (6.48), static from frame 0, never inside an element that animates opacity.
+
+### Tokens and constants
+
+**No token change.** Layout constants live in one file (`src/features/matches/field.ts`, or beside `simData.ts`): `FIELD_PITCH = { narrow: 3, wide: 5 }`, `FIELD_NARROW_MAX = 480`, `DOT_R = { off: 0.36, on: 0.46 }`, `TICK_EVERY = 3`. Words only from Anna's `copy.ts` entries.
+
+### Left out
+
+Per-dot fade, per-dot landing scale for the whole matched block, group hues and rings (that is `/doctor/simulate`), scatter placement, hover or tap on a dot, any zoom.
+
 ---
 
 # B. `/doctor/simulate` (MIN-4609)

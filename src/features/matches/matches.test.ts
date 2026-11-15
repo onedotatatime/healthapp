@@ -12,8 +12,9 @@ import { MatchesContext } from './context';
 import { isEmpty, MatchesView, PossibleMatchesPanel, type PanelState } from './PossibleMatchesPanel';
 import { toApiError } from './real';
 import { SimulationUnavailable, SimulationView } from './Simulation';
+import { BUILD_CHUNK, DOT_R, FIELD_NARROW_MAX, FIELD_PITCH, TICK_EVERY, fieldGeometry, labelledTicks, pitchFor, rangeRects } from './field';
 import {
-  SIM_GROW_MS, SIM_LANDING_MS, clockAt, decimalsOf, effectIndex, formatEuro, formatPct, formatPerInhabitant, formatTotal, hasDropped, matchesAt, niceAxis, parseSimulation,
+  SIM_GROW_MS, SIM_LANDING_MS, SIM_LAND_FADE_MS, clockAt, decimalsOf, effectIndex, formatCount, formatEuro, formatPct, formatPerInhabitant, formatTotal, hasDropped, matchesAt, niceAxis, parseSimulation,
   shownDrop, SIM_DURATION_MS, SIM_ENTRY_MS, SIM_MATCH_WINDOW, SIM_STEP_MS, simDuration, valueAt, visibleCells, type SimulationData,
 } from './simData';
 
@@ -137,7 +138,11 @@ describe('F2 panel: the permanent label is in every state', () => {
 
 describe('wording rules', () => {
   it('never says "anonymous" anywhere in the matches copy', () => {
-    const all = JSON.stringify(Object.values(COPY).map((v) => (typeof v === 'function' ? (v as (...a: number[]) => string)(1, 1) : v)));
+    // A copy function takes numbers (matchTotal) or one object of values (simFieldLabel, simAssumption): try the first, then a catch-all object.
+    const call = (f: (...a: unknown[]) => string) => {
+      try { return f(1, 1); } catch { return f({ matched: 1, visible: 1, start: '1', ceiling: '1', amount: '1', geography: '1', year: 1, drop: '1', total: '1' }); }
+    };
+    const all = JSON.stringify(Object.values(COPY).map((v) => (typeof v === 'function' ? call(v as (...a: unknown[]) => string) : v)));
     expect(all).not.toMatch(/anonym/i);
   });
   it('the simulation label in the JSON is the CTO\'s wording, word for word', () => {
@@ -318,7 +323,7 @@ describe('the clock: one linear clock, every number derived from it', () => {
       expect(formatEuro((euro.drop_pts[k] / 100) * printed), `step ${k}`).toBe(formatEuro(euro.drop_mio_eur[k]));
     }
   });
-  it('counters never go down and never skip: matches land one at a time, cells only appear, the drop only grows', () => {
+  it('counters never go down: the matches grow in hundreds per step, the dots only appear, the drop only grows', () => {
     let prev = { m: -1, v: -1, d: -1, e: -1, mio: -1 };
     for (let t = 0; t <= simDuration(n); t += 7) {
       const f = clockAt(t, n);
@@ -327,29 +332,54 @@ describe('the clock: one linear clock, every number derived from it', () => {
         e: effect[effectIndex(f)], mio: (shownDrop(euro.drop_pts, f.idx) / 100) * euro.total_mio_eur,
       };
       expect(cur.m).toBeGreaterThanOrEqual(prev.m);
-      expect(cur.m - Math.max(prev.m, 0)).toBeLessThanOrEqual(1);
       expect(cur.v).toBeGreaterThanOrEqual(prev.v);
       expect(cur.d).toBeGreaterThanOrEqual(prev.d);
       expect(cur.e).toBeGreaterThanOrEqual(prev.e);
       expect(cur.mio).toBeGreaterThanOrEqual(prev.mio);
-      expect(cur.m).toBeLessThanOrEqual(cur.v);
+      expect(cur.m).toBeLessThanOrEqual(cur.v); // a matched dot is a visible dot
       prev = cur;
     }
   });
-  it('each landing is at the instant the spec gives: evenly spread over the match window, in the same order as the data', () => {
+  it('the matches of a step are M(i-1) + floor(DeltaM x g), g the same linear progress as the values (spec A12, step 3)', () => {
     for (let k = 1; k < n; k++) {
       const delta = counts[k] - counts[k - 1];
-      for (let j = 0; j < delta; j++) {
-        const when = from + ((j + 0.5) * (to - from)) / delta;
-        expect(matchesAt(at(k, when - 1), counts)).toBe(counts[k - 1] + j);
-        expect(matchesAt(at(k, when + 1), counts)).toBe(counts[k - 1] + j + 1);
+      for (const tau of [0, from - 1, from, from + 1, (from + to) / 2, to - 1, to, to + 1, SIM_STEP_MS - 1]) {
+        const f = at(k, tau);
+        const g = Math.min(Math.max((tau - from) / (to - from), 0), 1);
+        expect(matchesAt(f, counts), `step ${k} tau ${tau}`).toBe(counts[k - 1] + Math.floor(delta * g));
+        expect(f.g).toBeCloseTo(g);
       }
+      expect(matchesAt(at(k, from), counts)).toBe(counts[k - 1]);
+      expect(matchesAt(at(k, to), counts)).toBe(counts[k]);
     }
   });
-  it('the cells of the new records are all in by the end of the 400 ms window, the first one at the start', () => {
+  it('the moving front: the matched count SIM_LAND_FADE_MS ago is never ahead, and lags by at most the dots that land in that time', () => {
+    expect(SIM_LAND_FADE_MS).toBe(160);
     for (let k = 1; k < n; k++) {
-      expect(visibleCells(at(k, 0), d.x.values)).toBe(d.x.values[k - 1] + 1);
-      expect(visibleCells(at(k, 400), d.x.values)).toBe(d.x.values[k]);
+      const delta = counts[k] - counts[k - 1];
+      const maxFront = Math.ceil((delta * SIM_LAND_FADE_MS) / (to - from)) + 1;
+      for (let tau = 0; tau < SIM_STEP_MS; tau += 11) {
+        const f = at(k, tau);
+        const now = matchesAt(f, counts), tail = matchesAt(f, counts, SIM_LAND_FADE_MS);
+        expect(tail, `step ${k} tau ${tau}`).toBeLessThanOrEqual(now);
+        expect(now - tail, `step ${k} tau ${tau}`).toBeLessThanOrEqual(maxFront);
+        expect(tail).toBeGreaterThanOrEqual(counts[k - 1]);
+      }
+      // 160 ms after the last landing nothing is left of the front
+      expect(matchesAt(at(k, to + SIM_LAND_FADE_MS), counts, SIM_LAND_FADE_MS)).toBe(counts[k]);
+      expect(matchesAt(at(k, from + 10), counts, SIM_LAND_FADE_MS)).toBe(counts[k - 1]);
+    }
+    // design for DeltaM up to 1,000 per interval: the front is then 100 dots at most
+    expect(Math.ceil((1000 * SIM_LAND_FADE_MS) / (to - from)) + 1).toBeLessThanOrEqual(100);
+  });
+  it('the new records appear as one sweep in reading order over the first 400 ms: the previous count at 0, the data at 400, never ahead of it', () => {
+    for (let k = 1; k < n; k++) {
+      const xs = d.x.values;
+      expect(visibleCells(at(k, 0), xs)).toBe(xs[k - 1]);
+      expect(visibleCells(at(k, SIM_GROW_MS / 2), xs)).toBeGreaterThan(xs[k - 1]);
+      expect(visibleCells(at(k, SIM_GROW_MS / 2), xs)).toBeLessThan(xs[k]);
+      expect(visibleCells(at(k, SIM_GROW_MS), xs)).toBe(xs[k]);
+      expect(visibleCells(at(k, SIM_STEP_MS - 1), xs)).toBe(xs[k]);
     }
   });
 });
@@ -388,7 +418,7 @@ describe('the euro outcome on the screen', () => {
     );
     expect(text(done, 'sim-euro-source')).toBe(`Health spending total: Eurostat, current health expenditure, ${euro.geography}, ${euro.year}.`);
     expect(done).toContain(`href="${euro.source.url}"`);
-    expect(text(done, 'sim-matches')).toContain(`Matches so far: ${d.matches!.count[last]}`);
+    expect(text(done, 'sim-matches')).toContain(`Matches so far: ${formatCount(d.matches!.count[last])}`);
     expect(text(done, 'sim-effect')).toBe(`Assumed effect of a match: ${formatPct(d.assumption.effect![last])}`);
   });
   it('the assumption line is on the hero and on chart 2 and chart 3, not on chart 1', () => {
@@ -432,20 +462,58 @@ describe('the euro outcome on the screen', () => {
     expect(text(simAt(d, 30000), 'sim-delta-3')).toBe(`−${Math.abs(s3.values[last] - s3.values[0]).toFixed(decimalsOf(s3.values))}`);
     expect(simAt(d, 30000)).not.toContain('sim-baseline-1');
   });
-  it('the start frame: 0 euros, no matches yet, the cells of the first step', () => {
+  it('the start frame: the first step of the data, the field at its first count, nothing worked out', () => {
     const start = simAt(d, 0);
-    expect(text(start, 'sim-euro-figure')).toBe('€0');
-    expect(text(start, 'sim-matches')).toContain(`Matches so far: ${d.matches!.count[0]}`);
-    expect(start.match(/<i( class="on")?\/?>/g)).toHaveLength(d.x.values[last]);
-    expect(start.match(/<i class="on"/g)).toHaveLength(d.x.values[0]);
-    expect(start).not.toContain('class="on m"');
+    expect(text(start, 'sim-euro-figure')).toBe(formatEuro(euro.drop_mio_eur[0]));
+    expect(text(start, 'sim-matches')).toContain(`Matches so far: ${formatCount(d.matches!.count[0])}`);
+    expect(text(start, 'sim-x-hero')).toContain(formatCount(d.x.values[0]));
+    expect(start).toContain(`data-visible="${d.x.values[0]}"`);
+    expect(start).toContain(`data-matched="${d.matches!.count[0]}"`);
   });
-  it('reduced motion: the outcome frame at once, all cells, all matches, the figure included, no replay', () => {
+  it('the field is one canvas with the figures of the data: no DOM per dot, aria-label and caption in Anna\'s words, data-* at step edges', () => {
+    const f0 = done.split('data-testid="sim-field"')[1].split('data-testid="sim-field-caption"')[0];
+    expect(f0.match(/<canvas/g)).toHaveLength(1);
+    expect(f0).not.toMatch(/<i[ >]/);
+    expect(done.match(/<canvas/g)).toHaveLength(1);
+    expect(f0).toContain('role="img"');
+    const total = d.x.values[last], matched = d.matches!.count[last];
+    expect(f0).toContain(`aria-label="${COPY.simFieldLabel({ matched, visible: total })}"`);
+    expect(COPY.simFieldLabel({ matched, visible: total })).toMatch(/synthetic/);
+    expect(done).toContain(`data-visible="${total}"`);
+    expect(done).toContain(`data-matched="${matched}"`);
+    expect(text(done, 'sim-field-caption')).toBe(COPY.simFieldCaption);
+    // the caption is outside the element that animates opacity
+    expect(done).toMatch(/<\/div><p class="sim-field-caption"/);
+  });
+  it('mid-step the figures about the field stay at the last step edge: only the dots and the counter move', () => {
+    const k = 4;
+    const t = SIM_ENTRY_MS + (k - 1) * SIM_STEP_MS;
+    const early = simAt(d, t + 100), late = simAt(d, t + 1000), edge = simAt(d, t + SIM_STEP_MS - 1);
+    for (const out of [early, late]) {
+      expect(out).toContain(`data-visible="${d.x.values[k - 1]}"`);
+      expect(out).toContain(`data-matched="${d.matches!.count[k - 1]}"`);
+    }
+    expect(edge).toContain(`data-visible="${d.x.values[k]}"`);
+    expect(edge).toContain(`data-matched="${d.matches!.count[k]}"`);
+  });
+  it('reduced motion: the outcome frame at once, the field at all records and all matches, the figure included, no replay', () => {
     expect(done).toContain('data-state="done"');
-    expect(done.match(/<i class="on m"/g)).toHaveLength(d.matches!.count[last]);
-    expect(done.match(/<i class="on"/g)?.length ?? 0).toBe(d.x.values[last] - d.matches!.count[last]);
+    expect(done).toContain(`data-visible="${d.x.values[last]}"`);
+    expect(done).toContain(`data-matched="${d.matches!.count[last]}"`);
     expect(done).not.toContain('sim-replay');
     expect(done).toContain('data-landed="true"');
+  });
+  it('the axis: a tick at every one of the data\'s values, a label at every third, ending on the last, written with the thousands comma', () => {
+    const xs = d.x.values;
+    expect(TICK_EVERY).toBe(3);
+    expect(labelledTicks(xs.length)).toEqual([2, 5, 8, 11]);
+    expect(labelledTicks(xs.length).map((i) => formatCount(xs[i]))).toEqual(['1,250', '2,500', '3,750', '5,000']);
+    for (const id of [1, 2, 3]) {
+      const chart = done.split(`data-testid="sim-series-${id}"`)[1].split('</figure>')[0];
+      expect(chart.match(/class="tick"/g)).toHaveLength(xs.length);
+      const labels = [...chart.matchAll(/data-testid="sim-tick-label">([^<]*)</g)].map((m) => m[1]);
+      expect(labels).toEqual(labelledTicks(xs.length).map((i) => formatCount(xs[i])));
+    }
   });
   it('the figure is never on screen without series 3 and never as a placeholder', () => {
     const noSeries3 = { ...d, series: d.series.filter((s) => s.id !== 3) };
@@ -488,6 +556,50 @@ describe('the euro outcome on the screen', () => {
     for (const f of readdirSync(__dirname)) {
       const src = readFileSync(join(__dirname, f), 'utf8');
       for (const v of forbidden) expect(src, `${f} contains ${v}`).not.toContain(v);
+    }
+  });
+});
+
+describe('the match field geometry (spec A12)', () => {
+  it('the pitch is 3 px at 480 px and below, 5 px above', () => {
+    expect(FIELD_PITCH).toEqual({ narrow: 3, wide: 5 });
+    expect(FIELD_NARROW_MAX).toBe(480);
+    expect([320, 390, 480].map(pitchFor)).toEqual([3, 3, 3]);
+    expect([481, 768, 1280, 1440].map(pitchFor)).toEqual([5, 5, 5, 5]);
+    expect(DOT_R.on).toBeGreaterThan(DOT_R.off);
+  });
+  it('sizes at the widths of the spec: 390, 768, 1280, 1440, from the records of the data', () => {
+    const total = real().x.values.at(-1)!;
+    expect(total).toBe(5000);
+    const g = (w: number, vw: number) => fieldGeometry(w, total, pitchFor(vw));
+    expect(g(326, 390)).toMatchObject({ cols: 108, rows: 47, height: 141 });
+    expect(g(704, 768)).toMatchObject({ cols: 140, rows: 36, height: 180 });
+    expect(g(593, 1280)).toMatchObject({ cols: 118, rows: 43, height: 215 });
+    expect(g(628, 1440)).toMatchObject({ cols: 125, rows: 40, height: 200 });
+    for (const w of [200, 326, 593, 900]) expect(g(w, 1280).cols * g(w, 1280).rows).toBeGreaterThanOrEqual(total);
+  });
+  it('a block of dots in reading order is at most three rectangles and covers exactly its dots', () => {
+    for (const cols of [7, 108, 118]) {
+      for (const [from, to] of [[0, 0], [0, 1], [0, cols], [3, cols + 2], [cols, 3 * cols], [5, 3 * cols + 4], [2, 2 * cols - 1], [0, 5 * cols + 3]]) {
+        const rects = rangeRects(from, to, cols);
+        expect(rects.length).toBeLessThanOrEqual(3);
+        const cells = new Set<number>();
+        for (const q of rects) for (let r = q.r0; r < q.r1; r++) for (let c = q.c0; c < q.c1; c++) {
+          expect(cells.has(r * cols + c), `cell twice (${from}, ${to}, ${cols})`).toBe(false);
+          cells.add(r * cols + c);
+        }
+        expect([...cells].sort((a, b) => a - b)).toEqual(Array.from({ length: Math.max(0, to - from) }, (_, i) => from + i));
+      }
+    }
+  });
+  it('the layers are built in chunks small enough to be no long task', () => {
+    expect(BUILD_CHUNK).toBeLessThanOrEqual(1000);
+    expect(Math.ceil(5000 / BUILD_CHUNK)).toBeGreaterThanOrEqual(5);
+  });
+  it('no 1,200-era figure is left in the simulation code or its fixtures', () => {
+    for (const f of readdirSync(__dirname)) {
+      if (f.endsWith('.test.ts')) continue;
+      expect(readFileSync(join(__dirname, f), 'utf8'), f).not.toMatch(/\b(1,200|1200|473)\b/);
     }
   });
 });
