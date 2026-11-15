@@ -72,6 +72,9 @@ export interface ExamRow {
   has_file: boolean;
   values_read: number;
   unchecked: boolean;
+  /** MIN-4637: the row carries a 14-day end for a kept refused file (documents.file_kept_until) and that end has passed.
+   *  Computed by the store on its own clock, so the list and the claim agree on "passed". */
+  kept_expired: boolean;
 }
 
 /** The test for saving a reading with no tap (CTO, MIN-4555 addendum §1), on what the reading produced. The reading
@@ -86,6 +89,9 @@ export const MAX_READS = 3;
 /** The lazy sweep's limits: a row reading this long, or waiting this long, is dead (CTO, MIN-4555 §3). */
 export const READING_STUCK_MINUTES = 3;
 export const QUEUED_STUCK_MINUTES = 10;
+/** A refused scan keeps its original this many days, for "Try again" after a fix (CTO decision on MIN-4613, part B; the
+ *  founder's yes, 2026-11-15). Set at the first refusal; a re-run never extends it. */
+export const KEEP_REFUSED_DAYS = 14;
 
 /** The list's row for one upload. A draft that was never read (a row from before this change) is shown as failed,
  *  computed here and never stored. Kind, date and the count are shown only once there is something read to show. */
@@ -103,8 +109,14 @@ export function toListItem(r: ExamRow): ExamListItem {
     kind: read ? (r.kind as ExamListItem["kind"]) : null,
     exam_date: read ? r.exam_date : null,
     values_read: read ? r.values_read : null,
-    can_retry: status === "failed" && r.has_file && r.read_attempts < MAX_READS && reason !== "no_file" && reason !== "unsupported_type",
+    // The one "Try again" signal (MIN-4637): a failed upload as before, and a refused one whose original is kept. Either way
+    // only while the file is there, its 14 days (if it has any) have not passed and it was read fewer than three times:
+    // exactly the rows claimForReading will take.
+    can_retry: (status === "failed" || status === "refused") && r.has_file && !r.kept_expired && r.read_attempts < MAX_READS &&
+      reason !== "no_file" && reason !== "unsupported_type",
     can_delete: status !== "confirmed",
+    // The copy signal: a refused upload whose original is still stored (kept 14 days, deletable). Never for another status.
+    file_kept: status === "refused" && r.has_file,
     // The mark exists only on a saved exam; a draft, whatever its column says, is already waiting for the owner.
     unchecked: status === "confirmed" && r.unchecked,
   };
@@ -118,9 +130,9 @@ export interface Store {
   getAny(env: HealthappEnv, docId: string): Promise<DocState | null>;
   /** The grant's end if the doctor holds a live grant on this patient, else null. */
   liveGrantEnd(env: HealthappEnv, grantId: string, doctorId: string, patientId: string): Promise<string | null>;
-  /** Atomically takes an upload for reading (queued, failed, or a draft that was never read, and read fewer than
-   *  MAX_READS times): status reading, one more attempt. Null when it is not the caller's or cannot be taken now, so
-   *  a second kick reads nothing twice. */
+  /** Atomically takes an upload for reading (queued, failed, a draft that was never read, or a refused one whose file is
+   *  kept (MIN-4637); read fewer than MAX_READS times; and never a row whose 14-day end has passed): status reading, one more
+   *  attempt. Null when it is not the caller's or cannot be taken now, so a second kick reads nothing twice. */
   claimForReading(env: HealthappEnv, patientId: string, docId: string): Promise<DocState | null>;
   /** Writes the draft of a row that is `reading`, and moves it to `draft`. Null when the row is not reading any more
    *  (deleted, or swept as stuck). */
@@ -136,8 +148,10 @@ export interface Store {
      *  visible draft in between. When the plan is refused the row stays a draft. */
     auto?: { plan: (s: DocState) => Promise<PlanOutcome> },
   ): Promise<Saved | null>;
-  /** reading -> refused, keeping the reason code and the times only: path, type, hashes and every extracted field
-   *  are set to null in the same statement. False when the row was not reading. The caller deleted the file first. */
+  /** reading -> refused, keeping the reason code, the times and the original (MIN-4637): storage_path, content_type and
+   *  sha256_file stay, the record hash and every extracted field are set to null in the same statement, and the file's
+   *  end is set to KEEP_REFUSED_DAYS from now unless it already has one (a refused re-run keeps the first refusal's end).
+   *  False when the row was not reading. The file is never deleted here. */
   markRefused(env: HealthappEnv, patientId: string, docId: string, reason: RefusalReason): Promise<boolean>;
   /** reading -> failed with a reason code; at MAX_READS the code becomes too_many_attempts. Only from `reading`. */
   markFailed(env: HealthappEnv, patientId: string, docId: string, reason: FailReason): Promise<void>;
@@ -146,6 +160,12 @@ export interface Store {
   sweepStuck(env: HealthappEnv, patientId: string): Promise<number>;
   /** The caller's own uploads, newest first. */
   listOwn(env: HealthappEnv, patientId: string): Promise<ExamRow[]>;
+  /** MIN-4637: the caller's refused or failed rows that still hold a file whose 14-day end has passed (store's clock). */
+  expiredKeptFiles(env: HealthappEnv, patientId: string): Promise<{ id: string; storage_path: string }[]>;
+  /** MIN-4637: after the storage API deleted the object, clears storage_path, content_type, sha256_file and
+   *  file_kept_until on that row, only if it is still the caller's, still refused or failed, still that path and still
+   *  past its end. False when nothing matched. */
+  dropKeptFile(env: HealthappEnv, patientId: string, docId: string, path: string): Promise<boolean>;
   /** The stored object's own metadata (type, size, upload time) from storage, or null when there is no object. */
   objectMeta(env: HealthappEnv, path: string): Promise<ObjectMeta | null>;
   /** Upserts the one analysis row of a document of this patient (MIN-4549). Twice leaves one row. */

@@ -4,7 +4,7 @@ import { ModelAnalysis } from "../_shared/analysis.ts";
 import type { ModelExtract } from "../_shared/extract.ts";
 import { ModelError } from "../_shared/model.ts";
 import { call, fakeAuth, fakeBlobs, fakeStore, PATIENT, PATIENT2 } from "../_shared/testkit_docs.ts";
-import { autoConfirmable, MAX_READS } from "../_shared/docs.ts";
+import { autoConfirmable, KEEP_REFUSED_DAYS, MAX_READS } from "../_shared/docs.ts";
 import { makeHandler as makeConfirm } from "../healthapp-confirm-doc/handler.ts";
 import { makeHandler as makeUnconfirm } from "../healthapp-unconfirm-doc/handler.ts";
 import { ANALYSIS_BUDGET_MS, makeHandler, READ_BUDGET_MS, TOTAL_BUDGET_MS } from "./handler.ts";
@@ -76,7 +76,9 @@ async function kick(t: ReturnType<typeof setup>, id: string, who = "tp") {
   const res = await t.h(call("x", { doc_id: id }, who));
   return { res, doc: t.s.docs.get(id), x: t.s.extra.get(id) };
 }
-const ALL_NULL = ["storage_path", "content_type", "sha256_file", "sha256_record", "printed_name", "printed_id", "header_confidence"] as const;
+/** What a refused row may not keep (MIN-4637: the original's path, type and hash may stay; nothing of the reading). */
+const READING_NULL = ["sha256_record", "printed_name", "printed_id", "header_confidence"] as const;
+const DAY = 86_400_000;
 
 Deno.test("the kick answers 202 queued before any model call; the reading then runs to a saved exam with no further request", async () => {
   const t = setup();
@@ -120,14 +122,18 @@ Deno.test("two kicks at once read once: the second claims nothing, and its answe
   assertEquals(t.logs.filter((l) => l.status === "not_claimed").length, 1);
 });
 
-Deno.test("unreadable: the row is refused with the code, the file is deleted, and nothing of the reading is kept", async () => {
+Deno.test("unreadable: the row is refused with the code, the original is kept 14 days, and nothing of the reading is kept", async () => {
   const t = setup({ ...GOOD, readable: false, document_kind: "other", printed_name: "", exam_date: "", results: [] });
   const d = await newDoc(t);
+  const refusedAt = t.s.clock.now;
   const { doc, x } = await kick(t, d.id);
   assertEquals([doc?.document.status, x?.reason], ["refused", "unreadable"]);
-  assertEquals(t.b.removed, [d.storage_path]);
-  assertEquals(t.b.files.has(d.storage_path), false); // yes/no: the file is gone
-  for (const k of ALL_NULL) assertEquals(doc?.meta[k] ?? null, null, k);
+  // MIN-4637 criterion 4: the file stays in the bucket, the row points at it, and its end is the refusal + 14 days
+  assertEquals([t.b.removed, t.b.files.has(d.storage_path)], [[], true]);
+  assertEquals([doc?.meta.storage_path, doc?.meta.content_type], [d.storage_path, "image/jpeg"]);
+  assertEquals(x?.keptUntil, refusedAt + KEEP_REFUSED_DAYS * DAY);
+  assertEquals(KEEP_REFUSED_DAYS, 14);
+  for (const k of READING_NULL) assertEquals(doc?.meta[k] ?? null, null, k);
   assertEquals([doc?.document.kind ?? null, doc?.document.exam_date, doc?.document.issuer, doc?.results.length, doc?.findings.length], [null, null, null, 0, 0]);
   assertEquals(t.logs.find((l) => l.status === "refused"), { fn: "extract-exam", status: "refused", reason: "unreadable", model: "m", attempts: 1, ms: 0 });
 });
@@ -196,11 +202,13 @@ Deno.test("read three times and still failing: too_many_attempts, and a fourth k
   assertEquals([res.status, t.modelCalls(), t.s.docs.get(d.id)?.document.status], [202, 3, "failed"]);
 });
 
-Deno.test("a document that is already saved, or already reading, is not read again", async () => {
+Deno.test("a document that is already saved, or already reading, or refused with no file left, is not read again", async () => {
   for (const status of ["confirmed", "reading", "refused", "draft"] as const) {
     const t = setup();
     const d = await newDoc(t);
     if (status === "draft") t.s.docs.get(d.id)!.document.kind = "blood_test"; // a draft that was read is not read again either
+    // a refused row from before 017 (or swept): no file, so nothing to read again
+    if (status === "refused") t.s.docs.get(d.id)!.meta = { ...t.s.docs.get(d.id)!.meta, storage_path: null, content_type: null };
     t.s.docs.get(d.id)!.document.status = status;
     const res = await t.h(call("x", { doc_id: d.id }));
     assertEquals([res.status, t.modelCalls(), t.s.docs.get(d.id)?.document.status], [202, 0, status], status);
@@ -216,19 +224,83 @@ Deno.test("an old draft that was never read is taken and read (it is listed as f
   assertEquals(doc?.document.kind, "blood_test");
 });
 
-Deno.test("a refused upload whose file cannot be deleted is failed delete_failed with the file still there, never refused", async () => {
+Deno.test("MIN-4637 criterion 5: a refusal never deletes, so delete_failed no longer arises, even with a storage that refuses deletes", async () => {
   const t = setup({ ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", printed_id: "AB654321" });
   t.b.refuseRemove(true);
   const d = await newDoc(t);
   const { doc, x } = await kick(t, d.id);
-  assertEquals([doc?.document.status, x?.reason], ["failed", "delete_failed"]);
-  assertEquals(t.b.files.has(d.storage_path), true);
-  assertEquals(doc?.meta.storage_path, d.storage_path); // the row still points at the file it could not delete
-  // the delete is tried before the row is written: a refusal never leaves a file behind a refused row
-  t.b.refuseRemove(false);
-  t.s.extra.get(d.id)!.attempts = 0;
-  const again = await kick(t, d.id);
-  assertEquals([again.doc?.document.status, again.x?.reason, t.b.files.has(d.storage_path)], ["refused", "name_mismatch", false]);
+  assertEquals([doc?.document.status, x?.reason], ["refused", "name_mismatch"]);
+  assertEquals([t.b.removed, t.b.files.has(d.storage_path), doc?.meta.storage_path], [[], true, d.storage_path]);
+  assertEquals(t.logs.some((l) => l.reason === "delete_failed"), false);
+});
+
+// MIN-4637: Try again on a refused scan whose original is kept ------------------------------------------------------
+/** A refused upload of Maria's (another person's name on it), its file kept; returns the harness and the doc. */
+async function refusedOne() {
+  const t = setup({ ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", printed_id: "AB654321" });
+  const d = await newDoc(t);
+  await kick(t, d.id);
+  assertEquals([t.s.docs.get(d.id)?.document.status, t.s.extra.get(d.id)?.attempts], ["refused", 1]);
+  return { t, d, end: t.s.extra.get(d.id)!.keptUntil! };
+}
+/** The same rows under a model that now reads the page as hers (the fix landed). */
+function rerunWith(t: ReturnType<typeof setup>, d: { id: string; storage_path: string }, model: ModelExtract | Error = GOOD) {
+  const ok = setup(model);
+  ok.s.docs.set(d.id, t.s.docs.get(d.id)!);
+  ok.s.extra.set(d.id, t.s.extra.get(d.id)!);
+  ok.b.files.set(d.storage_path, t.b.files.get(d.storage_path)!);
+  ok.s.clock.now = t.s.clock.now;
+  return ok;
+}
+
+Deno.test("criteria 6 and 7: Try again on a refused row with its file reads it again; a save clears the 14-day end", async () => {
+  const { t, d } = await refusedOne();
+  t.s.clock.now += 2 * DAY;
+  const ok = rerunWith(t, d);
+  const again = await kick(ok, d.id);
+  assertEquals([again.res.status, ok.modelCalls(), again.doc?.document.status, again.x?.attempts], [202, 1, "confirmed", 2]);
+  assertEquals([again.x?.keptUntil, again.doc?.meta.storage_path, ok.b.removed], [null, d.storage_path, []]); // saved: an exam's file, no end
+  assertEquals(again.doc?.results.length, 2);
+});
+
+Deno.test("criterion 7: a re-run refused again keeps the first refusal's end; a re-run never extends the 14 days", async () => {
+  const { t, d, end } = await refusedOne();
+  t.s.clock.now += 5 * DAY;
+  const again = await kick(t, d.id); // the same model: still someone else's name
+  assertEquals([again.doc?.document.status, again.x?.attempts, again.x?.keptUntil], ["refused", 2, end]);
+  assertEquals([t.b.removed, t.b.files.has(d.storage_path)], [[], true]);
+  // and one that fails on the re-read keeps the end too, so the sweep still deletes on the 14th day
+  t.s.clock.now += DAY;
+  const failing = rerunWith(t, d, new ModelError("timeout", undefined, 2));
+  const f = await kick(failing, d.id);
+  assertEquals([f.doc?.document.status, f.x?.reason, f.x?.keptUntil, f.doc?.meta.storage_path], ["failed", "too_many_attempts", end, d.storage_path]);
+});
+
+Deno.test("criterion 8: a refused row read three times is not taken: no model call, it stays refused", async () => {
+  const { t, d } = await refusedOne();
+  for (let i = 2; i <= MAX_READS; i++) await kick(t, d.id); // two more re-runs, both refused again
+  assertEquals([t.s.extra.get(d.id)?.attempts, t.modelCalls()], [3, 3]);
+  const ok = rerunWith(t, d);
+  const res = await ok.h(call("x", { doc_id: d.id }));
+  assertEquals([res.status, ok.modelCalls(), t.s.docs.get(d.id)?.document.status], [202, 0, "refused"]);
+});
+
+Deno.test("a refused row whose 14 days have passed is not taken, even with reads left", async () => {
+  const { t, d, end } = await refusedOne();
+  const ok = rerunWith(t, d);
+  ok.s.clock.now = end; // the end itself counts as passed
+  const res = await ok.h(call("x", { doc_id: d.id }));
+  assertEquals([res.status, ok.modelCalls(), ok.s.docs.get(d.id)?.document.status, ok.s.extra.get(d.id)?.attempts], [202, 0, "refused", 1]);
+  ok.s.clock.now = end - 1; // a millisecond before: taken
+  await kick(ok, d.id);
+  assertEquals([ok.modelCalls(), ok.s.docs.get(d.id)?.document.status], [1, "confirmed"]);
+});
+
+Deno.test("criterion 9: another account cannot re-run a refused row with its file: 404, no model call, nothing changes", async () => {
+  const { t, d } = await refusedOne();
+  const ok = rerunWith(t, d);
+  const res = await ok.h(call("x", { doc_id: d.id }, "tp2"));
+  assertEquals([res.status, ok.modelCalls(), ok.s.docs.get(d.id)?.document.status, ok.s.extra.get(d.id)?.attempts], [404, 0, "refused", 1]);
 });
 
 Deno.test("the row deleted while it is being read: the draft is not written, no analysis runs, nothing throws", async () => {
@@ -259,11 +331,11 @@ async function run(model: ModelExtract, who = "tp", body: Record<string, unknown
   return { t, d, res, doc: t.s.docs.get(d.id), x: t.s.extra.get(d.id) };
 }
 
-Deno.test("doc 6, another person: refused name_mismatch, nothing saved, the upload is deleted, the printed pair is not stored", async () => {
+Deno.test("doc 6, another person: refused name_mismatch, nothing saved, the upload kept 14 days, the printed pair is not stored", async () => {
   const { t, d, doc, x } = await run({ ...GOOD, printed_name: "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", printed_id: "AB654321" });
   assertEquals([doc?.document.status, x?.reason], ["refused", "name_mismatch"]);
   assertEquals(t.s.calls.includes("saveExtraction"), false);
-  assertEquals(t.b.removed, [d.storage_path]);
+  assertEquals([t.b.removed, doc?.meta.storage_path], [[], d.storage_path]);
   assertEquals(t.logs.find((l) => l.status === "refused")?.reason, "name_mismatch");
   // neither the printed nor the profile name is anywhere: not on the row, not in a log
   const everything = JSON.stringify([doc, x, t.logs]);
@@ -410,6 +482,22 @@ Deno.test("analyse_only: twice leaves one row; only the caller's own document; a
   assertEquals(t.s.saves(), 3);
 });
 
+// MIN-4637 (CTO must-fix 2): scripts/analyse-files.ts lists every row with a file, and after 017 that includes kept refused photos
+Deno.test("analyse_only on a refused row with its file kept, or any row that is not draft or confirmed: 404, no model call, no analysis row", async () => {
+  const { t, d } = await refusedOne();
+  assertEquals(t.s.docs.get(d.id)!.meta.storage_path !== null, true); // the file really is kept
+  const before = [t.modelCalls(), t.analysisCalls()];
+  for (const status of ["refused", "failed", "queued", "reading"] as const) {
+    t.s.docs.get(d.id)!.document.status = status;
+    const res = await t.h(call("x", { doc_id: d.id, analyse_only: true }));
+    assertEquals([status, res.status], [status, 404]);
+  }
+  assertEquals([t.modelCalls(), t.analysisCalls(), t.s.analyses.size], [...before, 0]);
+  t.s.docs.get(d.id)!.document.status = "draft"; // the guard is the status, not a stub that always answers 404
+  assertEquals((await t.h(call("x", { doc_id: d.id, analyse_only: true }))).status, 200);
+  assertEquals(t.analysisCalls(), before[1] + 1);
+});
+
 Deno.test("analyse_only on demo is 400: no read of the document, no model call", async () => {
   const t = setup();
   const d = await newDoc(t);
@@ -420,6 +508,7 @@ Deno.test("analyse_only on demo is 400: no read of the document, no model call",
 Deno.test("analyse_only with the stored object gone: a failed no_object row, no model call", async () => {
   const t = setup();
   const d = await newDoc(t, PATIENT, false);
+  t.s.docs.get(d.id)!.document.status = "draft"; // analyse_only takes a draft or confirmed row only (MIN-4637)
   const res = await t.h(call("x", { doc_id: d.id, analyse_only: true }));
   assertEquals((await res.json()).error_code, "no_object");
   assertEquals([t.analysisCalls(), t.s.analyses.get(d.id)?.sha256], [0, null]);

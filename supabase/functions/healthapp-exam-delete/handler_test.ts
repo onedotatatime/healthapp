@@ -22,11 +22,7 @@ function setup() {
       await s.store.claimForReading("dev", patient, d.id);
       if (status === "draft" || status === "confirmed") await s.store.saveExtraction("dev", patient, d.id, DRAFT, "a".repeat(64), "match");
       if (status === "confirmed") s.docs.get(d.id)!.document.status = "confirmed";
-      if (status === "refused") {
-        await b.blobs.remove("healthapp-dev", d.storage_path); // a refusal deletes the file first
-        await s.store.markRefused("dev", patient, d.id, "unreadable");
-        b.removed.length = 0;
-      }
+      if (status === "refused") await s.store.markRefused("dev", patient, d.id, "unreadable"); // MIN-4637: the original is kept
       if (status === "failed") await s.store.markFailed("dev", patient, d.id, "model_http");
     }
     return d;
@@ -34,15 +30,32 @@ function setup() {
   return { s, b, h, logs, make };
 }
 
-Deno.test("every upload that is not saved can be deleted, file and row; a refused one has no file to delete", async () => {
+Deno.test("every upload that is not saved can be deleted, file and row; a refused one with its kept original too (MIN-4637 criterion 14)", async () => {
   for (const st of ["queued", "reading", "draft", "failed", "refused"] as const) {
     const t = setup();
     const d = await t.make(st);
+    if (st === "refused") assertEquals([t.s.docs.get(d.id)?.meta.storage_path, t.b.files.has(d.storage_path)], [d.storage_path, true]);
     const res = await t.h(call("x", { doc_id: d.id }));
     assertEquals([res.status, ExamDeleteResponse.parse(await res.json())], [200, { deleted: true, doc_id: d.id }]);
     assertEquals([t.s.docs.has(d.id), t.b.files.has(d.storage_path)], [false, false], st);
-    assertEquals(t.b.removed, st === "refused" ? [] : [d.storage_path], st);
+    assertEquals(t.b.removed, [d.storage_path], st);
   }
+});
+
+Deno.test("a refused row from before 017 has no file: the row is deleted and no storage call is made", async () => {
+  const t = setup();
+  const d = await t.make("refused");
+  t.s.docs.get(d.id)!.meta = { ...t.s.docs.get(d.id)!.meta, storage_path: null, content_type: null };
+  t.s.extra.get(d.id)!.keptUntil = null;
+  assertEquals((await t.h(call("x", { doc_id: d.id }))).status, 200);
+  assertEquals([t.s.docs.has(d.id), t.b.removed], [false, []]);
+});
+
+Deno.test("MIN-4637 criterion 9: another account cannot delete a refused row or its kept original", async () => {
+  const t = setup();
+  const d = await t.make("refused", PATIENT);
+  assertEquals((await t.h(call("x", { doc_id: d.id }, "tp2"))).status, 404);
+  assertEquals([t.s.docs.has(d.id), t.b.files.has(d.storage_path), t.b.removed], [true, true, []]);
 });
 
 Deno.test("a saved exam cannot be deleted here: 404, the file and the row stay", async () => {

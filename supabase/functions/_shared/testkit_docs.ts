@@ -8,6 +8,7 @@ import {
   type ConfirmPlan,
   type DocState,
   type ExamRow,
+  KEEP_REFUSED_DAYS,
   MAX_READS,
   type PlanOutcome,
   QUEUED_STUCK_MINUTES,
@@ -55,8 +56,23 @@ export function fakeStore() {
   const grants = new Map<string, { doctor: string; patient: string; end: string }>();
   /** file_analysis rows by document id: an upsert, like the table's primary key. */
   const analyses = new Map<string, AnalysisFields & { patient_id: string }>();
-  /** What the table has besides DocState: the reason code, when the status last changed, how many reads. */
-  const extra = new Map<string, { reason: string | null; at: number; attempts: number }>();
+  /** What the table has besides DocState: the reason code, when the status last changed, how many reads, and the
+   *  kept refused file's end in ms (documents.file_kept_until, MIN-4637), or null. */
+  const extra = new Map<string, { reason: string | null; at: number; attempts: number; keptUntil: number | null }>();
+  const DAY = 86_400_000;
+  /** 017's two checks, run after every write of the fake: a refused row holds no reading and its file goes with an end;
+   *  an end exists only on refused, reading or failed. A fake that writes what the table would refuse fails the test. */
+  const check017 = (id: string) => {
+    const cur = docs.get(id), x = extra.get(id);
+    if (!cur || !x) return;
+    const st = cur.document.status, m = cur.meta, d = cur.document;
+    if (x.keptUntil !== null && !(st === "refused" || st === "reading" || st === "failed")) throw new Error(`017: end date on a ${st} row`);
+    if (st !== "refused") return;
+    const reading = [m.sha256_record, d.kind, d.language, d.exam_date, d.issuer, m.printed_name, m.printed_id, d.identity_status, m.header_confidence ?? null];
+    if (reading.some((v) => v !== null && v !== undefined)) throw new Error("017: a refused row keeps part of the reading");
+    if ((m.storage_path === null) !== (x.keptUntil === null)) throw new Error("017: a refused file without its end, or an end without a file");
+    if (m.storage_path === null && (m.content_type !== null || m.sha256_file !== null)) throw new Error("017: type or hash without the file");
+  };
   /** The test's clock in ms; the sweep reads it, never the wall clock. */
   const clock = { now: Date.parse("2026-11-14T10:00:00.000Z") };
   let saves = 0;
@@ -90,7 +106,7 @@ export function fakeStore() {
         meta: { storage_path: path, content_type: contentType, sha256_file: null, sha256_record: null, printed_name: null, printed_id: null },
         results: [], findings: [],
       });
-      extra.set(id, { reason: null, at: clock.now, attempts: 0 });
+      extra.set(id, { reason: null, at: clock.now, attempts: 0, keptUntil: null });
       calls.push("createDraft");
       return Promise.resolve({ id, storage_path: path });
     },
@@ -105,7 +121,9 @@ export function fakeStore() {
       const cur = docs.get(docId), x = extra.get(docId);
       if (!cur || !x || cur.document.patient_id !== patientId || x.attempts >= MAX_READS) return Promise.resolve(null);
       const st = cur.document.status;
-      if (!(st === "queued" || st === "failed" || (st === "draft" && cur.document.kind === null))) return Promise.resolve(null);
+      const refusedWithFile = st === "refused" && cur.meta.storage_path !== null;
+      if (!(st === "queued" || st === "failed" || (st === "draft" && cur.document.kind === null) || refusedWithFile)) return Promise.resolve(null);
+      if (x.keptUntil !== null && x.keptUntil <= clock.now) return Promise.resolve(null); // past its 14 days: never read again
       cur.document = { ...cur.document, status: "reading" };
       Object.assign(x, { reason: null, at: clock.now, attempts: x.attempts + 1 });
       return Promise.resolve(cur);
@@ -117,7 +135,7 @@ export function fakeStore() {
       let n = 0;
       cur.document = { ...cur.document, kind: d.kind, language: d.language, exam_date: d.exam_date, issuer: d.issuer, identity_status: identity, status: "draft" };
       cur.meta = { ...cur.meta, sha256_file: sha, printed_name: d.printed_name, printed_id: d.printed_id, header_confidence: d.header_confidence };
-      Object.assign(extra.get(docId)!, { reason: null, at: clock.now });
+      Object.assign(extra.get(docId)!, { reason: null, at: clock.now, keptUntil: null }); // a re-run that saves clears the end
       cur.results = d.results.map((r) => ({ ...r, id: uuid(1000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
       cur.findings = d.findings.map((f) => ({ ...f, id: uuid(2000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
       // the same transaction as the store's: the plan runs on the saved row; a plan it yields confirms it there and then
@@ -125,23 +143,27 @@ export function fakeStore() {
         const o: PlanOutcome = await auto.plan(cur);
         if (o.kind === "plan") applyPlan(cur, o.plan, true);
       }
+      check017(docId);
       return cur;
     },
     markRefused(_e, patientId, docId, reason: RefusalReason) {
       calls.push("markRefused");
       const cur = docs.get(docId);
       if (!cur || cur.document.patient_id !== patientId || cur.document.status !== "reading") return Promise.resolve(false);
-      // the same clearing as the SQL statement: nothing the file or the reading put on the row survives
+      // the same clearing as the SQL statement: nothing the reading put on the row survives; the original stays (MIN-4637)
       cur.document = {
         ...cur.document, status: "refused", kind: null as never, language: null, exam_date: null, issuer: null, identity_status: null,
       };
       cur.meta = {
-        storage_path: null, content_type: null, sha256_file: null, sha256_record: null, printed_name: null, printed_id: null,
-        header_confidence: null,
+        storage_path: cur.meta.storage_path, content_type: cur.meta.content_type, sha256_file: cur.meta.sha256_file,
+        sha256_record: null, printed_name: null, printed_id: null, header_confidence: null,
       };
       cur.results = [];
       cur.findings = [];
-      Object.assign(extra.get(docId)!, { reason, at: clock.now });
+      const x = extra.get(docId)!;
+      const keptUntil = cur.meta.storage_path === null ? null : (x.keptUntil ?? clock.now + KEEP_REFUSED_DAYS * DAY);
+      Object.assign(x, { reason, at: clock.now, keptUntil });
+      check017(docId);
       return Promise.resolve(true);
     },
     markFailed(_e, patientId, docId, reason: FailReason) {
@@ -150,6 +172,7 @@ export function fakeStore() {
       if (cur && x && cur.document.patient_id === patientId && cur.document.status === "reading") {
         cur.document = { ...cur.document, status: "failed" };
         Object.assign(x, { reason: x.attempts >= MAX_READS ? "too_many_attempts" : reason, at: clock.now });
+        check017(docId);
       }
       return Promise.resolve();
     },
@@ -181,9 +204,30 @@ export function fakeStore() {
           id: d.document.id, status: d.document.status, status_reason: x.reason, created_at: d.document.created_at,
           status_at: new Date(x.at).toISOString().replace("Z", "+00:00"), kind: d.document.kind, exam_date: d.document.exam_date,
           read_attempts: x.attempts, has_file: d.meta.storage_path !== null, values_read: d.results.length, unchecked: d.document.unchecked,
+          kept_expired: x.keptUntil !== null && x.keptUntil <= clock.now,
         };
       });
       return Promise.resolve(rows.reverse());
+    },
+    expiredKeptFiles(_e, patientId) {
+      calls.push("expiredKeptFiles");
+      const out: { id: string; storage_path: string }[] = [];
+      for (const [id, cur] of docs) {
+        const x = extra.get(id)!;
+        if (cur.document.patient_id !== patientId || !(cur.document.status === "refused" || cur.document.status === "failed")) continue;
+        if (cur.meta.storage_path !== null && x.keptUntil !== null && x.keptUntil <= clock.now) out.push({ id, storage_path: cur.meta.storage_path });
+      }
+      return Promise.resolve(out);
+    },
+    dropKeptFile(_e, patientId, docId, path) {
+      calls.push("dropKeptFile");
+      const cur = docs.get(docId), x = extra.get(docId);
+      if (!cur || !x || cur.document.patient_id !== patientId || !(cur.document.status === "refused" || cur.document.status === "failed")) return Promise.resolve(false);
+      if (cur.meta.storage_path !== path || x.keptUntil === null || x.keptUntil > clock.now) return Promise.resolve(false);
+      cur.meta = { ...cur.meta, storage_path: null, content_type: null, sha256_file: null };
+      x.keptUntil = null;
+      check017(docId);
+      return Promise.resolve(true);
     },
     unconfirm(_e, patientId, docId) {
       calls.push("unconfirm");
