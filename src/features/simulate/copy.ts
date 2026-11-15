@@ -1,27 +1,20 @@
 /**
- * Every on-screen string of /doctor/simulate (MIN-4594). English only (a prototype for one event).
- * Four labels are fixed word for word by the CTO (MIN-4504, 2026-11-14); the rest follow src/features/matches/copy.ts:
- * never "anonymous", always "without name or ID", no claim about the real product beyond the fixed labels.
+ * Every on-screen string of /doctor/simulate (MIN-4594, one flow since MIN-4736). English only (a prototype for one event).
+ * Three labels are fixed word for word: `pageLabel`, `machineLabel` and `machineFallback` (CTO, MIN-4504). The rest follow
+ * src/features/matches/copy.ts: never "anonymous", always "without name or ID", no claim about the real product beyond the fixed labels.
+ * Words for the one flow by Anna Lytica on MIN-4739. No number is typed into a string: `total`, `max`, `n`, `found`, `asked` and `k` are
+ * passed in from the file or the search.
  */
 export const COPY = {
-  // Fixed by the CTO: always visible / per step
+  // Fixed by the CTO: always visible / in the machine step
   pageLabel: 'Seeded synthetic data. Not real patients.',
   machineLabel: (when: string) => `Recorded run on a boxd machine, ${when}. Replayed here, not live.`,
   machineFallback: 'Generated with the same script and seed on a development machine.',
-  matchingLabel: 'The matching runs now, in this browser, on the 5,000 synthetic records.',
-  contactLabel: "Simulated. Planned flow: both patients agree first, then their doctors are introduced. Every request goes into both patients' access logs.",
-
-  title: 'Simulate matching on 5,000 records',
-  intro:
-    'The demo patient is synthetic and has a rare pattern: ACE high, cough, dry eyes, hilar lymphadenopathy on imaging, seen by pulmonology. Run the search to see which of 5,000 seeded records share it.',
-  run: 'Run the simulation',
-  runAgain: 'Run again',
 
   machineTitle: 'The machine',
-  machineBody: 'One short-lived machine makes the 5,000 test records, then goes away.',
+  machineBody: (total: string) => `One short-lived machine makes the ${total} synthetic records, then goes away.`,
   machineWaiting: 'Replaying the recorded run',
-  // MIN-4675, words by Anna on MIN-4672. "live" appears only in strings about the live run; "recorded" and "replayed" only in the replay ones.
-  machineStarting: 'Asking for a live run on a boxd machine to make the 5,000 synthetic records.',
+  // Kept for the live cut (cut 2); the page does not show them now. "live" appears only in strings about the live run.
   liveLabel: (when: string) => `Live run on a boxd machine, started ${when}. Not a replay. Synthetic data.`,
   /** Shown above `machineLabel` when the recorded run is played because the live one did not happen. One per reason. */
   fallback: {
@@ -31,92 +24,37 @@ export const COPY = {
     timeout: 'The live run did not finish in time. Showing the recorded run instead.',
     error: 'The live run failed. Showing the recorded run instead.',
   },
-  /** The log line of each live state: what the machine does at that step, the same words the recorded run logged. */
-  liveLog: { created: 'machine ready', running: 'generate.py --n 5000, build_run.py', done: 'run-5000.json written', deleted: 'machine deleted' },
   machineStates: { created: 'Created', running: 'Running', done: 'Done', deleted: 'Deleted' },
 
-  recordsTitle: 'The 5,000 records',
-  recordsBody: 'One dot each. Country and age band only, no names.',
-  groupNote: 'Group names show how the generator was seeded. They are not diagnoses.',
-  canvasLabel: (stage: string) => `5,000 synthetic records, one dot each. ${stage}`,
+  recordsTitle: (total: string) => `The ${total} records`,
+  recordsBody: 'One dot each, without name or ID. The place of a dot means nothing.',
+  canvasLabel: (total: string, stage: string) => `${total} synthetic records, one dot each. ${stage}`,
   canvasStage: {
     all: 'All records shown.',
-    opted: 'Records that did not opt in are faded.',
-    share: 'Only records that share at least 4 codes with the demo patient stay bright.',
-    exact: 'Only records with exactly the same set of shared codes stay bright.',
-    shown: 'The matched records are ringed and numbered.',
+    opted: 'Records that did not opt in to matching are faded.',
+    fit: 'Only records that fit the criteria stay bright.',
+    selected: 'The selected records are highlighted and ringed.',
+    selectedMany: (max: string) => `More than ${max} records are selected, so they are enlarged, not ringed.`,
   },
 
-  matchingTitle: 'The matching',
-  matchingBody: 'Only coded features are compared. Names and dates never are.',
-  stepFeatures: 'Coded features of the demo patient',
-  stepOptIn: 'Opt-in check',
-  stepShared: 'At least 4 shared codes',
-  stepExact: 'Exact-set groups',
-  stepK: 'k = 5',
-  optedIn: (n: string, of: string) => `${n} of ${of} records opted in. Records that did not opt in are never compared.`,
-  shared: (n: number, codes: number) => `${n} records share 4 or more of the patient's ${codes} codes.`,
-  exact: (n: number) => `${n} share exactly the same set of codes (the largest group).`,
-  kShown: (n: number) => `${n} is 5 or more, so the group may be shown.`,
-  kHidden: (n: number) => `${n} is below 5, so nothing is shown.`,
-
-  matchesTitle: 'The matches',
-  empty: 'No matches in the seeded data.', // the one empty answer
-  matchLine: (n: number) => `${n} seeded synthetic records share this pattern.`,
-  patternLabel: 'Shared pattern',
-  countriesLabel: 'Countries',
-  seededLine: (s: number) => `The generator seeded this rare pattern in ${s} of 5,000 records.`,
-  cardTitle: (n: number) => `Match ${n}`,
-  cardCountry: 'Country',
-  cardBefore: 'Shown so far: the shared pattern and the country.',
-  ask: 'Ask for an introduction',
-
-  contactTitle: 'Contact',
-  contactNote: 'Nothing is saved or sent from this page.',
-  contactSteps: ['Request sent, without name or ID', 'Both patients asked', 'Both patients agreed', 'Unlocked'],
-  examsTitle: 'Dummy exams',
-  colMarker: 'Marker',
-  colValue: 'Value',
-  colRange: 'Range',
-  colMonth: 'Month',
-  high: 'high',
-  low: 'low',
-  positive: 'positive',
-  negative: 'negative',
-  imaging: 'Imaging',
-  symptoms: 'Symptoms',
-  specialties: 'Specialties',
-  country: 'Country',
-  ageBand: 'Age band',
-  none: 'none',
-  otherDoctor: (spec: string, country: string) => `The other treating doctor: ${spec}, ${country}. No name.`,
-  sent: 'Message sent (simulated)',
-  logDemo: 'Simulated entry in the demo patient\'s access log: introduction requested.',
-  logMatch: (n: number, country: string) => `Simulated entry in the access log of match ${n} (${country}): introduction requested.`,
-
   growthLink: 'See how matches grow with the network',
-  home: 'Simulate matching on 5,000 records',
+  home: 'Recruit for a trial: search the synthetic records',
 } as const;
 
 /**
- * The recruitment search (MIN-4706). Words by Anna Lytica on MIN-4709, pasted as written; the CTO's two labels
- * (`understandsLabel`, `sourceLabelDev`, `sourceLabelBoxd`) are fixed word for word and must not be edited.
+ * The recruitment search (MIN-4706). Words by Anna Lytica on MIN-4709 and MIN-4739, pasted as written. The founder removed the two
+ * label pills under the box on 2026-11-15 ("also remove that"): `understandsLabel`, `sourceLabelDev`, `sourceLabelBoxd` are gone.
  * No number is typed into a string: every `n`, `found`, `asked`, `total`, `k` is passed in from the search.
  */
 export const RECRUIT_COPY = {
   // 1. Section and box
   title: 'Recruit for a trial',
-  intro: 'Write what you need in one sentence. The page counts the records that fit your condition and shows how the list narrows. Nobody is contacted.',
+  intro: (total: string) => `Write what you need in one sentence, then search. The search looks through ${total} seeded synthetic records and narrows them to the ones that fit. Nobody is contacted.`,
+  loadError: 'The synthetic records could not be loaded. Reload the page to try again.',
   inputLabel: 'Your sentence',
   placeholder: 'I want to recruit 40 people matching rheumatoid arthritis for a trial',
   button: 'Search the records',
 
-  // Fixed by the CTO, word for word (MIN-4706). Always visible under the box.
-  understandsLabel: 'Understands a number and one condition from a fixed list of 13. No AI reads this sentence.',
-  // `made.where` from the file picks the variant. Dev machine:
-  sourceLabelDev: '50,000 seeded synthetic records, made ahead of time with the same generator and seed. The search runs now, in this browser.',
-  // boxd block:
-  sourceLabelBoxd: '50,000 seeded synthetic records, made ahead of time on a boxd machine with the same generator and seed. The search runs now, in this browser.',
   groupNote: 'Condition names show how the generator was seeded. They are not diagnoses.', // same meaning as today's groupNote
 
   // 8. Loading (decision: from a file, MIN-4706)
@@ -152,8 +90,29 @@ export const RECRUIT_COPY = {
   tooMany: (total: string) => `That number is more than the ${total} records in this search. Ask for ${total} or fewer.`,
   twoConditions: (used: string) => `Your sentence names two conditions. This search reads one, so it used ${used}. Search again for the other.`,
 
-  // 7. Simulated invite
-  simulatedNote: 'Simulated. Nobody is contacted. Nothing is saved or sent from this page.',
+  // 9. Profiles of the selected records (MIN-4756, MIN-4758). Words by Anna Lytica, pasted as written.
+  profilesTitle: (n: string) => (n === '1' ? 'The 1 selected record' : `The ${n} selected records, one by one`),
+  recordLabel: (n: string) => `Record ${n}`,
+  countryLabel: 'Country',
+  ageBandLabel: 'Age band',
+  /** Wrap any specialty code with this. It reads as a field on the record, never as a finding. */
+  specialtyOn: (name: string) => `${name} (specialty on the record)`,
+  showing: (a: string, n: string) => `Showing ${a} of ${n}`,
+  /** k = how many the click adds: 100, or what is left when fewer remain. */
+  showMore: (k: string) => `Show ${k} more`,
+  /** Fixed by the CTO, word for word. Plain small text, not a bordered pill. Do not edit. */
+  profilesNote: 'Shown one by one because these records are synthetic. On real records the matching answers in groups, never one record at a time.',
+
+  // 10. What they have in common
+  commonTitle: 'What they have in common',
+  commonBasis: (n: string) => `Counted over the ${n} selected records.`,
+  allHave: (n: string) => `All ${n} have`,
+  halfHave: 'At least half have',
+  xOfN: (x: string, n: string) => `${x} of ${n}`,
+  /** list: "40-49: 18, 50-59: 22" built from the file's age-band strings and the counts. */
+  ageBands: (list: string) => `Age bands: ${list}.`,
+  commonNothingMore: 'No other coded feature is on at least half of these records.',
+
 } as const;
 
 /** The 13 conditions: name on screen (a seeded pattern, not a diagnosis). Spellings to type live in the file's synonyms. */

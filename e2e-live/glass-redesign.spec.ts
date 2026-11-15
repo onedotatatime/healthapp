@@ -1,5 +1,5 @@
 import type { Browser, Page } from '@playwright/test';
-import { expect, mockSimulateLive, test } from './helpers/simulate-live';
+import { expect, test } from './helpers/no-post';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
@@ -64,15 +64,18 @@ test('G1 patient: sign in, home tiles, tab bar reaches every patient route, scan
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test('G2 doctor: profile, sign out, and /doctor/simulate renders and matches', async ({ page }, ti) => {
+test('G2 doctor: profile, sign out, and /doctor/simulate renders and searches', async ({ page }, ti) => {
   await signIn(page, 'doctor');
   await expect(page.getByTestId('doctor-home')).toBeVisible();
   await page.getByTestId('simulate-link').click();
   await expect(page).toHaveURL(/\/doctor\/simulate$/);
   await expect(page.getByTestId('sim-page-label')).toBeVisible();
-  await mockSimulateLive(page); // MIN-4677: the Run click would create a real boxd machine
-  await page.getByTestId('sim-run').click();
-  await expect(page.getByTestId('sim-matches'), 'matching ran in the browser').toBeVisible({ timeout: 60_000 });
+  // MIN-4743: one flow. Search runs in the browser (reduced motion shows the end state at once); the page calls no backend.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByTestId('recruit-input').fill('I want to recruit 40 people matching rheumatoid arthritis for a trial');
+  await page.getByTestId('recruit-submit').click();
+  await expect(page.getByTestId('recruit-result'), 'the search read the sentence in the browser').toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId('recruit-line')).toHaveText('Asked 40. Found 40.');
   await shot(page, 'g2-simulate', ti);
 
   await page.goto('/doctor');

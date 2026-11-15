@@ -1,12 +1,11 @@
 import type { Page } from '@playwright/test';
-import { expect, MOCK_LIVE_LABEL, mockSimulateLive, test } from './helpers/simulate-live';
+import { expect, test } from './helpers/no-post';
 
-// /doctor/simulate on staging-dev (MIN-4592, MIN-4594, live since MIN-4675). The Run click calls healthapp-simulate-live, which
-// creates a real boxd machine: every test here mocks that POST (MIN-4677, e2e-live/helpers/simulate-live.ts) and the helper's
-// guard fails the suite if a click ever reaches the real function. The matching still runs in the browser on the recorded run.
+// /doctor/simulate on staging-dev: the sign-in and role gate (MIN-4592, kept by MIN-4743). The one-flow page itself is covered in
+// e2e-live/recruit.spec.ts (R1 to R7), simulations.spec.ts (W2, 390 px) and glass-redesign.spec.ts (G2). The page calls no backend.
 // Sign-in: the real dev demo login, as e2e-live/exam-journey.spec.ts does. The passcode comes from HEALTHAPP_DEMO_PASSCODE,
 // is cleared from the field right after submit, and is never logged. No trace/video/screenshot (see playwright.live.config.ts).
-// Run: HEALTHAPP_DEMO_PASSCODE=... npx playwright test -c playwright.live.config.ts e2e-live/simulate.spec.ts
+// Run: HEALTHAPP_DEMO_PASSCODE=... npx playwright test -c playwright.simulation.config.ts e2e-live/simulate.spec.ts
 const PASSCODE = process.env.HEALTHAPP_DEMO_PASSCODE ?? '';
 
 async function signIn(page: Page, persona: 'doctor' | 'patient') {
@@ -26,18 +25,6 @@ async function signIn(page: Page, persona: 'doctor' | 'patient') {
   }
 }
 
-/** Requests made from now on that are not the app's own GET assets and not the one mocked simulate-live POST per click. */
-function watchNetwork(page: Page, appOrigin: string) {
-  const bad: string[] = [];
-  page.on('request', (r) => {
-    const u = new URL(r.url());
-    if (u.protocol === 'data:' || u.protocol === 'blob:') return;
-    if (r.method() === 'POST' && u.pathname.endsWith('/functions/v1/healthapp-simulate-live')) return;
-    if (u.origin !== appOrigin || r.method() !== 'GET') bad.push(`${r.method()} ${u.origin}${u.pathname}`);
-  });
-  return bad;
-}
-
 test.describe('signed out and wrong role', () => {
   test('S1 signed-out visitor is sent to /login', async ({ page }) => {
     await page.goto('/doctor/simulate');
@@ -51,117 +38,5 @@ test.describe('signed out and wrong role', () => {
     await page.goto('/doctor/simulate');
     await expect(page).toHaveURL(/\/patient$/);
     await expect(page.getByTestId('doctor-simulate')).toHaveCount(0);
-  });
-});
-
-test.describe('doctor', () => {
-  test.skip(!PASSCODE, 'HEALTHAPP_DEMO_PASSCODE not set');
-  test.use({ viewport: { width: 1280, height: 900 }, hasTouch: false, isMobile: false });
-
-  test('S3 full live run (mocked stream): live label, four states, funnel, matches, introduction, run again, one POST per click', async ({ page, baseURL }) => {
-    test.setTimeout(150_000);
-    await signIn(page, 'doctor');
-    await page.goto('/doctor/simulate');
-    await expect(page.getByTestId('doctor-simulate')).toBeVisible();
-    await expect(page.getByTestId('sim-page-label')).toHaveText('Seeded synthetic data. Not real patients.');
-    const live = await mockSimulateLive(page);
-    const bad = watchNetwork(page, new URL(baseURL!).origin);
-
-    await page.getByTestId('sim-run').click();
-    const machine = page.getByTestId('sim-machine');
-    await expect(page.getByTestId('sim-machine-label')).toHaveText(MOCK_LIVE_LABEL);
-    await expect(machine).toHaveAttribute('data-mode', 'live');
-    await expect(page.getByTestId('sim-machine-notice')).toHaveCount(0);
-    for (const id of ['created', 'running', 'done', 'deleted']) await expect(page.getByTestId(`sim-machine-line-${id}`)).toBeVisible();
-    await expect(page.getByTestId('sim-machine-line-created')).toContainText('+0.5 s');
-    await expect(page.getByTestId('sim-machine-line-deleted')).toContainText('+2.7 s');
-    await expect(page.getByTestId('sim-matching-label')).toContainText('runs now, in this browser, on the 5,000 synthetic records', { timeout: 60_000 });
-
-    // funnel 4,499 / 6 / 5 / 5
-    await expect(page.getByTestId('sim-step-5')).toContainText('5 is 5 or more', { timeout: 90_000 });
-    await expect(page.getByTestId('sim-step-2')).toContainText('4,499 of 5,000 records opted in');
-    await expect(page.getByTestId('sim-step-3')).toContainText('6 records share 4 or more');
-    await expect(page.getByTestId('sim-step-4')).toContainText('5 share exactly the same set');
-
-    await expect(page.getByTestId('sim-count-line')).toHaveText('5 seeded synthetic records share this pattern.');
-    await expect(page.getByTestId('sim-seeded-line')).toHaveText('The generator seeded this rare pattern in 6 of 5,000 records.');
-    const matches = page.getByTestId('sim-matches');
-    for (const c of ['Spain', 'France', 'Greece', 'Netherlands']) await expect(matches).toContainText(c);
-
-    // before asking: country only, no exams, no other-doctor line
-    await expect(page.getByTestId('sim-card-1')).toContainText('Country');
-    await expect(page.getByTestId('sim-unlocked-1')).toHaveCount(0);
-    await expect(page.getByTestId('sim-other-doctor-1')).toHaveCount(0);
-
-    await page.getByTestId('sim-ask-1').click();
-    await expect(page.getByTestId('sim-card-1')).toContainText('Request sent, without name or ID');
-    await expect(page.getByTestId('sim-card-1')).toHaveAttribute('data-unlocked', 'true', { timeout: 30_000 });
-    await expect(page.getByTestId('sim-unlocked-1')).toContainText('Dummy exams');
-    await expect(page.getByTestId('sim-other-doctor-1')).toContainText('The other treating doctor:');
-    await expect(page.getByTestId('sim-other-doctor-1')).toContainText('No name.');
-    await expect(page.getByTestId('sim-sent-1')).toHaveText('Message sent (simulated)');
-    await expect(matches).toContainText('Nothing is saved or sent from this page.');
-
-    // run again restarts the run: a second click is a second POST, never two for one click
-    expect(live.calls(), 'POSTs after the first click').toBe(1);
-    await page.getByTestId('sim-run').click();
-    await expect(page.getByTestId('sim-card-1')).toHaveCount(0);
-    await expect(page.getByTestId('sim-step-5')).toContainText('5 is 5 or more', { timeout: 90_000 });
-    expect(live.calls(), 'POSTs after the second click').toBe(2);
-
-    expect(bad, 'requests beyond the app GET assets and the mocked simulate-live POST').toEqual([]);
-  });
-
-  test('S6 live run refused (busy): the card shows the reason, then the recorded run and its label, never a live label', async ({ page }) => {
-    test.setTimeout(150_000);
-    await signIn(page, 'doctor');
-    await page.goto('/doctor/simulate');
-    const live = await mockSimulateLive(page, 'busy');
-    await page.getByTestId('sim-run').click();
-    await expect(page.getByTestId('sim-machine-notice')).toHaveText('Another live run is in progress. Showing the recorded run instead.');
-    await expect(page.getByTestId('sim-machine')).toHaveAttribute('data-mode', 'replay');
-    await expect(page.getByTestId('sim-machine-label')).toHaveText('Recorded run on a boxd machine, 14 Nov 2026, 21:25 UTC. Replayed here, not live.');
-    await expect(page.getByTestId('sim-machine-label')).not.toContainText('Live run');
-    await expect(page.getByTestId('sim-step-5')).toContainText('5 is 5 or more', { timeout: 90_000 });
-    expect(live.calls()).toBe(1);
-  });
-
-  test('S7 live call answers 500: the page falls back with the error sentence, no raw error shown', async ({ page }) => {
-    test.setTimeout(150_000);
-    await signIn(page, 'doctor');
-    await page.goto('/doctor/simulate');
-    await mockSimulateLive(page, 'http500');
-    await page.getByTestId('sim-run').click();
-    await expect(page.getByTestId('sim-machine-notice')).toHaveText('The live run failed. Showing the recorded run instead.');
-    await expect(page.getByTestId('sim-machine')).toHaveAttribute('data-mode', 'replay');
-    await expect(page.getByTestId('sim-count-line')).toBeVisible({ timeout: 90_000 });
-  });
-
-  test('S4 reduced motion jumps straight to the result', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await signIn(page, 'doctor');
-    await page.goto('/doctor/simulate');
-    await mockSimulateLive(page);
-    await page.getByTestId('sim-run').click();
-    await expect(page.getByTestId('sim-count-line')).toBeVisible({ timeout: 5_000 }); // the animated run takes far longer
-    await page.getByTestId('sim-ask-1').click();
-    await expect(page.getByTestId('sim-card-1')).toHaveAttribute('data-unlocked', 'true', { timeout: 2_000 });
-  });
-});
-
-test.describe('phone width', () => {
-  test.skip(!PASSCODE, 'HEALTHAPP_DEMO_PASSCODE not set');
-  test.use({ viewport: { width: 375, height: 812 } });
-
-  test('S5 at 375 px the page does not scroll sideways and the run reaches the result', async ({ page }) => {
-    test.setTimeout(150_000);
-    await signIn(page, 'doctor');
-    await page.goto('/doctor/simulate');
-    await mockSimulateLive(page);
-    await page.getByTestId('sim-run').click();
-    await expect(page.getByTestId('sim-count-line')).toBeVisible({ timeout: 90_000 });
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow, 'horizontal overflow in px').toBeLessThanOrEqual(0);
-    await expect(page.getByTestId('sim-ask-1')).toBeVisible();
   });
 });

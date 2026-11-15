@@ -320,12 +320,12 @@ describe('the words and the buttons', () => {
     }
   });
 
-  it('the CTO\'s fixed labels are word for word, and the four existing labels are unchanged', () => {
-    expect(RECRUIT_COPY.understandsLabel).toBe('Understands a number and one condition from a fixed list of 13. No AI reads this sentence.');
-    expect(RECRUIT_COPY.sourceLabelDev).toBe('50,000 seeded synthetic records, made ahead of time with the same generator and seed. The search runs now, in this browser.');
-    expect(RECRUIT_COPY.sourceLabelBoxd).toBe('50,000 seeded synthetic records, made ahead of time on a boxd machine with the same generator and seed. The search runs now, in this browser.');
+  it('the two label pills under the box are gone (founder, 2026-11-15: "also remove that"), the page label stays', () => {
+    expect(RECRUIT_COPY).not.toHaveProperty('understandsLabel');
+    expect(RECRUIT_COPY).not.toHaveProperty('sourceLabelDev');
+    expect(RECRUIT_COPY).not.toHaveProperty('sourceLabelBoxd');
+    expect(RECRUIT_COPY).not.toHaveProperty('simulatedNote');
     expect(COPY.pageLabel).toBe('Seeded synthetic data. Not real patients.');
-    expect(COPY.matchingLabel).toBe('The matching runs now, in this browser, on the 5,000 synthetic records.');
   });
 
   it('the strings carry no number of their own: the same key answers 40 and 1,200', () => {

@@ -1,23 +1,24 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
-import runJson from '../../../data/synthetic/run-5000.json';
 import { COPY } from './copy';
 import { MachineCard, type MachineLine, type MachineView } from './MachineCard';
 import { SimulateView } from './Simulate';
-import { parseRun } from './matcher';
 
 // The card is pure (props in, markup out), so the DOM of every case is read here from the rendered markup.
-const html = (view: MachineView) => renderToStaticMarkup(createElement(MachineCard, { view }));
+const TOTAL = '50,000';
+const html = (view: MachineView) => renderToStaticMarkup(createElement(MachineCard, { view, total: TOTAL }));
 const label = (markup: string) => markup.match(/data-testid="sim-machine-label">([^<]*)</)?.[1] ?? null;
 const notice = (markup: string) => markup.match(/data-testid="sim-machine-notice"[^>]*>([^<]*)</)?.[1] ?? null;
 
+// The log words are the vm file's own; these are test values for the card, which only prints what it is given.
 const lines = (n: number): MachineLine[] =>
   [
-    { id: 'created', offsetMs: 1000, log: COPY.liveLog.created },
-    { id: 'running', offsetMs: 3000, log: COPY.liveLog.running },
-    { id: 'done', offsetMs: 4000, log: COPY.liveLog.done },
-    { id: 'deleted', offsetMs: 5000, log: COPY.liveLog.deleted },
+    { id: 'created', offsetMs: 1000, log: 'machine ready' },
+    { id: 'running', offsetMs: 3000, log: 'generate.py --n 7' },
+    { id: 'done', offsetMs: 4000, log: 'file written' },
+    { id: 'deleted', offsetMs: 5000, log: 'machine deleted' },
   ].slice(0, n) as MachineLine[];
 
 const live = (n: number): MachineView => ({ mode: 'live', notice: null, startedAt: '2026-11-15T06:30:00Z', states: true, lines: lines(n), footer: null });
@@ -42,29 +43,34 @@ describe('a card that ran at the click', () => {
     expect(m).toMatch(/<li class=""><span class="sm-box" data-s="done"/);
     expect(m).toMatch(/<li class=""><span class="sm-box" data-s="deleted"/);
     expect(m).toContain('+1.0 s</span> machine ready');
-    expect(m).toContain('+3.0 s</span> generate.py --n 5000, build_run.py');
-    expect(m).not.toContain('run-5000.json written');
+    expect(m).toContain('+3.0 s</span> generate.py --n 7');
+    expect(m).not.toContain('file written');
   });
 
   it('shows all four with Deleted last, and the machine\'s own total when it is known', () => {
-    const m = renderToStaticMarkup(createElement(MachineCard, { view: { ...live(4), footer: '2 vCPU · 8 GiB, 5.2 s in total.' } }));
+    const m = renderToStaticMarkup(createElement(MachineCard, { view: { ...live(4), footer: '2 vCPU · 8 GiB, 5.2 s in total.' }, total: TOTAL }));
     expect(m).toMatch(/<li class="now" aria-current="step"><span class="sm-box" data-s="deleted"/);
     expect(m).toContain('5.2 s in total.');
   });
 });
 
-describe('a card that waits for the live call', () => {
+describe('a card that waits for the live call (kept for the live cut)', () => {
   const pending: MachineView = { mode: 'pending', notice: null, startedAt: null, states: true, lines: [], footer: null };
-  it('says it is starting, claims neither live nor recorded, and lights nothing', () => {
+  it('claims neither live nor recorded and lights nothing; it has no string of its own that names a number', () => {
     const m = html(pending);
-    expect(m).toContain('Asking for a live run on a boxd machine to make the 5,000 synthetic records.');
     expect(label(m)).toBeNull();
-    expect(m).not.toMatch(/Live run|Recorded run|Replayed/);
+    expect(m).not.toMatch(/Live run|Recorded run|Replayed|Replaying/);
     expect(m).not.toContain('class="now"');
     expect(m).toContain('data-mode="pending"');
+    expect(m).not.toMatch(/5,000|5000/);
   });
-  it('a live card between the start line and the first state still says it is starting', () => {
-    expect(html({ ...live(0) })).toContain('Asking for a live run on a boxd machine');
+});
+
+describe('the body names the records the page loaded, never a typed number', () => {
+  it('prints the total it is given and no other count', () => {
+    const m = html(replay(null));
+    expect(m).toContain('One short-lived machine makes the 50,000 synthetic records, then goes away.');
+    expect(renderToStaticMarkup(createElement(MachineCard, { view: replay(null), total: '7' }))).toContain('makes the 7 synthetic records');
   });
 });
 
@@ -104,7 +110,7 @@ describe('a card that replays the recorded run', () => {
 
 describe('the words', () => {
   it('"live" only in strings about the live run, "recorded" and "replayed" only in the replay ones', () => {
-    for (const s of [COPY.machineStarting, COPY.liveLabel('x')]) expect(s).not.toMatch(/recorded|replayed|not live/i);
+    expect(COPY.liveLabel('x')).not.toMatch(/recorded|replayed|not live/i);
     expect(COPY.machineLabel('x')).toMatch(/Replayed here, not live/);
     for (const s of Object.values(COPY.fallback)) {
       expect(s).toMatch(/Showing the recorded run instead\.$/);
@@ -115,13 +121,14 @@ describe('the words', () => {
 });
 
 describe('the page, before any click', () => {
-  const run = parseRun(runJson);
-  const page = renderToStaticMarkup(createElement(SimulateView, { run }));
-  it('has the page label and an enabled Run button, and no machine card yet', () => {
+  const page = renderToStaticMarkup(createElement(MemoryRouter, null, createElement(SimulateView, { load: () => new Promise(() => undefined) })));
+  it('has the page label, the one h1 and an enabled Search button, and no machine card yet', () => {
     expect(page).toContain('data-testid="sim-page-label"');
     expect(page).toContain('Seeded synthetic data. Not real patients.');
-    expect(page).toMatch(/data-testid="sim-run"[^>]*>Run the simulation</);
-    expect(page).not.toMatch(/data-testid="sim-run"[^>]*disabled/);
+    expect(page.match(/<h1[ >]/g)).toHaveLength(1);
+    expect(page).toMatch(/<h1>Recruit for a trial<\/h1>/);
+    expect(page).toMatch(/data-testid="recruit-submit"(?![^>]*disabled)[^>]*>Search the records</);
     expect(page).not.toContain('sim-machine');
+    expect(page).not.toContain('sim-records');
   });
 });
