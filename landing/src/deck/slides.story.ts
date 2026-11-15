@@ -89,6 +89,7 @@ export const storySlides: StorySlide[] = [
       { label: 'Product', href: 'https://healthapp-8ui.pages.dev' },
       { label: 'Simulation', href: 'https://healthapp-8ui.pages.dev/simulation' },
       { label: 'Recruit for trial', href: 'https://healthapp-8ui.pages.dev/doctor/simulate' },
+      { label: 'Development dashboard', href: 'https://healthapp-dashboard.pages.dev/' },
     ],
     photo: { src: '/story/lefteris.webp', alt: 'Lefteris Georgaras' },
   },
