@@ -1,5 +1,5 @@
 // Speaker notes for the /story deck, by slide id, copied word for word from docs/story/story-deck-content.md (v1, 15 Nov 2026).
-// One string per paragraph. Slide 3 has one entry per beat: "3" (beat a), "3b" (beat b) and "4" (the first "what if", the third beat of slide 3). "5c" is the live simulation slide. Shown with N.
+// One string per paragraph. Slide 3 plays "3" then "3b" as one beat (3b merged into 3), then "4" (the first "what if", its second beat). "5c" is the live simulation slide. Shown with N.
 export const N: Record<string, string[]> = {
   '1': [
     "Hi, I'm Lefteris. I'm a product builder, based here in Athens. I run a small design studio, onedotatatime.design, and I've been designing digital products since 2009. This weekend I built something with a team of AI agents. But this is not a story about software. It's a story about me.",

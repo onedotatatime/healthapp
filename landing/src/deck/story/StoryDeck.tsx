@@ -16,11 +16,14 @@ const beatsOf = (s: StorySlide) => (s.template === 'story-live' ? s.beats.length
 const notesOf = (s: StorySlide, beat: number) => (s.template === 'story-live' ? s.beats[beat].notes : s.notes);
 const framesOf = (s: StorySlide): FrameId[] => (s.template === 'story-live' ? s.frames.map((f) => f.frame) : []);
 
-// Every stop of the deck is a slide or a beat of a slide, and has a hash id: #1 #2 #3 #3b #4 #5 #5b #5c #6.
-// #3, #3b and #4 are the three beats of slide 3 (same frames, so the iframes never remount); a beat with no id of its own is the slide id + "b".
+// Every stop of the deck is a slide or a beat of a slide, and has a hash id: #1 #2 #3 #4 #5 #5b #5c #6.
+// #3 and #4 are the two beats of slide 3 (same frames, so the iframes never remount); a beat with no id of its own is the slide id + "b".
+// #3b was a beat of its own until it merged into #3; old links to it still land on #3.
+const HASH_ALIAS: Record<string, string> = { '3b': '3' };
 const beatId = (s: StorySlide, beat: number) => (s.template === 'story-live' && s.beats[beat].id) || (beat > 0 ? `${s.id}b` : s.id);
 function parseHash(slides: StorySlide[]): { index: number; beat: number } {
-  const h = window.location.hash.replace('#', '').toLowerCase();
+  const raw = window.location.hash.replace('#', '').toLowerCase();
+  const h = HASH_ALIAS[raw] ?? raw;
   for (let index = 0; index < slides.length; index++) {
     for (let beat = 0; beat < beatsOf(slides[index]); beat++) {
       if (beatId(slides[index], beat).toLowerCase() === h) return { index, beat };
@@ -32,7 +35,7 @@ const hashOf = (s: StorySlide, beat: number) => `#${beatId(s, beat)}`;
 
 export function StoryDeck({ slides }: { slides: StorySlide[] }) {
   const n = slides.length;
-  // "n / 6" counts the numbered stops (1 2 3 4 5 6); 3b, 5b and 5c show their own id.
+  // "n / 6" counts the numbered stops (1 2 3 4 5 6); 5b and 5c show their own id.
   const total = useMemo(() => slides.reduce((c, s) => c + Array.from({ length: beatsOf(s) }, (_, b) => beatId(s, b)).filter((id) => /^\d+$/.test(id)).length, 0), [slides]);
   const mode = useMemo(() => readMode(), []);
   const pinned = new URLSearchParams(window.location.search).has('scale1');

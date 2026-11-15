@@ -55,8 +55,8 @@
 .sm-sheet-0{left:120px;top:480px;transform:rotate(-1.1deg);z-index:1}
 .sm-sheet-1{left:970px;top:492px;transform:rotate(1deg);z-index:2}
 
-/* ---- 3 (+3b, +4), 5 and 5c: live frames ---- */
-/* slide 3 (+3b, +4): the headline swaps per beat (a stack of headlines, one on at a time), the frames stay */
+/* ---- 3 (+4), 5 and 5c: live frames ---- */
+/* slide 3 (+4): the headline swaps per beat (a stack of headlines, one on at a time), the frames stay */
 .sl-heads .sl-h{left:0;opacity:0;translate:0 24px;transition:opacity var(--dur-step) var(--ease-out),translate var(--dur-step) var(--ease-out)}
 .sl-heads .sl-h:first-child:not(.is-on){translate:0 -24px}
 .sl-heads .sl-h.is-on{opacity:1;translate:0 0;transition:opacity var(--dur-reveal) var(--ease-out) .1s,translate var(--dur-reveal) var(--ease-out) .1s}

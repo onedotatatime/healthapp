@@ -1,4 +1,4 @@
-// The /story deck: the founder's own story in six slides, plus beats b and 4 of slide 3 (#3b, #4), the "Did you know" slide 5b and the live simulation slide 5c.
+// The /story deck: the founder's own story in six slides, plus beat 4 of slide 3 (#4), the "Did you know" slide 5b and the live simulation slide 5c.
 // The words are copied from docs/story/story-deck-content.md (v1, Marketing); the layout is docs/story/layout-spec.md (Design).
 // Frames and their addresses: ./story/config.ts (STORY_FRAMES). Templates: ./story/templates.
 import type { StorySlide } from './story/types';
@@ -31,12 +31,12 @@ export const storySlides: StorySlide[] = [
     ],
   },
   {
-    id: '3', template: 'story-live', variant: 'duo', theme: 'air', notes: N['3'], hotFromBeat: 0,
+    id: '3', template: 'story-live', variant: 'duo', theme: 'air', notes: [...N['3'], ...N['3b']], hotFromBeat: 0,
     headline: "And that's me today, still trying to figure this out.",
-    // Three beats, one pair of frames: #3, #3b and #4. Beat 3 (#4) swaps only the header, to the first "what if" question; the same iframes stay mounted.
+    // Two beats, one pair of frames: #3 and #4 (#3b still works as a link to #3). Beat 2 (#4) swaps only the header, to the first "what if" question; the same iframes stay mounted.
+    // 3b was merged into 3 when the support lines went (founder, 15 Nov: "delete"): its notes follow 3a's.
     beats: [
-      { support: 'And helping doctors find the answer.', notes: N['3'] },
-      { support: 'Now, by giving doctors the tool to analyse all my medical exams, we can finally make the difference.', notes: N['3b'] },
+      { support: '', notes: [...N['3'], ...N['3b']] },
       {
         id: '4',
         headline: 'And what if my doctor could find rare cases similar to mine, and cross-check with another doctor in Brazil?',
@@ -45,8 +45,8 @@ export const storySlides: StorySlide[] = [
       },
     ],
     frames: [
-      { frame: 'doctor', label: "My doctor's view · the same exams", labelStatic: "The doctor's view" },
-      { frame: 'patient', label: 'My record · my own exams, since 2019', labelStatic: "The patient's view" },
+      { frame: 'doctor' },
+      { frame: 'patient' },
     ],
   },
   {

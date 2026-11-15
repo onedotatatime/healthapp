@@ -5,7 +5,7 @@ import { headlineSize, rich, typo } from '../../util';
 import { ri, type FrameCtx } from './shared';
 
 /**
- * The slides with the app in a frame: slide 3 (+3b, +4), slide 5 and slide 5c.
+ * The slides with the app in a frame: slide 3 (+4), slide 5 and slide 5c.
  * Beats change the words and who has the mouse; the frames never remount. A beat may have a header of its own (slide 4 is the third beat of
  * slide 3: the same two iframes, only the header swaps).
  */
@@ -29,7 +29,7 @@ export function StoryLive({ s, beat, ctx }: { s: StoryLiveSlide; beat: number; c
       )}
       {variant === 'solo' && <h2 className="slide-h sl-solo-h rise" style={ri(0)}>{typo(s.headline)}</h2>}
 
-      {duo && (
+      {duo && s.beats.some((b) => b.support) && (
         <div className="sl-support rise" style={ri(1)}>
           {s.beats.map((b, i) => (
             <p key={i} className={`sl-sup ${i === beat ? 'is-on' : ''}`} aria-hidden={i !== beat}>{typo(b.support)}</p>
@@ -41,7 +41,7 @@ export function StoryLive({ s, beat, ctx }: { s: StoryLiveSlide; beat: number; c
         const cfg = STORY_FRAMES[f.frame];
         const label = ctx.isLive(f.frame) ? f.label : f.labelStatic;
         const pos = duo
-          ? (cfg.kind === 'phone' ? { left: 1800 - (cfg.viewW + 20), top: 288 } : { left: 120, top: 288 })
+          ? (cfg.kind === 'phone' ? { left: 1800 - (cfg.viewW + 20), top: 262 } : { left: 120, top: 262 })
           : variant === 'solo' ? { left: 700, top: 120 } : { left: 160, top: 30 };
         return (
           <div key={f.frame}>
