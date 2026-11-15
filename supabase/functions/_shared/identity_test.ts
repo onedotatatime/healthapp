@@ -22,9 +22,19 @@ const TABLE: [string, string, string | null, IdentityProfile, Want][] = [
   // MIN-4478 widening: extra printed words pass only with the printed ID present and exact.
   ["surname first + father's name + matching ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "AK123456", MARIA, "match"],
   ["surname first + father's name + a different ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "AK987654", MARIA, "id_mismatch"],
-  ["extra printed word, no ID printed", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", null, MARIA, "name_mismatch"],
-  ["extra printed word, empty ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "  ", MARIA, "name_mismatch"],
-  ["extra printed word, profile has no ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "AK123456", NO_ID, "name_mismatch"],
+  // MIN-4614: one extra printed part with no checkable ID is name_only (the strict rule already takes a bare 2-part name with no ID).
+  ["extra printed word, no ID printed", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", null, MARIA, "name_only"],
+  ["extra printed word, empty ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "  ", MARIA, "name_only"],
+  ["extra printed word, profile has no ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "AK123456", NO_ID, "name_only"],
+  ["father's name with ΤΟΥ, Greek, no ID (the marker is not a part)", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΤΟΥ ΓΕΩΡΓΙΟΥ", null, MARIA, "name_only"],
+  ["father's name with TOU, Latin, no ID", "PAPADOPOULOU MARIA TOU GEORGIOU", null, MARIA, "name_only"],
+  ["two extra parts, no ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", null, MARIA, "name_mismatch"],
+  ["two extra parts, matching ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", "AK123456", MARIA, "match"],
+  ["two extra parts, a different ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", "AK987654", MARIA, "id_mismatch"],
+  ["two extra parts, profile has no ID (a printed ID cannot be checked)", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", "AK123456", NO_ID, "name_mismatch"],
+  ["the markers never stand in for a profile part", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΤΟΥ ΓΕΩΡΓΙΟΥ", null, MARIA, "name_mismatch"],
+  ["the markers never stand in for a profile part, even with the ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΤΟΥ ΓΕΩΡΓΙΟΥ", "AK123456", MARIA, "name_mismatch"],
+  ["a marker plus two extra parts is still two extra parts", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΤΗΣ ΕΛΕΝΗΣ ΓΕΩΡΓΙΟΥ", null, MARIA, "name_mismatch"],
   ["a relative: same surname, other first name, father's name, no ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΕΛΕΝΗ ΓΕΩΡΓΙΟΥ", null, MARIA, "name_mismatch"],
   ["a relative with the same-looking ID is still a different name", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΕΛΕΝΗ ΓΕΩΡΓΙΟΥ", "AK123456", MARIA, "name_mismatch"],
   ["printed name lacks a profile part (the old reverse subset)", "ΜΑΡΙΑ", "AK123456", MARIA, "name_mismatch"],
@@ -91,7 +101,27 @@ Deno.test("identity fold: a Latin print of a Greek profile passes through the fo
   const v = matchIdentity(p, "BARBA XANTHI NTINAS", "AK123456");
   assertEquals(v.ok ? v.status : v.reason, "match");
   const n = matchIdentity(p, "BARBA XANTHI NTINAS", null);
-  assertEquals(n.ok ? n.status : n.reason, "name_mismatch");
+  assertEquals(n.ok ? n.status : n.reason, "name_only"); // MIN-4614: one extra part, no ID
+  const n2 = matchIdentity(p, "BARBA XANTHI NTINAS ELENI", null);
+  assertEquals(n2.ok ? n2.status : n2.reason, "name_mismatch"); // two extra parts need the ID
   const s = matchIdentity(p, "BARBA XANTHI", null);
   assertEquals(s.ok ? s.status : s.reason, "name_only");
+});
+
+// MIN-4614: a refusal reports counts only, so the owner's re-scan can be diagnosed from the logs without a name.
+Deno.test("identity: a refusal carries counts and no word of either name or ID", () => {
+  const n = matchIdentity(MARIA, "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", null);
+  if (n.ok) throw new Error("expected a refusal");
+  assertEquals(n.counts, { profile_parts: 2, profile_parts_found: 2, printed_parts: 4, extra_parts: 2, id_printed: false, id_equal: false });
+  const lacking = matchIdentity(MARIA, "ΠΑΠΑΔΟΠΟΥΛΟΥ ΤΟΥ ΓΕΩΡΓΙΟΥ", "AK123456");
+  if (lacking.ok) throw new Error("expected a refusal");
+  assertEquals(lacking.counts, { profile_parts: 2, profile_parts_found: 1, printed_parts: 2, extra_parts: 1, id_printed: true, id_equal: true });
+  const id = matchIdentity(MARIA, "PAPADOPOULOU MARIA", "AK987654");
+  if (id.ok) throw new Error("expected a refusal");
+  assertEquals(id.counts, { profile_parts: 2, profile_parts_found: 2, printed_parts: 2, extra_parts: 0, id_printed: true, id_equal: false });
+  for (const v of [n, lacking, id]) {
+    const all = JSON.stringify(v.counts);
+    for (const word of ["ΠΑΠΑΔΟΠΟΥΛΟΥ", "PAPADOPOULOU", "AK123456", "AK987654", "ΜΑΡΙΑ", "Μαρία"]) assertEquals(all.includes(word), false, word);
+    for (const x of Object.values(v.counts)) assertEquals(["number", "boolean"].includes(typeof x), true);
+  }
 });

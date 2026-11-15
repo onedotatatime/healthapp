@@ -19,27 +19,19 @@ export function TeamAsk({ s }: { s: TeamAskSlide }) {
       </section>
       <section className="ta-ask">
         <h4 className="caps">{s.ask.label}</h4>
-        <b className="ta-amount">{s.ask.amount}</b>
+        <b className="ta-amount">{s.ask.amount}{s.ask.mark && <sup className="est">{s.ask.mark}</sup>}</b>
         <p className="ta-line">{s.ask.line}</p>
-        <p className="ta-sub">{s.ask.sub}</p>
+        {s.ask.sub && <p className="ta-sub">{s.ask.sub}</p>}
       </section>
-      <div className="ta-gates">
+      <div className={`ta-gates${s.gates.rows.every((r) => !r.buys) ? ' two' : ''}`}>
         <div className="ta-gate-head">{s.gates.head.map((h) => <span key={h}>{h}</span>)}</div>
         {s.gates.rows.map((r) => (
           <div key={r.gate} className="ta-gate">
             <b>{r.gate}</b>
             <b className="ta-tranche">{r.amount}</b>
-            <span>{r.buys}</span>
+            {r.buys && <span>{r.buys}</span>}
           </div>
         ))}
-      </div>
-      <div className="ta-contact">
-        <div>
-          <small>{s.contact.label}</small>
-          <a href={`https://${s.contact.link}`} target="_blank" rel="noreferrer">{s.contact.link}</a>
-          <a href={`mailto:${s.contact.email}`}>{s.contact.email}</a>
-        </div>
-        <img src={s.contact.qr} alt={`QR code to ${s.contact.link}`} />
       </div>
     </div>
   );

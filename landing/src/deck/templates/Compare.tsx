@@ -21,12 +21,11 @@ export function Compare({ s }: { s: CompareSlide }) {
         <span className="cp-low">{m.low}</span>
         <span className="cp-high">{m.high}</span>
       </div>
-      <p className="cp-note">{rich(m.note)}</p>
       <div className="cp-rows">
         {s.rows.map((r) => (
           <article key={r.name} className={`cp-row ${r.hero ? 'hero' : ''}`}>
             <h3>{rich(r.name)}</h3>
-            <p><b>Does well:</b> {rich(r.well)} <b>Does not:</b> {rich(r.not)}</p>
+            {r.line ? <p className="cp-line">{rich(r.line)}</p> : <p><b>Does well:</b> {rich(r.well ?? '')} <b>Does not:</b> {rich(r.not ?? '')}</p>}
           </article>
         ))}
       </div>

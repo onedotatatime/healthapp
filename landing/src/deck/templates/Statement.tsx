@@ -5,7 +5,7 @@ function Side({ side, callout }: { side: StatementSide; callout?: StatementSlide
   switch (side.kind) {
     case 'compare':
       return (
-        <aside className="side-card">
+        <aside className={`side-card${side.clock ? '' : ' slim'}`}>
           <h4 className="caps">{side.title}</h4>
           {side.bars.map((b) => (
             <div key={b.label} className="cmp-row">
@@ -18,17 +18,21 @@ function Side({ side, callout }: { side: StatementSide; callout?: StatementSlide
               </div>
             </div>
           ))}
-          <hr />
-          <h4 className="caps">{side.clockTitle}</h4>
-          <ol className="clock">
-            {side.clock.map((c) => (
-              <li key={c.when}>
-                <i />
-                <b>{c.when}</b>
-                <span>{c.what}</span>
-              </li>
-            ))}
-          </ol>
+          {side.clock && (
+            <>
+              <hr />
+              <h4 className="caps">{side.clockTitle}</h4>
+              <ol className="clock">
+                {side.clock.map((c) => (
+                  <li key={c.when}>
+                    <i />
+                    <b>{c.when}</b>
+                    <span>{c.what}</span>
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
         </aside>
       );
     case 'notice':
