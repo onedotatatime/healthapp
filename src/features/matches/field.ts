@@ -1,6 +1,6 @@
 /**
  * The layout constants and the pure geometry of the /simulation match field (MIN-4682, spec docs/design/simulations-motion-spec.md A12).
- * No DOM here: the canvas (Field.tsx) and the tests both read these. Nothing in this folder imports from src/features/simulate.
+ * No DOM here: the canvas (DotField.tsx) and the tests both read these. Nothing in this folder imports from src/features/simulate.
  */
 
 /** Dot pitch in CSS pixels: 5 from 481 px up, 3 at 480 px and below (5 at 390 would be 385 px tall and push the euro figure out of the first screen). */
