@@ -172,6 +172,9 @@ if ty is not None and tl is not None:
           sv["total"]["values"] == total12(exp_sy, 1) and ty["diagnoses"]["total"]["values"] == total12([half_up(v * 10) for v in exp_dy], 10)
           and all(all(b >= a for a, b in zip(v, v[1:])) for v in (sv["total"]["values"], ty["diagnoses"]["total"]["values"], ty["income_eur"]["total"]["values"], pv10)),
           str((sv["total"]["values"][-3:], ty["diagnoses"]["total"]["values"][-3:])))
+    lim = half_up(pl["drop_pts"] / 100 * sv["total_mio_eur"] * 1e6)   # the all-Greece limit: drop_pts x Greece's total health spending (CEO seat MIN-4744; CTO review 1a8014d4)
+    check("4 no yearly money value exceeds the all-Greece limit (drop_pts x Greece's total spending, EUR %d), and patients never exceed Greece's population (%d)" % (lim, sv["population"]),
+          max(sv["yearly"]["values"]) <= lim and max(pv10) <= sv["population"], "max saved %d limit %d max patients %d population %d" % (max(sv["yearly"]["values"]), lim, max(pv10), sv["population"]))
     check("4 every extrapolated value is marked: status on diagnoses, saved_eur and income_eur; the Greek rates caveat; the plateau text",
           all(ty[k].get("status") for k in ("diagnoses", "saved_eur", "income_eur")) and "not Greek rates" in sv["status"] and "plan" in ty["income_eur"]["status"])
 
