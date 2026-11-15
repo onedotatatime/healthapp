@@ -159,7 +159,8 @@ async function readInBackground(
     const profile = await deps.store.identityOf(env, uid);
     if (!profile) return await failed("error");
     const who_ = matchIdentity(profile, built.draft.printed_name, built.draft.printed_id);
-    if (!who_.ok) return await refused(who_.reason, info);
+    // The log gets the counts the verdict carries (parts found, extra parts, whether an ID was printed and equal; MIN-4614), never a name or an ID.
+    if (!who_.ok) return await refused(who_.reason, { ...info, ...who_.counts });
 
     // The founder's choice (2026-11-14, MIN-4555 addendum): a reading that got this far is saved with no tap. The store
     // confirms it in the same transaction that saves it, with the patient's own confirm plan (so the same record hash)
