@@ -19,3 +19,4 @@
 - [healthapp one-off deletes](project_healthapp_oneoff_deletes.md) — MIN-4629 two gate stops (scope mismatch; whole-account gates race a live user), FK/trigger pre-flight
 - [healthapp identity name-only A](project_healthapp_identity_name_only_a.md) — MIN-4630 A branch pushed; local deno/check:static traps
 - [healthapp local migration job](project_healthapp_local_migration_job.md) — PGlite + socket for 017-style checks and real pgstore SQL, no docker; one-connection trap
+- [healthapp sim timeline](project_healthapp_sim_timeline.md) — MIN-4701: timeline block, ramp param vs byte-for-byte check 6, round 2 done e061350, shared-worktree JSON trap

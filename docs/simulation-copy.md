@@ -133,3 +133,105 @@ Notes (Anna): the "Modelled drop so far" counter shows the drop at the current n
 6. The arithmetic on screen checks out at the precision shown: the euro values come from the published two-decimal cost (1.01 × €1,834 billion = €18.5 billion).
 7. Nothing says the matching software learns today. Asked "does it learn?": "Not in this prototype. The curve is our assumption of what a learning matcher would do. A pilot with doctors would measure it."
 8. The cost caption "In the model, each step lowers the cost more than the one before." is false on the data and is not shown.
+
+## 7. The timeline diagram under the hero (MIN-4697 part 2; decided on MIN-4698; spec A13 on MIN-4700; build MIN-4702)
+
+Everything here is synthetic data or a plan, in English only. Words by Anna. The CEO seat's decision (MIN-4698, on the founder's behalf) is applied: per-case ramp, both money lines in "€ a year" on one euro axis, "saved" stays banned, income is the plan's conservative line marked as a plan.
+
+### 7.1 Final strings (keys are for `src/features/matches/copy.ts`; Ren owns that file)
+
+No number, month or price is typed in a string: every `{...}` comes from the data file. Placeholders are in braces.
+
+| Key | Final string |
+|---|---|
+| `tlTitle` | What a growing network could change, month by month |
+| `tlCaption` | Plan months {first} to {last}, on synthetic records. As more patients join, more records find a match; the model then shows fewer wrong or missed diagnoses, a lower cost for those patients, and our planned income. |
+| `tlXAxis` | Plan month |
+| `tlBand` | Free pilot: no patients counted |
+| `tlFirstPaid` | First paid cases |
+| `tlName.patients` | Patients in the network |
+| `tlName.matches` | Records with a match |
+| `tlName.dx` | Fewer wrong or missed diagnoses |
+| `tlName.drop` | Modelled drop in cost |
+| `tlName.income` | Our income |
+| `tlTag.plan` | Plan |
+| `tlTag.model` | Model |
+| `tlTag.computed` | Computed on synthetic records |
+| `tlLaneTitle.people` | People |
+| `tlLaneTitle.euro` | Euros |
+| `tlLaneTitle.dx` | Diagnoses |
+| `tlUnitPeople` | Patients and records, running total |
+| `tlUnitEuro` (one string, both lines) | € a year, one scale for both lines |
+| `tlUnitDrop` (key end value, if a unit shows with it) | € a year, for these patients, in the model |
+| `tlUnitIncome` (key end value) | € a year, plan |
+| `tlUnitDx` | A year, across these patients, in the model |
+| `tlAssumeDx` (under lane 3) | Assumption: one visit per patient a year. |
+| `tlRampPerCase` | Assumption: each paid case is one new patient in the network, at {price} a case. Months {from} to {to} are a free pilot with no patients counted. Doctor-seat fees are income, not patients. |
+| `tlIncomePlan` | Income: our plan, not a measurement. Every price and volume is an assumption. |
+| `tlEuroNote` (the new sentence, under lane 2) | Each case is paid once, at {price}. The modelled drop is a yearly figure for the patients in the network ({perPatient} per patient a year at month {last}). In this model it counts only the direct cost of wrong or missed diagnoses, on the EU-27 average spending per inhabitant. |
+| `tlFormula` (under lane 2, for month {last}) | {points} points × {perInhabitant} × {patients} patients = {amount} a year |
+| `tlTie` | The {amount} a year above applies this same model to all {geography} health spending. This chart counts only the patients in the network, so its figures are far smaller. |
+| `tlShowValues` (the `<details>` summary) | Show the values |
+| `tlColMeasure` | Measure |
+| `tlColMonth` | Month {n} |
+| `tlTableCaption` | Plan months {a} and {b}, the same figures as the chart. |
+| `tlDescLead` | Chart, plan months {first} to {last}, synthetic model. |
+| `tlDescPatients` | Patients in the network: none until month {paid}, {n} at month {last}. |
+| `tlDescMatches` | Records with a match: {n} at month {last}. |
+| `tlDescDx` | Modelled fewer wrong or missed diagnoses: {n} a year. |
+| `tlDescDrop` | Modelled drop in cost: {amount} a year. |
+| `tlDescIncome` | Planned income: {amount} a year, plan. |
+| `tlDescClose` | A model and a plan, not a measurement. |
+
+Notes for Ren:
+- **Keep** `tlTitle`, `tlCaption`, `tlTie`, `tlXAxis`, `tlBand`, `tlFirstPaid`, `tlName`, `tlRampPerCase`, `tlIncomePlan`, `tlShowValues`, `tlColMeasure`, `tlColMonth`, `tlDescLead`, `tlDescPatients`, `tlDescMatches`, `tlDescClose` as already in the file; only `tlCaption` and `tlDescMatches` are unchanged from the draft apart from "at month {last}" on the second.
+- **Replace** `tlUnitEuro` (the three-way `running`/`yearly`/`other`) with the one string above, and the same for `tlUnitDx`; **delete** the `running` forms and `tlDescBasis`: every money and diagnoses figure is "a year" (condition 10; no "so far" for either money line, on screen or in the `aria-label`). `tlDescDrop`, `tlDescIncome` and `tlDescDx` carry " a year" in the string itself.
+- **Delete** `tlRampGeneral`: the per-case ramp is decided, so one assumption line only.
+- **Add** `tlUnitDrop`, `tlUnitIncome`, `tlAssumeDx`, `tlEuroNote`, `tlFormula`, `tlTableCaption`.
+- `{points}` is the file's published two-decimal drop (points of spending) for that month, `{patients}` the month's patients, `{perInhabitant}` the file's €4,074.88, `{perPatient}` the file's per-patient figure at month {last}. The formula must use the points and the patients, never the rounded per-patient figure (condition 13).
+- If the drop line is cut for time, `tlTie`, `tlEuroNote`, `tlFormula`, `tlUnitDrop` and `tlDescDrop` leave with it (CEO seat, point 6). If the diagnoses lane is cut, `tlAssumeDx`, `tlUnitDx`, `tlDescDx` and the lane title leave with it.
+
+### 7.2 Answers to Pix's open question 1 (MIN-4700, A13 section 10)
+
+Lane titles: People, Euros, Diagnoses. Unit lines: as the table (`tlUnitPeople`, `tlUnitEuro`, `tlUnitDx`). The kind tags are exactly "Plan", "Model" and "Computed on synthetic records". Plan covers Patients in the network and Our income; Model covers the drop and the diagnoses; Computed on synthetic records covers Records with a match. The values table: summary "Show the values", column heads "Measure" and "Month {n}" (months 12 and 24), caption `tlTableCaption`. No matches-only note is needed for lane 1 (patients stay). Pix's mock placeholders for these are replaced by the table above.
+
+Two words to watch in the design: the euro lane's unit line says "one scale for both lines", so no second axis is implied; and the end value of Our income carries "plan" next to it, and of the drop carries "in the model", so neither money figure is read as collected or kept.
+
+### 7.3 Sources, with the quoted lines
+
+- **Price and ramp, the plan.** `docs/business/funding_plan.py`: `PRICE_EUR_PER_CASE = 40  # slide 10's conservative price per paid case, in euros`; `CONSERVATIVE = (26, 180, 560)  # slide 10's conservative yearly totals, EUR thousands`; `CONSERVATIVE_PER_CASE = (20, 120, 320)` (deck A6 line A; the rest is doctor seats, line B). Deck `docs/deck/deck-content.md` A6: "Paid cases per hospital a year (year 1 is half a year, after a free pilot) | 500 / 1,000 / 1,000 | 1,500 / 3,000 / 3,000 | assumption".
+- **Free pilot, months 3 to 8.** `docs/business/team-and-funding-plan.md` section 9: "Free pilot in one hospital department (2 to 4 months, BMC)"; method note: "its first half is the free pilot, so paid revenue starts at plan month 9". No patient count in the plan, so none is drawn: the band says "no patients counted".
+- **Plan, not a raise.** Deck footer: "Our plan, not a raise in progress; costs are assumptions."
+- **Spending base.** Eurostat `hlth_sha11_hf`, EU-27, 2024: `4074.88` euro per inhabitant (section 6.1, value as returned, checked 15 Nov). The derived hospital figure of part 1 (about €9,557 a discharge) is not used; the CEO seat rejected it.
+- **The drop at a month** = points (published, two decimals, for that month's matches) ÷ 100 × €4,074.88 × patients that month. Same model and same unit as the hero, counted only for the network's patients.
+
+### 7.4 Figures: filled values, and what still has to be checked
+
+Cron's regenerated `data/synthetic/simulation.json` (MIN-4701) does not yet hold the final yearly series: the committed generator still writes the money measures as running totals, and `timeline` is not in the committed file. The figures below are the CEO seat's scratch run (MIN-4698), synthetic, and **are not yet read from the file**. Before this section is final, each row must equal the file's value; the sentences on screen never type any of them.
+
+| Plan month | Patients | Records with a match | Drop, € a year | Per patient a year | Income, € a year (plan) | Diagnoses a year |
+|---|---|---|---|---|---|---|
+| 9 | 24 | 0 | 0 | €0 | 14,857 | 0.0 |
+| 12 | 238 | 28 | 1,358 | €5.70 | 59,429 | 0.2 |
+| 18 | 1,189 | 460 | 28,101 | €23.63 | 145,055 | 3.1 |
+| 24 | 2,806 | 1,137 | 88,043 | €31.38 | 228,923 | 9.8 |
+
+Arithmetic shown at month 24, as in 6.2: points 0.77 ÷ 100 × €4,074.88 = €31.38 per patient (check: 31.38 ÷ 4,074.88 = 0.770%); × 2,806 patients = €88,043 (check: 0.0077 × 4,074.88 × 2,806 = 88,042.7). So the formula line reads "0.77 points × €4,074.88 × 2,806 patients = €88k a year". Income: the plan's revenue × 12 = €228,923 a year, about €229k (19.1k a month). Diagnoses: 2,806 × 0.35 ÷ 100 = 9.8 (check: 9.82). The drop at month 24 is €88k against €229k of income: the gap is the picture, not an error, and nothing rescales it.
+
+Sentences checked against what the data shows: counts of patients, matches, drop and income do not fall in any month; the match **rate** falls once (44.3% to 44.2%, month 19 to 20). So `tlCaption` says "more records find a match" (true of the count) and no string says the rate rises every month. First matches are in month 11 (4 records, 143 patients); the string for that marker, if Ren builds it, is a value from the file, not typed. Not claimed anywhere: that the software learns, any payback, any sum over months, any study behind the 10% or 20%.
+
+### 7.5 Conditions 9 to 15 (CEO seat), and how these strings meet them
+
+9. Per-case ramp only; its assumption line is visible with the diagram; months 3 to 8 are "free pilot", no patient invented. `tlRampPerCase`, `tlBand`.
+10. Modelled money only as a yearly figure at that month's network size; no running total or sum, on screen or in the `aria-label`. Every money string above ends "a year".
+11. Drop and income share one euro axis from zero, at true size. `tlUnitEuro` says "one scale for both lines".
+12. Income is the conservative line, months 1 to 24, marked as a plan in the same block. `tlIncomePlan`, `tlUnitIncome`, `tlTag.plan`.
+13. The formula gives the figure at the precision shown. `tlFormula`.
+14. No sentence claims a shape the file does not show (7.4).
+15. The diagnoses lane carries "Assumption: one visit per patient a year." `tlAssumeDx`.
+
+Conditions 4 to 8 hold unchanged: the euro figure appears only with the formula, the source line, the permanent label and series 3's chart; `tlEuroNote` and `tlDescDrop` contain "model" or "modelled"; the 10% and 20% are not restated in this block, and wherever they appear (the learning-curve line, section 6.3) "assumption" stays in the same sentence.
+
+### 7.6 Wording check (run on the strings in 7.1)
+
+No "saved", "saves", "savings", "will", "result", "proves", "anonymous" and no exclamation mark in the table of 7.1 (a regex over its 38 string rows found none). Diagnoses appear only as a yearly count for the network, never toward a patient. English only; Greek n/a.

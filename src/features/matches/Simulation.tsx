@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import simulationJson from '../../../data/synthetic/simulation.json';
 import { COPY } from './copy';
 import { DotField } from './DotField';
+import { SimTimeline } from './SimTimeline';
 import { labelledTicks } from './field';
 import {
   SIM_LAND_FADE_MS, clockAt, decimalsOf, effectIndex, formatCount, formatEuro, formatPct, formatPerInhabitant, formatTotal, hasDropped, isModel,
@@ -194,6 +195,13 @@ export function SimulationView({ data, run, reduced, onReplay, at }: { data: Sim
           )}
           {euro && <EuroOutcome euro={euro} drop={drop} assumption={assumption} />}
         </div>
+      )}
+      {data.timeline && (
+        <SimTimeline
+          timeline={data.timeline}
+          tie={euro ? { amount: formatEuro((shownDrop(euro.drop_pts, n - 1) / 100) * euro.total_mio_eur), geography: euro.geography } : undefined}
+          curve={COPY.simAssumption({ start: formatPct(data.assumption.start), ceiling: formatPct(data.assumption.ceiling) })}
+        />
       )}
       <div className="sim-grid" data-count={data.series.length}>
         {data.series.map((s, i) => (
