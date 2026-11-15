@@ -2,7 +2,7 @@
 
 Pathien Health: a patient scans a paper medical exam with a phone, an AI reads it into structured values, and the patient keeps the record and decides which doctor may open it. A doctor sees the record with each value tied to its source file, and can search many records to find patients for a trial. This is a hackathon prototype: Vite + React PWA on Cloudflare Pages, Supabase (schemas `healthapp_dev` and `healthapp_demo`) behind it.
 
-This repo is private. Rules for agents and contributors: [`CLAUDE.md`](CLAUDE.md). Links to Linear below need a Linear sign-in.
+Links to Linear below need a Linear sign-in.
 
 ## Project summary
 
