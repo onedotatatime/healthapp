@@ -1,15 +1,17 @@
 // Tests for the nightly's own scripts (MIN-4718): scripts/nightly-guard.sh, scripts/nightly-to-linear.mjs and the shape of
 // .github/workflows/nightly.yml. Run: node --test scripts/nightly-scripts.test.mjs
-// They run as the second step of the nightly itself (no dependencies, a few seconds); they are not a PR check.
+// They run in the PR `static` job (pr.yml) and as a step of the nightly itself (no dependencies, about 1.5 s). The nightly runs
+// the guard and the reporter from the staging checkout, so a later PR could change them; the PR job is what keeps the target
+// lock and "a red run always reaches Linear" true until 03:00. The nightly itself is still not a PR check or a gate.
 //
 // The Linear stub APPLIES the writes it accepts (an issue it was asked to create is there for the next search), so a
 // second run proves "comment, don't open a duplicate" against state, not against a canned answer.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { basename as basenameOf, dirname, join, resolve } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -17,6 +19,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const GUARD = join(here, 'nightly-guard.sh');
 const REPORTER = join(here, 'nightly-to-linear.mjs');
 const WORKFLOW = resolve(here, '..', '.github', 'workflows', 'nightly.yml');
+const PR_WORKFLOW = resolve(here, '..', '.github', 'workflows', 'pr.yml');
 const DEV = 'https://staging-dev.healthapp-8ui.pages.dev';
 // The founder's real records live behind this one. Built from parts so no file in the repo carries it as a literal.
 const REAL = ['https://staging', 'healthapp-8ui.pages.dev'].join('.');
@@ -111,6 +114,31 @@ describe('nightly.yml', () => {
     for (const s of steps) assert.match(s, /steps\.guard\.outcome == 'success'[\s\S]*steps\.install\.outcome == 'success'/);
   });
 
+  test('each config step has its own timeout, so a hang ends as a failed step and the reporter still runs', () => {
+    const steps = code.split(/\n {6}- /).filter((s) => /playwright test/.test(s));
+    assert.equal(steps.length, 3);
+    const minutes = steps.map((s) => Number(s.match(/timeout-minutes: (\d+)/)?.[1]));
+    assert.deepEqual(minutes, [5, 5, 12]);
+    // 4 minutes of setup (checkout, node, npm ci, browsers) plus the steps must stay under 27: three minutes left of the job's 30.
+    assert.ok(minutes.reduce((a, b) => a + b, 0) + 4 <= 27);
+    const reporter = code.split(/\n {6}- /).find((s) => /nightly-to-linear\.mjs/.test(s));
+    assert.match(reporter, /if: \$\{\{ !cancelled\(\) \}\}/);
+    assert.ok(!/timeout-minutes/.test(reporter), 'the reporter has a step timeout of its own');
+  });
+
+  test('checkout keeps no credentials, and the self-test runs after setup-node', () => {
+    assert.match(code, /actions\/checkout@v4\n\s+with: \{[^}]*persist-credentials: false/);
+    const at = (s) => code.indexOf(s);
+    assert.ok(at('actions/setup-node@v4') > 0 && at('actions/setup-node@v4') < at('nightly-scripts.test.mjs'));
+    assert.ok(at('nightly-scripts.test.mjs') < at('npm ci'));
+  });
+
+  test('the PR static job runs this file, as its own step, so a later PR cannot change the guard or the reporter untested', () => {
+    const pr = readFileSync(PR_WORKFLOW, 'utf8').split('\n').filter((l) => !l.trim().startsWith('#')).join('\n');
+    const staticJob = pr.slice(pr.indexOf('\n  static:'), pr.indexOf('\n  smoke:'));
+    assert.match(staticJob, /- run: node --test scripts\/nightly-scripts\.test\.mjs(\n|$)/);
+  });
+
   test('secrets are only read through secrets.*, per step, and never echoed', () => {
     assert.ok(!/echo .*secrets\./i.test(code));
     assert.ok(!/\n {4}env:[\s\S]*?secrets\.[\s\S]*?\n {4}steps:/.test(code), 'a secret sits in the job-level env');
@@ -146,6 +174,7 @@ function makeStub() {
       }
       if (query.includes('issueCreate')) {
         s.mutations += 1;
+        if (s.mode === 'run-refused' && v.input.title.includes('e2e-live/run')) return send(200, { data: { issueCreate: { success: false, issue: { id: 'id-x', identifier: 'MIN-0', url: 'https://linear.test/none' } } } });
         if (s.mode === 'create-refused' && v.input.title.includes('simulate.spec.ts')) return send(200, { data: { issueCreate: { success: false, issue: { id: 'id-x', identifier: 'MIN-0', url: 'https://linear.test/none' } } } });
         const n = s.issues.length + 1;
         const issue = { id: `id-${n}`, identifier: `MIN-${9000 + n}`, url: `https://linear.test/MIN-${9000 + n}`, state: 'started', ...v.input };
@@ -192,6 +221,9 @@ describe('nightly-to-linear.mjs', () => {
   after(() => stub.server.close());
 
   let n = 0;
+  // Named reports live in a folder of their own per call, so a report written by one test is never found by another. `gone` is a path nothing writes.
+  const named = (name, content) => { const d = join(dir, `n${n++}`); mkdirSync(d); const p = join(d, name); writeFileSync(p, typeof content === 'string' ? content : JSON.stringify(content)); return p; };
+  const gone = (name) => join(dir, 'absent', name);
   const writeReport = (rep) => { const p = join(dir, `r${n++}.json`); writeFileSync(p, JSON.stringify(rep)); return p; };
   const reset = (mode = 'ok') => { stub.searches = []; stub.issues = []; stub.comments = []; stub.requests = []; stub.bodies = []; stub.mutations = 0; stub.mode = mode; stub.noUser = false; };
   const cli = (args, extra = {}) => {
@@ -295,9 +327,145 @@ describe('nightly-to-linear.mjs', () => {
     const skipped = await cli([writeReport(makeReport([{ file: 'recruit.spec.ts', specs: [{ title: 's', line: 1, tests: [test2('x', 'skipped')] }] }]))]);
     assert.equal(skipped.code, 1);
     assert.match(skipped.summary, /nothing passed either/);
-    const none = await cli([join(dir, 'does-not-exist.json')]);
+    const none = await cli([gone('does-not-exist.json')]);
     assert.equal(none.code, 1);
-    assert.match(none.summary, /no report at/);
+    assert.match(none.summary, /no report at does-not-exist\.json/);
+    // The skipped run opened the run issue; the missing report found it open and commented instead of opening a second one.
+    assert.equal(stub.issues.length, 1);
+    assert.equal(stub.comments.length, 1);
+  });
+
+  // ---- B1: every red run reaches Linear (CTO review MIN-4714 part 3) ----------------------------------------------------
+  const RUN_TITLE = 'Nightly red · e2e-live/run · 2026-11-16';
+  const passing = () => makeReport([{ file: 'recruit.spec.ts', specs: [{ title: 'ok', line: 1, tests: [test2('x', 'expected')] }] }]);
+  const noRunBodyLeak = () => {
+    for (const body of stub.bodies) assert.ok(!body.includes(PASSCODE) && !body.includes('private page text') && !body.includes(dir), 'error text or a runner path reached Linear');
+  };
+
+  test('a spec that fails to load in one config while another passes: one run issue, exit 1, no error text', async () => {
+    reset();
+    const loadError = { errors: [{ message: `Cannot find module helpers (typed ${PASSCODE}) private page text`, location: { file: join(dir, 'glass.spec.ts') } }], suites: [] };
+    const good = writeReport(passing());
+    const glass = named('glass.json', loadError);
+    const r = await cli([good, glass]);
+    assert.equal(r.code, 1, r.stdout);
+    assert.equal(stub.issues.length, 1);
+    assert.equal(stub.issues[0].title, RUN_TITLE);
+    assert.match(stub.issues[0].description, /glass\.json: 1 run-level error\(s\)/);
+    assert.match(stub.issues[0].description, /1 of 2 report\(s\) had a problem/);
+    assert.ok(!stub.issues[0].description.includes(basenameOf(good)), 'the passing report is listed as a problem');
+    assert.deepEqual(stub.issues[0].labelIds, ['label-1']);
+    noRunBodyLeak();
+    assert.match(r.summary, /opened MIN-9001/);
+    assert.match(r.summary, /1 run-level error\(s\) in glass\.json/);
+    assert.ok(!r.summary.includes(dir), 'a full runner path reached the summary');
+  });
+
+  test('one report missing while another passed: one run issue naming the missing report, exit 1', async () => {
+    reset();
+    const r = await cli([writeReport(passing()), gone('dashboard.json')]);
+    assert.equal(r.code, 1, r.stdout);
+    assert.equal(stub.issues.length, 1);
+    assert.equal(stub.issues[0].title, RUN_TITLE);
+    assert.match(stub.issues[0].description, /dashboard\.json: missing/);
+    noRunBodyLeak();
+    assert.match(r.summary, /no report at dashboard\.json/);
+    assert.ok(!r.summary.includes(dir));
+  });
+
+  test('no reports at all: one run issue, exit 1', async () => {
+    reset();
+    const r = await cli([gone('dashboard.json'), gone('glass.json'), gone('simulation.json')]);
+    assert.equal(r.code, 1, r.stdout);
+    assert.equal(stub.issues.length, 1);
+    assert.equal(stub.issues[0].title, RUN_TITLE);
+    assert.match(stub.issues[0].description, /3 of 3 report\(s\) had a problem/);
+    for (const n of ['dashboard', 'glass', 'simulation']) assert.match(stub.issues[0].description, new RegExp(`${n}\\.json: missing`));
+    noRunBodyLeak();
+  });
+
+  test('a run-level error with no other report: the run issue is filed too (not only an exit code)', async () => {
+    reset();
+    const p = named('simulation.json', { errors: [{ message: PASSCODE }, { message: 'second' }], suites: [] });
+    const r = await cli([p]);
+    assert.equal(r.code, 1);
+    assert.equal(stub.issues.length, 1);
+    assert.match(stub.issues[0].description, /simulation\.json: 2 run-level error\(s\)/);
+    noRunBodyLeak();
+  });
+
+  test('an unreadable report is a run problem', async () => {
+    reset();
+    const p = named('glass.json', '{ truncated');
+    const r = await cli([writeReport(passing()), p]);
+    assert.equal(r.code, 1);
+    assert.match(stub.issues[0].description, /glass\.json: unreadable/);
+  });
+
+  test('the run issue is one per run: a second red night comments on it, a closed one is not reused', async () => {
+    reset();
+    const args = [writeReport(passing()), gone('dashboard.json')];
+    await cli(args);
+    const second = await cli(args, { NIGHTLY_DATE: '2026-11-17' });
+    assert.equal(second.code, 1);
+    assert.equal(stub.issues.length, 1, 'a duplicate run issue was opened');
+    assert.equal(stub.comments.length, 1);
+    assert.match(stub.comments[0].body, /Red again on 2026-11-17/);
+    assert.match(stub.comments[0].body, /dashboard\.json: missing/);
+    assert.equal(stub.searches.at(-1).prefix, 'Nightly red · e2e-live/run ·');
+    stub.issues.forEach((i) => (i.state = 'completed'));
+    await cli(args, { NIGHTLY_DATE: '2026-11-18' });
+    assert.equal(stub.issues.length, 2);
+  });
+
+  test('a failing spec and a run problem together: the spec issue and the run issue, exit 1', async () => {
+    reset();
+    const r = await cli([writeReport(red()), gone('glass.json')]);
+    assert.equal(r.code, 1);
+    assert.deepEqual(stub.issues.map((i) => i.title), ['Nightly red · e2e-live/doctor-dashboard.spec.ts · 2026-11-16', 'Nightly red · e2e-live/simulate.spec.ts · 2026-11-16', RUN_TITLE]);
+  });
+
+  test('a run where every test was skipped files the run issue too', async () => {
+    reset();
+    const r = await cli([writeReport(makeReport([{ file: 'recruit.spec.ts', specs: [{ title: 's', line: 1, tests: [test2('x', 'skipped')] }] }]))]);
+    assert.equal(r.code, 1);
+    assert.equal(stub.issues.length, 1);
+    assert.equal(stub.issues[0].title, RUN_TITLE);
+    assert.match(stub.issues[0].description, /nothing passed/);
+  });
+
+  test('a run problem with Linear down: red, the problems are in the summary (nothing is lost silently)', async () => {
+    reset('http500');
+    const r = await cli([writeReport(passing()), gone('dashboard.json')]);
+    assert.equal(r.code, 1);
+    assert.equal(stub.issues.length, 0);
+    assert.match(r.summary, /No issue was opened/);
+    assert.match(r.summary, /e2e-live\/run/);
+    assert.match(r.summary, /no report at dashboard\.json/);
+  });
+
+  test('a run problem with Linear refusing the issue: NOT FILED, exit 1', async () => {
+    reset('run-refused');
+    const r = await cli([writeReport(passing()), gone('dashboard.json')]);
+    assert.equal(r.code, 1);
+    assert.match(r.summary, /e2e-live\/run: NOT FILED/);
+  });
+
+  test('--dry-run shows the run issue for a missing report and sends nothing', async () => {
+    reset();
+    const r = await cli(['--dry-run', writeReport(passing()), gone('dashboard.json')], { LINEAR_API_KEY_NIGHTLY: '' });
+    assert.equal(r.code, 0);
+    assert.equal(stub.requests.length, 0);
+    assert.match(r.stdout, /Title: Nightly red · e2e-live\/run · 2026-11-16/);
+    assert.match(r.stdout, /dashboard\.json: missing/);
+  });
+
+  test('--check says it would open the run issue, and writes nothing', async () => {
+    reset();
+    const r = await cli(['--check', writeReport(passing()), gone('dashboard.json')]);
+    assert.equal(r.code, 0);
+    assert.equal(stub.mutations, 0);
+    assert.match(r.stdout, /e2e-live\/run: would open a new issue/);
   });
 
   for (const [mode, reason] of [['http500', /HTTP 500/], ['graphql-errors', /Entity not found/], ['errors-with-data', /Partial failure/], ['garbage', /unreadable body/]]) {

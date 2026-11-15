@@ -13,7 +13,8 @@
 # paid model calls a run). Both break §5 as nightly runs; they stay manual.
 #
 # A red run becomes Linear issues: scripts/nightly-to-linear.mjs reads the Playwright JSON reports and opens ONE issue per
-# failing spec file ("Nightly red · e2e-live/<file> · <date>", label Quality Engineer, Lane B, fixed or deleted within 24
+# failing spec file, plus ONE "Nightly red · e2e-live/run ·" issue when a report is missing or carries a run-level error (a
+# spec failed to load, a step timed out) or nothing passed, so every red run reaches Linear. Each spec issue is titled ("Nightly red · e2e-live/<file> · <date>", label Quality Engineer, Lane B, fixed or deleted within 24
 # hours; E2E has no Linear user, so the assignee is Cron Jobbidis like every other E2E issue). If an open issue with the
 # same "Nightly red · e2e-live/<file> ·" prefix exists, it comments there instead. Only titles, file:line, the project name
 # and the run URL are sent; no error text and no page text. If the Linear call fails the job stays red and the failing
@@ -42,40 +43,47 @@ jobs:
       HEALTHAPP_LIVE_URL: https://staging-dev.healthapp-8ui.pages.dev
     steps:
       # The specs must match the code deployed on staging-dev.
+      # persist-credentials: false keeps the read-only token out of .git/config while npm ci and the specs run.
       - uses: actions/checkout@v4
-        with: { ref: staging }
+        with: { ref: staging, persist-credentials: false }
       - name: Guard (target and passcode)
         id: guard
         env:
           HEALTHAPP_DEMO_PASSCODE: ${{ secrets.HEALTHAPP_DEMO_PASSCODE }}
         run: scripts/nightly-guard.sh
-      - name: Self-test of the nightly scripts
-        run: node --test scripts/nightly-scripts.test.mjs
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
+      # After setup-node, so it runs on Node 22 like the rest. The same file runs in the PR static job (MIN-4727, B2).
+      - name: Self-test of the nightly scripts
+        run: node --test scripts/nightly-scripts.test.mjs
       - run: npm ci
       # webkit: the dashboard and glass configs run an iPhone project on it.
       - name: Install browsers
         id: install
         run: npx playwright install --with-deps chromium webkit
       - name: doctor-dashboard
+        timeout-minutes: 5
         if: ${{ !cancelled() && steps.guard.outcome == 'success' && steps.install.outcome == 'success' }}
         env:
           HEALTHAPP_DEMO_PASSCODE: ${{ secrets.HEALTHAPP_DEMO_PASSCODE }}
           PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/nightly/dashboard.json
         run: npx playwright test -c playwright.dashboard.config.ts --reporter=list,json
       - name: glass-redesign
+        timeout-minutes: 5
         if: ${{ !cancelled() && steps.guard.outcome == 'success' && steps.install.outcome == 'success' }}
         env:
           HEALTHAPP_DEMO_PASSCODE: ${{ secrets.HEALTHAPP_DEMO_PASSCODE }}
           PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/nightly/glass.json
         run: npx playwright test -c playwright.glass.config.ts --reporter=list,json
       - name: simulate, simulations, recruit
+        timeout-minutes: 12
         if: ${{ !cancelled() && steps.guard.outcome == 'success' && steps.install.outcome == 'success' }}
         env:
           HEALTHAPP_DEMO_PASSCODE: ${{ secrets.HEALTHAPP_DEMO_PASSCODE }}
           PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/nightly/simulation.json
         run: npx playwright test -c playwright.simulation.config.ts --reporter=list,json
+      # Each config step has its own timeout (5 + 5 + 12 = 22 min, plus about 4 of setup, under the 27 that leave room under the
+      # job's 30): a hang ends as a FAILED step, not a cancelled job, so the reporter below still runs and files the run issue.
       # Runs after any outcome except a cancel. Green and non-empty: it only writes the summary. Red: it files the issues.
       # Nothing failed but nothing passed (all skipped, no report): it exits 1, so an empty run is never green.
       - name: Red specs to Linear and job summary
