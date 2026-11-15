@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
-import { expect, mockSimulateLive, test } from './helpers/simulate-live';
+import { expect, test, watchNoPost } from './helpers/no-post';
 
 // /simulation and /doctor/simulate on staging after MIN-4603 (MIN-4612). Synthetic data only.
 // Expected values come from data/synthetic/simulation.json (the file the build serves), formatted here by the written rule,
 // not by importing the app's formatter, so a wrong formatter or a wrong deployed file fails.
-// The Run click on /doctor/simulate calls healthapp-simulate-live (a real boxd machine): every Run in this file mocks that POST
-// (MIN-4677, helpers/simulate-live.ts), and the helper fails the test if a click ever reaches the real function.
+// /doctor/simulate is one flow since MIN-4736: "Search the records" replays the recorded run and calls no backend. Its end states are
+// in e2e-live/recruit.spec.ts; this file keeps only the 390 px check (W2). helpers/no-post.ts fails any POST after sign-in.
 // Run: see playwright.simulation.config.ts. Passcode comes from HEALTHAPP_DEMO_PASSCODE, is never logged.
 const PASSCODE = process.env.HEALTHAPP_DEMO_PASSCODE ?? '';
 const SIM = JSON.parse(readFileSync('data/synthetic/simulation.json', 'utf8'));
@@ -276,91 +276,23 @@ async function signIn(page: Page) {
   }
 }
 
-const FIXED = ['sim-page-label', 'sim-machine-label', 'sim-matching-label', 'sim-contact-label'];
-
-/** Each fixed label that is in the DOM is fully opaque, with no faded or moving ancestor. */
-const fixedLabelsSolid = (page: Page) =>
-  page.evaluate((ids) => {
-    const bad: string[] = [];
-    for (const id of ids) {
-      const el = document.querySelector(`[data-testid="${id}"]`);
-      if (!el) continue;
-      for (let n: Element | null = el; n && n !== document.documentElement; n = n.parentElement) {
-        const cs = getComputedStyle(n);
-        if (Number(cs.opacity) < 1 || cs.visibility === 'hidden' || cs.display === 'none') bad.push(`${id}: ${n.tagName}.${n.className} opacity ${cs.opacity}`);
-      }
-    }
-    return bad;
-  }, FIXED);
-
 test.describe('/doctor/simulate (demo doctor)', () => {
   test.skip(!PASSCODE, 'HEALTHAPP_DEMO_PASSCODE not set');
 
-  test('D1 one click runs machine, dots, filters, matches; the four fixed labels stay solid; a card unlocks', async ({ page }, info) => {
-    test.skip(info.project.name !== 'desktop-1280', 'the full run is checked at desktop; W2 covers the phone');
-    test.setTimeout(170_000);
-    await signIn(page);
-    await page.goto('/doctor/simulate');
-    await mockSimulateLive(page);
-    await expect(T(page, 'sim-page-label')).toBeVisible();
-    expect(await fixedLabelsSolid(page)).toEqual([]);
-
-    // sample the labels while the run plays, from the click to the matches
-    const samples: string[] = [];
-    let sampling = true;
-    const sampler = (async () => {
-      while (sampling) {
-        samples.push(...(await fixedLabelsSolid(page).catch(() => [])));
-        await page.waitForTimeout(250);
-      }
-    })();
-    await T(page, 'sim-run').click();
-    await expect(T(page, 'sim-machine-label')).toBeVisible();
-    await expect(T(page, 'sim-dots')).toBeVisible({ timeout: 30_000 });
-    await expect(T(page, 'sim-matching-label')).toBeVisible({ timeout: 60_000 });
-    await expect(T(page, 'sim-step-5')).toContainText('5 is 5 or more', { timeout: 90_000 });
-    await expect(T(page, 'sim-count-line')).toBeVisible({ timeout: 30_000 });
-    await expect(T(page, 'sim-contact-label')).toBeVisible();
-    sampling = false;
-    await sampler;
-    expect(samples, 'a fixed label was faded or hidden at some sample').toEqual([]);
-    for (const id of FIXED) await expect(T(page, id)).toBeVisible();
-
-    await expect(T(page, 'sim-growth-link')).toHaveAttribute('href', '/simulation');
-    await expect(T(page, 'sim-unlocked-1')).toHaveCount(0);
-    await T(page, 'sim-ask-1').click();
-    await expect(T(page, 'sim-card-1')).toHaveAttribute('data-unlocked', 'true', { timeout: 30_000 });
-    await expect(T(page, 'sim-unlocked-1')).toContainText('Dummy exams');
-    expect(await fixedLabelsSolid(page)).toEqual([]);
-  });
-
-  test('D2 reduced motion: every stage shows its finished state and the card unlocks at once', async ({ page }, info) => {
-    test.skip(info.project.name !== 'desktop-1280', 'desktop only');
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await signIn(page);
-    await page.goto('/doctor/simulate');
-    await mockSimulateLive(page);
-    await T(page, 'sim-run').click();
-    await expect(T(page, 'sim-count-line')).toBeVisible({ timeout: 5_000 });
-    for (let i = 1; i <= 5; i++) await expect(T(page, `sim-step-${i}`)).toBeVisible();
-    for (const id of FIXED) await expect(T(page, id)).toBeVisible();
-    expect(await fixedLabelsSolid(page)).toEqual([]);
-    await T(page, 'sim-ask-1').click();
-    await expect(T(page, 'sim-card-1')).toHaveAttribute('data-unlocked', 'true', { timeout: 2_000 });
-  });
-
-  test('W2 at 390 px, no horizontal overflow before, during and after the run', async ({ page }, info) => {
+  test('W2 at 390 px, no horizontal overflow before, during and after a full-motion search; no POST', async ({ page, baseURL }, info) => {
     test.skip(info.project.name !== 'phone-390', 'phone project only');
-    test.setTimeout(170_000);
+    test.setTimeout(90_000);
     await signIn(page);
     await page.goto('/doctor/simulate');
-    await mockSimulateLive(page);
-    expect(await overflow(page), 'px of sideways scroll before the run').toBeLessThanOrEqual(0);
-    await T(page, 'sim-run').click();
+    await expect(T(page, 'recruit-intro')).toContainText('50,000', { timeout: 30_000 });
+    const bad = watchNoPost(page, new URL(baseURL!).origin);
+    expect(await overflow(page), 'px of sideways scroll before the search').toBeLessThanOrEqual(0);
+    await T(page, 'recruit-input').fill('I want to recruit 40 people matching rheumatoid arthritis for a trial');
+    await T(page, 'recruit-submit').click();
     await expect(T(page, 'sim-dots')).toBeVisible({ timeout: 30_000 });
-    expect(await overflow(page), 'px of sideways scroll during the run').toBeLessThanOrEqual(0);
-    await expect(T(page, 'sim-count-line')).toBeVisible({ timeout: 120_000 });
+    expect(await overflow(page), 'px of sideways scroll during the search').toBeLessThanOrEqual(0);
+    await expect(T(page, 'recruit-line')).toHaveText('Asked 40. Found 40.', { timeout: 60_000 });
     expect(await overflow(page), 'px of sideways scroll at the result').toBeLessThanOrEqual(0);
-    await expect(T(page, 'sim-ask-1')).toBeVisible();
+    expect(bad, 'the page called no backend').toEqual([]);
   });
 });
