@@ -11,6 +11,8 @@ Round 2 (CEO seat, MIN-4698, 2026-11-15): the ramp is per_case_only (doctor-seat
 at that month's network size, never running totals (patients and records with a match stay running totals); income is shown as the plan's yearly run rate.
 The ten_years block (MIN-4748, CTO decision MIN-4744 comment fee57739) runs the same plan to month 120 for Greece, additive: plan months 1 to 120, the real matching while the network fits the 5,000 records and a held plateau after,
 Greece's Eurostat spending base, and both bases (a year at that month's network size, and a running total since month 1) for diagnoses, money and income.
+The reach block (MIN-4773, CTO decision MIN-4769 comment 1178f99e) is additive and last: the money a geography loses a year to wrong or missed diagnoses and how it falls with the share of its residents in the network,
+for Greece, EU-27 and (Global, when its sources are in) with Anna's sources (MIN-4723 comment b08a38aa). The maths is in reach.py, Decimal, half-up.
 Usage: python3 simulate.py <out_dir> [--ramp per_case_only|all_revenue]     (writes <out_dir>/simulation.json; the default is what is committed)"""
 import argparse, json, math, os, random, sys, time
 from match import find_matches, features, K, MIN_SHARED
@@ -18,6 +20,7 @@ from generate import make_cohort, SEED as GEN_SEED
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "docs", "business"))
 import funding_plan                     # the plan's revenue line, importable (CTO, MIN-4699)
+import reach                            # the reach block's maths (MIN-4773)
 
 SEED = 20261114 + 2
 STEPS = 12
@@ -265,6 +268,33 @@ ten_years = {
                    "total": {"unit": "EUR, running total since month 1", "values": income_total10}},
 }
 
+
+# ---- reach: the money a geography loses a year and how it falls with the share of its residents in the network (MIN-4773, CTO decision MIN-4769 comment 1178f99e) ----
+# Sources are Anna's (MIN-4723 comment b08a38aa, each opened 2026-11-15); the rates (11, 1.01, 0.46, 2071 of 5000) are this file's own, read below, never typed again.
+EU27_POPULATION = 450054483               # Eurostat demo_pjan, EU27_2020, 1 January 2024
+EU27_POPULATION_URL = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_pjan?format=JSON&geo=EU27_2020&time=2024&time=2025&age=TOTAL&sex=T&unit=NR"
+MILLION = 1000000
+
+
+def eurostat_spec(gid, name, total_mio_eur, per_inhabitant, population, population_url, source_name, source_url, query_url, opened):
+    total = int(reach.D(str(total_mio_eur)) * MILLION)
+    return {"id": gid, "name": name, "year": SPEND_YEAR, "population": population,
+            "population_source": {"name": "Eurostat, population on 1 January (demo_pjan), %s, 2024" % name, "url": population_url, "year": 2024},
+            "spend_total_eur": total, "spend_per_inhabitant_eur": per_inhabitant,
+            "spend_source": {"name": source_name, "url": source_url, "query_url": query_url, "year": SPEND_YEAR, "opened": opened,
+                             "formula": "total as published by Eurostat (unit MIO_EUR, TOT_HF), EUR %s million" % ("{:,.2f}".format(total_mio_eur))},
+            "original": {"currency": "EUR", "total": total, "fx": None}}
+
+
+REACH_SPECS = [
+    eurostat_spec("greece", "Greece", GR_TOTAL_MIO_EUR, GR_EUR_HAB, GR_POPULATION, GR_POPULATION_QUERY_URL, GR_SOURCE_NAME, GR_SOURCE_URL, GR_TOTAL_QUERY_URL, GR_OPENED),
+    eurostat_spec("eu27", "Europe (EU-27)", EU27_HEALTH_SPEND_MIO_EUR, EU27_HEALTH_SPEND_EUR_HAB, EU27_POPULATION, EU27_POPULATION_URL, SPEND_SOURCE_NAME, SPEND_SOURCE_URL, SPEND_QUERY_URL, SPEND_OPENED),
+]
+reach_block = reach.build(
+    reach.Inputs(baseline_pct=BASE_COST_PCT, drop_pts=PLATEAU_DROP_PTS, drop_per_100=PLATEAU_DX_PTS, matched=PLATEAU_MATCHED, records=PLATEAU_RECORDS,
+                 match_rate_opted_in_pct=round(100 * rates[-1], 1), effect=PLATEAU_EFFECT, plan_patients=patients10[TY_N - 1], plan_month=TY_N),
+    REACH_SPECS, round(drop_pts[-1] / 100 * EU27_HEALTH_SPEND_MIO_EUR, 2))
+
 sim = {
     "synthetic": True,
     "label": "Simulation on synthetic data. A model, not a measurement",
@@ -306,6 +336,7 @@ sim = {
                         % (EU27_HEALTH_SPEND_MIO_EUR, SPEND_GEO, SPEND_YEAR, BASE_COST_PCT),
              "source": {"name": SPEND_SOURCE_NAME, "url": SPEND_SOURCE_URL, "query_url": SPEND_QUERY_URL, "opened": SPEND_OPENED}},
     "ten_years": ten_years,
+    "reach": reach_block,
 }
 open(os.path.join(d, "simulation.json"), "w").write(json.dumps(sim, indent=1) + "\n")
 print("Series 1: matches growing as the network grows")
@@ -325,3 +356,7 @@ print("Ten years (Greece, plan months 1 to %d; the real matching to month %d too
 for m in (12, 24, 36, 60, 120):
     print("  month %3d | patients %6d | matches %6d | diagnoses %7.1f a year, %5d so far | saved EUR %9d a year, %9d so far | income EUR %7d a year, %8d so far" % (
         m, patients10[m - 1], matches10[m - 1], dx_year10[m - 1], dx_total10[m - 1], saved_year10[m - 1], saved_total10[m - 1], income_year10[m - 1], income_total10[m - 1]))
+print("Reach (share of residents in the network; loss a year to wrong or missed diagnoses, EUR; plan month %d = %s patients):" % (TY_N, "{:,}".format(patients10[TY_N - 1])))
+for g in reach_block["geographies"]:
+    print("  %-15s | %d | spend EUR %16s | loss at 0%% EUR %15s | loss at 100%% EUR %15s | drop at 100%% EUR %14s | plan share %.6f%%" % (
+        g["name"], g["year"], "{:,}".format(g["spend_total_eur"]), "{:,}".format(g["loss0_eur"]), "{:,}".format(g["loss_at_100_eur"]), "{:,}".format(g["drop_at_100_eur"]), g["plan_share_pct"]))

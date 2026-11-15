@@ -1986,5 +1986,211 @@
     ]
    }
   }
+ },
+ "reach": {
+  "label": "Share of a geography's residents in the network, on synthetic records. A model, not a measurement",
+  "status": "a model on synthetic records, not a measurement",
+  "method": "share s = k / 1000 (k = the slider in tenths of a percent, 0 to 1000); integers and half-up rounding: residents(k) = half-up(population x k / 1000); drop(k) = half-up(drop_at_100 x k / 1000); loss(k) = loss0 - drop(k); matched(k) = half-up(residents x matched / records); fewer_dx(k) = half-up to 1 decimal of residents x drop_per_100 / 100, a year, one visit per person a year. loss0 = half-up(baseline_pct / 100 x spend_total); drop_at_100 = half-up(drop_pts / 100 x spend_total); spend_total is the one euro base of the geography. The line is straight because the match rate and its effect are held at the 5,000-record values (synthetic); they are not measured at this size. The plan point is plan.patients as residents, share = patients / population, drop = half-up(drop_at_100 x patients / population).",
+  "inputs": {
+   "baseline_pct": 11,
+   "drop_pts": 1.01,
+   "drop_per_100": 0.46,
+   "matched": 2071,
+   "records": 5000,
+   "match_rate_opted_in_pct": 46.0,
+   "effect": 0.2,
+   "from": "series 3 baseline; ten_years.plateau; series 1 last"
+  },
+  "slider": {
+   "min_pct": 0,
+   "max_pct": 100,
+   "step_pct": 0.1,
+   "unit": "% of residents in the network"
+  },
+  "plan": {
+   "patients": 91205,
+   "month": 120,
+   "from": "ten_years.patients[119]"
+  },
+  "geographies": [
+   {
+    "id": "greece",
+    "name": "Greece",
+    "year": 2024,
+    "population": 10375764,
+    "population_source": {
+     "name": "Eurostat, population on 1 January (demo_pjan), Greece, 2024",
+     "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_pjan?format=JSON&geo=EL&time=2024&time=2025&age=TOTAL&sex=T&unit=NR",
+     "year": 2024
+    },
+    "spend_total_eur": 19869370000,
+    "spend_per_inhabitant_eur": 1915.3,
+    "spend_per_inhabitant_gap_pct": 0.0168,
+    "spend_source": {
+     "name": "Eurostat, current health expenditure (hlth_sha11_hf, all financing schemes), Greece, 2024",
+     "url": "https://ec.europa.eu/eurostat/databrowser/view/hlth_sha11_hf/default/table",
+     "query_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/hlth_sha11_hf?format=JSON&unit=MIO_EUR&icha11_hf=TOT_HF&geo=EL&time=2024",
+     "year": 2024,
+     "opened": "2026-11-15",
+     "formula": "total as published by Eurostat (unit MIO_EUR, TOT_HF), EUR 19,869.37 million"
+    },
+    "original": {
+     "currency": "EUR",
+     "total": 19869370000,
+     "fx": null
+    },
+    "loss0_eur": 2185630700,
+    "drop_at_100_eur": 200680637,
+    "loss_at_100_eur": 1984950063,
+    "plan_share_pct": 0.879019607616,
+    "check_points": [
+     {
+      "share_pct": 0,
+      "loss_eur": 2185630700,
+      "drop_eur": 0,
+      "residents": 0,
+      "matched": 0,
+      "fewer_dx": 0.0
+     },
+     {
+      "share_pct": 0.1,
+      "loss_eur": 2185430019,
+      "drop_eur": 200681,
+      "residents": 10376,
+      "matched": 4298,
+      "fewer_dx": 47.7
+     },
+     {
+      "share_pct": 1,
+      "loss_eur": 2183623894,
+      "drop_eur": 2006806,
+      "residents": 103758,
+      "matched": 42977,
+      "fewer_dx": 477.3
+     },
+     {
+      "share_pct": 10,
+      "loss_eur": 2165562636,
+      "drop_eur": 20068064,
+      "residents": 1037576,
+      "matched": 429764,
+      "fewer_dx": 4772.8
+     },
+     {
+      "share_pct": 50,
+      "loss_eur": 2085290381,
+      "drop_eur": 100340319,
+      "residents": 5187882,
+      "matched": 2148821,
+      "fewer_dx": 23864.3
+     },
+     {
+      "share_pct": 100,
+      "loss_eur": 1984950063,
+      "drop_eur": 200680637,
+      "residents": 10375764,
+      "matched": 4297641,
+      "fewer_dx": 47728.5
+     },
+     {
+      "share_pct": 0.879019607616,
+      "loss_eur": 2183866678,
+      "drop_eur": 1764022,
+      "residents": 91205,
+      "matched": 37777,
+      "fewer_dx": 419.5
+     }
+    ]
+   },
+   {
+    "id": "eu27",
+    "name": "Europe (EU-27)",
+    "year": 2024,
+    "population": 450054483,
+    "population_source": {
+     "name": "Eurostat, population on 1 January (demo_pjan), Europe (EU-27), 2024",
+     "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/demo_pjan?format=JSON&geo=EU27_2020&time=2024&time=2025&age=TOTAL&sex=T&unit=NR",
+     "year": 2024
+    },
+    "spend_total_eur": 1833973320000,
+    "spend_per_inhabitant_eur": 4074.88,
+    "spend_per_inhabitant_gap_pct": -0.003,
+    "spend_source": {
+     "name": "Eurostat, current health expenditure (hlth_sha11_hf, all financing schemes), EU-27, 2024",
+     "url": "https://ec.europa.eu/eurostat/databrowser/view/hlth_sha11_hf/default/table",
+     "query_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/hlth_sha11_hf?format=JSON&unit=MIO_EUR&icha11_hf=TOT_HF&geo=EU27_2020&time=2024",
+     "year": 2024,
+     "opened": "2026-11-15",
+     "formula": "total as published by Eurostat (unit MIO_EUR, TOT_HF), EUR 1,833,973.32 million"
+    },
+    "original": {
+     "currency": "EUR",
+     "total": 1833973320000,
+     "fx": null
+    },
+    "loss0_eur": 201737065200,
+    "drop_at_100_eur": 18523130532,
+    "loss_at_100_eur": 183213934668,
+    "plan_share_pct": 0.020265324187,
+    "check_points": [
+     {
+      "share_pct": 0,
+      "loss_eur": 201737065200,
+      "drop_eur": 0,
+      "residents": 0,
+      "matched": 0,
+      "fewer_dx": 0.0
+     },
+     {
+      "share_pct": 0.1,
+      "loss_eur": 201718542069,
+      "drop_eur": 18523131,
+      "residents": 450054,
+      "matched": 186412,
+      "fewer_dx": 2070.2
+     },
+     {
+      "share_pct": 1,
+      "loss_eur": 201551833895,
+      "drop_eur": 185231305,
+      "residents": 4500545,
+      "matched": 1864126,
+      "fewer_dx": 20702.5
+     },
+     {
+      "share_pct": 10,
+      "loss_eur": 199884752147,
+      "drop_eur": 1852313053,
+      "residents": 45005448,
+      "matched": 18641257,
+      "fewer_dx": 207025.1
+     },
+     {
+      "share_pct": 50,
+      "loss_eur": 192475499934,
+      "drop_eur": 9261565266,
+      "residents": 225027242,
+      "matched": 93206284,
+      "fewer_dx": 1035125.3
+     },
+     {
+      "share_pct": 100,
+      "loss_eur": 183213934668,
+      "drop_eur": 18523130532,
+      "residents": 450054483,
+      "matched": 186412567,
+      "fewer_dx": 2070250.6
+     },
+     {
+      "share_pct": 0.020265324187,
+      "loss_eur": 201733311428,
+      "drop_eur": 3753772,
+      "residents": 91205,
+      "matched": 37777,
+      "fewer_dx": 419.5
+     }
+    ]
+   }
+  ]
  }
 }
