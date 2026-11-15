@@ -2190,6 +2190,102 @@
       "fewer_dx": 419.5
      }
     ]
+   },
+   {
+    "id": "world",
+    "name": "Global",
+    "year": 2023,
+    "population": 8062923417,
+    "population_source": {
+     "name": "World Bank, World Development Indicators, population, total (SP.POP.TOTL), World, 2023",
+     "url": "https://api.worldbank.org/v2/country/WLD/indicator/SP.POP.TOTL?format=json&date=2022:2024",
+     "year": 2023
+    },
+    "spend_total_eur": 9822663657879,
+    "spend_per_inhabitant_eur": 1218.25,
+    "spend_per_inhabitant_gap_pct": -0.0001,
+    "spend_source": {
+     "name": "World Bank, World Development Indicators, current health expenditure per capita, current US$ (SH.XPD.CHEX.PC.CD, from the WHO Global Health Expenditure Database), World, 2023",
+     "url": "https://api.worldbank.org/v2/country/WLD/indicator/SH.XPD.CHEX.PC.CD?format=json&date=2021:2024",
+     "query_url": "https://api.worldbank.org/v2/country/WLD/indicator/SH.XPD.CHEX.PC.CD?format=json&date=2021:2024",
+     "year": 2023,
+     "opened": "2026-11-15",
+     "formula": "SH.XPD.CHEX.PC.CD, World, 2023 (US$ 1317.2564716259 a person) x SP.POP.TOTL, World, 2023 (8,062,923,417 people) = US$ 10,620,938,051,267, converted at the ECB's 2023 annual average, US$ 1.081268627451 per EUR 1 = EUR 9,822,663,657,879"
+    },
+    "original": {
+     "currency": "USD",
+     "total": 10620938051267,
+     "fx": {
+      "usd_per_eur": 1.081268627451,
+      "year": 2023,
+      "source": {
+       "name": "ECB euro foreign exchange reference rate, US dollar, annual average (EXR.A.USD.EUR.SP00.A)",
+       "url": "https://data-api.ecb.europa.eu/service/data/EXR/A.USD.EUR.SP00.A?startPeriod=2023&endPeriod=2024"
+      }
+     }
+    },
+    "loss0_eur": 1080493002367,
+    "drop_at_100_eur": 99208902945,
+    "loss_at_100_eur": 981284099422,
+    "plan_share_pct": 0.001131165401,
+    "check_points": [
+     {
+      "share_pct": 0,
+      "loss_eur": 1080493002367,
+      "drop_eur": 0,
+      "residents": 0,
+      "matched": 0,
+      "fewer_dx": 0.0
+     },
+     {
+      "share_pct": 0.1,
+      "loss_eur": 1080393793464,
+      "drop_eur": 99208903,
+      "residents": 8062923,
+      "matched": 3339663,
+      "fewer_dx": 37089.4
+     },
+     {
+      "share_pct": 1,
+      "loss_eur": 1079500913338,
+      "drop_eur": 992089029,
+      "residents": 80629234,
+      "matched": 33396629,
+      "fewer_dx": 370894.5
+     },
+     {
+      "share_pct": 10,
+      "loss_eur": 1070572112072,
+      "drop_eur": 9920890295,
+      "residents": 806292342,
+      "matched": 333966288,
+      "fewer_dx": 3708944.8
+     },
+     {
+      "share_pct": 50,
+      "loss_eur": 1030888550894,
+      "drop_eur": 49604451473,
+      "residents": 4031461709,
+      "matched": 1669831440,
+      "fewer_dx": 18544723.9
+     },
+     {
+      "share_pct": 100,
+      "loss_eur": 981284099422,
+      "drop_eur": 99208902945,
+      "residents": 8062923417,
+      "matched": 3339662879,
+      "fewer_dx": 37089447.7
+     },
+     {
+      "share_pct": 0.001131165401,
+      "loss_eur": 1080491880150,
+      "drop_eur": 1122217,
+      "residents": 91205,
+      "matched": 37777,
+      "fewer_dx": 419.5
+     }
+    ]
    }
   ]
  }

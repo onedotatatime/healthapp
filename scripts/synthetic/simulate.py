@@ -12,7 +12,7 @@ at that month's network size, never running totals (patients and records with a 
 The ten_years block (MIN-4748, CTO decision MIN-4744 comment fee57739) runs the same plan to month 120 for Greece, additive: plan months 1 to 120, the real matching while the network fits the 5,000 records and a held plateau after,
 Greece's Eurostat spending base, and both bases (a year at that month's network size, and a running total since month 1) for diagnoses, money and income.
 The reach block (MIN-4773, CTO decision MIN-4769 comment 1178f99e) is additive and last: the money a geography loses a year to wrong or missed diagnoses and how it falls with the share of its residents in the network,
-for Greece, EU-27 and (Global, when its sources are in) with Anna's sources (MIN-4723 comment b08a38aa). The maths is in reach.py, Decimal, half-up.
+for Greece, EU-27 and Global (World Bank, shown in euros at the ECB's annual average) with Anna's sources (MIN-4723 comment b08a38aa). The maths is in reach.py, Decimal, half-up.
 Usage: python3 simulate.py <out_dir> [--ramp per_case_only|all_revenue]     (writes <out_dir>/simulation.json; the default is what is committed)"""
 import argparse, json, math, os, random, sys, time
 from match import find_matches, features, K, MIN_SHARED
@@ -286,9 +286,42 @@ def eurostat_spec(gid, name, total_mio_eur, per_inhabitant, population, populati
             "original": {"currency": "EUR", "total": total, "fx": None}}
 
 
+# Global (Anna, MIN-4723 comment b08a38aa; each source opened 2026-11-15; CTO, MIN-4769 section 3): World Bank WDI, World (WLD), 2023 (2024 is empty), per capita x population, shown in euros
+# at the ECB's annual average of the same year. The per-capita value is stored as the API returns it, not rounded. We do not sum countries.
+WLD_YEAR = 2023
+WLD_USD_PER_CAPITA = "1317.2564716259"    # SH.XPD.CHEX.PC.CD, World, 2023: current health expenditure per capita, current US$ (WHO GHED series)
+WLD_POPULATION = 8062923417               # SP.POP.TOTL, World, 2023
+WLD_USD_PER_EUR = "1.081268627451"        # ECB EXR.A.USD.EUR.SP00.A, annual average 2023
+WLD_SPEND_URL = "https://api.worldbank.org/v2/country/WLD/indicator/SH.XPD.CHEX.PC.CD?format=json&date=2021:2024"
+WLD_POPULATION_URL = "https://api.worldbank.org/v2/country/WLD/indicator/SP.POP.TOTL?format=json&date=2022:2024"
+WLD_FX_URL = "https://data-api.ecb.europa.eu/service/data/EXR/A.USD.EUR.SP00.A?startPeriod=2023&endPeriod=2024"
+WLD_OPENED = "2026-11-15"
+
+
+def world_spec():
+    D = reach.D
+    usd_total = D(WLD_USD_PER_CAPITA) * WLD_POPULATION                   # US$, exact
+    eur_total = reach.hu(usd_total / D(WLD_USD_PER_EUR))                  # EUR, half-up, the one base of this geography
+    usd_whole = reach.hu(usd_total)
+    return {
+        "id": "world", "name": "Global", "year": WLD_YEAR, "population": WLD_POPULATION,
+        "population_source": {"name": "World Bank, World Development Indicators, population, total (SP.POP.TOTL), World, 2023", "url": WLD_POPULATION_URL, "year": WLD_YEAR},
+        "spend_total_eur": eur_total,
+        "spend_per_inhabitant_eur": float((D(WLD_USD_PER_CAPITA) / D(WLD_USD_PER_EUR)).quantize(D("0.01"), rounding=reach.ROUND_HALF_UP)),
+        "spend_source": {"name": "World Bank, World Development Indicators, current health expenditure per capita, current US$ (SH.XPD.CHEX.PC.CD, from the WHO Global Health Expenditure Database), World, 2023",
+                         "url": WLD_SPEND_URL, "query_url": WLD_SPEND_URL, "year": WLD_YEAR, "opened": WLD_OPENED,
+                         "formula": "SH.XPD.CHEX.PC.CD, World, 2023 (US$ %s a person) x SP.POP.TOTL, World, 2023 (%s people) = US$ %s, converted at the ECB's 2023 annual average, US$ %s per EUR 1 = EUR %s"
+                                    % (WLD_USD_PER_CAPITA, "{:,}".format(WLD_POPULATION), "{:,}".format(usd_whole), WLD_USD_PER_EUR, "{:,}".format(eur_total))},
+        "original": {"currency": "USD", "total": usd_whole,
+                     "fx": {"usd_per_eur": float(WLD_USD_PER_EUR), "year": WLD_YEAR,
+                            "source": {"name": "ECB euro foreign exchange reference rate, US dollar, annual average (EXR.A.USD.EUR.SP00.A)", "url": WLD_FX_URL}}},
+    }
+
+
 REACH_SPECS = [
     eurostat_spec("greece", "Greece", GR_TOTAL_MIO_EUR, GR_EUR_HAB, GR_POPULATION, GR_POPULATION_QUERY_URL, GR_SOURCE_NAME, GR_SOURCE_URL, GR_TOTAL_QUERY_URL, GR_OPENED),
     eurostat_spec("eu27", "Europe (EU-27)", EU27_HEALTH_SPEND_MIO_EUR, EU27_HEALTH_SPEND_EUR_HAB, EU27_POPULATION, EU27_POPULATION_URL, SPEND_SOURCE_NAME, SPEND_SOURCE_URL, SPEND_QUERY_URL, SPEND_OPENED),
+    world_spec(),
 ]
 reach_block = reach.build(
     reach.Inputs(baseline_pct=BASE_COST_PCT, drop_pts=PLATEAU_DROP_PTS, drop_per_100=PLATEAU_DX_PTS, matched=PLATEAU_MATCHED, records=PLATEAU_RECORDS,

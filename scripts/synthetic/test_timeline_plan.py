@@ -199,7 +199,7 @@ if rc is not None and ty is not None:
           and rc["plan"]["month"] == 120 and rc["plan"]["patients"] == ty["patients"]["values"][119] == 91205 and "not a measurement" in rc["status"], str((rc["slider"], rc["plan"])))
     gs = rc["geographies"]
     ids = [g["id"] for g in gs]
-    check("5 geographies are in switch order greece, eu27, world (world only when its sources are in; no placeholder)", ids in (["greece", "eu27"], ["greece", "eu27", "world"]), str(ids))
+    check("5 geographies are in switch order greece, eu27, world (cutting Global is a deliberate edit of this line, never a placeholder)", ids == ["greece", "eu27", "world"], str(ids))
     # The typed anchors: the CTO's Decimal figures (MIN-4769) and Anna's sources (MIN-4723 comment b08a38aa).
     SPEC = {"greece": dict(total=19869370000, pop=10375764, year=2024, L0=2185630700, D100=200680637, L100=1984950063, per=Dc("1915.30")),
             "eu27": dict(total=1833973320000, pop=450054483, year=2024, L0=201737065200, D100=18523130532, L100=183213934668, per=Dc("4074.88"))}
@@ -253,6 +253,20 @@ if rc is not None and ty is not None:
           % (sim["euro"]["total_mio_eur"], sim["euro"]["drop_mio_eur"][-1]),
           eu["spend_total_eur"] == hu(Dc(str(sim["euro"]["total_mio_eur"])) * 1000000) and eu["spend_per_inhabitant_eur"] == sim["euro"]["total_eur_per_inhabitant"]
           and (Dc(eu["drop_at_100_eur"]) / 1000000).quantize(Dc("0.01"), rounding=ROUND_HALF_UP) == Dc(str(sim["euro"]["drop_mio_eur"][-1])) and eu["name"] == "Europe (EU-27)")
+    # Global: World Bank WDI SH.XPD.CHEX.PC.CD x SP.POP.TOTL (World, 2023, 2024 is empty) in euros at the ECB's 2023 annual average (Anna, MIN-4723 comment b08a38aa; CTO, MIN-4769 section 3). Typed anchors.
+    wl = next(g for g in gs if g["id"] == "world")
+    usd = Dc("1317.2564716259") * 8062923417
+    eur = hu(usd / Dc("1.081268627451"))
+    o = wl["original"]
+    check("5 Global: spend is US$ 1,317.2564716259 x 8,062,923,417 (World, 2023) = US$ %s, converted at the ECB's 2023 average US$ 1.081268627451 per EUR 1 = EUR %s; the US$ total, the rate, its year and its source are kept" % ("{:,}".format(hu(usd)), "{:,}".format(eur)),
+          wl["name"] == "Global" and wl["year"] == 2023 and wl["population"] == 8062923417 and wl["spend_total_eur"] == eur == 9822663657879
+          and o["currency"] == "USD" and o["total"] == hu(usd) == 10620938051267 and o["fx"]["usd_per_eur"] == 1.081268627451 and o["fx"]["year"] == 2023 and o["fx"]["source"]["name"] and "EXR/A.USD.EUR.SP00.A" in o["fx"]["source"]["url"], str((wl["spend_total_eur"], o)))
+    check("5 Global: the source line names the series, the formula, the US$ total and the rate; the sources are World Bank SH.XPD.CHEX.PC.CD and SP.POP.TOTL, World, 2023; Global loss0 is about EUR 1.08 trillion, drop_at_100 about EUR 99.2 billion (Anna's table)",
+          "SH.XPD.CHEX.PC.CD" in wl["spend_source"]["url"] and "WLD" in wl["spend_source"]["url"] and "SP.POP.TOTL" in wl["population_source"]["url"] and "WLD" in wl["population_source"]["url"]
+          and all(t in wl["spend_source"]["formula"] for t in ("10,620,938,051,267", "1.081268627451", "SH.XPD.CHEX.PC.CD", "SP.POP.TOTL")) and wl["spend_source"]["year"] == 2023 and wl["population_source"]["year"] == 2023
+          and round(Dc(wl["loss0_eur"]) / 10 ** 12, 2) == Dc("1.08") and round(Dc(wl["drop_at_100_eur"]) / 10 ** 9, 1) == Dc("99.2"), str(wl["spend_source"]))
+    check("5 every geography carries its own year (Greece 2024, EU-27 2024, Global 2023) and the plan share of Global is shown to 2 significant figures as 0.0011%",
+          [g["year"] for g in gs] == [2024, 2024, 2023] and float("%.2g" % wl["plan_share_pct"]) == 0.0011)
     text = json.dumps(rc)
     check("5 no 41.4 (the all-records rate) and no ceiling (the EUR 437 million state in which every record matches) anywhere in the block; the rate behind the money is 46.0% of opted-in records",
           "41.4" not in text and "ceiling" not in text.lower() and "0.0414" not in text and inp["match_rate_opted_in_pct"] == 46.0)
