@@ -1,11 +1,11 @@
-# Pathien: team and funding plan (v4)
+# Pathien: team and funding plan (v5)
 
 | | |
 |---|---|
 | **Owner** | CEO seat (ceo-minhos), on Linear MIN-4503 (deck). Copy polish: Anna (Marketing). Slide design: Pix (Design). |
 | **Date** | 15 Nov 2026, Gen AI Summit Hackathon, Athens |
-| **Version** | **v4, 15 Nov 2026** (CFO review of deck v4.6, then the CFO's decision on the founder's delegation, MIN-4503). Changes from v3: (1) **tranches €400k then €600k, both committed at signing**, the second released by its gate (were €300k then €700k, the second raised after the gate); (2) **one cost method for every hire**: variable pay loaded with employer contributions, €200 of tools for every person including part-time (+€14.5k over 24 months, out of the buffer: €112k → €97k); (3) **break-even means gross profit covers running costs: month 31** (v3 said "revenue passes costs at month 29"); (4) **cash simulated tranche by tranche**, both lows reported on both lines; the upside's low corrected (€690k at month 11 after tranche 2, not "never below the start"); (5) the tranche-2 gate written as a **written commitment**; (6) **unit economics in two lines** for A9; (7) **trials: five a year** everywhere; (8) slide numbers follow the deck since v4.2 (revenue is slide 10, impact 7, trials economics 6c, team and ask 13 and 14). The use-of-funds lines, the team, the hiring months and the €1M over 24 months are unchanged. The deck changes are in `docs/business/cfo-fixes-v4.7.md`. v3 is in git history; `python3 docs/business/funding-model.py --v3` reproduces its numbers. |
-| **Status** | **€1M over 24 months confirmed by the founder, 15 Nov 2026** ("Confirm €1M"). **Tranche structure: CFO on the founder's behalf, 15 Nov 2026** (founder delegated: "CFO will answer"); the founder can overturn it. **Still open:** the two new seats (D6/D13), the hiring order (D3), the founder's own pay (D5), the caps (D2), the trial fee (Q38), government revenue (Q39). Nothing here commits the company, contacts anyone or spends money. |
+| **Version** | **v5, 15 Nov 2026.** The founder, 15 Nov: "CFO you make the call". The CFO takes the six money questions v4 left open (section 6): the instrument and caps (D2), the trial fee and who is billed (Q38), government revenue (Q39), the hiring order (D3), the founder's pay (D5) and the two new seats (D6/D13). **No cash line changes**: every spend, cash and break-even figure is v4's (`python3 docs/business/funding-model.py`, now v5, prints the same cash numbers plus the decided dilution, the €1,500 trial fee not chosen, and what a full-time founder would cost). Deck changes: `docs/business/cfo-fixes-v4.8.md`. **v4, 15 Nov 2026** (CFO review of deck v4.6, then the CFO's decision on the founder's delegation, MIN-4503). Changes from v3: (1) **tranches €400k then €600k, both committed at signing**, the second released by its gate (were €300k then €700k, the second raised after the gate); (2) **one cost method for every hire**: variable pay loaded with employer contributions, €200 of tools for every person including part-time (+€14.5k over 24 months, out of the buffer: €112k → €97k); (3) **break-even means gross profit covers running costs: month 31** (v3 said "revenue passes costs at month 29"); (4) **cash simulated tranche by tranche**, both lows reported on both lines; the upside's low corrected (€690k at month 11 after tranche 2, not "never below the start"); (5) the tranche-2 gate written as a **written commitment**; (6) **unit economics in two lines** for A9; (7) **trials: five a year** everywhere; (8) slide numbers follow the deck since v4.2 (revenue is slide 10, impact 7, trials economics 6c, team and ask 13 and 14). The use-of-funds lines, the team, the hiring months and the €1M over 24 months are unchanged. The deck changes are in `docs/business/cfo-fixes-v4.7.md`. v3 is in git history; `python3 docs/business/funding-model.py --v3` reproduces its numbers. |
+| **Status** | **€1M over 24 months confirmed by the founder, 15 Nov 2026** ("Confirm €1M"). **CFO on the founder's behalf, 15 Nov 2026:** the tranche structure (v4; founder: "CFO will answer") and D2's terms, Q38, Q39, D3, D5, D6 and D13 (v5; founder: "CFO you make the call"); the founder can overturn each. **Still open:** Q37 (whether the clinical-trials slide stays in the main deck: a deck-structure call, not financial), staging → main for the deck (production needs the founder's yes), and the founder's own decisions D1, D4 and D7 to D12 (section 6). Nothing here commits the company, contacts anyone or spends money. |
 | **Method** | The CEO lens (ceo-advisor: capital allocation, what €1M buys that €600k does not), the CFO lens (cfo-advisor: runway tranche by tranche, burn, break-even as gross profit against running costs, unit economics), the analyst lens (a month-by-month model you can rerun: `docs/business/funding-model.py`), and the founder-load lens (founder-coach). |
 | **Labels** | **verified**: read at the primary source. **secondary**: quoted by someone else, or read only through a search summary. **assumption**: our number, with its anchor. **unverified**: named, not checked. **Every cost and revenue figure in this file is an assumption** unless it carries another label. |
 
@@ -15,6 +15,7 @@
 - 15 Nov, on v2: "Fund 1m -> do the maths". Also 15 Nov (relayed in the brief): the buyers are **hospitals, governments and private clinics**.
 - 15 Nov, on v3: "Confirm €1M".
 - **15 Nov, on the tranche choice after the CFO review ((a) €400k / €600k, or (b) both tranches committed at signing): "CFO will answer".**
+- **15 Nov, on the money decisions still open (D2 instrument and caps, Q38, Q39, D3, D5, D6/D13): "CFO you make the call".**
 
 ---
 
@@ -22,6 +23,7 @@
 
 - **The ask: €1M over 24 months, committed at one signing after G2, released in two tranches.** **€400k** at signing, for months 1 to 9 (€297k) plus about 3.5 months of reserve. **€600k** committed at the same signing and released when the gate holds: **a hospital commits in writing to 1,000 or more paid cases a year at €40 or more, and the pilot measures €5 or less a case to run** (section 5). About month 10.
 - **Why this shape (CFO view).** v3's €300k tranche covered months 1 to 9 with 8 days to spare, and its gate was due in the same month: a pilot two weeks late emptied the company with €700k only promised. Now tranche 1 carries its own reserve for a late gate, and tranche 2 is a drawdown, not a second raise. An investor risks €400k before the gate, not €1M (section 3, "The tranches").
+- **The terms (v5, CFO on the founder's behalf).** One **convertible loan agreement** holds both tranches. Tranche 1 at a **€3.5M pre-money cap** (floor €3.0M), tranche 2 at **1.5 times** that cap (€5.25M): about **19.5%** dilution in total; **walk away above 25%**. The founder takes **no salary** from this round. Both new seats stay. Trials: €5,000 a trial plus €1,000 a randomised patient, billed to the sponsor or CRO. Government revenue stays uncounted until a contract is signed. Section 6.
 - **What €1M buys that €600k did not (CEO view).** Not the same plan, bigger. Five things, in order of the risk they remove:
   1. **Runway to break-even.** On slide 10's conservative line, gross profit covers running costs at **month 31**, and the money is still there: **€186k at its lowest point after tranche 2 (month 30)**. Hospital sales can arrive **5 months late** and the money still reaches break-even. On the same method, €600k reached break-even with €60k left and 2 months of slack.
   2. **A clinician on the team from day 1.** A half-time **clinical and regulatory lead** fills the gap every seat in the lean room named first.
@@ -45,7 +47,7 @@
 - The founder also runs two other products (minhOS, TravelHood). Until G1 his time on Pathien is capped at about 4 hours a week, with no money and no build (CEO cap, `docs/lean/room/ceo.md`).
 - **Research partner (target, not contacted):** a Greek university hospital and an AI research centre (section 2b). Nothing is agreed.
 
-**What this means for a funder (CEO lens):** the weekend proved a small team builds the flow fast. It did not prove operating with real health data, selling to a hospital, or the founder's capacity to run a third company. A funded plan needs the founder at least half-time on Pathien; that choice is his (decision D5).
+**What this means for a funder (CEO lens):** the weekend proved a small team builds the flow fast. It did not prove operating with real health data, selling to a hospital, or the founder's capacity to run a third company. A funded plan needs the founder at least half-time on Pathien; his time is his call. He takes no salary from this round (D5, decided as CFO, section 6).
 
 ---
 
@@ -62,7 +64,7 @@ Costs are **loaded monthly costs** for a Greek employee in Athens, **one method 
 | 3 | **ML engineer** | Makes the reading accurate (98%) and cheap (€5 a case); owns every model and the evaluation sets | Month 2, full-time | €55,000 | **€5.8k** | **€133k** |
 | 4 | **Business development** | Turns the signed pilot into paying hospitals and private clinic chains; works public tenders with the procurement adviser | Month 2, full-time | €45,000 + 15% variable (€51,750) | **€5.5k** | **€125k** |
 | 5 | **Marketing** | Brings patients in through the hospital; consent and onboarding copy, the case study, the site | Month 3 half-time; full-time from month 10 | €36,000 full-time | **€2.0k**, then **€3.9k** | **€72k** |
-| 6 | **Second engineer** (new in v3) | Hospital and national-system integrations (FHIR and HL7, a public buyer's systems), security, and the platform's second pair of hands | Month 13, full-time | €45,000 | **€4.8k** | **€57k** |
+| 6 | **Second engineer** (new in v3) | Hospital and national-system integrations (FHIR and HL7, a public buyer's systems), security, and the platform's second pair of hands | Month 13, full-time, once tranche 2 is released and the first paid hospital has signed (else month 19) | €45,000 | **€4.8k** | **€57k** |
 | | **Team total** | | | | **€28.4k a month at full team (month 13 on)** | **€592k (59%)** |
 
 Salary anchors:
@@ -70,7 +72,7 @@ Salary anchors:
 - Machine learning engineer, Greece: median €37,000, range €27,000 to €66,000 (**secondary**, search summary only: [Jobmentis](https://www.jobmentis.com/en/salaries/country/greece)); an Athens posting lists €45,000 to €75,000 (**secondary**: [aijobs.net](https://aijobs.net/job/machine-learning-engineer-athens-gr-15125-272052/)).
 - Business development manager, Greece: 80% earn €1,264 to €4,860 gross a month (**secondary**: [Paylab](https://paylab.com/gr/salaryinfo/management/business-development-manager)).
 - Digital marketing manager, Greece: 80% earn €1,059 to €3,377 gross a month (**secondary**: [Paylab](https://www.paylab.com/gr/salaryinfo/marketing-advertising-pr/digital-marketing-manager?lang=en)).
-- Clinical and regulatory lead: **no salary source checked** (assumption: €60k full-time, paid half). A clinician who keeps practising is the usual shape at this stage; it also answers the room's G2 condition (a committed clinician). Whether this person is a co-founder is the founder's call (D6).
+- Clinical and regulatory lead: **no salary source checked** (assumption: €60k full-time, paid half). A clinician who keeps practising is the usual shape at this stage; it also answers the room's G2 condition (a committed clinician). An employee with options from the pool and vesting, not a co-founder (D6, decided as CFO, section 6).
 
 **Why these two seats and not others (CEO view).** The clinician gap was the first missing resource in every seat of the lean room (`docs/lean/00-summary.md`, decision 9); v2 covered it with a €1,000-a-month adviser. The second engineer removes v2's single point of failure on the platform, and hospitals and governments ask for integrations before they buy. Considered and not recommended: a second business-development hire (public buyers are slow; a procurement adviser at €1k a month covers tenders until the first public pilot), and consumer marketing (no consumer acquisition, BMC).
 
@@ -92,7 +94,7 @@ The founder's five directions: (1) scan, then the AI reads it; (2) store the ext
 
 **Directions 4 and 5, said plainly:**
 - **Direction 4 (analysis and projection for the patient)** collides with two of the founder's own rules: no diagnosis from the AI for the patient (13 Nov) and "route to the doctor", nothing interpreted (14 Nov). This round funds doctor-facing analysis with every answer citing its source, the patient's own values over time with no interpretation, and **the start of the regulatory pathway** (€50k, gated): the quality system projection would need. Certification itself (about €300k to €800k and 18 to 30 months, the CTO's estimate, not sourced) is the next round.
-- **Direction 5 (real matching)** is opt-in only (13 Nov). This round funds the consent design and **a trials sponsor pilot**: one sponsor or CRO, one trial, pre-screening with the patient's consent, priced as on slide 6c (€5,000 a trial plus €1,000 a randomised patient, about €24,000 a trial, assumptions; `docs/business/clinical-trials-fit.md` §8).
+- **Direction 5 (real matching)** is opt-in only (13 Nov). This round funds the consent design and **a trials sponsor pilot**: one sponsor or CRO, one trial, pre-screening with the patient's consent, priced as on slide 6c (€5,000 a trial plus €1,000 a randomised patient, about €24,000 a trial, billed to the sponsor or CRO only; assumptions, decided as CFO, Q38; `docs/business/clinical-trials-fit.md` §8).
 
 ---
 
@@ -147,7 +149,7 @@ The founder, 15 Nov, on (a) €400k / €600k or (b) both tranches committed at 
 - **Sizing check (model):** a first tranche of €300k leaves 3 days of reserve; €350k, 1.8 months; **€400k, 3.5 months**; €450k, 5.2 months (more at risk before the gate for the investor, a harder first close).
 - **If the gate fails:** the investor need not release tranche 2. Tranche 1, held at month 9's costs (no tranche-2 lines started), lasts to about **month 12.5**: time to change course, wind down cleanly, or find other money.
 - **Fallback if no investor will commit tranche 2 at signing:** keep €400k / €600k and start the tranche-2 raise at month 6, on the pilot's interim numbers.
-- **For the term sheet (the founder's call, D2):** both tranches in one SAFE or convertible-note agreement; tranche 2's cap agreed at signing and set above tranche 1's; the investor may release tranche 2 early. A lawyer drafts it; nothing is signed before G2.
+- **The term sheet (v5: CFO on the founder's behalf, D2).** One **convertible loan agreement** (the EU form of a convertible note, not a US SAFE) holds both tranches: €400k at signing, €600k committed at the same signing and released by the gate; the investor may release tranche 2 early. **Caps, pre-money:** tranche 1 **€3.5M** (floor €3.0M); tranche 2 **1.5 times** tranche 1's, **€5.25M** (floor €4.5M). **Discount:** 20% to the next priced round; the investor converts at the lower price. **Interest:** none paid in cash; if Greek law or the investor needs it, at most 5% a year, converted into shares. **Conversion:** at the next priced round of €1.5M or more, or at the cap after 36 months (past the month-31 break-even). **If the lead investor wants a priced round:** the same pre-money and the same step-up, as two closings. **Walk away** if the round costs more than 25% of the company. The legal form follows the entity (D9, the founder's); a lawyer drafts it; nothing is signed before G2.
 
 ### Use of funds, by line
 
@@ -175,7 +177,7 @@ The founder, 15 Nov, on (a) €400k / €600k or (b) both tranches committed at 
 
 The shares are 29.7%, 36.1%, 24.5% and 9.7%; rounded they sum to 100.
 
-Not in the budget: **the founder's own pay** (D5; €3,000 a month would cost €72k over 24 months, most of the buffer), equity for the hires (D8), and certification.
+Not in the budget: **a salary for the founder** (none from this round: D5, decided as CFO; section 6 shows what full-time pay would cost), equity for the hires (D8), and certification.
 
 ### Burn per quarter
 
@@ -234,7 +236,7 @@ Average €37.6k a month. Months 1 to 9 cost €297k (tranche 1 is €400k); mon
 | Months sales can slip and still reach break-even | 2 | **5** |
 | Sell (marketing and sales) | €168k | **€297k** |
 
-**Not counted:** clinical-trials revenue. If the sponsor pilot converts (one trial in months 19 to 24, then **five a year** at about €24,000 each, about €120,000 a year; assumptions), break-even comes one quarter sooner (month 28). Slide 10 still does not add it as a line (`docs/business/clinical-trials-fit.md` §8). Government revenue is not counted inside 24 months: procurement is slow.
+**Not counted:** clinical-trials revenue. If the sponsor pilot converts (one trial in months 19 to 24, then **five a year** at about €24,000 each, about €120,000 a year; assumptions), break-even comes one quarter sooner (month 28). Slide 10 still does not add it as a line (`docs/business/clinical-trials-fit.md` §8). **Government revenue is not counted (Q39, decided as CFO):** not in the 24 months and not on slide 10 until a contract or framework is signed, the same rule as grants. Procurement is slow, and the adviser's €15k builds the pipeline, not revenue.
 
 **The upside does not change the ask.** The plan is sized on the conservative line; if the upside arrives, tranche 2 can be smaller or released early.
 
@@ -275,11 +277,11 @@ Realistic for a Greek solo founder in health tech: non-dilutive first, equity fo
 
 1. **Now to G1 (30 Nov 2026):** €0. Hackathon credits only.
 2. **G1 to G2 (15 Jan 2027):** the regulatory opinion, €3k to €10k of the founder's own money, only if he says yes (MIN-4442). Draft the EIC short proposal.
-3. **After G2, one signing for the €1M:** Greek grant (ESPA) and EIT Health applications go in; the €1M is committed by angels or a Greek VC from the EquiFund II funds on one SAFE or convertible-note agreement with two tranches (D2). **€400k is drawn at signing**, target about March 2027.
+3. **After G2, one signing for the €1M:** Greek grant (ESPA) and EIT Health applications go in; the €1M is committed by angels or a Greek VC from the EquiFund II funds on one convertible loan agreement with two tranches (D2, section 3 "The term sheet"). **€400k is drawn at signing**, target about March 2027.
 4. **At the gate (about month 9):** **€600k is released**, less any grant **signed** by then (a signed grant can replace part of tranche 2 if the agreement allows it).
 5. **Months 18 to 24:** EIC Accelerator full proposal (1 Sep or 4 Nov 2027 cut-off) and a seed round for EU MDR certification (CTO estimate €300k to €800k).
 
-**Dilution (assumption; the caps are guesses, not quotes; the founder decides, D2).** Tranche 1 (€400k) at a €2.5M to €3.5M cap is about **10% to 14%**. If tranche 2's cap is agreed at signing at 1.5 times tranche 1's, the total is about **19.5% to 26%**; at one cap for both, about **22% to 29%**. Committing tranche 2 at signing costs the founder the chance to price it on the pilot's evidence; the step-up cap keeps part of that. Every euro of signed grant lowers it. All figures are in the model.
+**Dilution (v5: the caps decided as CFO, D2; assumptions until an investor agrees).** Tranche 1 (€400k) at a €3.5M pre-money cap is **10.3%**; tranche 2 (€600k) at €5.25M is 10.3% of the company after it; together **about 19.5%**, and the founder keeps about 80.5% before any option pool. At the floor (€3.0M, then €4.5M) about **22.1%**. Above 25% we walk away (€2.5M with the step-up is 25.7%; one €2.5M cap for both, 28.6%). Committing tranche 2 at signing costs the founder the chance to price it on the pilot's evidence; the step-up keeps part of that. Every euro of signed grant lowers it. All figures are in the model.
 
 ---
 
@@ -309,7 +311,7 @@ Realistic for a Greek solo founder in health tech: non-dilutive first, equity fo
 3. **Accuracy costs people.** If 98% needs a person on every case, margin falls to about 50% to 75%, and break-even rises to €534k to €801k a year.
 4. **Public buyers are slow.** Governments buy through tenders that can take longer than this plan; the plan counts no government revenue. Each month of hospital delay costs about €38k of runway; the money absorbs about 5 months of delay on the conservative line.
 5. **The pilot runs late.** Tranche 1's €103k reserve covers about 3.5 months of a late gate at month 9's burn; beyond that, tranche-2 work starts late or the plan changes.
-6. **The team.** A solo founder with two other products. The plan adds a clinician (half-time) and a second engineer; the founder's own time is still the constraint (D5).
+6. **The team.** A solo founder with two other products. The plan adds a clinician (half-time) and a second engineer; the founder's own time is still the constraint. He takes no salary from this round (D5); if an investor asks for him full-time and paid, the plan changes (section 6).
 7. **Grants arrive late or not at all.** None is counted until signed.
 8. **The name.** PATHIEN trademark clearance is pending (`docs/brand/brand-check-pathien.md`).
 9. **The insurer rule narrows the buyers by design.** Insurers stay out; the five open edges are the founder's.
@@ -329,27 +331,31 @@ v4 writes numbers 1 and 2 as **a written commitment**: at the end of a free pilo
 
 ## 6. Decisions only the founder can make
 
-The CEO seat recommends; it takes none of these, except where the founder delegated (D2's tranche structure, 15 Nov). They are money, hiring and company commitments.
+The CEO seat recommends. Where the founder delegated, the CFO decided on his behalf, and he can overturn each: D2's tranches (15 Nov, "CFO will answer") and, in v5, D2's terms, D3, D5, D6, D13, Q38 and Q39 (15 Nov, "CFO you make the call"). The rest are his: money, hiring and company commitments.
 
-| # | Decision | Recommendation |
+| # | Decision | Recommendation, or the decision taken |
 |---|---|---|
 | **D1** | Raise at all, and when | Only after G2 passes. Park by default until then |
-| **D2** | Amount, tranches and structure | **€1M** over 24 months (confirmed). **Tranches €400k / €600k, both committed at one signing, the second released by the gate: CFO on the founder's behalf, 15 Nov** ("CFO will answer"); he can overturn it. **Still his:** the instrument (SAFE or convertible note), the caps and whether tranche 2 steps up. Grants first. Dilution about 19.5% to 29% (assumption). Levers to about €885k in section 3 |
-| **D3** | Hiring order | Engineer and the clinical and regulatory lead in month 1; ML engineer and business development in month 2; marketing in month 3; second engineer in month 13 |
+| **D2** | Amount, tranches and structure | **€1M** over 24 months (confirmed). **Tranches €400k / €600k, both committed at one signing, the second released by the gate** (CFO, v4). **Decided (CFO on the founder's behalf, v5):** one **convertible loan agreement**, not a SAFE; pre-money caps **€3.5M** for tranche 1 (floor €3.0M) and **1.5 times** that, **€5.25M**, for tranche 2 (step-up: yes); 20% discount; no cash interest; **about 19.5% dilution, walk away above 25%**. Terms in section 3. Grants first. Levers to about €885k in section 3 |
+| **D3** | Hiring order | **Decided (CFO, v5):** engineer and the clinical and regulatory lead in month 1; ML engineer and business development in month 2; marketing half-time in month 3. Nobody before tranche 1 lands. Tranche-2 hires (marketing full-time from month 10, the second engineer from month 13) start only once tranche 2 is released; the second engineer also waits for the first paid hospital's contract, else month 19 (saves €29k) |
 | **D4** | Full-time or part-time | Engineers, ML engineer and business development full-time; the clinical lead half-time; marketing half-time until tranche 2, then full-time |
-| **D5** | The founder's own time and pay | At least half-time once tranche 1 lands; his pay is not in the €1M (€3,000 a month adds €72k, from the €97k buffer) |
-| **D6** | The clinician | A half-time clinical and regulatory lead from month 1 (€78k over 24 months). Co-founder (equity) or employee is his call. The room's G2 condition asks for a committed clinician |
+| **D5** | The founder's own time and pay | Time: at least half-time once tranche 1 lands (recommendation; his call). **Pay, decided (CFO, v5): no salary from this round**; he keeps his equity (about 80.5% at the target caps, before any option pool). If an investor asks for him full-time and paid, that is a new decision: €48k gross from month 10 costs €76k, leaves a €21k buffer, moves break-even to month 32 and lets sales slip 1 month, not 5 (model). It comes with a lever or a larger ask, never silently out of the buffer |
+| **D6** | The clinician | **Decided (CFO, v5):** a half-time clinical and regulatory lead from month 1 (€78k over 24 months), **an employee with options from the pool (D8) and vesting, not co-founder shares**. The room's G2 condition asks for a committed clinician |
 | **D7** | Hires or co-founders | Three of the roles match the studio's co-founder search (2026-11-10: "Eng - Sales - Marketing"); his call |
 | **D8** | Option pool | Recommend 10% (assumption), with vesting |
 | **D9** | The legal entity | Pathien as its own company or inside the studio; needed before Elevate Greece, a grant or a SAFE |
 | **D10** | Direction 4 against his own rules | How "analysis and projection for the patient" reads against "route to the doctor, nothing interpreted"; the quality system starts only if the opinion asks for it |
 | **D11** | The research partner | Approach NKUA Medical School with Attikon (clinical) and the Athena Research Center's Archimedes unit (technical) after G1, budget €49.8k; nobody is contacted without his go |
 | **D12** | IP and publication terms | The product IP stays with the company; the university may publish the method after a short review |
-| **D13** | The two new seats and the three new lines | Clinical and regulatory lead, second engineer, regulatory pathway (gated), procurement adviser, trials sponsor pilot. Each can be dropped; section 3 shows what each saves |
+| **D13** | The two new seats and the three new lines | **Decided (CFO, v5): both new seats stay**: the clinical and regulatory lead (month 1) and the second engineer (month 13, gated as in D3). The three new lines stay with their gates: the regulatory pathway (only if the opinion asks for a device route), the trials sponsor pilot (only when a sponsor signs), the procurement adviser (months 10 to 24) |
+| **Q38** | Trial fee and who is billed | **Decided (CFO, v5):** **€5,000 set-up per trial and country**, paid at signing, not refundable, plus **€1,000 per randomised patient** (not €1,500), billed to **the sponsor or CRO only**: never the site, never the patient. €1,500 is reconsidered only after the sponsor pilot measures 5 or more days saved. About €24,000 a trial, 13% of the saving (`clinical-trials-fit.md` §8) |
+| **Q39** | Government revenue | **Decided (CFO, v5): not counted**, in the 24 months or on slide 10, until a contract or framework is signed (the grant rule). Governments stay a buyer group on slide 9; the procurement adviser builds the pipeline |
+
+**Still open after v5:** Q37 (whether the clinical-trials slide stays in the main deck: a deck-structure call, not financial), staging → main for the deck (production needs the founder's yes), and D1, D4, D7 to D12 above.
 
 ---
 
-## 7. Slide-ready text (v4, for deck v4.7)
+## 7. Slide-ready text (v4, for deck v4.7; slides 13 and 14 unchanged in v5)
 
 Slides 13 ("Team today, and what I ask") and 14 ("Why the money"), main numbers only; the detail is on A9. The deck-facing changes, word for word, are in `docs/business/cfo-fixes-v4.7.md`; this section repeats the two slides so the plan and the deck say the same thing. **No funding-sources content** (founder, 14 Nov). Every estimate carries a "\*" and the small footnote (deck rule 8, v4.2). The founder approves public copy.
 
@@ -390,4 +396,4 @@ Slides 13 ("Team today, and what I ask") and 14 ("Why the money"), main numbers 
 
 ## Sources in the repo
 
-`docs/business/funding-model.py` (the v4 model; rerun to check every number in sections 3 and 5; `--v3` reproduces v3) · `docs/business/cfo-fixes-v4.7.md` (the deck changes, word for word) · `docs/business/clinical-trials-fit.md` §8 (trial pricing) · `docs/deck/deck-content.md` (slides 6c, 7, 10, 13, 14; A3, A4, A6, A7, A9) · `docs/lean/00-summary.md` · `docs/lean/05-business-model-canvas.md` (CTO cost estimates, BMC) · `docs/lean/06-market-fit-scorecard.md` (28/100, gates, R1 to R11) · `docs/lean/room/ceo.md`, `cto.md` · `docs/research/buyers.md`, `market-and-competitors.md` · `docs/00-founder-brief.md` · `~/AppDevelopment/conductor/docs/founder-decisions.md` (healthapp entries; 2026-11-15 "Raise ask €1M" and "Tranches €400k then €600k, both committed at signing; break-even at month 31").
+`docs/business/funding-model.py` (the v5 model, cash numbers as v4; rerun to check every number in sections 3, 4 and 5; `--v3` reproduces v3) · `docs/business/cfo-fixes-v4.7.md` and `docs/business/cfo-fixes-v4.8.md` (the deck changes, word for word) · `docs/business/clinical-trials-fit.md` §8 (trial pricing) · `docs/deck/deck-content.md` (slides 6c, 7, 10, 13, 14; A3, A4, A6, A7, A9) · `docs/lean/00-summary.md` · `docs/lean/05-business-model-canvas.md` (CTO cost estimates, BMC) · `docs/lean/06-market-fit-scorecard.md` (28/100, gates, R1 to R11) · `docs/lean/room/ceo.md`, `cto.md` · `docs/research/buyers.md`, `market-and-competitors.md` · `docs/00-founder-brief.md` · `~/AppDevelopment/conductor/docs/founder-decisions.md` (healthapp entries; 2026-11-15 "Raise ask €1M" and "Tranches €400k then €600k, both committed at signing; break-even at month 31").
