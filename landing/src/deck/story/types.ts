@@ -8,7 +8,6 @@ export interface StoryBase {
   theme: Theme;
   /** Eyebrow text. Optional. */
   eyebrow?: string;
-  notes: string[];
 }
 
 export interface StoryIntroSlide extends StoryBase {
@@ -34,7 +33,6 @@ export interface StoryBeat {
   /** A header of its own for this beat. The frames never change: only the header (and the words under it) swap. Default: the slide's headline. */
   headline?: string;
   support: string;
-  notes: string[];
 }
 
 export interface StoryFrameSpec {

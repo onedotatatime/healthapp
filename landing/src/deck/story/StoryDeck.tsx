@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Lockup, typo } from '../util';
+import { Lockup } from '../util';
 import { readMode, type FrameId } from './config';
 import type { StorySlide } from './types';
 import { StoryEmergency } from './templates/StoryEmergency';
@@ -9,12 +9,12 @@ import { StoryLive } from './templates/StoryLive';
 import { StoryMemoir } from './templates/StoryMemoir';
 import { StoryNumbers } from './templates/StoryNumbers';
 import type { FrameCtx } from './templates/shared';
+import { StoryNav, type Stop } from './StoryNav';
 
 const W = 1920;
 const H = 1080;
 
 const beatsOf = (s: StorySlide) => (s.template === 'story-live' ? s.beats.length : 1);
-const notesOf = (s: StorySlide, beat: number) => (s.template === 'story-live' ? s.beats[beat].notes : s.notes);
 const framesOf = (s: StorySlide): FrameId[] => (s.template === 'story-live' ? s.frames.map((f) => f.frame) : []);
 
 // Every stop of the deck is a slide or a beat of a slide, and has a hash id: #1 #2 #3 #4 #4b #5 #5b #5c #6.
@@ -33,20 +33,23 @@ function parseHash(slides: StorySlide[]): { index: number; beat: number } {
   return { index: 0, beat: 0 };
 }
 const hashOf = (s: StorySlide, beat: number) => `#${beatId(s, beat)}`;
+// The stops in order, one per hash id: 1 2 3 4 4b 5 5b 5c 6. The dots, the counter and Home / End all walk this list.
+const stopsOf = (slides: StorySlide[]): Stop[] => slides.flatMap((s, index) => Array.from({ length: beatsOf(s) }, (_, beat) => ({ index, beat, id: beatId(s, beat) })));
+
+// The controls fade to low opacity this long after the last mouse move, key or touch.
+const IDLE_MS = 3000;
 
 export function StoryDeck({ slides }: { slides: StorySlide[] }) {
   const n = slides.length;
-  // "n / 6" counts the numbered stops (1 2 3 4 5 6); 4b, 5b and 5c show their own id.
-  const total = useMemo(() => slides.reduce((c, s) => c + Array.from({ length: beatsOf(s) }, (_, b) => beatId(s, b)).filter((id) => /^\d+$/.test(id)).length, 0), [slides]);
+  const stops = useMemo(() => stopsOf(slides), [slides]);
   const mode = useMemo(() => readMode(), []);
   const pinned = new URLSearchParams(window.location.search).has('scale1');
 
   const [pos, setPos] = useState(() => parseHash(slides));
   const { index, beat } = pos;
   const [scale, setScale] = useState(1);
-  const [notes, setNotes] = useState(false);
-  const [hud, setHud] = useState(true);
-  const hudTimer = useRef<number>(0);
+  const [idle, setIdle] = useState(false);
+  const idleTimer = useRef<number>(0);
   const [off, setOff] = useState<Set<FrameId>>(() => new Set());
 
   const cur = slides[index];
@@ -64,7 +67,11 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
       return p.index > 0 ? { index: p.index - 1, beat: beatsOf(slides[p.index - 1]) - 1 } : p;
     });
   }, [slides]);
-  const jump = useCallback((i: number) => setPos({ index: Math.min(Math.max(i, 0), n - 1), beat: 0 }), [n]);
+  const jump = useCallback((i: number) => {
+    const t = stops[Math.min(Math.max(i, 0), stops.length - 1)];
+    setPos({ index: t.index, beat: t.beat });
+  }, [stops]);
+  const at = Math.max(0, stops.findIndex((t) => t.index === index && t.beat === beat));
 
   // hash <-> position
   useEffect(() => {
@@ -125,28 +132,27 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
         case 'ArrowLeft': case 'ArrowUp': case 'PageUp': case 'Backspace':
           e.preventDefault(); back(); break;
         case 'Home': e.preventDefault(); jump(0); break;
-        case 'End': e.preventDefault(); jump(n - 1); break;
+        case 'End': e.preventDefault(); jump(stops.length - 1); break;
         case 'f': case 'F': toggleFullscreen(); break;
-        case 'n': case 'N': setNotes((v) => !v); break;
         case 'l': case 'L': toggleSlideFrames(); break;
-        case 'Escape': setNotes(false); break;
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [forward, back, jump, n, toggleFullscreen, toggleSlideFrames]);
+  }, [forward, back, jump, stops.length, toggleFullscreen, toggleSlideFrames]);
 
-  // HUD shows on mouse move, hides after a moment (?clean keeps it hidden)
+  // The controls are fully visible on mouse move, a key or a touch, and fade to low opacity after IDLE_MS (?clean hides them for screenshots).
+  // They stay clickable while faded. A mouse over a live frame sends no events to this page, so they fade there; moving out brings them back.
   useEffect(() => {
-    const show = () => {
-      setHud(true);
-      window.clearTimeout(hudTimer.current);
-      hudTimer.current = window.setTimeout(() => setHud(false), 2500);
+    const wake = () => {
+      setIdle(false);
+      window.clearTimeout(idleTimer.current);
+      idleTimer.current = window.setTimeout(() => setIdle(true), IDLE_MS);
     };
-    if (!new URLSearchParams(window.location.search).has('clean')) show();
-    else setHud(false);
-    window.addEventListener('mousemove', show);
-    return () => { window.removeEventListener('mousemove', show); window.clearTimeout(hudTimer.current); };
+    wake();
+    const evs = ['mousemove', 'mousedown', 'keydown', 'touchstart'] as const;
+    evs.forEach((ev) => window.addEventListener(ev, wake));
+    return () => { evs.forEach((ev) => window.removeEventListener(ev, wake)); window.clearTimeout(idleTimer.current); };
   }, []);
 
   // While the mouse is over a live frame the keys go to the app (LiveFrame focuses it on enter). The parent only sees the mouse once it is
@@ -165,16 +171,12 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
 
   // click: right two thirds forward, left third back. Links, buttons and a frame that has the mouse keep their own clicks.
   const onStageClick = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('a,button,.notes,.live-frame.is-hot')) return;
+    if ((e.target as HTMLElement).closest('a,button,.sn,.live-frame.is-hot')) return;
     if (e.clientX < window.innerWidth / 3) back();
     else forward();
   };
 
-  const labelNow = beatId(cur, beat);
-  const counterNow = /^\d+$/.test(labelNow) ? `${labelNow} / ${total}` : labelNow;
-
-  // a frame has the mouse and keys: show the "Next" pill, because after a click inside the app the arrow keys go to the app
-  const hotNow = cur.template === 'story-live' && beat >= cur.hotFromBeat && framesOf(cur).some((id) => isLive(id));
+  const clean = useMemo(() => new URLSearchParams(window.location.search).has('clean'), []);
 
   return (
     <div className="stage story" onClick={onStageClick}>
@@ -182,25 +184,9 @@ export function StoryDeck({ slides }: { slides: StorySlide[] }) {
         {slides.map((s, i) => (
           <StorySlideView key={s.id} s={s} i={i} index={index} beat={i === index ? beat : 0} ctx={ctx} />
         ))}
-        <button type="button" className={`next-pill ${hotNow ? 'is-on' : ''}`} onClick={(e) => { e.stopPropagation(); forward(); }} tabIndex={hotNow ? 0 : -1} aria-hidden={!hotNow}>
-          Next
-        </button>
+        <StoryNav stops={stops} at={at} idle={idle} clean={clean} keys={`← → space · Home End · F fullscreen${mode.armed ? ' · L live / screenshot' : ''}`} onBack={back} onNext={forward} onJump={jump} />
       </div>
 
-      <div className={`hud ${hud ? 'on' : ''}`} aria-live="polite" hidden={!hud}>
-        <span className="hud-count">{counterNow}</span>
-        <span className="hud-keys">← → space · F fullscreen · N notes{mode.armed ? ' · L live / screenshot' : ''}{mode.staticMode ? ' · static' : ''}</span>
-      </div>
-
-      {notes && (
-        <aside className="notes" role="complementary" aria-label="Speaker notes">
-          <header>
-            <b>Speaker notes · slide {labelNow}</b>
-            <button type="button" onClick={() => setNotes(false)} aria-label="Close notes">Close (N)</button>
-          </header>
-          {notesOf(cur, beat).map((p, i) => <p key={i}>{typo(p)}</p>)}
-        </aside>
-      )}
     </div>
   );
 }
