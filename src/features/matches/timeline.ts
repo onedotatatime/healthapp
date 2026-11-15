@@ -16,8 +16,8 @@ export type TlUnit = 'people' | 'euro' | 'dx';
 export type TlShape = 'square' | 'circle' | 'up' | 'down' | 'diamond';
 export type TlLine = { id: TlMeasureId; kind: TlKind; unit: TlUnit; shape: TlShape; values: number[]; decimals: number };
 
-/** Which kind each line is (spec A14 section 2): computed on synthetic records, a model, or the plan. Pattern says the kind, the marker shape says the line. */
-export const TL_KIND: Record<TlMeasureId, TlKind> = { patients: 'computed', matches: 'computed', income: 'plan', drop: 'model', dx: 'model' };
+/** Which kind each line is (spec A14 section 2): computed on synthetic records, a model, or the plan (patients are the plan's revenue x its per-case share / the price, simulate.py 84-90). Pattern says the kind, the marker shape says the line. */
+export const TL_KIND: Record<TlMeasureId, TlKind> = { patients: 'plan', matches: 'computed', income: 'plan', drop: 'model', dx: 'model' };
 export const TL_UNIT: Record<TlMeasureId, TlUnit> = { patients: 'people', matches: 'people', income: 'euro', drop: 'euro', dx: 'dx' };
 export const TL_SHAPE: Record<TlMeasureId, TlShape> = { patients: 'square', matches: 'circle', income: 'up', dx: 'down', drop: 'diamond' };
 /** The stroke pattern of each kind: three different `stroke-dasharray` values. */

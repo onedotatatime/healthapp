@@ -19,7 +19,7 @@ import {
 import { BUILD_CHUNK, DOT_R, FIELD_NARROW_MAX, FIELD_PITCH, TICK_EVERY, fieldGeometry, labelledTicks, pitchFor, rangeRects } from './field';
 import {
   SIM_GROW_MS, SIM_LANDING_MS, SIM_LAND_FADE_MS, clockAt, decimalsOf, effectIndex, formatCount, formatEuro, formatPct, formatPerInhabitant, formatTotal, hasDropped, matchesAt, niceAxis, parseSimulation,
-  TL_MONTHS, dropFromInputs, formatEuroCents, formatEuroK, formatEuroWhole, parseTimeline, type SimEuro, type SimTimeline as SimTimelineData,
+  TL_MONTHS, TL_PILOT_FROM, pilotBand, dropFromInputs, formatEuroCents, formatEuroK, formatEuroWhole, parseTimeline, type SimEuro, type SimTimeline as SimTimelineData,
   shownDrop, SIM_DURATION_MS, SIM_ENTRY_MS, SIM_MATCH_WINDOW, SIM_STEP_MS, simDuration, valueAt, visibleCells, type SimulationData,
 } from './simData';
 
@@ -680,6 +680,19 @@ describe('the timeline block parser (MIN-4702)', () => {
     expect(t.diagnoses?.values).toEqual(TLX.dx);
     expect(t.plan.priceEurPerCase).toBe(40);
   });
+  it('the pilot band starts at plan.pilot_from when the file has it, and at TL_PILOT_FROM when it does not (MIN-4724 fix C)', () => {
+    const withIt = tlRaw(); (withIt.plan as { pilot_from?: number }).pilot_from = 2;
+    const a = parseTimeline(withIt)!;
+    expect(a.plan.pilotFrom).toBe(2);
+    expect(pilotBand(a.patients.values, a.x, a.plan.pilotFrom)?.from).toBe(2);
+    const without = tlRaw(); delete (without.plan as { pilot_from?: number }).pilot_from;
+    const b = parseTimeline(without)!;
+    expect(b.plan.pilotFrom).toBeUndefined();
+    expect(pilotBand(b.patients.values, b.x, b.plan.pilotFrom)).toEqual({ from: TL_PILOT_FROM, to: b.x[b.patients.values.findIndex((v) => v > 0)] - 1, firstPaid: b.x[b.patients.values.findIndex((v) => v > 0)] });
+    // a pilot that starts after the first paid month is no pilot: no block
+    const late = tlRaw(); (late.plan as { pilot_from?: number }).pilot_from = 12;
+    expect(parseTimeline(late)).toBeUndefined();
+  });
   it('an invalid or missing block gives no timeline, and parseSimulation leaves everything else as it was', () => {
     const broken: [string, (r: ReturnType<typeof tlRaw>) => void][] = [
       ['x is not months 1 to 24', (r) => { r.x.values = MONTHS.map((m) => m + 1); }],
@@ -967,6 +980,19 @@ describe('the timeline card on the screen', () => {
     expect(row('dx')).toBe(`|Fewer wrong or missed diagnoses|a year, model|${TLX.dx[11].toFixed(1)}|${TLX.dx[23].toFixed(1)}|`);
     expect(wide).toContain('Plan months 12 and 24, the same figures as the chart.');
   });
+  it('no leader is visible while the run plays; they show at the end and under reduced motion (MIN-4724 fix A)', () => {
+    const lead = (html: string) => [...html.matchAll(/<path[^>]*class="lead"[^>]*>/g)].map((m) => m[0]);
+    const playing = lead(card(t, WIDE, TIE, { geography: EURO.geography, reduced: false, at: 3000 }));
+    expect(playing).toHaveLength(5);
+    for (const p of playing) expect(p).toContain('display:none');
+    const finished = lead(wide);
+    expect(finished).toHaveLength(5);
+    for (const p of finished) expect(p).not.toContain('display');
+    const still = lead(card(t, WIDE, TIE, { geography: EURO.geography, reduced: true }));
+    for (const p of still) expect(p).not.toContain('display');
+    // the frame loop writes the same rule through the ref
+    expect(readFileSync(join(__dirname, 'timelinePaint.ts'), 'utf8')).toMatch(/lead\.style\.display = f\.showPlay \? 'none' : ''/);
+  });
   it('the same numbers on a phone: five rows in the fixed order, no head labels, no leaders', () => {
     expect([...narrow.matchAll(/<li class="tl-row" data-measure="(\w+)"/g)].map((m) => m[1])).toEqual(['patients', 'matches', 'income', 'drop', 'dx']);
     expect(byId(narrow, 'sim-tl-value-patients')).toBe(formatCount(TLX.patients[23]));
@@ -984,12 +1010,12 @@ describe('the timeline card on the screen', () => {
   it('three kinds, told apart without colour: three dash patterns, five marker shapes, a tag on every line', () => {
     expect(new Set(Object.values(TL_DASH)).size).toBe(3);
     const dashOf = (id: string) => (wide.match(new RegExp(`data-line="${id}" data-dash="([^"]*)"`)) ?? [])[1];
-    expect(dashOf('patients')).toBe('none');
+    expect(dashOf('patients')).toBe('12 4 2 4');   // patients are the plan's revenue / 40, so the plan's pattern (MIN-4724 fix B)
     expect(dashOf('matches')).toBe('none');
     expect(dashOf('income')).toBe('12 4 2 4');
     expect(dashOf('drop')).toBe('6 4');
     expect(dashOf('dx')).toBe('6 4');
-    expect(byId(wide, 'sim-tl-tag-patients')).toBe('Computed on synthetic records');
+    expect(byId(wide, 'sim-tl-tag-patients')).toBe('Plan');
     expect(byId(wide, 'sim-tl-tag-matches')).toBe('Computed on synthetic records');
     expect(byId(wide, 'sim-tl-tag-income')).toBe('Plan');
     expect(byId(wide, 'sim-tl-tag-drop')).toBe('Model');

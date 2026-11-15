@@ -27,7 +27,11 @@ export function paintFrame(els: TlEls, f: TlFrame): void {
     if (f.tops && f.leaders) {
       const label = els.labels[h.id];
       if (label) label.style.transform = `translateY(${f.tops[i].toFixed(1)}px)`;
-      els.leaders[h.id]?.setAttribute('d', f.leaders[i]);
+      const lead = els.leaders[h.id];
+      if (lead) {
+        lead.setAttribute('d', f.leaders[i]);
+        lead.style.display = f.showPlay ? 'none' : '';   // no leader while the run plays: it would cross months the chart has not reached
+      }
     }
   });
 }

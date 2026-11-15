@@ -130,7 +130,7 @@ function SimTimelineImpl({ timeline, tie, geography, curve, layout: forced, redu
   const months = timeline.x;
   const model = useMemo(() => buildModel(timeline), [timeline]);
   const geom = useMemo(() => tlGeometry({ wide: layout.wide, width: layout.width }, months), [layout.wide, layout.width, months]);
-  const band = useMemo(() => pilotBand(timeline.patients.values, months), [timeline, months]);
+  const band = useMemo(() => pilotBand(timeline.patients.values, months, timeline.plan.pilotFrom), [timeline, months]);
   const runMs = tlRunMs(months);
   const startT = still ? runMs : at ?? 0;
   // The frame the markup is drawn in: the start of the run, or the finished chart. Everything after is written through refs.
@@ -265,7 +265,7 @@ function SimTimelineImpl({ timeline, tie, geography, curve, layout: forced, redu
           <line ref={(el) => { els.current.play = el; }} className="play" x1={first.playX} x2={first.playX} y1={geom.T} y2={geom.bottom} style={first.showPlay ? undefined : { display: 'none' }} />
           <PlotTop g={geom} model={model} band={band} clipId={clipId} />
           {geom.wide && model.lines.map((l, i) => (
-            <path key={l.id} ref={(el) => { els.current.leaders[l.id] = el; }} className="lead" stroke={KIND_COLOR[l.kind]} d={first.leaders![i]} />
+            <path key={l.id} ref={(el) => { els.current.leaders[l.id] = el; }} className="lead" stroke={KIND_COLOR[l.kind]} d={first.leaders![i]} style={first.showPlay ? { display: 'none' } : undefined} />
           ))}
           {model.lines.map((l, i) => (
             <g key={l.id} ref={(el) => { els.current.heads[l.id] = el; }} transform={`translate(${first.heads[i].x.toFixed(2)} ${first.heads[i].y.toFixed(2)})`} data-head={l.id}>
