@@ -139,6 +139,9 @@ h2{font-size:clamp(40px,6vw,96px)}
 .foot{display:flex;flex-wrap:wrap;gap:24px;align-items:center;justify-content:space-between}
 .foot strong{font-size:28px;letter-spacing:-.03em}
 .footer :focus-visible{outline-color:#fff}
+.foot-link{display:inline-flex;align-items:center;min-height:44px;color:#fff;font-weight:500;text-underline-offset:4px;text-decoration:underline}
+.nav-cta{display:flex;align-items:center;gap:8px}
+@media(max-width:420px){.nav-cta .btn-sm{padding:0 14px}}
 /* static fallback: mobile + reduced motion */
 .static .st-word{color:#fff}
 .static .change{min-height:0}
