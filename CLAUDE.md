@@ -26,4 +26,6 @@ Founder, verbatim: "We need to move in parallel in 4 directions" (he then listed
 4. No patient analysis or projection yet.
 5. Matching runs only against 400 synthetic patients, with keyword coding (`supabase/sql/005_matches.sql`).
 
+Addresses (MIN-4658): `https://staging.healthapp-8ui.pages.dev` reads `healthapp_demo`, the founder's own records, the same as production; `https://staging-dev.healthapp-8ui.pages.dev` is its synthetic `dev` twin, and every automated test and agent check uses only the twin.
+
 Other rules still apply: lean demo (bare minimum), and the conductor rule that no agent reads row content in `healthapp_demo` until MIN-4526 closes.
