@@ -308,151 +308,235 @@ class Blocks(unittest.TestCase):
         self.assertIsNone(snap['blocks']['linear']['error'])
 
 
-SAMPLE_DIRECTIONS = os.path.join(os.path.dirname(HERE), 'directions.sample.json')
-GOAL_TITLES = ['Scan \u2192 AI reads', 'Store extracted data', 'Store + analyse original files (staging and main)', 'Real analysis + projection', 'Real matching']
+GOAL_TITLES = ['Scan → AI reads', 'Store extracted data', 'Store + analyse original files (staging and main)', 'Real analysis + projection', 'Real matching']
+FREEZE = sn.parse(HAND['freeze'])
+BEFORE_FREEZE = NOW                                  # 2026-11-14T15:00Z, the freeze is 2026-11-15T11:00Z
+AFTER_FREEZE = FREEZE + timedelta(minutes=1)
+TYPES = {'done': 'completed', 'prog': 'started', 'open': 'unstarted', 'backlog': 'backlog', 'canceled': 'canceled', 'duplicate': 'duplicate'}
 
 
-def direction(n=1, **over):
-    d = {'n': n, 'title': 'T%s' % n, 'status': 'on_track', 'note': 'ok', 'updatedAt': '2026-11-14T22:00:00+02:00'}
-    d.update(over)
-    return d
+def dn(ident, st='open', parent=None, blocked_by=None, blocker_state='started'):
+    """A node as fetch_linear returns it, reduced to what the directions read."""
+    rels = [{'type': 'blocks', 'issue': {'identifier': blocked_by, 'state': {'type': blocker_state}, 'assignee': {'name': 'x'}}}] if blocked_by else []
+    return {'identifier': ident, 'title': 'secret title ' + ident, 'state': {'name': st, 'type': TYPES[st]},
+            'parent': {'identifier': parent} if parent else None, 'inverseRelations': {'nodes': rels},
+            'description': '', 'priority': 3, 'labels': {'nodes': []}, 'assignee': {'name': 'Cron Jobbidis'}, 'projectMilestone': None, 'startedAt': None,
+            'completedAt': '2026-11-14T10:00:00Z' if st == 'done' else None, 'children': {'nodes': []}}
+
+
+def only(roots, n=1):
+    """A config naming one direction, so a test counts one tree."""
+    return {'directionRoots': [{'n': n, 'title': 'T', 'roots': roots}]}
+
+
+def run_dir(nodes, cfg=None, now=BEFORE_FREEZE):
+    return sn.build_directions(nodes, cfg if cfg is not None else only(['R']), now, FREEZE)[0]
 
 
 class Directions(unittest.TestCase):
-    """MIN-4497: the five directions of the project goal, from a hand-set file, in the snapshot as `directions`."""
+    """MIN-4653 (CTO decision, MIN-4561): the five directions are computed from the Linear fetch, never read from a file."""
 
-    def setUp(self):
-        self.tmp = tempfile.mkdtemp(prefix='directions-')
-        self.addCleanup(lambda: __import__('shutil').rmtree(self.tmp, ignore_errors=True))
-        self.path = os.path.join(self.tmp, 'directions.json')
+    def test_the_committed_map_is_the_decided_one(self):
+        self.assertEqual([(d['n'], d['title'], list(d['roots'])) for d in sn.DIRECTION_ROOTS], [
+            (1, GOAL_TITLES[0], ['MIN-4474', 'MIN-4554', 'MIN-4613']),
+            (2, GOAL_TITLES[1], ['MIN-4474', 'MIN-4477', 'MIN-4554']),
+            (3, GOAL_TITLES[2], ['MIN-4546']),
+            (4, GOAL_TITLES[3], ['MIN-4547']),
+            (5, GOAL_TITLES[4], ['MIN-4504', 'MIN-4649'])])
+        self.assertEqual(sn.DIRECTION_STATUSES, ('on_track', 'at_risk', 'off_track', 'not_started'))
 
-    def write(self, doc):
-        with open(self.path, 'w') as f:
-            f.write(doc if isinstance(doc, str) else json.dumps(doc))
+    def test_no_nodes_gives_five_not_started_with_no_issues_mapped(self):
+        got = sn.build_directions([], {}, NOW, FREEZE)
+        self.assertEqual([(d['n'], d['title'], d['status'], d['note']) for d in got], [(i + 1, t, 'not_started', 'no issues mapped') for i, t in enumerate(GOAL_TITLES)])
+        self.assertEqual(sorted(got[0]), ['n', 'note', 'status', 'title', 'updatedAt'])
+        self.assertEqual({d['updatedAt'] for d in got}, {sn.iso(NOW)})
 
-    def snap(self, directions):
+    def test_status_rules_each_in_turn_first_match_wins(self):
+        cases = [
+            ('1 nothing moving', [dn('A', 'open', 'R'), dn('B', 'open', 'R')], BEFORE_FREEZE, 'not_started', '0 of 2 done'),
+            ('1 nothing moving, after freeze too', [dn('A', 'open', 'R')], AFTER_FREEZE, 'not_started', '0 of 1 done'),
+            ('2 all done', [dn('A', 'done', 'R'), dn('B', 'done', 'R')], BEFORE_FREEZE, 'on_track', '2 of 2 done'),
+            ('2 all done wins over after freeze', [dn('A', 'done', 'R')], AFTER_FREEZE, 'on_track', '1 of 1 done'),
+            ('3 blocked and nothing in progress', [dn('A', 'open', 'R', 'X'), dn('B', 'done', 'R')], BEFORE_FREEZE, 'off_track', '1 of 2 done · 1 blocked'),
+            ('3 blocked only, nothing done', [dn('A', 'open', 'R', 'X'), dn('B', 'open', 'R')], BEFORE_FREEZE, 'off_track', '0 of 2 done · 1 blocked'),
+            ('4 blocked and one in progress', [dn('A', 'open', 'R', 'X'), dn('B', 'prog', 'R')], BEFORE_FREEZE, 'at_risk', '0 of 2 done · 1 in progress · 1 blocked'),
+            ('4 past the freeze with work left', [dn('A', 'prog', 'R'), dn('B', 'done', 'R')], AFTER_FREEZE, 'at_risk', '1 of 2 done · 1 in progress'),
+            ('5 moving before the freeze', [dn('A', 'prog', 'R'), dn('B', 'open', 'R')], BEFORE_FREEZE, 'on_track', '0 of 2 done · 1 in progress'),
+            ('5 done work and open work before the freeze', [dn('A', 'done', 'R'), dn('B', 'open', 'R')], BEFORE_FREEZE, 'on_track', '1 of 2 done'),
+        ]
+        for name, kids, now, status, note in cases:
+            with self.subTest(name):
+                d = run_dir([dn('R', 'open')] + kids, now=now)
+                self.assertEqual((d['status'], d['note']), (status, note))
+
+    def test_the_freeze_instant_itself_counts_as_past(self):
+        nodes = [dn('R', 'open'), dn('A', 'prog', 'R'), dn('B', 'open', 'R')]
+        self.assertEqual(run_dir(nodes, now=FREEZE)['status'], 'at_risk')
+        self.assertEqual(run_dir(nodes, now=FREEZE - timedelta(seconds=1))['status'], 'on_track')
+
+    def test_the_note_says_the_decided_example(self):
+        kids = [dn('D%d' % i, 'done', 'R') for i in range(7)] + [dn('P1', 'prog', 'R'), dn('P2', 'prog', 'R'), dn('B1', 'open', 'R', 'X'), dn('B2', 'open', 'R', 'X'), dn('O', 'open', 'R')]
+        d = run_dir([dn('R', 'open')] + kids)
+        self.assertEqual(d['note'], '7 of 12 done · 2 in progress · 2 blocked')
+        self.assertEqual(d['status'], 'at_risk')
+
+    def test_leaves_only_an_umbrella_parent_is_not_one_more_item(self):
+        nodes = [dn('R', 'prog'), dn('U', 'open', 'R'), dn('A', 'done', 'U'), dn('B', 'done', 'U')]
+        d = run_dir(nodes)
+        self.assertEqual((d['status'], d['note']), ('on_track', '2 of 2 done'))                 # R and U are not counted: they have counted children
+        d = run_dir([dn('R', 'open'), dn('U', 'open', 'R')])
+        self.assertEqual(d['note'], '0 of 1 done')                                              # a root with one open leaf: the leaf, not the root
+
+    def test_a_root_with_no_counted_child_is_its_own_leaf(self):
+        self.assertEqual(run_dir([dn('R', 'done')])['note'], '1 of 1 done')
+        nodes = [dn('R', 'prog'), dn('X', 'canceled', 'R'), dn('Y', 'backlog', 'R')]
+        d = run_dir(nodes)                                                                      # its only children are not counted: it is a leaf itself
+        self.assertEqual((d['status'], d['note']), ('on_track', '0 of 1 done · 1 in progress'))
+
+    def test_canceled_duplicate_and_backlog_are_left_out(self):
+        nodes = [dn('R', 'open'), dn('A', 'done', 'R'), dn('B', 'canceled', 'R'), dn('C', 'backlog', 'R'), dn('D', 'duplicate', 'R'), dn('E', 'open', 'R')]
+        self.assertEqual(run_dir(nodes)['note'], '1 of 2 done')
+
+    def test_a_blocker_that_is_closed_does_not_block(self):
+        for bs in ('completed', 'canceled', 'duplicate'):
+            with self.subTest(bs):
+                nodes = [dn('R', 'open'), dn('A', 'prog', 'R', 'X', bs)]
+                self.assertEqual(run_dir(nodes)['note'], '0 of 1 done · 1 in progress')
+        self.assertEqual(run_dir([dn('R', 'open'), dn('A', 'prog', 'R', 'X')])['note'], '0 of 1 done · 1 blocked')    # an open blocker: blocked wins over in progress
+
+    def test_a_done_issue_is_never_blocked(self):
+        d = run_dir([dn('R', 'open'), dn('A', 'done', 'R', 'X')])
+        self.assertEqual((d['status'], d['note']), ('on_track', '1 of 1 done'))
+
+    def test_a_depth_three_tree_and_a_parent_outside_the_project(self):
+        nodes = [dn('R', 'open'), dn('A', 'open', 'R'), dn('B', 'done', 'A'), dn('C', 'prog', 'A')]
+        self.assertEqual(run_dir(nodes)['note'], '1 of 2 done · 1 in progress')
+        out = dn('Z', 'done', 'R')                                                              # the root is not a fetched node: its child still counts
+        self.assertEqual(run_dir([out])['note'], '1 of 1 done')
+
+    def test_an_issue_outside_every_root_is_not_counted(self):
+        d = run_dir([dn('R', 'open'), dn('A', 'prog', 'R'), dn('S', 'done'), dn('T', 'done', 'S')])
+        self.assertEqual(d['note'], '0 of 1 done · 1 in progress')
+
+    def test_a_root_in_two_directions_counts_in_both_and_two_roots_do_not_double_count(self):
+        nodes = [dn('R1', 'open'), dn('R2', 'open'), dn('S', 'done', 'R1'), dn('T', 'prog', 'R2'), dn('SHARED', 'done', 'R1')]
+        cfg = {'directionRoots': [{'n': 1, 'title': 'a', 'roots': ['R1', 'R2']}, {'n': 2, 'title': 'b', 'roots': ['R2']}]}
+        a, b = sn.build_directions(nodes, cfg, NOW, FREEZE)
+        self.assertEqual(a['note'], '2 of 3 done · 1 in progress')
+        self.assertEqual(b['note'], '0 of 1 done · 1 in progress')
+        both = sn.build_directions([dn('R', 'open'), dn('A', 'done', 'R')], {'directionRoots': [{'n': 1, 'title': 'a', 'roots': ['R', 'R']}]}, NOW, FREEZE)
+        self.assertEqual(both[0]['note'], '1 of 1 done')                                        # the same root twice is counted once
+
+    def test_the_default_map_is_used_when_config_has_none_and_config_wins_when_present(self):
+        nodes = [dn('MIN-4546', 'open'), dn('A', 'done', 'MIN-4546'), dn('MIN-4547', 'open'), dn('B', 'prog', 'MIN-4547')]
+        got = sn.build_directions(nodes, {}, NOW, FREEZE)
+        self.assertEqual([d['n'] for d in got], [1, 2, 3, 4, 5])
+        self.assertEqual((got[2]['status'], got[2]['note']), ('on_track', '1 of 1 done'))
+        self.assertEqual((got[3]['status'], got[3]['note']), ('on_track', '0 of 1 done · 1 in progress'))
+        self.assertEqual(got[0]['note'], 'no issues mapped')
+        over = sn.build_directions(nodes, {'directionRoots': [{'n': 4, 'title': 'Mine', 'roots': ['MIN-4546']}]}, NOW, FREEZE)
+        self.assertEqual([(d['n'], d['title'], d['note']) for d in over], [(4, 'Mine', '1 of 1 done')])
+
+    def test_a_bad_config_map_is_refused_with_a_reason(self):
+        good = {'n': 1, 'title': 'T', 'roots': ['R']}
+        bad = {'not a list': 'x', 'empty': [], 'six': [dict(good, n=i % 5 + 1) for i in range(6)], 'duplicate n': [good, good], 'n 0': [dict(good, n=0)], 'n 6': [dict(good, n=6)],
+               'n true': [dict(good, n=True)], 'no roots': [dict(good, roots=[])], 'roots text': [dict(good, roots='R')], 'root not text': [dict(good, roots=[1])],
+               'empty title': [dict(good, title=' ')], 'long title': [dict(good, title='x' * 121)], 'extra key': [dict(good, owner='x')], 'missing key': [{'n': 1, 'title': 'T'}],
+               'not an object': ['R']}
+        for name, v in bad.items():
+            with self.subTest(name):
+                with self.assertRaises(sn.BlockError) as cm:
+                    sn.build_directions([], {'directionRoots': v}, NOW, FREEZE)
+                self.assertIn('directionRoots', str(cm.exception))
+
+    def test_the_output_carries_counts_and_no_issue_id_or_title(self):
+        nodes = [dn('R', 'open'), dn('A', 'prog', 'R', 'BLOCKER-9'), dn('B', 'done', 'R')]
+        text = json.dumps(sn.build_directions(nodes, only(['R']), NOW, FREEZE))
+        self.assertNotIn('BLOCKER-9', text)
+        self.assertNotIn('secret title', text)
+        self.assertNotRegex(text, r'[A-Z]{2,}-\d+')
+        self.assertNotIn('"R"', text)
+
+    def _snap(self, nodes, hand=None, state=None):
         import unittest.mock as mock
-        with mock.patch.object(sn, 'fetch_linear', return_value=[]), mock.patch.object(sn, 'build_branches', return_value={}):
-            return sn.build(NOW, copy.deepcopy(HAND), RATES, {}, '/nonexistent', USAGE_BIN, lambda: FAKE_KEY, directions=directions)
+        with mock.patch.object(sn, 'fetch_linear', return_value=nodes), mock.patch.object(sn, 'build_branches', return_value={}):
+            return sn.build(NOW, copy.deepcopy(hand or HAND), RATES, {} if state is None else state, '/nonexistent', USAGE_BIN, lambda: FAKE_KEY)
 
-    def test_the_seed_example_has_the_five_titles_all_not_started(self):
-        seed = json.load(open(SAMPLE_DIRECTIONS))
-        self.assertEqual([d['title'] for d in seed['directions']], GOAL_TITLES)
-        self.assertEqual([d['n'] for d in seed['directions']], [1, 2, 3, 4, 5])
-        self.assertEqual({d['status'] for d in seed['directions']}, {'not_started'})
-        got, warn = sn.read_directions(SAMPLE_DIRECTIONS)
-        self.assertIsNone(warn)
-        self.assertEqual(len(got), 5)
-        snap = self.snap((got, warn))
-        self.assertEqual([d['title'] for d in snap['directions']], GOAL_TITLES)
-        self.assertEqual(sorted(snap['directions'][0]), ['n', 'note', 'status', 'title', 'updatedAt'])
+    def test_the_snapshot_carries_five_directions_from_the_linear_fetch(self):
+        nodes = [dn('MIN-4546', 'open'), dn('A', 'done', 'MIN-4546')]
+        snap = self._snap(nodes)
+        self.assertEqual([d['n'] for d in snap['directions']], [1, 2, 3, 4, 5])
+        self.assertEqual(snap['directions'][2]['note'], '1 of 1 done')
+        self.assertEqual({d['updatedAt'] for d in snap['directions']}, {sn.iso(NOW)})
+        self.assertIsNone(snap['blocks']['linear']['error'])
         self.assertIsNone(snap['blocks']['hand']['error'])
         sn.assert_clean(json.dumps(snap))
 
-    def test_a_missing_file_omits_the_field_and_says_nothing(self):
-        self.assertEqual(sn.read_directions(self.path), (None, None))
-        snap = self.snap(sn.read_directions(self.path))
-        self.assertNotIn('directions', snap)
-        self.assertIsNone(snap['blocks']['hand']['error'])
-        self.assertNotIn('directions', self.snap(None))                      # build() called the old way (no argument) is the same
-
-    def test_every_status_and_a_hand_edited_file_come_through_sorted_by_n(self):
-        self.write({'directions': [direction(3, status='off_track', note='x'), direction(1, status='on_track'), direction(2, status='at_risk', note=''),
-                                   direction(5, status='not_started', note='')]})
-        got, warn = sn.read_directions(self.path)
-        self.assertIsNone(warn)
-        self.assertEqual([(d['n'], d['status']) for d in got], [(1, 'on_track'), (2, 'at_risk'), (3, 'off_track'), (5, 'not_started')])
-        self.assertEqual(sn.DIRECTION_STATUSES, ('on_track', 'at_risk', 'off_track', 'not_started'))
-
-    def test_a_bad_file_omits_the_field_and_puts_the_reason_on_the_hand_block_only(self):
-        bad = {
-            'not json': '{"directions": [',
-            'a list, not an object': '[]',
-            'no directions key': {'x': 1},
-            'empty list': {'directions': []},
-            'six entries': {'directions': [direction(i % 5 + 1) for i in range(6)]},
-            'duplicate n': {'directions': [direction(1), direction(1)]},
-            'n 0': {'directions': [direction(0)]},
-            'n 6': {'directions': [direction(6)]},
-            'n true': {'directions': [direction(True)]},
-            'n text': {'directions': [direction('1')]},
-            'bad status': {'directions': [direction(1, status='green')]},
-            'status case': {'directions': [direction(1, status='On_Track')]},
-            'missing key': {'directions': [{'n': 1, 'title': 'T', 'status': 'on_track', 'note': ''}]},
-            'extra key': {'directions': [dict(direction(1), owner='x')]},
-            'empty title': {'directions': [direction(1, title='  ')]},
-            'long title': {'directions': [direction(1, title='x' * 121)]},
-            'note not text': {'directions': [direction(1, note=None)]},
-            'long note': {'directions': [direction(1, note='x' * 301)]},
-            'no updatedAt time': {'directions': [direction(1, updatedAt='soon')]},
-            'updatedAt without offset': {'directions': [direction(1, updatedAt='2026-11-14T22:00:00')]},
-            'updatedAt not text': {'directions': [direction(1, updatedAt=1763150400)]},
-            'a key in the note': {'directions': [direction(1, note='see ' + FAKE_KEY)]},
-            'a key in the title': {'directions': [direction(1, title='eyJ' + 'a' * 40)]},
-        }
-        for name, doc in bad.items():
-            with self.subTest(name):
-                self.write(doc)
-                got, warn = sn.read_directions(self.path)
-                self.assertIsNone(got)
-                self.assertTrue(warn and warn.startswith('directions.json'), warn)
-                self.assertNotIn(FAKE_KEY, warn)                                   # the reason never repeats the text
-                snap = self.snap((got, warn))
-                self.assertNotIn('directions', snap)
-                self.assertEqual(snap['blocks']['hand']['error']['message'], warn)
-                self.assertEqual(snap['blocks']['hand']['asOf'], sn.iso(NOW))      # the hand data itself is fresh and complete
-                self.assertEqual(snap['deadline'], HAND['deadline'])
-                self.assertIn('demo', snap)
-                self.assertIsNone(snap['blocks']['linear']['error'])
-
-    def test_an_unreadable_file_is_a_warning_not_a_crash(self):
-        os.makedirs(self.path)                                                       # a folder where the file should be
-        got, warn = sn.read_directions(self.path)
-        self.assertIsNone(got)
-        self.assertIn('cannot be read', warn)
-
-    def test_a_hand_file_error_still_wins_on_the_hand_block(self):
+    def test_config_directionRoots_in_hand_set_wins(self):
         hand = copy.deepcopy(HAND)
-        hand['demo']['steps'] = hand['demo']['steps'][:7]
+        hand['config']['directionRoots'] = [{'n': 2, 'title': 'From the hand file', 'roots': ['MIN-4546']}]
+        snap = self._snap([dn('MIN-4546', 'done')], hand)
+        self.assertEqual([(d['n'], d['title'], d['note']) for d in snap['directions']], [(2, 'From the hand file', '1 of 1 done')])
+
+    def test_no_linear_data_at_all_omits_the_field(self):
         import unittest.mock as mock
-        with mock.patch.object(sn, 'fetch_linear', return_value=[]), mock.patch.object(sn, 'build_branches', return_value={}):
-            snap = sn.build(NOW, hand, RATES, {}, '/nonexistent', USAGE_BIN, lambda: FAKE_KEY, directions=([direction(1)], None))
-        self.assertIn('8 entries', snap['blocks']['hand']['error']['message'])
-
-    def test_main_reads_the_file_from_the_home_folder_or_from_the_flag(self):
-        import io, unittest.mock as mock, contextlib
-        home = os.path.join(self.tmp, 'home')
-        os.makedirs(home)
-        out = os.path.join(self.tmp, 'out.json')
-        hand = os.path.join(os.path.dirname(HERE), 'hand-set.sample.json')
-
-        def run(*extra):
-            with mock.patch.object(sn, 'fetch_linear', return_value=[]), mock.patch.object(sn, 'build_branches', return_value={}), mock.patch.object(sn, 'linear_key', lambda *a, **k: FAKE_KEY), \
-                    contextlib.redirect_stdout(io.StringIO()):
-                code = sn.main(['--home', home, '--hand', hand, '--root', '/nonexistent', '--out', out, '--now', '2026-11-14T15:00:00Z'] + list(extra))
-            self.assertEqual(code, 0)
-            return json.load(open(out))
-        self.assertNotIn('directions', run())                                         # no file in the home folder: omitted
-        self.write({'directions': [direction(2, status='at_risk', note='from the home folder')]})
-        os.replace(self.path, os.path.join(home, 'directions.json'))
-        got = run()['directions']
-        self.assertEqual([(d['n'], d['status'], d['note']) for d in got], [(2, 'at_risk', 'from the home folder')])
-        other = os.path.join(self.tmp, 'other.json')
-        with open(other, 'w') as f:
-            json.dump({'directions': [direction(4, status='off_track', note='from the flag')]}, f)
-        got = run('--directions', other)['directions']
-        self.assertEqual([(d['n'], d['status']) for d in got], [(4, 'off_track')])
-        with open(os.path.join(home, 'directions.json'), 'w') as f:                     # a typo: the snapshot is still written, the panel is empty
-            f.write('{"directions": [')
-        snap = run()
+        with mock.patch.object(sn, 'fetch_linear', side_effect=sn.BlockError('Linear unreachable: x')), mock.patch.object(sn, 'build_branches', return_value={}):
+            snap = sn.build(NOW, copy.deepcopy(HAND), RATES, {}, '/nonexistent', USAGE_BIN, lambda: FAKE_KEY)
         self.assertNotIn('directions', snap)
-        self.assertEqual(snap['blocks']['hand']['error']['message'], 'directions.json: not valid JSON')
+        self.assertIn('unreachable', snap['blocks']['linear']['error']['message'])
 
-    def test_install_seeds_the_file_once_and_never_overwrites_it(self):
-        src = open(os.path.join(os.path.dirname(HERE), 'install.sh')).read()
-        lines = [l for l in src.splitlines() if 'directions' in l and not l.lstrip().startswith('#')]
-        self.assertEqual(len(lines), 1, lines)
-        self.assertTrue(lines[0].startswith('[ -f "$HOME_DIR/directions.json" ] || cp "$SRC/directions.sample.json"'), lines[0])
+    def test_when_linear_fails_the_last_good_value_stays_with_its_age(self):
+        import unittest.mock as mock
+        state = {}
+        first = self._snap([dn('MIN-4546', 'done')], state=state)
+        later = NOW + timedelta(minutes=30)
+        with mock.patch.object(sn, 'fetch_linear', side_effect=sn.BlockError('Linear unreachable: x')), mock.patch.object(sn, 'build_branches', return_value={}):
+            snap = sn.build(later, copy.deepcopy(HAND), RATES, state, '/nonexistent', USAGE_BIN, lambda: FAKE_KEY)
+        self.assertEqual(snap['directions'], first['directions'])
+        self.assertEqual(snap['directions'][0]['updatedAt'], sn.iso(NOW))                       # the age is visible: not the failed run's time
+        self.assertEqual(snap['blocks']['linear']['asOf'], sn.iso(NOW))
+        self.assertTrue(snap['blocks']['linear']['error'])
+
+    def test_a_bad_map_is_a_warning_that_keeps_the_last_good_value_and_never_blanks_linear(self):
+        state = {}
+        first = self._snap([dn('MIN-4546', 'done')], state=state)
+        hand = copy.deepcopy(HAND)
+        hand['config']['directionRoots'] = 'oops'
+        snap = self._snap([dn('MIN-4546', 'done')], hand, state)
+        self.assertIn('directions not computed', snap['blocks']['linear']['error']['message'])
+        self.assertEqual(snap['blocks']['linear']['asOf'], sn.iso(NOW))
+        self.assertIn('milestones', snap)                                                       # the rest of the linear block is fresh
+        self.assertEqual(snap['directions'], first['directions'])
+        fresh = self._snap([dn('MIN-4546', 'done')], hand)                                      # no last good value: omitted, still no crash
+        self.assertNotIn('directions', fresh)
+        self.assertIn('directions not computed', fresh['blocks']['linear']['error']['message'])
+
+    def test_the_file_and_the_flag_are_gone(self):
+        here = os.path.dirname(HERE)
+        self.assertFalse(os.path.exists(os.path.join(here, 'directions.sample.json')))
+        src = open(os.path.join(here, 'snapshot.py')).read()
+        code = '\n'.join(l for l in src.splitlines() if not l.lstrip().startswith('#'))
+        for gone in ('read_directions', 'check_directions', "'--directions'", 'DIRECTIONS_FILE', 'dirs_warning'):
+            self.assertNotIn(gone, code)
+        install = [l for l in open(os.path.join(here, 'install.sh')).read().splitlines() if not l.lstrip().startswith('#')]
+        self.assertEqual([l for l in install if 'directions' in l], [])
+        import contextlib, io
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            sn.main(['--directions', 'x'])
+
+    def test_a_stale_directions_file_in_the_home_folder_is_ignored(self):
+        import io, unittest.mock as mock, contextlib
+        with tempfile.TemporaryDirectory() as home:
+            with open(os.path.join(home, 'directions.json'), 'w') as f:
+                json.dump({'directions': [{'n': 1, 'title': 'STALE', 'status': 'off_track', 'note': 'old', 'updatedAt': '2026-11-14T22:00:00+02:00'}]}, f)
+            out = os.path.join(home, 'out.json')
+            hand = os.path.join(os.path.dirname(HERE), 'hand-set.sample.json')
+            with mock.patch.object(sn, 'fetch_linear', return_value=[]), mock.patch.object(sn, 'build_branches', return_value={}), \
+                    mock.patch.object(sn, 'linear_key', lambda *a, **k: FAKE_KEY), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(sn.main(['--home', home, '--hand', hand, '--root', '/nonexistent', '--out', out, '--now', '2026-11-14T15:00:00Z']), 0)
+            snap = json.load(open(out))
+        self.assertEqual([d['title'] for d in snap['directions']], GOAL_TITLES)
+        self.assertNotIn('STALE', json.dumps(snap))
 
 
 class Safety(unittest.TestCase):

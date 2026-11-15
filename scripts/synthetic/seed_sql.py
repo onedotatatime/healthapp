@@ -1,12 +1,18 @@
-"""Write the SQL seeds for the matching RPC from the committed synthetic files (MIN-4505, DB part).
+"""Write the SQL seeds for the matching RPC from the committed synthetic files (MIN-4505, DB part; MIN-4649).
 
-  python3 seed_sql.py write  <data_dir> <sql_dir>   writes 006_seed_match_cohort.sql and 007_seed_match_persona.sql
+  python3 seed_sql.py write  <data_dir> <sql_dir>   writes 006_seed_match_cohort.sql, 007_seed_match_persona.sql,
+                                                    019_seed_match_cohort_5000.sql and rollback/019_018_down.sql
   python3 seed_sql.py parity <data_dir> <schema>    prints one SELECT that compares the SQL lab coding with match.py
 
 Synthetic data only. The cohort codes come from match.features (one definition for Python and the seed);
 the lab thresholds come from match.LAB_DEFS. Same input, same bytes: no clock, no randomness.
+019 holds the 5,000 records of /doctor/simulate: regenerated with the seed, n and S recorded in run-5000.json,
+and written only when every row equals that file's record (country, age band, opt-in, codes). It is one compact
+statement that checks its own result against the cohort fingerprint before it commits (CTO, MIN-4649), so one
+execute_sql call carries it and a copying error changes nothing. The rollback undoes 019, then 018.
 """
-import json, os, sys
+import hashlib, json, os, random, string, sys
+import generate
 from match import LAB_DEFS, LABEL, features, latest_labs
 
 # match.py marker -> results.analyte_key, using the keys of the extraction's synonym map (MIN-4475,
@@ -40,14 +46,19 @@ def num(x):
     return repr(float(x)) if isinstance(x, float) else str(x)
 
 
+def lab_values(indent="  "):
+    """match.LAB_DEFS as VALUES rows, ordered by analyte_key (006 and the compact writer use the same rows)."""
+    return ",\n".join(
+        "%s(%s, %s, %s, %s, %s, %s)" % (indent, q(ANALYTE_KEY[m]), q(u), num(lo), num(hi),
+                                        q(a) if a else "null", q(b) if b else "null")
+        for m, (u, lo, hi, a, b) in sorted(LAB_DEFS.items(), key=lambda kv: ANALYTE_KEY[kv[0]]))
+
+
 def cohort_sql(cohort):
     rows = sorted(cohort, key=lambda r: r["id"])
     for r in rows:
         assert r["synthetic"] is True and r["label"] == LABEL
-    lab = ",\n".join(
-        "  (%s, %s, %s, %s, %s, %s)" % (q(ANALYTE_KEY[m]), q(u), num(lo), num(hi),
-                                        q(a) if a else "null", q(b) if b else "null")
-        for m, (u, lo, hi, a, b) in sorted(LAB_DEFS.items(), key=lambda kv: ANALYTE_KEY[kv[0]]))
+    lab = lab_values()
     co = ",\n".join(  # the first row carries the types; VALUES resolves the rest to them
         "  (%s,%s,%s,%s,%s)" % (q(r["id"]), q(r["country"]), q(r["age_band"]),
                                 "true" if r["matching_opt_in"] else "false",
@@ -86,6 +97,226 @@ begin
 end $$;
 
 insert into __SCHEMA__._applied (file) values ('006_seed_match_cohort.sql') on conflict (file) do nothing;
+"""
+
+
+# ---- MIN-4649: 019 (the 5,000 records of /doctor/simulate) and its rollback, as compact self-checking statements.
+SIM_FILE = "019_seed_match_cohort_5000.sql"
+SIM_NEEDS_FIRST = "018_matches_codes_once.sql"
+DOWN_DIR, DOWN_FILE = "rollback", "019_018_down.sql"  # not a migration: `hdb render` cannot take it, `hdb down` can
+B62 = string.digits + string.ascii_lowercase + string.ascii_uppercase
+WRAP = 110  # short lines, so an editor, a diff and a chunked read carry the payload unchanged
+REPO_SQL = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "supabase", "sql"))
+
+
+def cohort_rows(cohort):
+    """(id, country, age band, opt-in, sorted codes) per row, in id order: what match_cohort holds."""
+    rows = []
+    for r in sorted(cohort, key=lambda r: r["id"]):
+        assert r["synthetic"] is True and r["label"] == LABEL
+        rows.append((r["id"], r["country"], r["age_band"], bool(r["matching_opt_in"]), sorted(features(r))))
+    return rows
+
+
+def cohort_fingerprint(rows):
+    """md5 of the cohort exactly as supabase/sql/checks/match_cohort_counts.sql (`hdb matches`) computes it."""
+    return hashlib.md5("|".join("%s %s %s %s %s" % (i, c, a, "true" if o else "false", ",".join(cs))
+                                for i, c, a, o, cs in rows).encode()).hexdigest()
+
+
+def labs_fingerprint():
+    """md5 of match_lab_defs as the compact statement checks it (a numeric keeps its literal's scale: 4.0, 0.6)."""
+    return hashlib.md5("|".join(
+        "%s %s %s %s %s %s" % (ANALYTE_KEY[m], u, num(lo), num(hi), a or "", b or "")
+        for m, (u, lo, hi, a, b) in sorted(LAB_DEFS.items(), key=lambda kv: ANALYTE_KEY[kv[0]])).encode()).hexdigest()
+
+
+def wrap(words, sep, indent=""):
+    lines, cur = [], ""
+    for w in words:
+        if cur and len(indent) + len(cur) + len(sep) + len(w) > WRAP:
+            lines.append(indent + cur)
+            cur = w
+        else:
+            cur = cur + sep + w if cur else w
+    return lines + [indent + cur]
+
+
+def compact_cohort_sql(rows, label, guard, done):
+    """One DO block: write match_lab_defs and match_cohort from a compact payload, then raise (so nothing commits)
+    unless the cohort and the thresholds have exactly the fingerprints computed here from the source rows."""
+    n = len(rows)
+    assert 0 < n <= 9999 and [r[0] for r in rows] == ["syn-%04d" % i for i in range(1, n + 1)]
+    assert all(r[4] for r in rows)  # 005's check: cardinality(codes) > 0
+    countries = sorted({r[1] for r in rows})
+    bands = sorted({r[2] for r in rows})
+    codes = sorted({c for r in rows for c in r[4]})
+    assert max(len(countries), len(bands), len(codes)) <= len(B62)
+    words = [B62[countries.index(c)] + B62[bands.index(a)] + ("1" if o else "0")
+             + "".join(B62[codes.index(x)] for x in cs) for _i, c, a, o, cs in rows]
+    code_list = ",\n".join(wrap([q(x) for x in codes], ",", indent="    "))
+    payload = "\n".join(wrap(words, " "))
+    keys = ",\n".join(wrap([q(k) for k in sorted(ANALYTE_KEY.values())], ",", indent="    "))
+    return f"""do $$
+declare
+  b62         constant text   := {q(B62)};
+  v_countries constant text[] := array[{",".join(q(x) for x in countries)}];
+  v_bands     constant text[] := array[{",".join(q(x) for x in bands)}];
+  v_codes     constant text[] := array[
+{code_list}];
+  -- Word n is syn-n: country, age band, opt-in (1 or 0), then one character per code (base-62 indexes above).
+  v_payload   constant text   := '
+{payload}
+';
+  want_cohort constant text := {q(cohort_fingerprint(rows))};
+  want_labs   constant text := {q(labs_fingerprint())};
+  got         text;
+begin
+{guard}{chr(10) if guard else ""}  -- Lab thresholds, from match.LAB_DEFS (marker -> analyte_key of the extraction): the same values as 006.
+  insert into __SCHEMA__.match_lab_defs (analyte_key, unit, ref_low, ref_high, code_above, code_below) values
+{lab_values("    ")}
+  on conflict (analyte_key) do update set unit = excluded.unit, ref_low = excluded.ref_low,
+    ref_high = excluded.ref_high, code_above = excluded.code_above, code_below = excluded.code_below;
+  delete from __SCHEMA__.match_lab_defs where analyte_key <> all (array[
+{keys}]);
+
+  -- The {n:,} rows: word n is upserted as syn-n, then every row outside syn-0001..syn-{n:04d} is deleted.
+  insert into __SCHEMA__.match_cohort (id, country, age_band, matching_opt_in, codes)
+  select 'syn-' || lpad(w.n::text, 4, '0'),
+         v_countries[strpos(b62, substr(w.word, 1, 1))],
+         v_bands[strpos(b62, substr(w.word, 2, 1))],
+         substr(w.word, 3, 1) = '1',
+         array(select v_codes[strpos(b62, x.ch)]
+               from unnest(string_to_array(substr(w.word, 4), null)) with ordinality x (ch, i) order by x.i)
+  from unnest(regexp_split_to_array(btrim(v_payload, E' \\n'), '\\s+')) with ordinality w (word, n)
+  on conflict (id) do update set country = excluded.country, age_band = excluded.age_band,
+    matching_opt_in = excluded.matching_opt_in, codes = excluded.codes;
+  delete from __SCHEMA__.match_cohort where id collate "C" not between 'syn-0001' and 'syn-{n:04d}';
+
+  -- Self-check before anything commits: the cohort as `scripts/hdb matches` fingerprints it, then the thresholds.
+  select md5(string_agg(id || ' ' || country || ' ' || age_band || ' ' || matching_opt_in::text || ' '
+                        || array_to_string(codes, ','), '|' order by id collate "C"))
+    into got from __SCHEMA__.match_cohort;
+  if got is distinct from want_cohort then
+    raise exception '{label}: cohort fingerprint % is not %: nothing was changed',
+      got, want_cohort;
+  end if;
+  select md5(string_agg(analyte_key || ' ' || unit || ' ' || ref_low::text || ' ' || ref_high::text || ' '
+                        || coalesce(code_above, '') || ' ' || coalesce(code_below, ''),
+                        '|' order by analyte_key collate "C"))
+    into got from __SCHEMA__.match_lab_defs;
+  if got is distinct from want_labs then
+    raise exception '{label}: lab thresholds fingerprint % is not %: nothing was changed',
+      got, want_labs;
+  end if;
+{done}
+end $$;
+"""
+
+
+def simulate_cohort(data):
+    """The 5,000 records /doctor/simulate matches against (run-5000.json), regenerated with the seed, n and S
+    recorded in that file. Exits before anything is written when one row differs from the file's record."""
+    run = json.load(open(os.path.join(data, "run-5000.json")))
+    s = run["seeded"]["rare_sarcoid_like"]
+    cohort, _ = generate.make_cohort(random.Random(run["seed"]), run["n"], s)
+    if run["seed"] != generate.SEED or not (len(cohort) == run["n"] == len(run["records"]) == 5000):
+        sys.exit("run-5000.json: seed or n is not the generator's (seed %s, n %s)" % (run["seed"], run["n"]))
+    for i, (c, r) in enumerate(zip(cohort, run["records"])):
+        got = [c["id"], c["country"], c["age_band"], c["matching_opt_in"], sorted(features(c))]
+        want = ["syn-%04d" % (i + 1), r[0], run["age_bands"][r[1]], bool(r[2]), [run["codes"][j] for j in r[4]]]
+        if got != want:
+            sys.exit("row %d differs from run-5000.json: %r != %r" % (i, got, want))
+    return cohort, run["seed"], run["n"], s
+
+
+def simulate_cohort_sql(cohort, seed, n, s):
+    rows = cohort_rows(cohort)
+    fp = cohort_fingerprint(rows)
+    guard = f"""  -- Guard: 018 must be applied AND live. Re-running the whole 005 keeps 018's _applied row but puts 005's
+  -- slow body back (CTO, measured), so the live function body is checked as well as _applied.
+  if not exists (select 1 from __SCHEMA__._applied where file = {q(SIM_NEEDS_FIRST)}) then
+    raise exception '{SIM_FILE} needs {SIM_NEEDS_FIRST}: apply 018 first';
+  end if;
+  if not exists (select 1 from pg_proc p
+                 where p.oid = to_regprocedure('__SCHEMA__.healthapp_possible_matches(uuid)')
+                   and p.prosrc like '%into my_codes%') then
+    raise exception '{SIM_FILE}: 018''s healthapp_possible_matches is not live (005 re-run?): apply 018 again';
+  end if;
+"""
+    done = f"  insert into __SCHEMA__._applied (file) values ({q(SIM_FILE)}) on conflict (file) do nothing;"
+    return f"""-- GENERATED by scripts/synthetic/seed_sql.py from generate.make_cohort (seed {seed}, n {n}, rare_sarcoid_like {s}) and match.py. Do not edit.
+-- Per env. Rendered by `scripts/hdb render <env> {SIM_FILE}`. Needs 005_matches.sql and {SIM_NEEDS_FIRST}.
+-- {n} seeded synthetic cohort rows (label "{LABEL}"): country, age band, opt-in, coded features.
+-- No name, no id of a person, no date, nothing below country. Idempotent: loading it twice leaves one copy.
+-- MIN-4649 (CTO decision): the same {n:,} records /doctor/simulate matches against in the browser
+-- (data/synthetic/run-5000.json). The writer regenerates them with that file's seed, n and S and refuses to
+-- write unless every row's country, age band, opt-in and codes equal the file's. Same ids as 006
+-- (syn-0001..syn-0400 are overwritten with these rows, syn-0401..syn-{n:04d} are added).
+-- ONE statement (a DO block), so one execute_sql call carries it and it commits all or nothing. The rows are
+-- compact: word n of v_payload is syn-n (country, age band, opt-in, then one base-62 character per code).
+-- Self-check: before it commits, it compares the cohort's fingerprint with {fp}
+-- (the value `scripts/hdb matches <env>` shows) and the lab thresholds' with theirs; any difference raises,
+-- so a copying error changes nothing.
+-- Refuses to run unless 018 is applied and its body is live: with 005's RPC, {n:,} rows time out for every
+-- opted-in patient (the patient's codes were computed once per cohort row).
+-- NEVER re-run 006 after this file: 006 deletes every row it does not hold, so it would put the 400 back
+-- and every patient's matches would change. The rollback is supabase/sql/{DOWN_DIR}/{DOWN_FILE}
+-- (`scripts/hdb down <env> {DOWN_FILE}`), on the CTO's call only.
+
+{compact_cohort_sql(rows, SIM_FILE, guard, done)}"""
+
+
+def possible_matches_005(sql_dir=REPO_SQL):
+    """005's healthapp_possible_matches, byte for byte (its CREATE through the closing $$;). The rollback restores
+    this function only: re-applying the whole 005 also puts back 005's match_patient_codes and undoes 014."""
+    text = open(os.path.join(sql_dir, "005_matches.sql"), encoding="utf-8").read()
+    start = text.index("create or replace function __SCHEMA__.healthapp_possible_matches(")
+    end = text.index("\n$$;\n", start) + len("\n$$;")
+    fn = text[start:end]
+    assert fn.count("create or replace function") == 1 and "match_patient_codes(p.id) as codes" in fn
+    return fn
+
+
+def prosrc_md5(fn, env):
+    """md5(prosrc) Postgres reports for a function rendered for healthapp_<env>: the text between its $$ quotes."""
+    body = fn[fn.index("\nas $$") + len("\nas $$"):fn.rindex("$$")]
+    return hashlib.md5(body.replace("__SCHEMA__", "healthapp_" + env).encode()).hexdigest()
+
+
+def rollback_sql(cohort):
+    rows = cohort_rows(cohort)  # 006's 400 rows
+    fn = possible_matches_005()
+    undo019 = compact_cohort_sql(rows, f"{DOWN_FILE} (019 back to 006)", "",
+                                 f"  delete from __SCHEMA__._applied where file = {q(SIM_FILE)};")
+    return f"""-- GENERATED by scripts/synthetic/seed_sql.py from data/synthetic/cohort.json, match.py and 005_matches.sql. Do not edit.
+-- ROLLBACK of {SIM_FILE} and {SIM_NEEDS_FIRST} (MIN-4649), on the CTO's call only. Per env.
+-- Not a migration: it lives in supabase/sql/{DOWN_DIR}/, which `scripts/hdb render` cannot take.
+-- Rendered by `scripts/hdb down <env> {DOWN_FILE}`. Apply it in one transaction (one execute_sql call, or psql -1).
+-- Order: 019 first, then 018.
+--  1. 019 -> 006: the cohort goes back to 006's {len(rows)} rows. They are written compactly and checked against
+--     006's fingerprint {cohort_fingerprint(rows)} (and the lab thresholds against theirs) before
+--     anything commits; then 019's _applied row is deleted.
+--  2. 018 -> 005: only 005's healthapp_possible_matches comes back, byte for byte from 005_matches.sql, with its
+--     revoke and grant; then 018's _applied row is deleted. NEVER re-apply the whole 005 file: it also puts back
+--     005's match_patient_codes, which undoes 014's coding fixes (CTO, measured), and with 5,000 rows the 8 s
+--     timeout returns.
+-- After it: `scripts/hdb matches <env>` shows cohort_rows {len(rows)}, cohort_md5 {cohort_fingerprint(rows)},
+-- rpc_codes_once f, applied_018 f, applied_019 f; md5(prosrc) of healthapp_possible_matches is
+-- {prosrc_md5(fn, "dev")} on dev and {prosrc_md5(fn, "demo")} on demo; match_patient_codes is unchanged.
+-- Synthetic cohort and one function only: no patient row is read or touched.
+
+-- 1. 019 -> 006
+{undo019}
+-- 2. 018 -> 005: 005's function, byte for byte.
+{fn}
+
+revoke execute on function __SCHEMA__.healthapp_possible_matches(uuid) from public, anon, authenticated;
+grant execute on function __SCHEMA__.healthapp_possible_matches(uuid) to authenticated, service_role;
+
+delete from __SCHEMA__._applied where file = {q(SIM_NEEDS_FIRST)};
+
+notify pgrst, 'reload schema';
 """
 
 
@@ -190,9 +421,14 @@ if __name__ == "__main__":
     if mode == "write":
         out = sys.argv[3]
         persona = json.load(open(os.path.join(data, "persona-maria.json")))
-        for name, text in (("006_seed_match_cohort.sql", cohort_sql(cohort)),
-                           ("007_seed_match_persona.sql", persona_sql(persona))):
-            with open(os.path.join(out, name), "w") as f:
+        files = (("006_seed_match_cohort.sql", cohort_sql(cohort)),  # every text first: a refusal writes nothing
+                 ("007_seed_match_persona.sql", persona_sql(persona)),
+                 (SIM_FILE, simulate_cohort_sql(*simulate_cohort(data))),
+                 (os.path.join(DOWN_DIR, DOWN_FILE), rollback_sql(cohort)))
+        for name, text in files:
+            path = os.path.join(out, name)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w") as f:
                 f.write(text)
             print("wrote", name, len(text.encode()), "bytes")
     elif mode == "parity":

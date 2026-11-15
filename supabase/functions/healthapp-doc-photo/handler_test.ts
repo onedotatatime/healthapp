@@ -6,7 +6,7 @@ import { makeHandler } from "./handler.ts";
 const NOW = Date.now();
 const GRANT = "99999999-9999-4999-8999-999999999999";
 
-async function setup(status: "draft" | "confirmed" = "confirmed") {
+async function setup(status: "draft" | "confirmed" | "refused" | "failed" | "queued" | "reading" = "confirmed") {
   const s = fakeStore(), b = fakeBlobs();
   const h = makeHandler({ auth: fakeAuth, store: s.store, blobs: b.blobs, now: () => NOW });
   const d = await s.store.createDraft("dev", PATIENT, "image/jpeg");
@@ -68,4 +68,14 @@ Deno.test("a doctor in a live grant gets a link that never outlives the grant", 
   const short = makeHandler({ auth: fakeAuth, store: t.s.store, blobs: t.b.blobs, now: () => Date.now() + 59_500 });
   assertEquals((await short(call("x", { doc_id: t.id, grant_id: GRANT }, "td"))).status, 403);
   assertEquals(t.b.signed.length, before);
+});
+
+Deno.test("MIN-4637 criterion 13: the owner gets no link to a refused photo, even while its original is kept; nor to an unsaved upload", async () => {
+  for (const status of ["refused", "failed", "queued", "reading"] as const) {
+    const t = await setup(status);
+    assertEquals(t.s.docs.get(t.id)?.meta.storage_path, t.path); // the file is there
+    const res = await t.h(call("x", { doc_id: t.id }));
+    assertEquals([res.status, (await res.json()).error.code], [404, "not_found"], status);
+    assertEquals(t.b.signed.length, 0, status);
+  }
 });

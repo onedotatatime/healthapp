@@ -652,14 +652,14 @@
    ],
    "findings": [],
    "expected": {
-    "outcome": "refused",
-    "reason": "id_mismatch"
+    "outcome": "draft",
+    "identity": "name_only"
    },
    "render": {
     "title": "LABORATORY REPORT: BIOCHEMISTRY",
     "blur": 0
    },
-   "note": "Maria's name with a different ID: B1 refusal id_mismatch"
+   "note": "Maria's name with a number that is not hers: the number is ignored, saved name_only (MIN-4630)"
   },
   {
    "n": 9,
@@ -776,6 +776,89 @@
     "blur": 7
    },
    "note": "blurred beyond reading; the retake path"
+  },
+  {
+   "n": 11,
+   "file": "11-blood-el-fathers-name-2026-06-30.jpg",
+   "kind": "blood_test",
+   "language": "el",
+   "issuer": "Ιατρικό Εργαστήριο «Υγεία», Αθήνα",
+   "exam_date": "2026-06-30",
+   "exam_date_printed": "30/06/2026",
+   "printed_name": "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΤΟΥ ΓΕΩΡΓΙΟΥ",
+   "printed_id": null,
+   "results": [
+    {
+     "analyte": "Γλυκόζη νηστείας",
+     "value": "91",
+     "value_num": 91.0,
+     "unit": "mg/dL",
+     "ref": "70 - 100",
+     "ref_low": 70,
+     "ref_high": 100,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Ολική χοληστερόλη",
+     "value": "187",
+     "value_num": 187.0,
+     "unit": "mg/dL",
+     "ref": "<200",
+     "ref_low": null,
+     "ref_high": 200,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Σίδηρος",
+     "value": "58",
+     "value_num": 58.0,
+     "unit": "μg/dL",
+     "ref": "60 - 150",
+     "ref_low": 60,
+     "ref_high": 150,
+     "flag": "low"
+    },
+    {
+     "analyte": "Φερριτίνη",
+     "value": "22",
+     "value_num": 22.0,
+     "unit": "ng/mL",
+     "ref": "15 - 150",
+     "ref_low": 15,
+     "ref_high": 150,
+     "flag": "normal"
+    },
+    {
+     "analyte": "TSH",
+     "value": "2,1",
+     "value_num": 2.1,
+     "unit": "μIU/mL",
+     "ref": "0,4 - 4,0",
+     "ref_low": 0.4,
+     "ref_high": 4.0,
+     "flag": "normal"
+    },
+    {
+     "analyte": "Βιταμίνη D (25-OH)",
+     "value": "21",
+     "value_num": 21.0,
+     "unit": "ng/mL",
+     "ref": "30 - 100",
+     "ref_low": 30,
+     "ref_high": 100,
+     "flag": "low"
+    }
+   ],
+   "findings": [],
+   "expected": {
+    "outcome": "draft",
+    "identity": "name_only"
+   },
+   "render": {
+    "title": "ΑΠΟΤΕΛΕΣΜΑΤΑ ΒΙΟΧΗΜΙΚΩΝ ΕΞΕΤΑΣΕΩΝ",
+    "blur": 0
+   },
+   "note": "name with father's name (τού Γεωργίου), no ID printed: name_only (MIN-4614)"
   }
  ]
 }

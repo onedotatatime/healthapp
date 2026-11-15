@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
+import { ApiError } from '../../api/call';
 import { AccessTimer } from '../../components/AccessTimer';
 import { ErrorNote, Spinner } from '../../components/Primitives';
+import { failureOf } from '../exams/logic';
 import { formatShortCode } from './codes';
 import { localDeadlineIso, mmss, offsetFrom, secondsLeft } from './clock';
 import { qrText, type GrantEnvelope, type HandshakeCreateResponse } from './contract';
@@ -16,6 +18,15 @@ interface Code {
   data: HandshakeCreateResponse;
   /** server minus device clock when the code was issued */
   offsetMs: number;
+}
+
+/** A code that could not be made: a dead session says so (the same two lines as the scan screens), anything else blames the connection. */
+export function codeErrorText(e: unknown): string {
+  if (e instanceof ApiError && e.status === 401) {
+    const f = failureOf(e);
+    return `${f.title} ${f.body}`;
+  }
+  return 'Could not make a code. Check the connection and try again.';
 }
 
 /** Patient: share with a doctor. One screen, five states: code, asking, running, ended (declined, expired, ended). */
@@ -36,8 +47,8 @@ export function PatientShare() {
     try {
       const data = await api.create();
       setCode({ data, offsetMs: offsetFrom(data.server_now, Date.now()) });
-    } catch {
-      setCodeError('Could not make a code. Check the connection and try again.');
+    } catch (e) {
+      setCodeError(codeErrorText(e));
     } finally {
       making.current = false;
     }

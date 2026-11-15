@@ -6,9 +6,14 @@
 // variants), with the patronymic markers ("του", "της", "of") dropped from both sides so they never count as a part.
 //  - Every profile part must be among the printed parts, and both names need two parts at least. Otherwise: refused.
 //  - extra = printed parts - profile parts (a father's name, an initial that counts).
-//  - An ID is printed and the profile has one: equal is a match (any extra), different is id_mismatch.
-//  - Otherwise (no printed ID, or the profile has none): up to ONE extra part is accepted as "name_only", the same
-//    standing a bare two-part name with no ID always had. Two extra parts or more need the matching ID: refused.
+//  - MIN-4630 (founder, 2026-11-15: his exams carry no ΑΜΚΑ or ΑΔΤ; the model read a lab code into printed_id and the
+//    right name was refused): a printed number NEVER refuses. A different number is ignored, so the name decides alone.
+//  - An ID is printed and the profile has one and they are equal: a match, at any extra count. It only helps.
+//  - Otherwise: up to ONE extra part is accepted as "name_only", the same standing a bare two-part name with no ID
+//    always had. Two extra parts or more need the equal ID to prove it is the same person: name_mismatch.
+//  - Accepted risk, on the record: a namesake's paper with another person's real ID is saved as name_only. The
+//    record carries the "name only" mark and its owner can delete it. `id_mismatch` is never returned now; the code
+//    stays in the contract, the DB check and the UI copy because old rows hold it.
 // No readable name is refused earlier (extract.ts `build`, reason name_missing). No fuzzy matching: a misspelt
 // name is refused, which is the safe direction for a record that doctors will read.
 import { normalizeId } from "./extract.ts";
@@ -74,7 +79,7 @@ export interface IdentityCounts {
 }
 export type IdentityVerdict =
   | { ok: true; status: "match" | "name_only" }
-  | { ok: false; reason: "name_mismatch" | "id_mismatch"; printed: string; profile: string; counts: IdentityCounts };
+  | { ok: false; reason: "name_mismatch"; printed: string; profile: string; counts: IdentityCounts };
 
 /** How one profile name sits in the printed name: part counts, with the printed parts the profile does not have as extra. */
 function compare(printedName: string, known: string) {
@@ -86,7 +91,7 @@ function compare(printedName: string, known: string) {
 
 /**
  * `printedName` is non-empty here (the caller refuses an empty one as name_missing first).
- * A printed ID against a profile that has none cannot be checked: name_only, never a guess.
+ * The name decides. A printed ID can only upgrade to `match` (equal to the profile's); it never refuses (MIN-4630).
  */
 export function matchIdentity(
   profile: IdentityProfile,
@@ -107,18 +112,14 @@ export function matchIdentity(
     profile_parts: best.k, profile_parts_found: best.found, printed_parts: best.p, extra_parts: best.extra,
     id_printed: printed !== null, id_equal: idEqual,
   };
-  const refuse = (reason: "name_mismatch" | "id_mismatch"): IdentityVerdict => ({
-    ok: false, reason, counts,
-    printed: reason === "id_mismatch" ? printed! : printedName, profile: reason === "id_mismatch" ? known! : profile.full_name,
-  });
-  if (!best.whole) return refuse("name_mismatch");
-  if (idPair) return idEqual ? { ok: true, status: "match" } : refuse("id_mismatch");
-  // No ID to check: one extra part is a father's name; two or more need the ID to prove it is the same person.
-  return best.extra <= 1 ? { ok: true, status: "name_only" } : refuse("name_mismatch");
+  const refuse = (): IdentityVerdict => ({ ok: false, reason: "name_mismatch", counts, printed: printedName, profile: profile.full_name });
+  if (!best.whole) return refuse();
+  if (idEqual) return { ok: true, status: "match" };
+  // No equal ID (none printed, a different number, or none on the profile): one extra part is a father's name;
+  // two or more need an equal ID to prove it is the same person.
+  return best.extra <= 1 ? { ok: true, status: "name_only" } : refuse();
 }
 
 export function mismatchMessage(v: Extract<IdentityVerdict, { ok: false }>): string {
-  return v.reason === "name_mismatch"
-    ? `The name on it (${v.printed}) doesn't match your profile (${v.profile}). Nothing was saved.`
-    : `The ID on it (${v.printed}) doesn't match your profile (${v.profile}). Nothing was saved.`;
+  return `The name on it (${v.printed}) doesn't match your profile (${v.profile}). Nothing was saved.`;
 }

@@ -10,6 +10,7 @@ const CONTACT_EMAIL = "hello@onedotatatime.design";
 gsap.registerPlugin(ScrollTrigger);
 
 const img = (n: string) => `/img/${n}.webp`;
+const SIGNIN_URL = 'https://healthapp-8ui.pages.dev/login';
 const navLinks = [['how', 'How it works'], ['who', "Who it's for"], ['tech', 'Under the hood'], ['roadmap', 'Roadmap']];
 const audienceLinks = [['who-patient', 'For patients'], ['who-doctor', 'For doctors']];
 const before = ['Paper in a drawer', 'A new doctor starts from memory', "Specialists don't see each other's results", 'Exams get repeated'];
@@ -167,7 +168,10 @@ export default function App() {
         <a className="logo" href="#top"><img src="/brand/pathien-lockup.svg" alt="Pathien" height={32} style={{ height: 32, width: "auto" }} /></a>
         <ul className="nav-main">{navLinks.map(([id, l]) => <li key={id}><a href={`#${id}`}>{l}</a></li>)}</ul>
         <ul className="nav-aud">{audienceLinks.map(([id, l]) => <li key={id}><a href={`#${id}`}>{l}</a></li>)}</ul>
-        <a className="btn btn-sm" href="#updates" onClick={() => setAudience(null)}>Get updates</a>
+        <div className="nav-cta">
+          <a className="btn btn-ghost btn-sm" href={SIGNIN_URL}>Sign in</a>
+          <a className="btn btn-sm" href="#updates" onClick={() => setAudience(null)}>Get updates</a>
+        </div>
       </nav>
 
       <main id="top">
@@ -284,6 +288,7 @@ export default function App() {
           <img src="/brand/pathien-lockup-white.svg" alt="Pathien" style={{ height: 32, width: "auto" }} />
           <span>Built at GenAI Summit Hackathon · Athens · Nov 2026</span>
           <a className="btn" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          <a className="foot-link" href={SIGNIN_URL}>Sign in</a>
         </div>
       </footer>
     </div>

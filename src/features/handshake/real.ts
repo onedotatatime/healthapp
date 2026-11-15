@@ -1,5 +1,6 @@
 /** The real handshake calls: Cron's functions (MIN-4484) and Realtime on `grants`. Every answer is parsed against contract.ts. */
 import { ApiError } from '../../api/call';
+import { authedCall } from '../../api/authed';
 import { callFunction, supabase } from '../../api/client';
 import { envState } from '../../lib/env';
 import type { HandshakeApi } from './api';
@@ -10,27 +11,21 @@ function need() {
   return { supabase, callFunction };
 }
 
-async function token(): Promise<string> {
-  const { data } = await need().supabase.auth.getSession();
-  if (!data.session) throw new ApiError(401, 'Not signed in.', 'unauthenticated');
-  return data.session.access_token;
-}
-
 export const realApi: HandshakeApi = {
   async create() {
-    return need().callFunction('handshake-create', {}, HandshakeCreateResponse, { accessToken: await token() });
+    return authedCall((accessToken) => need().callFunction('handshake-create', {}, HandshakeCreateResponse, { accessToken }));
   },
   async claim(input) {
-    return need().callFunction('handshake-claim', input, GrantEnvelope, { accessToken: await token() });
+    return authedCall((accessToken) => need().callFunction('handshake-claim', input, GrantEnvelope, { accessToken }));
   },
   async status(grantId) {
-    return need().callFunction('grant-status', grantId ? { grant_id: grantId } : {}, GrantStatusResponse, { accessToken: await token() });
+    return authedCall((accessToken) => need().callFunction('grant-status', grantId ? { grant_id: grantId } : {}, GrantStatusResponse, { accessToken }));
   },
   async decide(grantId, approve) {
-    return need().callFunction('grant-decide', { grant_id: grantId, approve }, GrantEnvelope, { accessToken: await token() });
+    return authedCall((accessToken) => need().callFunction('grant-decide', { grant_id: grantId, approve }, GrantEnvelope, { accessToken }));
   },
   async revoke(grantId) {
-    return need().callFunction('grant-revoke', { grant_id: grantId }, GrantEnvelope, { accessToken: await token() });
+    return authedCall((accessToken) => need().callFunction('grant-revoke', { grant_id: grantId }, GrantEnvelope, { accessToken }));
   },
   subscribe(onSignal) {
     if (!supabase || envState.status !== 'ok') return () => {};

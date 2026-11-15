@@ -3,8 +3,10 @@
 // update (queued/failed -> reading), answers 202 at once, and the whole reading runs after the answer
 // (EdgeRuntime.waitUntil): the model reads the photo once with one retry, the server validates and decides whose
 // document it is, saves the draft, saves it as confirmed with no tap (unchecked until its owner opens it, MIN-4555 addendum:
-// the founder's choice), then runs the file analysis on what is left of the budget. A refusal deletes the
-// file and keeps the reason code only. Logs carry a status, a reason code and timings, never a word of the document.
+// the founder's choice), then runs the file analysis on what is left of the budget. A refusal keeps the reason code and
+// the original photo for 14 days (MIN-4637), nothing of the reading; the photo can be read again ("Try again") or deleted
+// by its owner, and my-exams deletes it once the 14 days have passed. Logs carry a status, a reason code and timings,
+// never a word of the document.
 import { analyseFile } from "../_shared/analysis.ts";
 import { bytesToBase64 } from "../_shared/b64.ts";
 import {
@@ -23,6 +25,8 @@ import { fail, headersFor, json } from "../_shared/http.ts";
 import { matchIdentity } from "../_shared/identity.ts";
 import { type JsonCall, type JsonResult, ModelError } from "../_shared/model.ts";
 
+/** analyse_only takes a draft or a saved row only (MIN-4637); every other status, a kept refused photo included, is "no such document". */
+const ANALYSABLE: readonly string[] = ["draft", "confirmed"];
 /** The analyse_only dev backfill answers in one call, so it keeps the old single budget. */
 export const MODEL_BUDGET_MS = 52_000;
 /** Reading the photo: at most this long, with one retry inside it (the platform's background limit is assumed 150 s). */
@@ -47,7 +51,8 @@ export interface Deps {
     | "objectMeta"
     | "saveAnalysis"
   >;
-  blobs: Pick<Blobs, "download" | "remove">;
+  /** Read only (MIN-4637): a refusal keeps the original, so this function deletes no file. */
+  blobs: Pick<Blobs, "download">;
   generate<T>(call: JsonCall<T>): Promise<JsonResult<T>>;
   /** Keeps the work alive after the response is sent (EdgeRuntime.waitUntil on the platform). */
   background(work: Promise<unknown>): void;
@@ -77,7 +82,9 @@ export function makeHandler(deps: Deps) {
     if (parsed.data.analyse_only) {
       // MIN-4549: only the file analysis, for this patient's own saved document (the dev backfill script).
       const cur = await deps.store.getOwn(who.env, who.uid, parsed.data.doc_id);
-      if (!cur) return fail(req, 404, "not_found", "No such document.");
+      // MIN-4637 (CTO): a kept refused photo is read only for its owner's re-run, never here. Only a saved or draft row goes to the
+      // model, the same rule doc-photo uses; any other status is "no such document" and writes no analysis row.
+      if (!cur || !ANALYSABLE.includes(cur.document.status)) return fail(req, 404, "not_found", "No such document.");
       const o = await analyseFile(deps, { env: who.env, patientId: who.uid, state: cur, budgetMs: MODEL_BUDGET_MS });
       const done: AnalyseResponse = { outcome: "analysed", ...o };
       return json(req, 200, done);
@@ -122,10 +129,8 @@ async function readInBackground(
     await deps.store.markFailed(env, uid, id, reason);
     deps.log({ fn: "extract-exam", status: "failed", reason, ...extra, ms: deps.now() - started });
   };
-  // A refusal deletes the file first and writes the row second: if the delete fails the row is failed, never
-  // refused with a file still in the bucket.
+  // A refusal writes the row only: the original stays where it is, with a 14-day end set by the store (MIN-4637).
   const refused = async (reason: RefusalReason, extra: Record<string, unknown>) => {
-    if (path && !(await deps.blobs.remove(bucket, path))) return await failed("delete_failed", extra);
     await deps.store.markRefused(env, uid, id, reason);
     deps.log({ fn: "extract-exam", status: "refused", reason, ...extra, ms: deps.now() - started });
   };

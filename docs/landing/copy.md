@@ -174,6 +174,9 @@ The flag shows only the label and the printed range. No colour-coded meaning, no
 | `cta-patients` | For patients | Scrolls to the patient card in `who` | Nav, hero (secondary link) |
 | `cta-doctors` | For doctors | Scrolls to the doctor card in `who` | Nav, hero (secondary link) |
 | `cta-updates` | Get updates | Opens `mailto:hello@onedotatatime.design?subject=Get updates` | Nav (button, replaces "Get in touch"), footer band, small link at the end of each `who` card |
+| `cta-signin` | Sign in | Opens `https://healthapp-8ui.pages.dev/login` (the demo app) | Nav (secondary, next to Get updates), mobile nav, footer |
+
+**`cta-signin` note:** Get updates stays the primary CTA. Sign in is a plain secondary link, same wording as the app's own button. No line around it in the footer.
 
 **Footer band (`cta-updates`):**
 - **headline:** Hackathon prototype. Hear when we pilot.

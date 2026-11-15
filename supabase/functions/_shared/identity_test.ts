@@ -12,7 +12,9 @@ const TABLE: [string, string, string | null, IdentityProfile, Want][] = [
   ["doc 6: her husband (other name, other ID)", "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", "AB654321", MARIA, "name_mismatch"],
   ["doc 7: name, no ID printed", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ", null, MARIA, "name_only"],
   ["doc 7 with an empty ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ", "  ", MARIA, "name_only"],
-  ["doc 8: her name, a different ID", "PAPADOPOULOU MARIA", "AK987654", MARIA, "id_mismatch"],
+  // MIN-4630: a printed number never refuses; the name decides. A different number is ignored.
+  ["doc 8: her name, a different ID (ignored)", "PAPADOPOULOU MARIA", "AK987654", MARIA, "name_only"],
+  ["MIN-4630: her exact name + a lab code printed as the ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ", "LAB-0042731", MARIA, "name_only"],
   ["the ID letters printed as Greek lookalikes", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ", "ΑΚ123456", MARIA, "match"],
   ["the ID with spaces and a dash", "PAPADOPOULOU MARIA", "ak 123-456", MARIA, "match"],
   ["accents and lower case", "Μαρία Παπαδοπούλου", "AK123456", MARIA, "match"],
@@ -21,7 +23,7 @@ const TABLE: [string, string, string | null, IdentityProfile, Want][] = [
   ["a father's name added", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΤΟΥ ΓΕΩΡΓΙΟΥ", "AK123456", MARIA, "match"],
   // MIN-4478 widening: extra printed words pass only with the printed ID present and exact.
   ["surname first + father's name + matching ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "AK123456", MARIA, "match"],
-  ["surname first + father's name + a different ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "AK987654", MARIA, "id_mismatch"],
+  ["surname first + father's name + a different ID (ignored, one extra part)", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "AK987654", MARIA, "name_only"],
   // MIN-4614: one extra printed part with no checkable ID is name_only (the strict rule already takes a bare 2-part name with no ID).
   ["extra printed word, no ID printed", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", null, MARIA, "name_only"],
   ["extra printed word, empty ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ", "  ", MARIA, "name_only"],
@@ -30,7 +32,7 @@ const TABLE: [string, string, string | null, IdentityProfile, Want][] = [
   ["father's name with TOU, Latin, no ID", "PAPADOPOULOU MARIA TOU GEORGIOU", null, MARIA, "name_only"],
   ["two extra parts, no ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", null, MARIA, "name_mismatch"],
   ["two extra parts, matching ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", "AK123456", MARIA, "match"],
-  ["two extra parts, a different ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", "AK987654", MARIA, "id_mismatch"],
+  ["two extra parts, a different ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", "AK987654", MARIA, "name_mismatch"],
   ["two extra parts, profile has no ID (a printed ID cannot be checked)", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", "AK123456", NO_ID, "name_mismatch"],
   ["the markers never stand in for a profile part", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΤΟΥ ΓΕΩΡΓΙΟΥ", null, MARIA, "name_mismatch"],
   ["the markers never stand in for a profile part, even with the ID", "ΠΑΠΑΔΟΠΟΥΛΟΥ ΤΟΥ ΓΕΩΡΓΙΟΥ", "AK123456", MARIA, "name_mismatch"],
@@ -52,6 +54,33 @@ for (const [label, name, id, profile, want] of TABLE) {
   });
 }
 
+// MIN-4630: the verdict is never id_mismatch (the code stays in the contract and the DB for old rows only).
+// Over every row of the table, and over every name crossed with every kind of printed number.
+Deno.test("identity: nothing returns id_mismatch, over the whole table and every name x ID", () => {
+  const seen = new Set<string>();
+  const check = (profile: IdentityProfile, name: string, id: string | null) => {
+    const v = matchIdentity(profile, name, id);
+    const got = v.ok ? v.status : v.reason;
+    seen.add(got);
+    assertEquals((got as string) === "id_mismatch", false, `${name} / ${id}`);
+  };
+  for (const [, name, id, profile] of TABLE) check(profile, name, id);
+  const ids = [null, "", "  ", "AK123456", "AK987654", "LAB-0042731", "ΑΚ123456", "12345678901"];
+  for (const profile of [MARIA, NO_ID]) {
+    for (const [, name] of TABLE) for (const id of ids) check(profile, name, id);
+  }
+  // the sweep reaches every verdict that remains, so the assertion above is not vacuous
+  assertEquals([...seen].sort(), ["match", "name_mismatch", "name_only"]);
+});
+
+Deno.test("identity: a printed number that is not the profile's changes nothing but the upgrade to match", () => {
+  for (const [, name, , profile] of TABLE) {
+    const noId = matchIdentity(profile, name, null);
+    const other = matchIdentity(profile, name, "LAB-0042731");
+    assertEquals(other.ok ? other.status : other.reason, noId.ok ? noId.status : noId.reason, name);
+  }
+});
+
 Deno.test("identity: a refusal names the two values that differ", () => {
   const n = matchIdentity(MARIA, "ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ", "AB654321");
   assertEquals(n.ok, false);
@@ -61,9 +90,9 @@ Deno.test("identity: a refusal names the two values that differ", () => {
     mismatchMessage(n),
     "The name on it (ΠΑΠΑΔΟΠΟΥΛΟΣ ΓΕΩΡΓΙΟΣ) doesn't match your profile (Μαρία Παπαδοπούλου). Nothing was saved.",
   );
+  // MIN-4630: the same name with another number is no longer a refusal.
   const i = matchIdentity(MARIA, "PAPADOPOULOU MARIA", "AK987654");
-  if (i.ok) throw new Error("expected a refusal");
-  assertEquals([i.reason, i.printed, i.profile], ["id_mismatch", "AK987654", "AK123456"]);
+  assertEquals(i, { ok: true, status: "name_only" });
 });
 
 Deno.test("identity: Latin and Greek spellings of the same name meet", () => {
@@ -116,9 +145,9 @@ Deno.test("identity: a refusal carries counts and no word of either name or ID",
   const lacking = matchIdentity(MARIA, "ΠΑΠΑΔΟΠΟΥΛΟΥ ΤΟΥ ΓΕΩΡΓΙΟΥ", "AK123456");
   if (lacking.ok) throw new Error("expected a refusal");
   assertEquals(lacking.counts, { profile_parts: 2, profile_parts_found: 1, printed_parts: 2, extra_parts: 1, id_printed: true, id_equal: true });
-  const id = matchIdentity(MARIA, "PAPADOPOULOU MARIA", "AK987654");
+  const id = matchIdentity(MARIA, "ΠΑΠΑΔΟΠΟΥΛΟΥ ΜΑΡΙΑ ΓΕΩΡΓΙΟΥ ΑΙΚΑΤΕΡΙΝΗΣ", "AK987654");
   if (id.ok) throw new Error("expected a refusal");
-  assertEquals(id.counts, { profile_parts: 2, profile_parts_found: 2, printed_parts: 2, extra_parts: 0, id_printed: true, id_equal: false });
+  assertEquals([id.reason, id.counts], ["name_mismatch", { profile_parts: 2, profile_parts_found: 2, printed_parts: 4, extra_parts: 2, id_printed: true, id_equal: false }]);
   for (const v of [n, lacking, id]) {
     const all = JSON.stringify(v.counts);
     for (const word of ["ΠΑΠΑΔΟΠΟΥΛΟΥ", "PAPADOPOULOU", "AK123456", "AK987654", "ΜΑΡΙΑ", "Μαρία"]) assertEquals(all.includes(word), false, word);

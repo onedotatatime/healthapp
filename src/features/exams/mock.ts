@@ -76,7 +76,7 @@ const draftFor = (id: string) => ({
 
 const ago = (min: number) => new Date(Date.parse(NOW) - min * 60_000).toISOString();
 const item = (n: number, o: Partial<ExamListItem>): ExamListItem => ({
-  id: uid(n), status: 'queued', reason: null, uploaded_at: ago(5), status_at: ago(5), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false, ...o,
+  id: uid(n), status: 'queued', reason: null, uploaded_at: ago(5), status_at: ago(5), kind: null, exam_date: null, values_read: null, can_retry: false, can_delete: true, unchecked: false, file_kept: false, ...o,
 });
 /** One row per status, newest first. Synthetic: does not count toward the goal. */
 const exams: ExamListItem[] = [
@@ -85,6 +85,9 @@ const exams: ExamListItem[] = [
   item(303, { status: 'confirmed', kind: 'blood_test', exam_date: '2026-11-10', values_read: 9, unchecked: true, can_delete: false, uploaded_at: ago(8) }),
   item(304, { status: 'draft', kind: 'blood_test', exam_date: '2026-11-09', values_read: 2, uploaded_at: ago(12) }),
   item(305, { status: 'refused', reason: 'name_mismatch', uploaded_at: ago(20) }),
+  item(308, { status: 'refused', reason: 'unreadable', can_retry: true, file_kept: true, uploaded_at: ago(22) }),
+  item(309, { status: 'refused', reason: 'name_mismatch', can_retry: true, file_kept: true, uploaded_at: ago(24) }),
+  item(310, { status: 'refused', reason: 'incomplete', can_retry: false, file_kept: true, uploaded_at: ago(26) }),
   item(306, { status: 'failed', reason: 'model_timeout', can_retry: true, uploaded_at: ago(30) }),
   item(307, { status: 'failed', reason: 'too_many_attempts', uploaded_at: ago(40) }),
   item(101, { status: 'confirmed', kind: 'blood_test', exam_date: '2026-03-12', values_read: 3, unchecked: false, can_delete: false, uploaded_at: ago(60 * 24 * 30) }),
@@ -114,6 +117,7 @@ export const mockApi: ExamsApi = {
     const row = exams.find((e) => e.id === docId);
     if (!row) return;
     scanned++;
+    row.can_retry = false;
     later(() => { row.status = 'reading'; row.status_at = new Date().toISOString(); }, 3000);
     later(() => {
       row.status_at = new Date().toISOString();
@@ -124,7 +128,7 @@ export const mockApi: ExamsApi = {
       else if (o === 'failed') { row.status = 'failed'; row.reason = 'model_http'; row.can_retry = true; }
       else {
         const d = draftFor(docId);
-        row.status = 'confirmed'; row.kind = 'blood_test'; row.exam_date = '2026-11-10'; row.values_read = 2; row.unchecked = true; row.can_delete = false;
+        row.status = 'confirmed'; row.file_kept = false; row.kind = 'blood_test'; row.exam_date = '2026-11-10'; row.values_read = 2; row.unchecked = true; row.can_delete = false;
         store.docs.unshift({ ...d.document, status: 'confirmed', confirmed_at: row.status_at });
         store.results.push(...d.results.map((r) => ({ ...r, patient_id: PATIENT })));
       }

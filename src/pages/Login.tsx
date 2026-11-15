@@ -20,7 +20,7 @@ function message(e: unknown): string {
 }
 
 export function Login() {
-  const { state, signInDemo } = useAuth();
+  const { state, signInDemo, sessionEnded } = useAuth();
   const [passcode, setPasscode] = useState('');
   const [busy, setBusy] = useState<DemoPersona | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +45,11 @@ export function Login() {
       <div className="signin">
         <img className="lockup" src="/brand/pathien-lockup.svg" alt="Pathien" width={150} height={40} />
         <h1>Sign in to the demo</h1>
+        {sessionEnded && (
+          <ErrorNote>
+            <strong>Your session ended.</strong> Sign in again to continue.
+          </ErrorNote>
+        )}
         <p className="muted">Synthetic people only. Type the demo passcode, then choose who to sign in as.</p>
         {envState.status === 'error' ? (
           <ErrorNote>{envState.message}</ErrorNote>
