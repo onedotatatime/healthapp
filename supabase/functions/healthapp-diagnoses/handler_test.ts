@@ -264,3 +264,18 @@ Deno.test("an item whose cites are real but from another line's numbers is dropp
   const out = await parse(await setup({ answers: [a, a] }).run());
   assertEquals(out.status, "none");
 });
+
+Deno.test("a model refusal logs Gemini's detail on dev only; demo logs the code only; never a prompt or a record line", async () => {
+  const refusal = () => new ModelError("http", 400, 1, "INVALID_ARGUMENT: schema too deep");
+  const dev = setup({ answers: [refusal() as unknown as Error] });
+  assertEquals((await dev.run()).status, 503);
+  const line = dev.logs.at(-1)!;
+  assertEquals([line.status, line.kind, line.http, line.detail], ["model_error", "http", 400, "INVALID_ARGUMENT: schema too deep"]);
+  const s = JSON.stringify(dev.logs);
+  assertEquals(s.includes("Maria") || s.includes("CRP") || s.includes("Anti-CCP"), false);
+
+  const demo = setup({ answers: [refusal()], envs: "dev,demo" });
+  assertEquals((await demo.run("td", GRANT, "demo")).status, 503);
+  const dl = demo.logs.at(-1)!;
+  assertEquals([dl.env, dl.status, dl.http, "detail" in dl], ["demo", "model_error", 400, false]);
+});
