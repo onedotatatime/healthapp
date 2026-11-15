@@ -18,22 +18,23 @@ const MAX_NAME = 80;
 const MAX_TERM = 60;
 
 // ---------------------------------------------------------------------------------------------
-// What the model returns. Short ids as in ask mode. The limits are looser than the wire's on purpose: a
-// model that writes a fifth "fits" must not cost a whole retry; the server keeps the first verified ones.
+// What the model returns. Short ids as in ask mode. No size bounds here on purpose: Gemini answers 400 to
+// nested bounded arrays (MIN-4662), and a model that writes a fifth "fits" must not cost a whole retry.
+// `verify` keeps every wire limit: the server keeps the first verified ones.
 // ---------------------------------------------------------------------------------------------
 export const ModelStatement = z.object({
-  text: z.string().max(600),
-  cites: z.array(z.string().max(12)).max(8),
+  text: z.string(),
+  cites: z.array(z.string()),
 });
 export const ModelItem = z.object({
-  name: z.string().max(120),
-  fits: z.array(ModelStatement).max(8),
-  does_not_explain: z.array(ModelStatement).max(6),
-  not_in_record: z.array(z.string().max(100)).max(6),
+  name: z.string(),
+  fits: z.array(ModelStatement),
+  does_not_explain: z.array(ModelStatement),
+  not_in_record: z.array(z.string()),
 });
 export const ModelDiagnoses = z.object({
   not_enough: z.boolean(),
-  items: z.array(ModelItem).max(8),
+  items: z.array(ModelItem),
 });
 export type ModelDiagnoses = z.infer<typeof ModelDiagnoses>;
 export type ModelItem = z.infer<typeof ModelItem>;

@@ -1,6 +1,7 @@
 // The diagnoses guard (MIN-4662; CTO decision on MIN-4660 §3, §4). Each rule below was forced red once: the
 // control was removed, the test failed, the control was put back (see the PR body for the list).
 import { assertEquals } from "jsr:@std/assert@1";
+import { responseSchemaOf } from "./model.ts";
 import { DiagnosesResponse, DiagnosisItem, DiagnosisStatement } from "./contract.ts";
 import { buildFacts } from "./assistant.ts";
 import { better, citationCount, fold, MAX_ITEMS, ModelDiagnoses, verify } from "./diagnoses.ts";
@@ -233,4 +234,27 @@ Deno.test("M2: the bare-id rule drops a record id in the text, not an ordinary t
   assertEquals(ok("CRP was 7.9 mg/L on 2025-12-09, see d1.", "r2"), 0);
   assertEquals(ok("CRP was 7.9 mg/L on 2025-12-09; vitamin D3 and f8 were not measured.", "r2"), 1); // d3, f8 are not ids here
   assertEquals(ok("CRP was 7.9 mg/L on 2025-12-09; vitamin d3 is not on any line.", "r2"), 1); // even lowercase after "vitamin"
+});
+
+Deno.test("the model-side schema carries no size bound at any level (Gemini answers 400 to nested bounded arrays)", () => {
+  const js = JSON.stringify(responseSchemaOf(ModelDiagnoses));
+  for (const k of ["maxItems", "maxLength", "minItems", "minLength"]) assertEquals(js.includes(k), false, k);
+});
+
+Deno.test("an answer over every old model bound still goes through verify and parses as the wire contract", () => {
+  const over = answerOf(
+    ...Array.from({ length: 9 }, (_, n) =>
+      item({
+        name: n === 0 ? "Long".padEnd(130, "x") : `Condition ${String.fromCharCode(65 + n)}`, // item 0: 130 characters, over the wire's 80 -> dropped
+        fits: [stmt("CRP was 7.9 mg/L. ".repeat(40), "r2"), ...Array.from({ length: 9 }, () => stmt("CRP was 7.9 mg/L on 2025-12-09, above the printed range 0 - 5.", "r2", "r2", "r3", "r4", "r1", "f1", "f2", "d1", "r2"))],
+        not_in_record: Array.from({ length: 7 }, (_, k) => `term ${k}`.padEnd(110, "y")),
+      })),
+  );
+  const v = run(over);
+  const out = DiagnosesResponse.parse({
+    run_id: crypto.randomUUID(), status: "ok", items: v.items, truncated: false,
+    counts: { facts: facts.size, items: v.items.length, citations: citationCount(v.items), guard_drops: v.drops, errors: 0 }, created_at: new Date().toISOString(),
+  });
+  assertEquals(out.items.length, MAX_ITEMS); // 8 good items, first 6 by name
+  assertEquals(v.items.every((i) => i.fits.length <= 4 && i.fits[0].cites.length <= 6 && i.not_in_record.length === 0), true);
 });

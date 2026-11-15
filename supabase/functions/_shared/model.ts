@@ -33,8 +33,12 @@ export interface ModelDeps {
 
 export type ModelErrorKind = "config" | "timeout" | "http" | "invalid";
 export class ModelError extends Error {
-  constructor(readonly kind: ModelErrorKind, readonly status?: number, readonly attempts = 0) {
+  /** Gemini's own reason for a refusal (`error.status` + first 300 chars of `error.message`). Never in the
+   * message string; a caller logs it only where the data is synthetic (MIN-4662). Never a prompt or an answer. */
+  detail?: string;
+  constructor(readonly kind: ModelErrorKind, readonly status?: number, readonly attempts = 0, detail?: string) {
     super(`model ${kind}${status ? ` ${status}` : ""} after ${attempts} attempt(s)`);
+    if (detail) this.detail = detail;
   }
 }
 
@@ -50,6 +54,20 @@ export function responseSchemaOf(schema: z.ZodType): Record<string, unknown> {
   const js = z.toJSONSchema(schema, { target: "draft-2020-12" }) as Record<string, unknown>;
   delete js.$schema;
   return js;
+}
+
+export const DETAIL_MAX = 300;
+/** Gemini's error body -> "STATUS: message", capped. A body that is not JSON, or has no error, gives none. */
+async function errorDetail(res: Response): Promise<string | undefined> {
+  try {
+    const e = (await res.json())?.error;
+    const status = typeof e?.status === "string" ? e.status : "";
+    const message = typeof e?.message === "string" ? e.message : "";
+    const out = `${status}${status && message ? ": " : ""}${message}`.slice(0, DETAIL_MAX);
+    return out || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 const RETRYABLE = (status: number) => status === 429 || status >= 500;
@@ -98,9 +116,12 @@ export async function generateJson<T>(call: JsonCall<T>, deps: ModelDeps): Promi
         continue; // network error: retry
       }
       if (!res.ok) {
-        await res.body?.cancel();
-        last = new ModelError("http", res.status, attempt);
-        if (RETRYABLE(res.status)) continue;
+        if (RETRYABLE(res.status)) {
+          await res.body?.cancel();
+          last = new ModelError("http", res.status, attempt);
+          continue;
+        }
+        last = new ModelError("http", res.status, attempt, await errorDetail(res));
         throw last;
       }
       let text = "";

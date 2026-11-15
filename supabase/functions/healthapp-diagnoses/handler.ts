@@ -110,7 +110,11 @@ export function makeHandler(deps: Deps) {
         }
       } catch (e) {
         const kind = e instanceof ModelError ? e.kind : "unexpected";
-        log("model_error", { ...ZERO, facts: facts.size, errors: 1 }, attempts, model, { kind, http: e instanceof ModelError ? (e.status ?? null) : null });
+        log("model_error", { ...ZERO, facts: facts.size, errors: 1 }, attempts, model, {
+          kind, http: e instanceof ModelError ? (e.status ?? null) : null,
+          // Gemini's reason, on dev only (synthetic data); demo logs the code only (MIN-4662, MIN-4526).
+          ...(who.env === "dev" && e instanceof ModelError && e.detail ? { detail: e.detail } : {}),
+        });
         if (!best) {
           return kind === "config"
             ? fail(req, 500, "internal", "Possible diagnoses is not configured.")

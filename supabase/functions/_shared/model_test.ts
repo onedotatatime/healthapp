@@ -76,3 +76,39 @@ Deno.test("no key: a config error before any request", async () => {
   const e = await assertRejects(() => generateJson({ parts: [], schema: Answer }, { apiKey: undefined, fetch: f }), ModelError);
   assertEquals([e.kind, calls.length], ["config", 0]);
 });
+
+const errBody = (status: string, message: string) =>
+  new Response(JSON.stringify({ error: { code: 400, status, message } }), { status: 400 });
+
+Deno.test("a 400 puts Gemini's status and message on detail (capped at 300), not in the Error message", async () => {
+  const long = "schema too large ".repeat(40);
+  const { f } = fakeFetch([() => errBody("INVALID_ARGUMENT", long)]);
+  const e = await assertRejects(
+    () => generateJson({ parts: [], schema: Answer }, { apiKey: "k", fetch: f, sleep: noSleep }),
+    ModelError,
+  );
+  assertEquals(e.detail, `INVALID_ARGUMENT: ${long}`.slice(0, 300));
+  assertEquals(e.detail?.length, 300);
+  assertEquals(e.message.includes("schema"), false);
+  const { f: f2 } = fakeFetch([() => errBody("INVALID_ARGUMENT", "too deep")]);
+  const e2 = await assertRejects(
+    () => generateJson({ parts: [], schema: Answer }, { apiKey: "k", fetch: f2, sleep: noSleep }),
+    ModelError,
+  );
+  assertEquals(e2.detail, "INVALID_ARGUMENT: too deep");
+});
+
+Deno.test("a 400 whose body is not JSON gives no detail; a retryable status gives none either", async () => {
+  const { f } = fakeFetch([() => new Response("<html>nope</html>", { status: 400 })]);
+  const e = await assertRejects(
+    () => generateJson({ parts: [], schema: Answer }, { apiKey: "k", fetch: f, sleep: noSleep }),
+    ModelError,
+  );
+  assertEquals(e.detail, undefined);
+  const { f: f2 } = fakeFetch([() => new Response(JSON.stringify({ error: { status: "UNAVAILABLE", message: "busy" } }), { status: 503 })]);
+  const e2 = await assertRejects(
+    () => generateJson({ parts: [], schema: Answer, maxAttempts: 1 }, { apiKey: "k", fetch: f2, sleep: noSleep }),
+    ModelError,
+  );
+  assertEquals([e2.status, e2.detail], [503, undefined]);
+});
