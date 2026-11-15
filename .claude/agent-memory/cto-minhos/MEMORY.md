@@ -23,3 +23,4 @@
 - [Doctor simulate page](project_doctor_simulate.md) — MIN-4670: founder overrode MIN-4504; live boxd machine at the click (SDK /web entry), recorded run is the fallback; MIN-4676 pass, e2e-live specs were not mocked
 - [Nightly and timeline follow-ups](project_nightly_and_followups.md) — MIN-4714: PILOT_FROM in funding_plan, absent = no card; nightly Cron/Lane C, main-only; part 2 PASS 42a7b4d, v4 fixture waits for MIN-4724
 - [Recruit search at 50,000](project_recruit_50000.md) — 2026-11-15: committed file, deterministic parser, must+some, k=5; review PASS 921aef0; faint shot = fade mid-way
+- [Nightly review](project_nightly_review.md) — MIN-4714 p3: PR #149 at 38f37e8 changes needed (B1 reds not reaching Linear, B2 self-test in static); PW load error aborts config
