@@ -1,7 +1,8 @@
 /**
- * Step 1 of /doctor/simulate: the machine card (MIN-4594, live since MIN-4675). One card shows one source and never both:
- * `pending` (the live call is sent, nothing is back), `live` (the lines come from the real machine, with its real times) or
- * `replay` (the recorded run, with the sentence saying why when the live one did not happen). Pure: props in, markup out.
+ * Step 1 of /doctor/simulate: the machine card (MIN-4594; the recorded 50,000 run since MIN-4736). One card shows one source and never
+ * both: `pending` (a call is sent, nothing is back), `live` (the lines come from a real machine, with its real times) or `replay` (the
+ * recorded run, with the sentence saying why when a live one did not happen). The page plays only `replay` now; the other two stay for
+ * the live cut. Pure: props in, markup out.
  */
 import { COPY } from './copy';
 import { formatRunTime } from './format';
@@ -22,7 +23,8 @@ export interface MachineView {
   footer: string | null;
 }
 
-export function MachineCard({ view }: { view: MachineView }) {
+/** `total` is the number of records, formatted by the page from the file it loaded; no number is typed here. */
+export function MachineCard({ view, total }: { view: MachineView; total: string }) {
   const { mode, lines, startedAt } = view;
   const idx = lines.length - 1;
   const label =
@@ -32,7 +34,7 @@ export function MachineCard({ view }: { view: MachineView }) {
   return (
     <section className="sm-card" aria-labelledby="sm-h1" data-testid="sim-machine" data-mode={mode}>
       <h2 id="sm-h1"><b>1</b> {COPY.machineTitle}</h2>
-      <p className="muted">{COPY.machineBody}</p>
+      <p className="muted">{COPY.machineBody(total)}</p>
       {view.notice && <p className="sm-notice" role="status" data-testid="sim-machine-notice">{view.notice}</p>}
       {label && <p className="sm-fixed" data-testid="sim-machine-label">{label}</p>}
       {view.states && (
@@ -46,7 +48,7 @@ export function MachineCard({ view }: { view: MachineView }) {
             ))}
           </ol>
           <ul className="sm-log mono" aria-live="polite">
-            {idx < 0 && <li>{mode === 'replay' ? COPY.machineWaiting : COPY.machineStarting}</li>}
+            {idx < 0 && mode === 'replay' && <li>{COPY.machineWaiting}</li>}
             {lines.map((l) => (
               <li key={l.id} data-testid={`sim-machine-line-${l.id}`}><span>+{(l.offsetMs / 1000).toFixed(1)} s</span> {l.log}</li>
             ))}

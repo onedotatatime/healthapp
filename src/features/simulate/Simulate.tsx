@@ -1,70 +1,80 @@
 /**
- * /doctor/simulate (MIN-4594, parent MIN-4592; live since MIN-4675). The doctor clicks once: a real boxd machine makes the 5,000
- * synthetic records and the card lights its states with their real times (live.ts, one call). When the live run cannot happen the
- * recorded run is replayed as before, with a sentence saying why. Then the records appear as dots and the matching runs in this
- * browser over them (matcher.ts). The count on screen is the matcher's return value. The "contact" is simulated: nothing is
- * written or sent. Doctor-only (RequireRole in App.tsx). The only network call of the module is in live.ts; no key, no model.
+ * /doctor/simulate, one flow (MIN-4736, replacing the two flows of MIN-4706 and MIN-4594). A doctor writes one sentence and presses
+ * "Search the records" (or Enter): that is the only control that starts anything. The click reads the sentence (a number and one
+ * condition from a fixed list of 13), then plays the simulation: the machine card replays the recorded 50,000 run (data/synthetic/
+ * recruit-50000.vm.json), the 50,000 records appear as dots, and four stages narrow them: all records, opted in to matching, fit the
+ * criteria, selected. Every count and every bright dot is what recruit() returned at this click (flow.ts); the animation only reveals it.
+ *
+ * Synthetic data only. Doctor-only (RequireRole in App.tsx). No network call, no model, nothing stored: the sentence lives in this
+ * component's state. The records are one file loaded with import() after the first paint (recruit-data.ts).
  */
 import { Flask } from '@phosphor-icons/react';
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type RefObject } from 'react';
 import { Link } from 'react-router';
-import runJson from '../../../data/synthetic/run-5000.json';
-import { COPY as MATCHES_COPY } from '../matches/copy';
-import { COPY } from './copy';
-import { DotCanvas, colorOfGroup, type Stage } from './DotCanvas';
-import { createLiveRunner, type FallbackReason, type LiveResult, type LiveSend } from './live';
+import vmJson from '../../../data/synthetic/recruit-50000.vm.json';
+import { COPY, RECRUIT_CONDITION_NAMES, RECRUIT_COPY as T, recruitFill } from './copy';
+import { DotCanvas } from './DotCanvas';
+import type { FieldInput } from './dotPaint';
+import { RING_MAX, brightFraction, stageOfStep, STAGE_IDS, type StageId } from './dots';
+import { afterReveal, answerFor, prepare, replayPlan, search, type Answer, type OkRequest, type Prepared } from './flow';
+import { codeLabel, countryName } from './format';
 import { MachineCard, type MachineView } from './MachineCard';
-import RecruitSearch from './RecruitSearch';
-import { findMatches, parseRun, type MatchOutcome, type RecordDetail, type RunFile } from './matcher';
-import { codeLabel, countryName, formatValue, groupName, offsetMs, vmOffsets } from './format';
-import { SM_CARD_AT, SM_CONTACT_STEP_MS, SM_RINGS_AT, barFraction, stepAt } from './motion';
+import { parseRecruitFile, type RecruitCondition, type RecruitFile, type RecruitResult } from './recruit';
+import './recruit.css';
 import './simulate.css';
 
-type Phase = 'idle' | 'machine' | 'dots' | 'matching' | 'done';
-const STAGES: Stage[] = ['all', 'all', 'opted', 'share', 'exact', 'exact']; // index = steps revealed; the rings (stage 'shown') come after step 5
+type Phase = 'idle' | 'machine' | 'dots' | 'stages' | 'done';
+type Loaded = { state: 'loading' } | { state: 'error' } | { state: 'ready'; file: RecruitFile };
+interface Shown { id: number; ans: Answer }
+
 const nf = (n: number) => n.toLocaleString('en-US');
+const nameOf = (c: RecruitCondition) => RECRUIT_CONDITION_NAMES[c.id as keyof typeof RECRUIT_CONDITION_NAMES] ?? c.name;
 const prefersReduced = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const defaultLoad = () => import('./recruit-data').then((m) => m.default);
+const stageText = (stage: StageId, many: boolean) => (stage === 'selected' && many ? COPY.canvasStage.selectedMany(nf(RING_MAX)) : COPY.canvasStage[stage]);
+const FUNNEL_KEYS = ['records', 'optedIn', 'eligible', 'selected'] as const;
 
 export default function Simulate() {
-  const run = useMemo(() => { try { return parseRun(runJson); } catch { return null; } }, []);
-  if (!run) {
-    // Data error: the page label stays, one card says it. The sentence is the existing one from the matches panel (no new copy until Anna's runError).
-    return (
-      <main className="page doctor sm" data-testid="doctor-simulate">
-        <p className="sm-label" data-testid="sim-page-label"><Flask size={18} aria-hidden="true" />{COPY.pageLabel}</p>
-        <h1>{COPY.title}</h1>
-        <section className="sm-card"><p role="alert" data-testid="sim-run-error">{MATCHES_COPY.panelError}</p></section>
-      </main>
-    );
-  }
-  return <SimulateView run={run} />;
+  return <SimulateView />;
 }
 
-/** `run` is the recorded run (the fallback). `send` is the live call; tests and the review harness pass a fake, the page passes none. */
-export function SimulateView({ run, send }: { run: RunFile; send?: LiveSend }) {
+/** `load` is the records' loader and `vm` the recorded run; tests and the review harness may pass others, the page passes none. */
+export function SimulateView({ load = defaultLoad, vm = vmJson }: { load?: () => Promise<unknown>; vm?: unknown }) {
+  const [text, setText] = useState('');
+  const [data, setData] = useState<Loaded>({ state: 'loading' });
+  const [queued, setQueued] = useState<string | null>(null); // a click that came before the records were in
+  const [shown, setShown] = useState<Shown | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [machine, setMachine] = useState<MachineView | null>(null);
-  const [active, setActive] = useState<RunFile>(run); // the records on screen: the live run, or the recorded one
-  const [step, setStep] = useState(0);
-  const [outcome, setOutcome] = useState<MatchOutcome | null>(null);
-  const [runId, setRunId] = useState(0);
-  const [reduced, setReduced] = useState(false);
+  const [prepared, setPrepared] = useState<Prepared | null>(null);
+  const [step, setStep] = useState(0); // stages reached: 0 = the dots are in, nothing lit yet
   const [rings, setRings] = useState(false);
+  const [reduced, setReduced] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
   const main = useRef<HTMLElement>(null);
   const labelRef = useRef<HTMLParagraphElement>(null);
   const recordsRef = useRef<HTMLElement>(null);
   const clickScroll = useRef(0);
   const timers = useRef<number[]>([]);
+  const preparedRef = useRef<Prepared | null>(null);
+  const reducedRef = useRef(false);
+  const runId = useRef(0);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   const later = (fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); };
-  const runner = useRef<ReturnType<typeof createLiveRunner> | null>(null);
-  if (!runner.current) runner.current = createLiveRunner(send);
-  const alive = useRef(true);
-  const call = useRef<AbortController | null>(null);
+  useEffect(() => clear, []);
+
+  // After the first paint: the timer runs once the first commit is on screen, so the 50,000 records are never on the first paint's path.
   useEffect(() => {
-    alive.current = true;
-    return () => { alive.current = false; call.current?.abort(); clear(); };
-  }, []);
+    let alive = true;
+    const t = window.setTimeout(() => {
+      load()
+        .then((json) => { if (alive) setData({ state: 'ready', file: parseRecruitFile(json) }); })
+        .catch(() => { if (alive) setData({ state: 'error' }); });
+    }, 0);
+    return () => { alive = false; window.clearTimeout(t); };
+  }, [load]);
+  const file = data.state === 'ready' ? data.file : null;
+  const plan = useMemo(() => replayPlan(vm), [vm]);
 
   // The strip sticks under the page label, which wraps to one or two lines: its height is measured, not guessed.
   useEffect(() => {
@@ -77,287 +87,298 @@ export function SimulateView({ run, send }: { run: RunFile; send?: LiveSend }) {
     return () => ro.disconnect();
   }, []);
 
-  // Spec B3 step 2: on the dots phase the records come to just under the label, only if the page was not scrolled since the click.
+  // On the dots phase the records come to just under the label, only if the page was not scrolled since the click and motion is allowed.
   useEffect(() => {
     if (phase !== 'dots' || reduced || Math.abs(window.scrollY - clickScroll.current) > 2) return;
     const el = recordsRef.current;
     if (!el || typeof window.scrollTo !== 'function') return;
-    // The strip is the anchor, not the card top: with it just under the label, the strip and the whole canvas are in one viewport.
     const anchor = el.querySelector('.sm-strip') ?? el;
     const top = anchor.getBoundingClientRect().top + window.scrollY - (labelRef.current?.offsetHeight ?? 0);
     window.scrollTo({ top, behavior: 'smooth' });
   }, [phase, reduced]);
 
-  /** The live run is back: its 5,000 records are the ones on screen. A file the matcher cannot read plays the recorded run instead. */
-  const goLive = (res: Extract<LiveResult, { live: true }>, red: boolean) => {
-    let out: MatchOutcome;
-    try { out = findMatches(res.run); } catch { return replay('error', red); }
-    setActive(res.run);
-    setOutcome(out); // the matching runs here, on the records the machine made
-    const footer = res.size && res.seconds !== null ? `${res.size}, ${res.seconds} s in total.` : null;
-    setMachine((m) => m && { ...m, footer });
-    if (red) setPhase('dots');
-    else later(() => setPhase('dots'), 700);
-  };
+  const machineView = (lines: number, footer: boolean): MachineView => ({
+    mode: 'replay',
+    notice: null,
+    startedAt: plan?.startedAt ?? null,
+    states: plan !== null,
+    lines: plan ? plan.lines.slice(0, lines) : [],
+    footer: footer && plan ? plan.footer : null,
+  });
 
-  /** The recorded run, exactly as before, under one sentence saying why the live one did not happen. The card starts again from empty. */
-  const replay = (reason: FallbackReason, red: boolean) => {
-    setActive(run);
-    setOutcome(findMatches(run));
-    const vm = run.vm;
-    const notice = COPY.fallback[reason];
-    if (!vm) {
-      setMachine({ mode: 'replay', notice, startedAt: null, states: false, lines: [], footer: null });
-      setPhase('dots');
-      return;
-    }
-    const at = vmOffsets(vm);
-    const lines = vm.phases.map((p, i) => ({ id: p.id, offsetMs: at[i], log: p.log }));
-    const base = { mode: 'replay' as const, notice, startedAt: vm.started_at, states: true, footer: vm.size ? `${vm.size}, ${vm.seconds} s in total.` : null };
-    if (red) {
-      setMachine({ ...base, lines });
-      setPhase('dots');
-      return;
-    }
-    setMachine({ ...base, lines: [] });
-    at.forEach((ms, i) => later(() => setMachine((m) => m && { ...m, lines: lines.slice(0, i + 1) }), ms));
-    later(() => setPhase('dots'), at[at.length - 1] + 700);
-  };
-
-  const start = () => {
-    const r = runner.current!;
-    if (r.running) return; // one call at a time
+  /** The click, after the sentence is in: parse it, clear what an earlier search left, and start the run only when the sentence says something to search for. */
+  const begin = (f: RecruitFile, sentence: string) => {
     clear();
     const red = prefersReduced();
-    const ctl = new AbortController();
-    let startedAt = '';
-    const pending = r.start(
-      {
-        onStart: (e) => { startedAt = e.at; setMachine({ mode: 'live', notice: null, startedAt: e.at, states: true, lines: [], footer: null }); },
-        onPhase: (e) => setMachine((m) => m && { ...m, lines: [...m.lines, { id: e.id, offsetMs: offsetMs(startedAt, e.at), log: COPY.liveLog[e.id] }] }),
-      },
-      ctl.signal,
-    );
-    if (!pending) return;
-    call.current = ctl;
+    reducedRef.current = red;
+    const ans = answerFor(f, sentence);
+    runId.current += 1;
+    preparedRef.current = null;
     setReduced(red);
-    setOutcome(null);
-    setActive(run);
-    setRunId((n) => n + 1);
+    setShown({ id: runId.current, ans });
+    setPrepared(null);
     setStep(0);
     setRings(false);
+    if (ans.kind !== 'run') {
+      setMachine(null);
+      setPhase('idle');
+      return;
+    }
     clickScroll.current = window.scrollY;
-    setMachine({ mode: 'pending', notice: null, startedAt: null, states: true, lines: [], footer: null });
-    setPhase('machine');
-    void pending.then((res) => {
-      if (!alive.current) return;
-      if (res.live) goLive(res, red);
-      else replay(res.reason, red);
-    });
-  };
-
-  const revealed = useCallback(() => {
-    setPhase('matching');
-    if (prefersReduced()) {
-      setStep(5);
-      setRings(true);
+    const parsed = ans.parsed;
+    if (red) {
+      // Reduced motion: the finished state of every stage at once. No timer.
+      const p = prepare(f, parsed, search(f, parsed));
+      preparedRef.current = p;
+      setPrepared(p);
+      setMachine(machineView(plan ? plan.lines.length : 0, true));
+      setStep(p.stages.length);
+      setRings(p.shown && !p.many);
       setPhase('done');
       return;
     }
-    // Spec B3 steps 4 to 10, ms after the dots finished filling in: five narrowings 1,500 apart, then the rings, then the matches card.
-    for (let s = 1; s <= 5; s++) later(() => setStep(s), stepAt(s));
-    later(() => setRings(true), SM_RINGS_AT);
-    later(() => setPhase('done'), SM_CARD_AT);
+    setMachine(machineView(0, false));
+    setPhase('machine');
+    // The two recruit() calls run in their own short tasks while the machine card plays, so the click itself stays light.
+    let res: RecruitResult | null = null;
+    later(() => { res = search(f, parsed); }, 20);
+    later(() => {
+      const p = prepare(f, parsed, res ?? search(f, parsed));
+      preparedRef.current = p;
+      setPrepared(p);
+    }, 60);
+    if (plan) {
+      plan.times.forEach((ms, i) => later(() => setMachine(machineView(i + 1, i === plan.times.length - 1)), ms));
+    }
+    later(() => setPhase('dots'), Math.max(plan ? plan.dotsAt : 0, 150));
+  };
+
+  // A queued click holds the button only while the records load: on a load error the button works again (MIN-4736 edge table).
+  const running = phase === 'machine' || phase === 'dots' || phase === 'stages' || (queued !== null && data.state === 'loading');
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    if (running) return; // one simulation at a time
+    if (file) begin(file, text);
+    else if (data.state === 'loading') setQueued(text); // the flow waits for the records
+  };
+  useEffect(() => {
+    if (file && queued !== null) {
+      const q = queued;
+      setQueued(null);
+      begin(file, q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [file, queued]);
+
+  const fill = (c: RecruitCondition) => {
+    const asked = shown?.ans.kind === 'run' ? shown.ans.parsed.asked : null;
+    setText(recruitFill(asked ?? 40, c.name));
+    input.current?.focus();
+  };
+
+  /** All the dots are in: the four stages follow, each a fixed time after (motion.ts), then the rings, then the result. */
+  const revealed = useCallback(() => {
+    const p = preparedRef.current;
+    if (!p || reducedRef.current) return;
+    setPhase('stages');
+    const tl = afterReveal(p);
+    tl.stageAt.forEach((ms, i) => later(() => setStep(i + 1), ms));
+    if (tl.ringsAt !== null) later(() => setRings(true), tl.ringsAt);
+    later(() => setPhase('done'), tl.doneAt);
   }, []);
 
-  const stage: Stage = rings ? 'shown' : STAGES[step];
-  const started = phase !== 'idle';
-  const showDots = phase === 'dots' || phase === 'matching' || phase === 'done';
+  const field = useMemo<FieldInput | null>(
+    () => (prepared && file ? { seed: file.seed, cls: prepared.cls, selected: prepared.selected, many: prepared.many, stages: prepared.stages } : null),
+    [prepared, file],
+  );
+  const showDots = phase === 'dots' || phase === 'stages' || phase === 'done';
 
   return (
     <main ref={main} className="page doctor sm" data-testid="doctor-simulate">
       <p ref={labelRef} className="sm-label" data-testid="sim-page-label"><Flask size={18} aria-hidden="true" />{COPY.pageLabel}</p>
-      <RecruitSearch />
-      <h1>{COPY.title}</h1>
-      <p className="sm-intro">{COPY.intro}</p>
-      <p>
-        <button type="button" className="btn primary" data-testid="sim-run" onClick={start} disabled={phase === 'machine' || phase === 'dots' || phase === 'matching'}>
-          {phase === 'done' ? COPY.runAgain : COPY.run}
-        </button>
-      </p>
+      <h1>{T.title}</h1>
+      {file && <p className="sm-intro" data-testid="recruit-intro">{T.intro(nf(file.n))}</p>}
 
-      {started && machine && <MachineCard view={machine} />}
+      <div className="sm-card" data-testid="recruit">
+        <form className="rc-form" onSubmit={submit} data-testid="recruit-form">
+          <div className="rc-field">
+            <label htmlFor="rc-input">{T.inputLabel}</label>
+            <input
+              ref={input}
+              id="rc-input"
+              className="rc-input"
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={T.placeholder}
+              maxLength={300}
+              autoComplete="off"
+              spellCheck={false}
+              enterKeyHint="search"
+              data-testid="recruit-input"
+            />
+          </div>
+          <button type="submit" className="btn primary" data-testid="recruit-submit" disabled={running}>{T.button}</button>
+        </form>
+        <div className="rc-out" aria-live="polite" data-testid="recruit-out">
+          {data.state === 'loading' && <p className="muted" data-testid="recruit-loading">{T.loading}</p>}
+          {data.state === 'error' && <p role="alert" data-testid="recruit-load-error">{T.loadError}</p>}
+          {file && shown && <Said file={file} ans={shown.ans} onPick={fill} />}
+        </div>
+      </div>
 
-      {showDots && outcome && (
-        <section ref={recordsRef} className="sm-card" aria-labelledby="sm-h2" data-testid="sim-records">
-          <h2 id="sm-h2"><b>2</b> {COPY.recordsTitle}</h2>
-          <p className="muted">{COPY.recordsBody}</p>
-          <Strip run={active} outcome={outcome} step={step} />
-          <DotCanvas key={runId} run={active} stage={stage} reveal={showDots} reduced={reduced} shareRows={outcome.shareRows} matched={outcome.matched} onRevealed={revealed} />
-          <ul className="sm-legend" aria-label="Seeded groups">
-            {active.groups.map((g) => (
-              <li key={g}><i style={{ background: colorOfGroup(g) }} aria-hidden="true" />{groupName(g)} <span className="mono">{nf(active.seeded[g] ?? 0)}</span></li>
-            ))}
-          </ul>
-          <p className="muted sm-small">{COPY.groupNote}</p>
-        </section>
+      {machine && file && <MachineCard view={machine} total={nf(file.n)} />}
+
+      {showDots && file && prepared && field && shown?.ans.kind === 'run' && (
+        <Records
+          sectionRef={recordsRef}
+          id={shown.id}
+          file={file}
+          request={shown.ans.parsed}
+          prepared={prepared}
+          field={field}
+          step={step}
+          rings={rings}
+          reduced={reduced}
+          done={phase === 'done'}
+          onRevealed={revealed}
+        />
       )}
 
-      {(phase === 'matching' || phase === 'done') && outcome && <MatchingCard run={active} outcome={outcome} step={step} />}
-      {phase === 'done' && outcome && <Matches run={active} outcome={outcome} key={runId} />}
+      <p className="sm-links">
+        <Link to="/simulation" data-testid="sim-growth-link">{COPY.growthLink}</Link>
+      </p>
     </main>
   );
 }
 
-function matchingSteps(run: RunFile, outcome: MatchOutcome): [string, string][] {
-  const f = outcome.funnel;
-  return [
-    [COPY.stepFeatures, run.persona.codes.map(codeLabel).join(', ')],
-    [COPY.stepOptIn, COPY.optedIn(nf(f.opted_in), nf(run.n))],
-    [COPY.stepShared, COPY.shared(f.share_min, run.persona.codes.length)],
-    [COPY.stepExact, COPY.exact(f.exact)],
-    [COPY.stepK, f.exact >= run.k ? COPY.kShown(f.exact) : COPY.kHidden(f.exact)],
-  ];
+/** The records card: the dots, the strip, the four step rows and, last, the result. A pure view of the run so far (`step`, `rings`, `done`). */
+export function Records({ sectionRef, id, file, request, prepared, field, step, rings, reduced, done, onRevealed }: {
+  sectionRef?: RefObject<HTMLElement | null>;
+  id: number;
+  file: RecruitFile;
+  request: OkRequest;
+  prepared: Prepared;
+  field: FieldInput;
+  step: number;
+  rings: boolean;
+  reduced: boolean;
+  done: boolean;
+  onRevealed: () => void;
+}) {
+  const stage = stageOfStep(step);
+  return (
+    <section ref={sectionRef} className="sm-card" aria-labelledby="sm-h2" data-testid="sim-records">
+      <h2 id="sm-h2"><b>2</b> {COPY.recordsTitle(nf(file.n))}</h2>
+      <p className="muted">{COPY.recordsBody}</p>
+      <Strip stage={stage} step={step} prepared={prepared} records={file.n} />
+      <DotCanvas
+        key={id}
+        input={field}
+        label={COPY.canvasLabel(nf(file.n), stageText(stage, prepared.many))}
+        stage={stage}
+        rings={rings}
+        reduced={reduced}
+        onRevealed={onRevealed}
+      />
+      {prepared.shown && <Steps prepared={prepared} step={step} />}
+      <Ending file={file} cond={request.condition} asked={request.asked} prepared={prepared} step={step} done={done} />
+    </section>
+  );
 }
 
-/** Under the records card's text: the sentence of the step that just ran and a bar of how many records are still bright. A mirror of the matching card, so aria-hidden. */
-function Strip({ run, outcome, step }: { run: RunFile; outcome: MatchOutcome; step: number }) {
-  const steps = matchingSteps(run, outcome);
-  const [title, text] = steps[Math.max(step, 1) - 1];
-  const pct = barFraction(step, run.n, outcome.funnel) * 100;
+/** What the sentence said, at once at the click: the sentence that stops a search, or what was read from it. */
+export function Said({ file, ans, onPick }: { file: RecruitFile; ans: Answer; onPick: (c: RecruitCondition) => void }) {
+  if (ans.kind === 'empty') return <p data-testid="recruit-empty">{T.emptyBox}</p>;
+  if (ans.kind === 'too_many') return <p data-testid="recruit-too-many">{T.tooMany(nf(file.n))}</p>;
+  if (ans.kind === 'no_condition') {
+    return (
+      <>
+        <p id="rc-unknown" data-testid="recruit-unknown">{T.unknownCondition}</p>
+        <ul className="rc-picks" aria-labelledby="rc-unknown">
+          {file.conditions.map((c) => (
+            <li key={c.id}><button type="button" className="rc-pick" data-testid={`recruit-pick-${c.id}`} onClick={() => onPick(c)}>{nameOf(c)}</button></li>
+          ))}
+        </ul>
+        <p className="muted sm-small">{T.groupNote}</p>
+      </>
+    );
+  }
+  const { condition: c, asked, others } = ans.parsed;
+  const name = nameOf(c);
+  return (
+    <div className="rc-out" data-testid="recruit-result" data-condition={c.id}>
+      {others.length > 0 && <p className="rc-notice" data-testid="recruit-two">{T.twoConditions(name)}</p>}
+      <p className="rc-read" data-testid="recruit-read">{asked ? T.read(nf(asked), name) : T.readNoNumber(name)}</p>
+    </div>
+  );
+}
+
+/** Under the records card's text: the sentence of the stage that just ran and a bar of how much is still bright. A mirror of the canvas label, so aria-hidden. */
+function Strip({ stage, step, prepared, records }: { stage: StageId; step: number; prepared: Prepared; records: number }) {
+  const pct = brightFraction(stage, prepared.counts, prepared.optedIn, records) * 100;
   return (
     <div className="sm-strip" data-on={step >= 1} aria-hidden="true" data-testid="sim-strip">
-      <p key={step} className="sm-strip-text" data-testid="sim-strip-text">{step <= 1 ? `${title}: ${text}` : text}</p>
+      <p key={stage} className="sm-strip-text" data-testid="sim-strip-text">{stageText(stage, prepared.many)}</p>
       <div className="sm-bar"><i style={{ width: `${pct}%` }} data-testid="sim-strip-bar" /></div>
     </div>
   );
 }
 
-function MatchingCard({ run, outcome, step }: { run: RunFile; outcome: MatchOutcome; step: number }) {
-  const steps = matchingSteps(run, outcome);
+/** The four step rows. A row shows its count only once its stage is reached. The counts are recruit()'s, computed at this click. */
+function Steps({ prepared, step }: { prepared: Prepared; step: number }) {
+  const counts = prepared.counts;
+  if (!counts) return null;
   return (
-    <section className="sm-card" aria-labelledby="sm-h3" data-testid="sim-matching">
-      <h2 id="sm-h3"><b>3</b> {COPY.matchingTitle}</h2>
-      <p className="sm-fixed" data-testid="sim-matching-label">{COPY.matchingLabel}</p>
-      <p className="muted">{COPY.matchingBody}</p>
-      <ol className="sm-steps" aria-live="polite">
-        {steps.map(([title, text], i) => (
-          <li key={title} className={i < step ? 'show' : ''} data-testid={`sim-step-${i + 1}`}>
-            <strong>{title}</strong>
-            <span>{i < step ? text : ''}</span>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function Matches({ run, outcome }: { run: RunFile; outcome: MatchOutcome }) {
-  const seeded = run.seeded['rare_sarcoid_like'];
-  return (
-    <section className="sm-card" aria-labelledby="sm-h4" data-testid="sim-matches">
-      <h2 id="sm-h4"><b>4</b> {COPY.matchesTitle}</h2>
-      {outcome.match_count === 0 ? (
-        <p className="sm-big sm-enter" data-testid="sim-empty">{COPY.empty}</p>
-      ) : (
-        <>
-          <p className="sm-big sm-enter" data-testid="sim-count-line">{COPY.matchLine(outcome.match_count)}</p>
-          {outcome.groups.map((g) => (
-            <div key={g.pattern.join()} className="sm-group">
-              <p className="sm-kicker">{COPY.patternLabel}</p>
-              <ul className="sm-chips">{g.pattern.map((c) => <li key={c} className="sm-chip sm-enter" style={{ '--i': g.pattern.indexOf(c) } as CSSProperties}>{codeLabel(c)}</li>)}</ul>
-              <p className="sm-kicker">{COPY.countriesLabel}</p>
-              <ul className="sm-chips">{g.countries.map((c) => <li key={c} className="sm-chip plain">{countryName(c)}</li>)}</ul>
+    <ol className="rc-funnel" aria-live="polite" data-testid="recruit-funnel">
+      {FUNNEL_KEYS.map((key, i) => {
+        const lit = step >= i + 1;
+        return (
+          <li key={key} className={lit ? 'show' : ''} data-testid={`recruit-funnel-${key}`}>
+            <span className="rc-num mono">{lit ? nf(counts[key]) : ''}</span>
+            <div>
+              <strong>{T.funnel[key].label}</strong>
+              <span className="rc-line">{T.funnel[key].line}</span>
+              <div className="sm-bar" aria-hidden="true"><i style={{ width: lit ? `${(counts[key] / counts.records) * 100}%` : 0 }} /></div>
             </div>
-          ))}
-          {seeded !== undefined && <p className="muted" data-testid="sim-seeded-line">{COPY.seededLine(seeded)}</p>}
-          <h3 className="sm-h3">{COPY.contactTitle}</h3>
-          <p className="sm-fixed" data-testid="sim-contact-label">{COPY.contactLabel}</p>
-          <p className="muted sm-small">{COPY.contactNote}</p>
-          <ul className="sm-cards">
-            {outcome.matched.map((row, k) => (
-              <MatchCard key={row} i={k} n={k + 1} country={run.records[row][0]} detail={run.detail[String(row)]} />
-            ))}
-          </ul>
-        </>
-      )}
-      <p className="sm-links">
-        <Link to="/simulation" data-testid="sim-growth-link">{COPY.growthLink}</Link>
-      </p>
-    </section>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
-/** Before consent: pattern (above) and country only. The four simulated steps run on timers; nothing is stored or sent. */
-function MatchCard({ i, n, country, detail }: { i: number; n: number; country: string; detail?: RecordDetail }) {
-  const [at, setAt] = useState(0); // 0 not asked, 1..4 = the step reached
-  const timers = useRef<number[]>([]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
-  const ask = () => {
-    if (prefersReduced()) return setAt(4);
-    setAt(1);
-    [2, 3, 4].forEach((s, i) => timers.current.push(window.setTimeout(() => setAt(s), (i + 1) * SM_CONTACT_STEP_MS)));
-  };
-  const name = countryName(country);
+/** The "Compared" line from the fit stage on; after the last stage the result. Under 5 only the one sentence: no count, no countries. */
+function Ending({ file, cond, asked, prepared, step, done }: { file: RecruitFile; cond: RecruitCondition; asked: number | null; prepared: Prepared; step: number; done: boolean }) {
+  const must = cond.must.map(codeLabel).join(', ');
+  const some = cond.some.map(codeLabel).join(', ');
+  const compared = cond.some.length === 0 ? T.comparedOnlyMust(must) : T.compared(must, some, String(cond.min_some));
+  const res = prepared.res;
+  const comparedOn = prepared.shown ? step >= STAGE_IDS.indexOf('fit') + 1 : done;
   return (
-    <li className="sm-match sm-enter" style={{ '--i': Math.min(i, 3) } as CSSProperties} data-testid={`sim-card-${n}`} data-unlocked={at === 4}>
-      <h4>{COPY.cardTitle(n)}</h4>
-      <p><span className="muted">{COPY.cardCountry}</span> <strong>{name}</strong></p>
-      {at === 0 && (
-        <>
-          <p className="muted sm-small">{COPY.cardBefore}</p>
-          <button type="button" className="btn" data-testid={`sim-ask-${n}`} onClick={ask}>{COPY.ask}</button>
-        </>
+    <>
+      {comparedOn && <p className="rc-read sm-enter" data-testid="recruit-compared">{compared}</p>}
+      {done && !res.shown && <p className="sm-big sm-enter" data-testid="recruit-few">{T.fewerThanK(String(file.k))}</p>}
+      {done && res.shown && (
+        <div className="rc-end sm-enter" data-testid="recruit-found">
+          {asked === null ? (
+            <>
+              <p className="sm-big" data-testid="recruit-line">{T.resultNoNumber(nf(res.selected))}</p>
+              <p className="muted" data-testid="recruit-no-number">{T.noNumberNote}</p>
+            </>
+          ) : res.short > 0 ? (
+            <p className="sm-big" data-testid="recruit-line">{T.resultShort(nf(res.eligible), nf(asked))}</p>
+          ) : (
+            <>
+              <p className="sm-big" data-testid="recruit-line">{T.resultEqual(nf(asked), nf(res.selected))}</p>
+              {res.eligible > asked && <p className="muted" data-testid="recruit-more">{T.resultMore(nf(res.eligible - asked))}</p>}
+            </>
+          )}
+          <p data-testid="recruit-countries">{T.countries(res.countries.map(countryName).sort((a, b) => a.localeCompare(b)).join(', '))}</p>
+          <p className="muted sm-small">{T.groupNote}</p>
+        </div>
       )}
-      {at > 0 && (
-        <ol className="sm-asks" aria-live="polite">
-          {COPY.contactSteps.map((s, i) => <li key={s} className={i < at ? 'show' : ''}>{s}</li>)}
-        </ol>
-      )}
-      {at === 4 && detail && <Unlocked n={n} detail={detail} country={name} />}
-    </li>
-  );
-}
-
-function Unlocked({ n, detail, country }: { n: number; detail: RecordDetail; country: string }) {
-  const labs = [...detail.labs].sort((a, b) => a.marker.localeCompare(b.marker) || b.date.localeCompare(a.date));
-  const list = (xs: string[]) => (xs.length ? xs.join(', ') : COPY.none);
-  const spec = detail.specialties[0] ? codeLabel(detail.specialties[0]) : COPY.none;
-  return (
-    <div className="sm-unlocked" data-testid={`sim-unlocked-${n}`}>
-      <h5>{COPY.examsTitle}</h5>
-      <div className="sm-tablewrap">
-        <table className="sm-table">
-          <thead><tr><th>{COPY.colMarker}</th><th>{COPY.colValue}</th><th>{COPY.colRange}</th><th>{COPY.colMonth}</th></tr></thead>
-          <tbody>
-            {labs.map((l, i) => {
-              const q = l.unit === 'qual';
-              const dir = !q && l.value > l.ref_high ? COPY.high : !q && l.value < l.ref_low ? COPY.low : null;
-              return (
-                <tr key={i} className={dir ? 'out' : ''}>
-                  <td>{l.marker.replace(/_/g, ' ')}</td>
-                  <td className="mono">{formatValue(l)}{dir ? ` (${dir})` : ''}</td>
-                  <td className="mono">{q ? '-' : `${l.ref_low}-${l.ref_high}`}</td>
-                  <td className="mono">{l.date}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <dl className="sm-facts">
-        <dt>{COPY.imaging}</dt><dd>{list(detail.imaging.map((i) => `${codeLabel(i.code).toLowerCase()} (${i.date})`))}</dd>
-        <dt>{COPY.symptoms}</dt><dd>{list(detail.symptoms.map(codeLabel))}</dd>
-        <dt>{COPY.specialties}</dt><dd>{list(detail.specialties.map(codeLabel))}</dd>
-        <dt>{COPY.country}</dt><dd>{country}</dd>
-        <dt>{COPY.ageBand}</dt><dd>{detail.age_band}</dd>
-      </dl>
-      <p className="sm-other" data-testid={`sim-other-doctor-${n}`}>{COPY.otherDoctor(spec, country)}</p>
-      <p className="sm-sent" role="status" data-testid={`sim-sent-${n}`}>{COPY.sent}</p>
-      <ul className="sm-logs mono">
-        <li>{COPY.logDemo}</li>
-        <li>{COPY.logMatch(n, country)}</li>
-      </ul>
-    </div>
+    </>
   );
 }

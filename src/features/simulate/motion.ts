@@ -1,6 +1,6 @@
 /**
- * The motion of /doctor/simulate (MIN-4609), every number in one place. Source: docs/design/simulations-motion-spec.md section B.
- * Times in ms. `R` in the comments is the moment the 5,000 dots have filled in. The CSS durations are the tokens in
+ * The motion of /doctor/simulate (MIN-4609, one flow since MIN-4736), every number in one place. Source: docs/design/simulations-motion-spec.md section B.
+ * Times in ms. `R` in the comments is the moment the dots have filled in. The CSS durations are the tokens in
  * src/styles/tokens.css (--dur-fade, --dur-step, --ease-out, --ease-inout); the JS values below mirror them for the canvas.
  */
 export const SM_REVEAL_MS = 1400; // the dots fill in (quadratic ease-out, unchanged)
@@ -10,15 +10,9 @@ export const SM_FADE_MS = 600; // the dots that leave fade over this long, --dur
 export const SM_RING_MS = 300; // one ring landing
 export const SM_RING_STAGGER_MAX = 120;
 export const SM_RING_SPREAD_MS = 600; // stagger = min(120, 600 / count)
-export const SM_CARD_AFTER_RINGS_MS = 500; // the matches card enters 500 ms after the rings start
-export const SM_CONTACT_STEP_MS = 900; // the four simulated contact steps on a card (unchanged)
 
-/** Start of matching step `s` (1 = features, 2 = opt-in, 3 = shared codes, 4 = exact set, 5 = k), ms after R. */
+/** Start of stage `s` (1 = all records, 2 = opted in, 3 = fit the criteria, 4 = selected), ms after R. */
 export const stepAt = (s: number) => SM_SETTLE_MS + (s - 1) * SM_STAGE_MS;
-/** The rings start once the k step has had its 400 ms. */
-export const SM_RINGS_AT = stepAt(5) + 400;
-export const SM_CARD_AT = SM_RINGS_AT + SM_CARD_AFTER_RINGS_MS;
-export const SM_HOLD_AT = SM_CARD_AT + 400; // the card has finished entering: 7,700 after R
 
 export const ringStagger = (count: number) => (count > 0 ? Math.min(SM_RING_STAGGER_MAX, SM_RING_SPREAD_MS / count) : 0);
 /** When the last ring has landed, ms after the rings start. */
@@ -50,9 +44,3 @@ export function cubicBezier(x1: number, y1: number, x2: number, y2: number) {
 }
 export const easeInOut = cubicBezier(0.4, 0, 0.2, 1); // --ease-inout
 export const easeOut = cubicBezier(0.22, 1, 0.36, 1); // --ease-out
-
-/** Width of the fraction bar for step 1..5: the share of the 5,000 records that are still bright, from the matcher's funnel. */
-export function barFraction(step: number, n: number, f: { opted_in: number; share_min: number; exact: number }) {
-  const bright = [n, n, f.opted_in, f.share_min, f.exact, f.exact][Math.min(Math.max(step, 0), 5)];
-  return n > 0 ? bright / n : 0;
-}
