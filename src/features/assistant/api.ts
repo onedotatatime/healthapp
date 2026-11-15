@@ -22,7 +22,7 @@ export interface AssistantApi {
 }
 
 /** The grant is over (or never was): the caller should ask `grant-status` and close. */
-export const isGrantGone = (e: unknown) => e instanceof ApiError && (e.code === 'grant_expired' || e.code === 'unauthenticated' || e.status === 403);
+export const isGrantGone = (e: unknown) => e instanceof ApiError && (e.code === 'grant_expired' || e.status === 403);
 
 export function askErrorMessage(e: unknown): string {
   if (e instanceof ApiError) {

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ApiError } from '../api/call';
 import { callFunction, supabase } from '../api/client';
 import { DemoLoginResponse, Profile, type DemoPersona, type Role } from '../api/contract';
@@ -9,7 +9,10 @@ interface Auth {
   displayName: string | null;
   /** Throws ApiError (HTTP status in `.status`) when the passcode or the server refuses. */
   signInDemo(persona: DemoPersona, passcode: string): Promise<Role>;
+  /** Signs out this device only. */
   signOut(): Promise<void>;
+  /** True when the session ended and this device did not ask for it (MIN-4648): Login says so. */
+  sessionEnded: boolean;
 }
 
 const Ctx = createContext<Auth | null>(null);
@@ -26,6 +29,9 @@ async function readProfile(uid: string): Promise<Profile | null> {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'loading' });
   const [displayName, setDisplayName] = useState<string | null>(null);
+  const [sessionEnded, setSessionEnded] = useState(false);
+  /** True while this device itself is signing out, so its own SIGNED_OUT is not reported as an ended session. */
+  const selfSignOut = useRef(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -43,7 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setState({ status: 'in', role: p.role });
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_OUT') setState({ status: 'out' });
+      if (event === 'SIGNED_OUT') {
+        if (!selfSignOut.current) setSessionEnded(true);
+        setState({ status: 'out' });
+      }
     });
     return () => {
       live = false;
@@ -51,28 +60,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  /** This device only: `scope: 'local'` leaves the account's other devices signed in (MIN-4648). */
+  const signOutHere = useCallback(async () => {
+    selfSignOut.current = true;
+    try {
+      await supabase?.auth.signOut({ scope: 'local' });
+    } finally {
+      selfSignOut.current = false;
+    }
+  }, []);
+
   const signInDemo = useCallback(async (persona: DemoPersona, passcode: string): Promise<Role> => {
     if (!supabase || !callFunction) throw new ApiError(0, 'Not configured.');
     const res = await callFunction('demo-login', { persona, passcode }, DemoLoginResponse);
+    setSessionEnded(false);
     const { error } = await supabase.auth.setSession({ access_token: res.access_token, refresh_token: res.refresh_token });
     if (error) throw new ApiError(0, 'The session was not accepted.');
     const p = await readProfile(res.user_id);
     if (!p) {
-      await supabase.auth.signOut();
+      await signOutHere();
       throw new ApiError(404, 'This account has no profile in this environment.');
     }
     setDisplayName(p.full_name);
     setState({ status: 'in', role: p.role });
     return p.role;
-  }, []);
+  }, [signOutHere]);
 
   const signOut = useCallback(async () => {
-    await supabase?.auth.signOut();
+    await signOutHere();
     setDisplayName(null);
     setState({ status: 'out' });
-  }, []);
+  }, [signOutHere]);
 
-  const value = useMemo(() => ({ state, displayName, signInDemo, signOut }), [state, displayName, signInDemo, signOut]);
+  const value = useMemo(() => ({ state, displayName, signInDemo, signOut, sessionEnded }), [state, displayName, signInDemo, signOut, sessionEnded]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
