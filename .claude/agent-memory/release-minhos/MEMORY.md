@@ -8,3 +8,5 @@
 - [Release audit cleanup](feedback_release_audit_cleanup.md) — merged = mergeCommit on main + Pages check; leased atomic remote deletes; lsof for live cwd; batch branch -D refused
 - [feedback_quoted_heredoc](feedback_quoted_heredoc.md) — Never build a PR body or comment with an unquoted heredoc; backticks in markdown run as commands in the shell'
 - [project_healthapp_live_function_checks](project_healthapp_live_function_checks.md) — How Release calls a deployed healthapp edge function for real as the dev doctor, proves a boxd machine is gone
+- [healthapp release contents](project_healthapp_release_contents.md) — merge-base check, pin release branch by refspec, merge pinned to head
+- [healthapp staging verify](project_healthapp_staging_verify.md) — /health needs a Playwright render for the sha; twin ff push can be refused, gate E2E on it

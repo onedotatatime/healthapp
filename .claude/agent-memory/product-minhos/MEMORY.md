@@ -1,1 +1,3 @@
 - [Simulation claim rules](reference_simulation_claim_rules.md) — CEO conditions on MIN-4506, CTO-fixed labels, simulation.json is generated (Cron)
+- [Healthapp Linear setup](reference_healthapp_linear_setup.md) — project name, label and assignee per seat, story format (MIN-4554), how to measure a subagent run
+- [Possible diagnoses history](project_possible_diagnoses_history.md) — E3 cut 2026-11-14 (MIN-4489), back as slice 2 of MIN-4659; PRD §8 flag 3 is the precedent

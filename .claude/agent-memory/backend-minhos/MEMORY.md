@@ -14,3 +14,4 @@
 - [healthapp matches RPC](project_healthapp_matches_rpc.md) — 005-007 + 013 coding, check file, hash-verified applies, execute_sql limits
 - [healthapp matches replay](project_healthapp_matches_replay.md) — MIN-4649 CTE-folding timeout, 018/019, throwaway PG18 recipe, calls-count proof
 - [Seeds through the connector](feedback_seed_through_connector.md) — one execute_sql call, compact DO block, self-check fingerprint, live-body guard, rollback file, replay via psql -c
+- [Diagnoses function (MIN-4662)](project_healthapp_diagnoses_fn.md) — guard design, choices beyond spec, deno scratch-copy and Write-block traps, vacuous contract test
