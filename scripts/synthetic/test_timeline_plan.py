@@ -77,6 +77,9 @@ if tl is not None:
     check("3 the last income is the plan's own 24-month figure x 1000 (EUR 164,352 for 26/180/560)",
           tl["income_eur"]["values"][-1] == half_up(sum(cons[m] for m in range(1, N + 1)) * 1000))
     check("3 income at month 14 is the plan's first year, EUR %dk" % fp.CONSERVATIVE[0], tl["income_eur"]["values"][13] == fp.CONSERVATIVE[0] * 1000)
+    first_paid = next(m for m in range(1, N + 1) if tl["patients"]["values"][m - 1] > 0)
+    check("3 plan.pilot_from is the plan's PILOT_FROM (%d), the free pilot start (MIN-4715)" % fp.PILOT_FROM, tl["plan"].get("pilot_from") == fp.PILOT_FROM, str(tl["plan"].get("pilot_from")))
+    check("3 the first month with patients (%d) comes after pilot_from" % first_paid, isinstance(tl["plan"].get("pilot_from"), int) and first_paid > tl["plan"]["pilot_from"])
     check("3 plan.yearly_k_eur and price_eur_per_case are the plan's", tl["plan"]["yearly_k_eur"] == list(fp.CONSERVATIVE) and tl["plan"]["price_eur_per_case"] == fp.PRICE_EUR_PER_CASE)
     check("3 patients, income and matches never fall; patients and matches start at 0",
           all(all(b >= a for a, b in zip(v, v[1:])) for v in (tl["patients"]["values"], tl["income_eur"]["values"], tl["matches"]["count"]))

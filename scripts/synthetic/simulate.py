@@ -38,7 +38,7 @@ SPEND_OPENED = "2026-11-15"
 #   per_case_only : patients = running total of the plan's revenue x its per-case share (deck A6 line A / total, per plan year) / EUR 40 (Marketing, MIN-4697). THE DEFAULT.
 #   all_revenue   : patients = running total of the plan's revenue / EUR 40 (counts doctor-seat fees as cases). The CTO's first contract formula; kept for comparison only.
 TIMELINE_RAMP = "per_case_only"
-TIMELINE_LABEL = "Plan months on synthetic records. A plan and a model, not a measurement"      # provisional: Marketing's string (MIN-4697 part 2) replaces it
+TIMELINE_LABEL = "Plan months on synthetic records. A plan and a model, not a measurement"
 TIMELINE_PLAN_STATUS = "a plan, not a measurement (CEO seat, MIN-4503)"
 # The CEO seat's wording, MIN-4698 decision comment 7b038e47: the modelled drop "is the yearly figure at that month's network size".
 TIMELINE_MEASURE_STATUS = ("CEO on the founder's behalf, MIN-4698, 2026-11-15: the modelled drop in cost is the yearly figure at that month's network size, "
@@ -114,8 +114,9 @@ else:
 timeline = {
     "label": TIMELINE_LABEL,
     "x": {"unit": "plan month", "values": list(range(1, TL_N + 1))},
-    "plan": {"name": "Pathien funding model v4, conservative line", "module": "docs/business/funding_plan.py",
-             "yearly_k_eur": list(funding_plan.CONSERVATIVE), "price_eur_per_case": PRICE, "status": TIMELINE_PLAN_STATUS},
+    "plan": {"name": "Pathien funding model v5, conservative line", "module": "docs/business/funding_plan.py",
+             "yearly_k_eur": list(funding_plan.CONSERVATIVE), "price_eur_per_case": PRICE, "status": TIMELINE_PLAN_STATUS,
+             "pilot_from": funding_plan.PILOT_FROM},
     "patients": {"unit": "patients in the network, running total", "ramp": args.ramp, "formula": ramp_text, "values": patients},
     "income_eur": {"unit": "EUR, running total, plan",
                    "formula": "income[m] = half-up(sum of the plan's revenue in months 1 to m, in euros); the plan's conservative line (EUR %dk, %dk, %dk a plan year)" % funding_plan.CONSERVATIVE,

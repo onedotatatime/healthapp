@@ -176,7 +176,7 @@
    ]
   },
   "plan": {
-   "name": "Pathien funding model v4, conservative line",
+   "name": "Pathien funding model v5, conservative line",
    "module": "docs/business/funding_plan.py",
    "yearly_k_eur": [
     26,
@@ -184,7 +184,8 @@
     560
    ],
    "price_eur_per_case": 40,
-   "status": "a plan, not a measurement (CEO seat, MIN-4503)"
+   "status": "a plan, not a measurement (CEO seat, MIN-4503)",
+   "pilot_from": 3
   },
   "patients": {
    "unit": "patients in the network, running total",
