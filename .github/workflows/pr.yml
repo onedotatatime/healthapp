@@ -21,6 +21,10 @@ jobs:
       # Built with no env on purpose: the build must not fail without the values.
       - run: npm run build
       - run: npm run check:static
+      # The plan's conservative line against the timeline block of simulation.json (MIN-4701): a stale file turns the PR red. No matching, under 1 s.
+      - run: python3 scripts/synthetic/test_timeline_plan.py
+      # The nightly's guard and reporter run from the staging checkout, so any PR can change them: test them here, not only at 03:00 (MIN-4727). No dependencies, about 1.5 s.
+      - run: node --test scripts/nightly-scripts.test.mjs
   smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 15

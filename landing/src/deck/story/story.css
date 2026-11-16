@@ -1,0 +1,218 @@
+/* The /story deck. Loaded after ../deck.css; the 1920x1080 canvas, tokens and type scale are the deck engine's.
+   Layout: docs/story/layout-spec.md. Motion: --ease-out only, no bounce, no spring, no parallax, no scrub; reduced motion = opacity only, .01s. */
+:root{--ease-out:cubic-bezier(.22,1,.36,1);--dur-fast:.2s;--dur-step:.4s;--dur-reveal:.8s;--faint:#A9BDBC}
+@media (prefers-reduced-motion:reduce){:root{--dur-fast:.01s;--dur-step:.01s;--dur-reveal:.01s}}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* ---- slides stay mounted (the frames never unmount): the outgoing one fades up, the incoming one rises ---- */
+.story .slide{display:block;visibility:hidden;opacity:0;translate:0 24px;pointer-events:none;
+  transition:opacity var(--dur-step) var(--ease-out),translate var(--dur-step) var(--ease-out),visibility 0s linear var(--dur-step)}
+.story .slide.is-before{translate:0 -24px}
+.story .slide.is-current{visibility:visible;opacity:1;translate:0 0;pointer-events:auto;
+  transition:opacity var(--dur-reveal) var(--ease-out) .2s,translate var(--dur-reveal) var(--ease-out) .2s,visibility 0s}
+.story .slide>[class^='ts-'],.story .slide>[class*=' ts-']{position:absolute;inset:0}
+@media (prefers-reduced-motion:reduce){.story .slide,.story .slide.is-before{translate:none}}
+
+/* ---- blocks fade up 24px once, 0.8 s, 0.1 s apart. Visible by default, so the outgoing slide keeps its content while it fades ---- */
+@keyframes rise-in{from{opacity:0;translate:0 24px}to{opacity:1;translate:0 0}}
+@keyframes rise-fade{from{opacity:0}to{opacity:1}}
+@keyframes rise-photo{from{opacity:0;translate:0 24px;scale:1.04}to{opacity:1;translate:0 0;scale:1}}
+@keyframes rise-paper{from{opacity:0;translate:0 40px;rotate:3deg}to{opacity:1;translate:0 0;rotate:0deg}}
+@keyframes rise-frame{from{opacity:0;translate:0 24px;scale:.98}to{opacity:1;translate:0 0;scale:1}}
+.story .slide.is-current .rise{animation:rise-in var(--dur-reveal) var(--ease-out) calc(var(--i,0) * .1s + .2s) both}
+.story .slide.is-current .rise-photo{animation-name:rise-photo;animation-duration:1.2s}
+.story .slide.is-current .rise-paper{animation-name:rise-paper;animation-delay:calc(var(--i,0) * .15s + .1s)}
+.story .slide.is-current .rise-frame{animation-name:rise-frame}
+@media (prefers-reduced-motion:reduce){
+  .story .slide.is-current .rise,.story .slide.is-current .rise-photo,.story .slide.is-current .rise-paper,.story .slide.is-current .rise-frame{animation-name:rise-fade;animation-delay:0s;animation-duration:.01s}
+}
+
+/* ---- chrome: no counter, no foot lockup, no timeline; the lockup sits top right ---- */
+.head-lockup-story{width:150px;margin-left:auto}
+.chip{position:absolute;left:24px;bottom:24px;max-width:calc(100% - 48px);padding:8px 18px;border-radius:999px;background:rgba(234,243,242,.92);color:var(--ink);font-size:22px;line-height:1.2;font-weight:600;letter-spacing:0}
+
+/* ---- 1: intro (the cover, with a name, three facts and the portrait) ---- */
+.si-h1{margin:0;white-space:normal}
+.si-sub{position:absolute;left:120px;top:296px;width:1000px;font-size:40px;line-height:48px;font-weight:500;color:var(--ink)}
+.si-facts{position:absolute;left:120px;top:424px;width:900px}
+.si-facts li{margin-bottom:20px;padding-left:22px;border-left:4px solid var(--teal);font-size:28px;line-height:36px;font-weight:500}
+.si-photo{position:absolute;left:1230px;top:110px;width:560px;height:700px;margin:0}
+.si-photo img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 30%;border-radius:32px;box-shadow:var(--sh)}
+
+/* ---- 2: memoir (headline and words top left, two small hospital photos top right, two big spreadsheets laid on the desk like paper) ---- */
+.sm-h{left:120px;top:122px;width:960px;line-height:58px;text-wrap:balance}
+.sm-body{position:absolute;left:120px;top:276px;width:900px;font-size:28px;line-height:36px;font-weight:400}
+.sm-photo{position:absolute;top:116px;width:320px;height:330px;margin:0}
+.sm-photo-0{left:1130px}
+.sm-photo-1{left:1480px}
+.sm-photo img{display:block;width:100%;height:100%;object-fit:cover;border-radius:28px;box-shadow:var(--sh)}
+.sm-photo .chip{left:16px;bottom:16px;max-width:calc(100% - 32px);padding:6px 14px;font-size:20px}
+.sm-sheet{position:absolute;width:830px;height:474px;margin:0;background:#fff;border:12px solid #fff;border-radius:6px;
+  box-shadow:var(--sh),0 2px 6px rgba(11,59,61,.12),0 0 0 1px rgba(18,32,31,.08)}
+/* the picture is shown 125% large, from just under the toolbar: the numbers read from the back of a room (the source is 1280 px wide) */
+.sm-sheet{overflow:hidden}
+.sm-sheet img{display:block;width:125%;height:125%;max-width:none;margin:-60px 0 0 -8px;object-fit:cover;object-position:0 0}
+.sm-sheet-0{left:120px;top:480px;transform:rotate(-1.1deg);z-index:1}
+.sm-sheet-1{left:970px;top:492px;transform:rotate(1deg);z-index:2}
+
+/* ---- 3 (+4), 5 and 5c: live frames ---- */
+/* slide 3 (+4): the headline swaps per beat (a stack of headlines, one on at a time), the frames stay */
+.sl-heads .sl-h{left:0;opacity:0;translate:0 24px;transition:opacity var(--dur-step) var(--ease-out),translate var(--dur-step) var(--ease-out)}
+.sl-heads .sl-h:first-child:not(.is-on){translate:0 -24px}
+.sl-heads .sl-h.is-on{opacity:1;translate:0 0;transition:opacity var(--dur-reveal) var(--ease-out) .1s,translate var(--dur-reveal) var(--ease-out) .1s}
+.sl-heads{position:absolute;left:120px;top:0;width:1680px;height:0}
+.sl-heads .slide-h{left:0}
+.sl-support{position:absolute;left:120px;top:198px;width:1680px;height:40px}
+.sl-sup{position:absolute;left:0;top:0;width:1680px;font-size:28px;line-height:36px;color:var(--soft);opacity:0;translate:0 24px;
+  transition:opacity var(--dur-step) var(--ease-out),translate var(--dur-step) var(--ease-out)}
+.sl-sup:first-child:not(.is-on){translate:0 -24px}
+.sl-sup.is-on{opacity:1;translate:0 0;transition:opacity var(--dur-reveal) var(--ease-out) .1s,translate var(--dur-reveal) var(--ease-out) .1s}
+.sl-label{position:absolute;top:256px;line-height:22px;white-space:nowrap}
+.sl-label-l{left:120px}
+.sl-label-r{right:120px;text-align:right}
+.sl-frame-pos{position:absolute}
+.sl-solo-h{left:120px;top:122px;width:540px;font-size:48px;line-height:52px}
+
+.live-frame{position:relative}
+.lf-browser{display:flex;flex-direction:column;width:max-content;background:#fff;border-radius:24px;overflow:hidden;box-shadow:var(--sh);transition:box-shadow var(--dur-step) var(--ease-out)}
+.lf-browser.is-hot{box-shadow:0 0 0 3px var(--teal),var(--sh)}
+.lf-edge{position:absolute;inset:0;border:2px solid rgba(18,32,31,.08);border-radius:24px;pointer-events:none}
+.lf-bar{display:flex;align-items:center;gap:16px;height:52px;padding:0 16px 0 20px;background:var(--mist);border-bottom:1px solid rgba(18,32,31,.08)}
+.lf-dots{display:flex;gap:10px}
+.lf-dots i{display:block;width:14px;height:14px;border-radius:50%;background:var(--skel)}
+.lf-address{height:36px;padding:0 20px;border-radius:999px;background:#fff;font-size:20px;line-height:36px;color:var(--soft);letter-spacing:0}
+.lf-bar .lf-badge{margin-left:auto}
+.lf-viewport{position:relative;overflow:hidden;background:#fff}
+.lf-shot{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:0 0;user-select:none}
+.lf-iframe{position:absolute;left:0;top:0;border:0;background:#fff;transform-origin:0 0;opacity:0;transition:opacity var(--dur-step) ease}
+.lf-iframe.is-shown{opacity:1}
+
+.lf-phone{width:336px;height:705px}
+.lf-phone-body{position:relative;width:336px;height:705px;padding:10px;background:var(--night);border-radius:54px;box-shadow:var(--sh);
+  transition:translate var(--dur-reveal) var(--ease-out),scale var(--dur-reveal) var(--ease-out),box-shadow var(--dur-reveal) var(--ease-out)}
+.lf-phone .lf-viewport{border-radius:44px}
+.lf-phone.is-hot .lf-phone-body{box-shadow:0 0 0 3px var(--teal),var(--sh)}
+.lf-notch{position:absolute;left:50%;top:20px;width:60px;height:10px;margin-left:-30px;border-radius:5px;background:var(--skel);z-index:2}
+.lf-badge-row{position:absolute;right:100%;bottom:0;margin-right:16px;display:flex}
+
+.lf-badge{display:inline-flex;align-items:center;gap:10px;height:36px;padding:0 16px;border:0;border-radius:999px;background:var(--skel);color:var(--ink);
+  font:700 20px/1 var(--font);letter-spacing:.06em;text-transform:uppercase;transition:background var(--dur-step) ease}
+.lf-badge i{position:relative;display:none;width:10px;height:10px;border-radius:50%}
+.lf-badge.is-ready{background:var(--mist)}
+.lf-badge.is-live{background:var(--mint)}
+.lf-badge.is-live i{display:block;background:var(--teal)}
+.lf-badge.is-ready i{display:block;background:var(--soft)}
+@media (prefers-reduced-motion:no-preference){
+  .lf-badge.is-live i::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--teal);animation:lf-ring 1.6s ease-out infinite}
+}
+@keyframes lf-ring{from{transform:scale(1);opacity:.5}to{transform:scale(1.8);opacity:0}}
+.lf-badge.is-button{cursor:pointer}
+
+/* ---- navigation: a dot per stop, a "3 / 9" counter, large back and next buttons. Inside the 1920x1080 frame, bottom left, in the strip under every slide (content ends by y 1002; the bar is y 1002-1072).
+   Night pill with mint ink so it reads on air, mist and night slides alike. Idle (3 s without input) = low opacity, never hidden, still clickable. ---- */
+.sn-wrap{position:absolute;left:56px;bottom:8px;z-index:6;display:flex;align-items:center;gap:16px}
+.sn{position:relative;display:flex;flex:none;align-items:center;gap:16px;height:70px;padding:0 6px 0 16px;box-sizing:border-box;border-radius:35px;
+  background:rgba(11,59,61,.95);box-shadow:0 0 0 2px rgba(127,227,207,.28),var(--sh);color:#fff;cursor:default;transition:opacity .4s var(--ease-out)}
+.sn.is-idle{opacity:.3}
+.sn.is-idle:hover,.sn.is-idle:focus-within{opacity:1}
+.sn.is-clean{display:none}
+.sn-dots{display:flex;margin:0;padding:0;list-style:none}
+.sn-dot{position:relative;display:grid;place-items:center;width:36px;height:54px;padding:0;border:0;border-radius:12px;background:none;cursor:pointer}
+.sn-dot i{display:block;width:12px;height:12px;border-radius:6px;background:var(--faint);opacity:.65}
+.sn-dot:hover i{background:var(--mint-soft);opacity:1}
+.sn-dot.is-current i{width:28px;background:var(--mint);opacity:1}
+.sn-tip{position:absolute;left:50%;bottom:calc(100% + 6px);translate:-50% 0;padding:8px 18px;border-radius:999px;background:var(--mint);color:var(--night);font-size:24px;line-height:1.2;font-weight:700;white-space:nowrap;
+  opacity:0;visibility:hidden;pointer-events:none;transition:opacity var(--dur-fast) ease,visibility 0s linear var(--dur-fast)}
+.sn-dot:hover .sn-tip,.sn-dot:focus-visible .sn-tip{opacity:1;visibility:visible;transition:opacity var(--dur-fast) ease}
+.sn-count{display:flex;flex-direction:column;justify-content:center;gap:1px;width:156px;margin:0;line-height:1.1}
+.sn-count b{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff}
+.sn-count span{font-size:20px;font-weight:600;color:var(--mint-soft)}
+.sn-btn{display:grid;place-items:center;flex:none;width:58px;height:58px;padding:0;border-radius:50%;border:3px solid var(--mint);cursor:pointer;transition:background var(--dur-fast) ease,transform var(--dur-fast) var(--ease-out),opacity var(--dur-fast) ease}
+.sn-back{background:transparent;color:var(--mint)}
+.sn-back:hover:not(:disabled){background:rgba(127,227,207,.2)}
+.sn-next{background:var(--mint);color:var(--night)}
+.sn-next:hover:not(:disabled){background:var(--mint-soft);border-color:var(--mint-soft)}
+.sn-btn:active:not(:disabled){transform:scale(.95)}
+.sn-btn:disabled{opacity:.3;cursor:default}
+.sn-dot:focus-visible,.sn-btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+/* the key hint (presenter chrome beside the bar, shown only while the controls are awake) */
+.sn-keys{display:flex;align-items:center;height:70px;margin:0;padding:0 20px;box-sizing:border-box;border-radius:35px;background:rgba(11,59,61,.88);color:var(--mint-soft);
+  font-size:16px;line-height:1;font-weight:600;white-space:nowrap;pointer-events:none;transition:opacity .4s var(--ease-out)}
+.sn-keys.is-off{opacity:0}
+
+/* ---- 4b: the emergency "what if" (photo, scrim, three steps, a phone and a rescuer's tablet; no iframe) ---- */
+.s4b-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;transform:scale(1.25);transform-origin:100% 100%}
+.s4b-scrim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(11,59,61,.70) 0%,rgba(11,59,61,.70) 46%,rgba(11,59,61,.12) 80%,rgba(11,59,61,.12) 100%)}
+.s4b-left{position:absolute;left:120px;top:122px;width:780px;color:#fff}
+.s4b-h{margin:0;font-size:68px;line-height:1.04;font-weight:700;letter-spacing:-.04em;color:#fff;text-wrap:balance}
+.s4b-steps{margin:48px 0 0;padding:0;list-style:none;width:780px;display:flex;flex-direction:column;gap:32px}
+.s4b-step{display:flex;gap:20px;align-items:flex-start}
+.s4b-num{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--coral);color:var(--ink);font-size:18px;font-weight:800;line-height:1;margin-top:2px}
+.s4b-step p{margin:0;text-wrap:balance;font-size:28px;line-height:1.3;font-weight:500;color:#fff}
+.s4b-step small{display:block;margin-top:6px;font-size:22px;line-height:1.3;font-weight:600;color:#fff}
+.s4b-badge{position:absolute;left:120px;top:880px;display:inline-block;background:var(--mint);color:var(--ink);font-size:22px;line-height:1.2;font-weight:700;padding:12px 24px;border-radius:999px}
+.s4b-devices{position:absolute;inset:0;pointer-events:none}
+.s4b-path{position:absolute;left:0;top:0}
+.s4b-phone{position:absolute;left:1010px;top:220px;box-sizing:border-box;width:320px;height:640px;border:8px solid var(--ink);border-radius:32px;background:var(--air);box-shadow:var(--sh);overflow:hidden;transform:scale(1.1);transform-origin:top left;color:var(--ink)}
+.s4b-ph-in{padding:20px 18px;display:flex;flex-direction:column;gap:14px;height:100%;box-sizing:border-box}
+.s4b-call{display:flex;align-items:center;gap:12px;background:var(--night);color:#fff;border-radius:24px;padding:14px 16px}
+.s4b-av{width:40px;height:40px;border-radius:50%;background:var(--coral);display:grid;place-items:center;font-weight:800;color:var(--ink)}
+.s4b-call b{display:block;font-size:16px;font-weight:700}
+.s4b-call small{font-size:14px;color:var(--mint);font-weight:600}
+.s4b-end{margin-left:auto;flex:none;width:36px;height:36px;border-radius:50%;background:var(--coral);display:grid;place-items:center}
+.s4b-card{background:#fff;border-radius:24px;padding:18px;box-shadow:var(--sh);border:2px solid var(--mint);display:flex;flex-direction:column;gap:12px}
+.s4b-lock{display:flex;align-items:center;gap:8px}
+.s4b-lock svg{width:28px;height:28px}
+.s4b-lock span{font-weight:800;font-size:16px;color:var(--teal)}
+.s4b-card h4{margin:0;font-size:18px;line-height:1.25;font-weight:700}
+.s4b-chip{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;background:var(--mist);color:var(--teal);font-weight:700;font-size:14px;padding:8px 12px;border-radius:999px}
+.s4b-row{display:flex;justify-content:space-between;font-size:14px;color:var(--soft);font-weight:600}
+.s4b-tick{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--teal)}
+.s4b-tick i{flex:none;width:20px;height:20px;border-radius:50%;background:var(--mint);display:grid;place-items:center}
+.s4b-sk{height:12px;border-radius:999px;background:var(--skel)}
+.s4b-tablet{position:absolute;left:1500px;top:400px;width:360px;height:280px;box-sizing:border-box;border:8px solid var(--ink);border-radius:28px;background:var(--air);box-shadow:var(--sh);color:var(--ink)}
+.s4b-tb-in{padding:20px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:12px}
+.s4b-top{display:flex;justify-content:space-between;font-size:16px;font-weight:700;color:var(--soft)}
+.s4b-tablet h4{margin:0;font-size:20px;font-weight:700;line-height:1.25}
+.s4b-folder{background:#fff;border-radius:16px;padding:12px 14px;display:flex;gap:12px;align-items:center;border:2px solid var(--mint)}
+.s4b-ic{flex:none;width:36px;height:36px;border-radius:12px;background:var(--mist);display:grid;place-items:center}
+.s4b-folder small{display:block;font-size:16px;color:var(--soft);font-weight:600}
+.s4b-tb-in .s4b-tick{margin-top:auto;font-size:16px}
+
+/* ---- 5b: did you know (mint figures on night) ---- */
+.sn-rule{position:absolute;left:959px;top:250px;width:2px;height:650px;background:rgba(127,227,207,.25)}
+.sn-col{position:absolute;top:0;bottom:0}
+.sn-left{left:120px;width:780px}
+.sn-right{left:1020px;width:780px}
+.sn-col>*{position:absolute;margin:0}
+.sn-fig{top:250px;left:0;display:flex;align-items:baseline;gap:16px;white-space:nowrap}
+.sn-num{font-size:240px;line-height:.92;font-weight:700;letter-spacing:-.05em;color:var(--mint);font-variant-numeric:tabular-nums}
+.sn-unit{font-size:96px;line-height:1;font-weight:700;letter-spacing:-.03em;color:#fff}
+.sn-label{top:560px;left:0;width:760px;font-size:36px;line-height:44px;font-weight:600;color:#fff}
+.sn-climax{top:700px;left:0;width:760px;font-size:52px;line-height:58px;font-weight:700;letter-spacing:-.03em;color:#fff}
+.sn-mint{color:var(--mint)}
+.sn-source{top:840px;left:0;width:760px;font-size:22px;line-height:28px;color:var(--faint)}
+.sn-note{position:absolute;left:120px;top:906px;margin:0;font-size:19px;line-height:1.3;color:var(--faint)}
+
+/* ---- 6: close ---- */
+.sc-h{position:absolute;left:120px;top:270px;width:1000px;margin:0;font-size:132px;line-height:130px;font-weight:700;letter-spacing:-.04em;color:#fff}
+.sc-h span{display:block}
+.sc-contact{position:absolute;left:120px;top:610px;display:flex;align-items:center;gap:28px}
+.sc-photo{display:block;width:112px;height:112px;border-radius:50%;object-fit:cover;object-position:50% 30%}
+.sc-name{margin:0;font-size:36px;line-height:44px;font-weight:700;color:#fff}
+.sc-line{margin:0;font-size:28px;line-height:36px;color:var(--faint)}
+.sc-lockup{position:absolute;left:120px;top:860px;width:300px}
+.sc-links{position:absolute;left:1150px;top:150px;width:650px;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:16px}
+.sc-link{display:flex;flex-direction:column;justify-content:center;gap:2px;height:104px;box-sizing:border-box;padding:0 36px;border-radius:32px;background:var(--mint);color:var(--night);text-decoration:none;box-shadow:var(--sh);transition:transform var(--dur-fast) var(--ease-out)}
+.sc-link:hover,.sc-link:focus-visible{transform:translateY(-2px)}
+.sc-link:active{transform:scale(.98)}
+.sc-link:focus-visible{outline:4px solid #fff;outline-offset:4px}
+.sc-link-label{font-size:38px;line-height:44px;font-weight:700;letter-spacing:-.01em}
+.sc-link-url{font-size:22px;line-height:26px;font-weight:500;opacity:.8}
+
+/* ---- print: every slide, no controls ---- */
+@media print{
+  .sn,.sn-keys{display:none!important}
+  .story .slide{visibility:visible!important;opacity:1!important;translate:none!important}
+  .story .slide .rise{animation:none!important}
+}

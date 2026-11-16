@@ -1,0 +1,8 @@
+<!doctype html><body><iframe id="f" style="width:390px;height:2400px;border:0" src=""></iframe><pre id="o"></pre><script>
+const q=new URLSearchParams(location.search);const w=+q.get('w')||390;const f=document.getElementById('f');f.style.width=w+'px';f.src='loss-card-mock.html?'+q.get('p');
+f.onload=()=>setTimeout(()=>{const d=f.contentDocument,r=e=>e.getBoundingClientRect();const card=d.getElementById('lc'),sl=d.getElementById('sh'),svg=d.getElementById('svg');
+const out={w,scrollW:d.documentElement.scrollWidth,card:Math.round(r(card).height),cardTop2sliderBottom:Math.round(r(sl).bottom-r(card).top),sliderH:r(sl).height,
+thumbCx:null,markerX:null,rows:[...d.querySelectorAll('.ro .t')].map(e=>Math.round(r(e).height)),switchH:r(d.querySelector('.sw label')).height,
+smallText:[...d.querySelectorAll('.lc *')].filter(e=>e.children.length===0&&e.textContent.trim()&&parseFloat(getComputedStyle(e).fontSize)<14).map(e=>e.textContent.trim().slice(0,20)+':'+getComputedStyle(e).fontSize).slice(0,8)};
+const s=+sl.value,Lx=parseFloat(sl.style.marginLeft)+16,pw=parseFloat(sl.style.width)-32;out.thumbCx=Math.round((r(sl).left+16+(s/100)*pw)*10)/10;out.sliderLeft=r(sl).left;out.svgLeft=r(svg).left;out.expected=Math.round((r(svg).left+Lx+(s/100)*pw)*10)/10;
+document.getElementById('o').textContent=JSON.stringify(out)},400)</script>

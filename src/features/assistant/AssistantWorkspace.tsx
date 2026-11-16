@@ -4,16 +4,21 @@
  * `DoctorWorkspace` (handshake/DoctorConnect.tsx), so the patient bundle never contains it. When access ends the shell
  * unmounts and everything here, including the conversation and the photo URL, goes with it.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChartLineUp, ChatCircleText, Stethoscope } from '@phosphor-icons/react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { EmptyState, ErrorNote, Spinner } from '../../components/Primitives';
 import { useActiveGrant } from '../handshake/context';
 import { PossibleMatchesPanel } from '../matches/PossibleMatchesPanel';
 import { askErrorMessage, isGrantGone } from './api';
+import { CARDS_SHOWN, orderSeries } from './analysis';
+import { DiagnosesPanel } from './Diagnoses';
+import { ExamsList } from './Exams';
 import { AskPanel } from './Ask';
 import { useAssistantApi } from './context';
 import { OverviewPanel } from './Overview';
-import { OverTimePanel } from './OverTimePanel';
-import { buildIndex, buildOverview, type RecordData, type Subject } from './record';
+import { FlagsRow, OverTimeView } from './OverTime';
+import { useOverTime } from './OverTimePanel';
+import { buildExams, buildIndex, buildOverview, type RecordData, type Subject } from './record';
 import { SourceViewer } from './SourceViewer';
 import './assistant.css';
 
@@ -80,16 +85,86 @@ export default function AssistantWorkspace() {
   if (!model) return <EmptyState>This record has nothing in it yet.</EmptyState>;
   const ctx = { index: model.index, openCite: open?.cite ?? null, onOpen: openCite };
   return (
-    <div className="as-grid" data-testid="assistant-workspace">
-      <section className="as-col as-left" aria-label="Overview">
-        <OverviewPanel overview={model.overview} openCite={open?.cite ?? null} onOpenCite={openCite} onOpenSubject={(s) => openSubject(s)} />
-        <OverTimePanel api={api} grantId={active.grant.grant_id} index={model.index} openCite={open?.cite ?? null} onOpenCite={openCite} onGone={gone} />
-        <PossibleMatchesPanel patientId={active.grant.patient.id} />
-      </section>
-      <section className="as-col as-right" aria-label="Assistant">
-        <AskPanel api={api} grantId={active.grant.grant_id} ctx={ctx} onGone={gone} />
-      </section>
+    <>
+      <Dashboard model={model} grantId={active.grant.grant_id} patientId={active.grant.patient.id} ctx={ctx} openCite={open?.cite ?? null} onOpenCite={openCite} onOpenSubject={(s) => openSubject(s)} onGone={gone} />
       {open && <SourceViewer subject={open.subject} record={model.data} index={model.index} api={api} grantId={active.grant.grant_id} onClose={close} onGone={gone} />}
+    </>
+  );
+}
+
+const WIDE = '(min-width: 900px)';
+/** From 900 the nav switches between three views; under it the existing column stays (one stack, both views) and the nav scrolls to a section. */
+function useWide(): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      const m = window.matchMedia?.(WIDE);
+      m?.addEventListener?.('change', cb);
+      return () => m?.removeEventListener?.('change', cb);
+    },
+    () => window.matchMedia?.(WIDE).matches ?? false,
+    () => false,
+  );
+}
+
+type View = 'overview' | 'diagnoses' | 'ask';
+interface DashProps {
+  model: { data: RecordData; index: ReturnType<typeof buildIndex>; overview: ReturnType<typeof buildOverview> };
+  grantId: string;
+  patientId: string;
+  ctx: { index: ReturnType<typeof buildIndex>; openCite: string | null; onOpen(c: string): void };
+  openCite: string | null;
+  onOpenCite(c: string): void;
+  onOpenSubject(s: Subject): void;
+  onGone(): void;
+}
+
+/** The doctor's dashboard (MIN-4664): left nav, then the overview (charts, flags, matches, exams, today's panels) and the ask panel. All three read one record and one over-time answer. */
+function Dashboard({ model, grantId, patientId, ctx, openCite, onOpenCite, onOpenSubject, onGone }: DashProps) {
+  const api = useAssistantApi();
+  const wide = useWide();
+  const [view, setView] = useState<View>('overview');
+  const [otState, retry] = useOverTime(api, grantId, onGone);
+  const [expanded, setExpanded] = useState(false);
+  const [chipsOpen, setChipsOpen] = useState(false);
+  const exams = useMemo(() => buildExams(model.data), [model.data]);
+
+  const go = (v: View) => {
+    setView(v);
+    if (!wide) document.getElementById(`dash-${v}`)?.scrollIntoView?.({ block: 'start' });
+  };
+  const goToCard = (key: string) => {
+    if (otState.status !== 'ready') return;
+    const idx = orderSeries(otState.data.series).findIndex((s) => s.key === key);
+    if (idx >= CARDS_SHOWN) setExpanded(true);
+    setTimeout(() => document.getElementById(`chart-${key}`)?.scrollIntoView?.({ block: 'center' }), 0);
+  };
+  const nav: { v: View; label: string; icon: React.ReactNode }[] = [
+    { v: 'overview', label: 'Overview', icon: <ChartLineUp size={22} weight="bold" aria-hidden="true" /> },
+    { v: 'diagnoses', label: 'Related diagnoses', icon: <Stethoscope size={22} weight="bold" aria-hidden="true" /> },
+    { v: 'ask', label: 'Ask the assistant', icon: <ChatCircleText size={22} weight="bold" aria-hidden="true" /> },
+  ];
+  return (
+    <div className="dash-shell" data-testid="assistant-workspace" data-view={view}>
+      <nav className="dnav" aria-label="Doctor workspace" data-testid="doctor-nav">
+        {nav.map((n) => (
+          <button key={n.v} type="button" onClick={() => go(n.v)} aria-current={view === n.v ? 'page' : undefined} data-testid={`nav-${n.v}`}>{n.icon}<span>{n.label}</span></button>
+        ))}
+      </nav>
+      <div className="dash-main">
+        <div id="dash-overview" className="dash-view" hidden={wide && view !== 'overview'} aria-label="Overview">
+          <OverTimeView state={otState} index={model.index} openCite={openCite} onOpenCite={onOpenCite} onRetry={retry} expanded={expanded} onToggleExpanded={() => setExpanded((x) => !x)} />
+          <FlagsRow state={otState} expandedChips={chipsOpen} onToggleChips={() => setChipsOpen((x) => !x)} onGoTo={goToCard} />
+          <PossibleMatchesPanel patientId={patientId} onGone={onGone} />
+          <ExamsList exams={exams} onOpenSubject={onOpenSubject} />
+          <OverviewPanel overview={model.overview} openCite={openCite} onOpenCite={onOpenCite} onOpenSubject={onOpenSubject} />
+        </div>
+        <div id="dash-diagnoses" className="dash-view" hidden={wide && view !== 'diagnoses'} aria-label="Related diagnoses">
+          <DiagnosesPanel api={api} grantId={grantId} index={model.index} openCite={openCite} onOpenCite={onOpenCite} onGone={onGone} />
+        </div>
+        <section id="dash-ask" className="dash-view card ask-main" hidden={wide && view !== 'ask'} aria-label="Assistant">
+          <AskPanel api={api} grantId={grantId} ctx={ctx} onGone={onGone} />
+        </section>
+      </div>
     </div>
   );
 }

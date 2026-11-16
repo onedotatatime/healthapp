@@ -666,6 +666,43 @@ export type RpcArgsOf<N extends RpcName> = z.input<(typeof RPCS)[N]["args"]>;
 export type RpcResponseOf<N extends RpcName> = z.infer<(typeof RPCS)[N]["response"]>;
 
 // ---------------------------------------------------------------------------------------------
+// healthapp-diagnoses (MIN-4662; doctor in a live grant; CTO decision on MIN-4660 §5)
+// ---------------------------------------------------------------------------------------------
+// Related diagnoses for the doctor to evaluate, from one patient's record. On request only, nothing stored.
+// 403 wrong_role for a patient, 403 grant_expired when the grant has ended, 503 model_unavailable, 500 internal.
+// Off by default per environment: status "off" with no read and no model call.
+// Every object is strict: an extra key fails the parse on both sides. No number, rank or probability field exists.
+export const DIAGNOSES_MAX_ITEMS = 6;
+export const DiagnosesRequest = z.strictObject({ grant_id: Uuid });
+export const DiagnosisStatement = z.strictObject({
+  text: z.string().min(1).max(300),
+  cites: z.array(CiteId).min(1).max(6), // every statement rests on at least one record line
+});
+export const DiagnosisItem = z.strictObject({
+  name: z.string().min(1).max(80),
+  fits: z.array(DiagnosisStatement).min(1).max(4),
+  does_not_explain: z.array(DiagnosisStatement).max(3),
+  not_in_record: z.array(z.string().min(1).max(60)).max(3), // terms searched for and not found in any record line
+});
+export type DiagnosisItem = z.infer<typeof DiagnosisItem>;
+export const DiagnosesCounts = z.strictObject({
+  facts: z.number().int(), // record lines sent to the model
+  items: z.number().int(), // items shown
+  citations: z.number().int(), // cites across the shown items
+  guard_drops: z.number().int(), // statements, terms and items the server removed
+  errors: z.number().int(),
+});
+export const DiagnosesResponse = z.strictObject({
+  run_id: Uuid,
+  status: z.enum(["ok", "none", "off"]),
+  items: z.array(DiagnosisItem).max(DIAGNOSES_MAX_ITEMS), // sorted by name on the server; [] unless status is "ok"
+  truncated: z.boolean(), // the record reached the 500-row cap of a kind
+  counts: DiagnosesCounts, // the same integers the function logs
+  created_at: Timestamp,
+});
+export type DiagnosesResponse = z.infer<typeof DiagnosesResponse>;
+
+// ---------------------------------------------------------------------------------------------
 // The function table: one typed wrapper on the client can key off this.
 // ---------------------------------------------------------------------------------------------
 export const FUNCTIONS = {
@@ -689,6 +726,7 @@ export const FUNCTIONS = {
   "healthapp-grant-decide": { session: true, request: GrantDecideRequest, response: GrantDecideResponse },
   "healthapp-grant-revoke": { session: true, request: GrantRevokeRequest, response: GrantRevokeResponse },
   "healthapp-assistant": { session: true, request: AssistantRequest, response: AssistantResponse },
+  "healthapp-diagnoses": { session: true, request: DiagnosesRequest, response: DiagnosesResponse },
   "healthapp-over-time": { session: true, request: OverTimeRequest, response: OverTimeResponse },
 } as const;
 export type FunctionName = keyof typeof FUNCTIONS;

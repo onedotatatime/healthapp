@@ -1,2 +1,0 @@
-- [Dashboard chat page (MIN-4498)](project_healthapp_dashboard_chat_ui.md) — bridge words only, key in memory, mock servers, browser-check pitfalls
-- [Browser pane timing checks](feedback_browser_pane_timing.md) — hidden pane pauses rAF; fake clock via SPA remount; offsetTop not rects; performance.now in ticks

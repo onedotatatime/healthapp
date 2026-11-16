@@ -1,8 +1,0 @@
-- [wrangler Pages delegation](feedback_wrangler_pages_delegation.md) — `pages project create` now makes a public Worker from cwd; use --force from an empty folder
-- [healthapp memory is tracked on staging](project_healthapp_memory_tracked_rebase.md) — untracked memory in a main-based worktree blocks the rebase; save, rebase, merge index
-- [healthapp local lane run](project_healthapp_local_lane_run.md) — Deno needs --node-modules-dir=auto, lint noise is baseline, smoke port 4173 may be taken
-- [Isolated worktree cleanup](feedback_isolated_worktree_cleanup.md) — isolated runs: plain `git worktree remove` (no --force) works as dirty check; -C refused
-- [Landing release lessons](project_landing_release_lessons.md) — merge memory index files, check live sha256 vs staging first, no cache-bust needed on Pages
-- [Dashboard Pages edge cache](project_dashboard_pages_edge_cache.md) — prod host keeps removed files 7 days (s-maxage); curl prod and hash URL after deploy
-- [Dashboard Pages curls](project_dashboard_pages_curls.md) — index.html 308s, use -L; local 8765 sync is ff-only pull of healthapp-dashboard-live
-- [Release audit cleanup](feedback_release_audit_cleanup.md) — merged = mergeCommit on main + Pages check; leased atomic remote deletes; lsof for live cwd; batch branch -D refused

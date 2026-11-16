@@ -4,7 +4,7 @@
  * and the tests. Nothing else in this folder imports `callFunction` or `supabase`.
  */
 import { ApiError } from '../../api/call';
-import type { FileAnalysisRow, OverTimeResponse } from './analysis.contract';
+import type { DiagnosesResponse, FileAnalysisRow, OverTimeResponse } from './analysis.contract';
 import type { AssistantResponse, DocPhotoResponse } from './contract';
 import type { RecordData } from './record';
 
@@ -19,6 +19,8 @@ export interface AssistantApi {
   fileAnalysis(docId: string): Promise<FileAnalysisRow | null>;
   /** MIN-4552: the series, the out-of-range history and the straight-line projection, calculated in code. Doctor only. */
   overTime(grantId: string): Promise<OverTimeResponse>;
+  /** MIN-4665: the related diagnoses for the record in the grant, on request only (one call per press). Doctor only. Throws ApiError: 503 `model_unavailable`, 500, 403 `grant_expired`. */
+  diagnoses(grantId: string): Promise<DiagnosesResponse>;
 }
 
 /** The grant is over (or never was): the caller should ask `grant-status` and close. */

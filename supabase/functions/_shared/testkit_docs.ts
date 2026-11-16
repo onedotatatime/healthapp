@@ -18,7 +18,7 @@ import {
   type Store,
 } from "./docs.ts";
 import type { AnalysisFields } from "./analysis.ts";
-import type { DraftIn } from "./extract.ts";
+import type { DraftIn, LoincRow } from "./extract.ts";
 import type { IdentityProfile } from "./identity.ts";
 
 export const PATIENT = "11111111-1111-4111-8111-111111111111";
@@ -32,6 +32,14 @@ const PROFILES: Record<string, IdentityProfile> = {
   [PATIENT]: { full_name: "Μαρία Παπαδοπούλου", full_name_latin: "Maria Papadopoulou", national_id_norm: "AK123456" },
   [PATIENT2]: { full_name: "Ελένη Δημητρίου", full_name_latin: "Eleni Dimitriou", national_id_norm: "AB555555" },
 };
+
+/** A few rows of 020's lab_loinc, as the store returns them (code order). */
+export const FAKE_LOINC: LoincRow[] = [
+  { loinc: "1988-5", name_en: "C reactive protein [Mass/volume] in Serum or Plasma", name_el: "C-αντιδρώσα πρωτεΐνη (CRP)", ucum: "mg/L" },
+  { loinc: "4548-4", name_en: "Hemoglobin A1c/Hemoglobin.total in Blood", name_el: "Γλυκοζυλιωμένη αιμοσφαιρίνη (HbA1c) %", ucum: "%" },
+  { loinc: "718-7", name_en: "Hemoglobin [Mass/volume] in Blood", name_el: "Αιμοσφαιρίνη (HGB)", ucum: "g/dL" },
+  { loinc: "8061-4", name_en: "Nuclear Ab [Presence] in Serum", name_el: "Αντιπυρηνικά αντισώματα (ANA)", ucum: null },
+];
 
 export const fakeAuth: Auth = { verify: (t) => Promise.resolve(TOKENS[t] ?? null) };
 
@@ -77,6 +85,10 @@ export function fakeStore() {
   const clock = { now: Date.parse("2026-11-14T10:00:00.000Z") };
   let saves = 0;
   let seq = 0;
+  /** What loincCodes answers: the rows, or an error it throws (the table missing or unreadable). */
+  let loinc: LoincRow[] | Error = FAKE_LOINC;
+  /** Every draft handed to saveExtraction, as given: the results' loinc lives here (ResultRow has no such field). */
+  const drafts: DraftIn[] = [];
   const calls: string[] = [];
   const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
   /** The bucket's object names, for the sweep's "no_file" rule; fakeBlobs().files is wired in by the test. */
@@ -84,6 +96,10 @@ export function fakeStore() {
   const store: Store = {
     roleOf: (_e, uid) => Promise.resolve(ROLES[uid] ?? null),
     identityOf: (_e, uid) => Promise.resolve(PROFILES[uid] ?? null),
+    loincCodes: () => {
+      calls.push("loincCodes");
+      return loinc instanceof Error ? Promise.reject(loinc) : Promise.resolve(loinc);
+    },
     objectMeta: (_e, path) => {
       const d = [...docs.values()].find((x) => x.meta.storage_path === path);
       return Promise.resolve(d ? { mime: d.meta.content_type, size: null, created_at: "2026-11-14T10:00:30.000+00:00" } : null);
@@ -130,13 +146,15 @@ export function fakeStore() {
     },
     async saveExtraction(_e, patientId, docId, d: DraftIn, sha, identity, auto): Promise<Saved | null> {
       calls.push("saveExtraction");
+      drafts.push(d);
       const cur = docs.get(docId);
       if (!cur || cur.document.patient_id !== patientId || cur.document.status !== "reading") return null;
       let n = 0;
       cur.document = { ...cur.document, kind: d.kind, language: d.language, exam_date: d.exam_date, issuer: d.issuer, identity_status: identity, status: "draft" };
       cur.meta = { ...cur.meta, sha256_file: sha, printed_name: d.printed_name, printed_id: d.printed_id, header_confidence: d.header_confidence };
       Object.assign(extra.get(docId)!, { reason: null, at: clock.now, keptUntil: null }); // a re-run that saves clears the end
-      cur.results = d.results.map((r) => ({ ...r, id: uuid(1000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
+      // like pgstore's load(): ResultRow.parse drops loinc, so a saved row carries no code (the column is server-side only)
+      cur.results = d.results.map(({ loinc: _code, ...r }) => ({ ...r, id: uuid(1000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
       cur.findings = d.findings.map((f) => ({ ...f, id: uuid(2000 + ++n), document_id: docId, patient_id: patientId, edited_by_patient: false }));
       // the same transaction as the store's: the plan runs on the saved row; a plan it yields confirms it there and then
       if (auto) {
@@ -265,7 +283,11 @@ export function fakeStore() {
       return { state: cur };
     },
   };
-  return { store, docs, grants, calls, analyses, saves: () => saves, extra, clock, setBlobFiles: (f: () => Iterable<string>) => void (blobFiles = f) };
+  return {
+    store, docs, grants, calls, analyses, saves: () => saves, extra, clock, drafts,
+    setBlobFiles: (f: () => Iterable<string>) => void (blobFiles = f),
+    setLoinc: (v: LoincRow[] | Error) => void (loinc = v),
+  };
 }
 
 export function fakeBlobs() {

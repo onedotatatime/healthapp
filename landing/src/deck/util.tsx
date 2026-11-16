@@ -32,9 +32,12 @@ export const Lockup = ({ theme, className = '' }: { theme: Theme; className?: st
 export const Tag = ({ children }: { children?: DemoTag }) => (children ? <span className="demo-tag">{children}</span> : null);
 
 /** Slide headline. Size steps down with length so it stays within two lines (one line when short). */
-export function Headline({ text, size: forced }: { text: string; size?: 'xl' | 'md' | 'lg' | 'sm' }) {
+export const headlineSize = (text: string): 'xl' | 'md' | 'lg' | 'sm' => {
   const n = text.length;
-  const size = forced ?? (n <= 58 ? 'xl' : n <= 68 ? 'md' : n <= 88 ? 'lg' : 'sm');
+  return n <= 58 ? 'xl' : n <= 68 ? 'md' : n <= 88 ? 'lg' : 'sm';
+};
+export function Headline({ text, size: forced }: { text: string; size?: 'xl' | 'md' | 'lg' | 'sm' }) {
+  const size = forced ?? headlineSize(text);
   return <h2 className={`slide-h ${size}`}>{rich(text)}</h2>;
 }
 

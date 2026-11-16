@@ -33,11 +33,13 @@ function renderMain(){
   +   '<div class="winwrap"><div class="winlabels"><span style="left:'+fr(H.T.submit)+'%;transform:translateX(-100%)">17:00 submit</span></div>'
   +   '<div class="wintrack"><div class="winbar" id="bar"><i class="fill"></i></div><i class="wintick" style="left:'+fr(H.T.freeze)+'%;top:0"></i><i class="wintick" style="left:'+fr(H.T.submit)+'%;top:0"></i></div>'
   +   '<div class="winlabels below"><span style="left:0">Sat 12:00 build start</span><span class="lf" style="left:'+fr(H.T.freeze)+'%;transform:translateX(-100%)">13:00 freeze</span><span style="right:0">18:00 deadline</span></div></div><div id="heroRepo"></div></div>'
-  + '<div class="card now-panel" data-enter><div id="nowp"></div><div class="fc" id="fc" aria-live="polite"></div><div class="flags" id="flags" aria-live="polite"></div></div>'
+  + '<div class="card now-panel" data-enter><div id="nowp"></div><div class="flags" id="flags" aria-live="polite"></div></div>'
   + '</section>'
   + '<div class="dyn" id="dyn"></div>'
   + '<section class="card dirs" id="dirs" data-enter aria-labelledby="dirsH"><div class="card-h"><span class="chip brand goal">Project goal</span><h2 id="dirsH">Five directions, in parallel</h2><span class="muted dcount mono" id="dirsN"></span></div>'
-  +   '<ol class="dlist" id="dlist"></ol></section>';
+  +   '<ol class="dlist" id="dlist"></ol></section>'
+  /* the forecast (MIN-4791, founder 15 Nov: "This is goes to the bottom"): its own card, a sibling AFTER #dyn so renderDyn() never wipes it; hidden while there is no forecast. The project goal (MIN-4654) sits between the demo strip and it */
+  + '<section class="card fc-card" id="fcCard" data-enter hidden aria-labelledby="fcH"><div class="card-h"><h2 id="fcH">Forecast</h2></div><div class="fc" id="fc" aria-live="polite"></div></section>';
   renderDyn(true);
 }
 
@@ -165,13 +167,14 @@ function paintNow(){
 }
 let lastFcKey = '';
 function paintForecast(){
-  const box = $('#fc'); if(!box) return;
+  const box = $('#fc'), card = $('#fcCard'); if(!box) return;
   const ds = Live.state('derived'), f = ds.s==='ok' ? H.forecast() : null;
   const blocked = f ? H.fcBlocked() : [], cut = f ? H.fcCut() : [];
   const key = f ? JSON.stringify([H.fcLine(), f.verdict, blocked, cut, f.cut_reaches_freeze]) : '';
   if(key===lastFcKey) return; lastFcKey = key;
+  if(card) card.hidden = !f;
   if(!f){ box.innerHTML = ''; return; }
-  let h = '<div class="micro">Forecast</div><p class="fc-line">'+esc(H.fcLine())+'</p>';
+  let h = '<p class="fc-line">'+esc(H.fcLine())+'</p>';
   if(blocked.length) h += '<div class="micro">Blocked ('+blocked.length+')</div>' + blocked.map(b => '<div class="f warn"><span class="g" aria-hidden="true">▲</span><span><b class="mono">'+esc(b.id)+'</b> '+esc(b.title)+' waits on '
     + ((b.waits_on||[]).map(w => '<b class="mono">'+esc(w.id)+'</b> ('+esc(w.who)+')').join(', ') || 'an open issue')+'</span></div>').join('');
   if(cut.length) h += '<div class="micro">Cut, in this order</div><ol class="fc-cut">' + cut.map(c => '<li><b class="mono">'+esc(c.id)+'</b> '+esc(c.title)+' <span class="muted">'+esc(c.minutes)+' min, then finish '+esc(c.finish_after_label)+'</span></li>').join('') + '</ol>'

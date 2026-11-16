@@ -170,7 +170,7 @@ class PageSource(unittest.TestCase):
 
     def test_the_bundle_script_copies_the_shared_folder_so_the_model_is_in_the_public_page(self):
         with open(os.path.join(ROOT, "dashboard", "pages-bundle.sh")) as f:
-            self.assertIn('cp -R "$SRC/direction-A" "$SRC/shared"', f.read())
+            self.assertIn('cp -R "$SRC/direction-A" "$SRC/replay" "$SRC/shared" "$SRC/fonts"', f.read())   # the replay page (MIN-4766) is copied beside Direction A
 
 
 class Fixtures(unittest.TestCase):

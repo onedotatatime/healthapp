@@ -18,3 +18,11 @@ supabase/.temp/
 test-results/
 playwright-report/
 *.local
+.mcp.json
+
+# Agent memory is user scope (~/.claude/agent-memory/<role>/), never in the repo (MIN-4794)
+.claude/agent-memory/
+.claude/agent-memory-local/
+
+# Agent rules stay local, not in the public repo.
+CLAUDE.md

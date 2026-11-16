@@ -20,7 +20,7 @@ import {
   type Saved,
   type Store,
 } from "./docs.ts";
-import type { DraftIn } from "./extract.ts";
+import type { DraftIn, LoincRow } from "./extract.ts";
 
 type Sql = postgres.Sql;
 let _sql: Sql | null = null;
@@ -97,11 +97,26 @@ async function writeConfirm(tx: Q, S: string, docId: string, p: ConfirmPlan, unc
   );
 }
 
+/** MIN-4689: the LOINC list per env, cached per isolate for LOINC_TTL_MS. Reference data only. */
+const LOINC_TTL_MS = 10 * 60_000;
+const loincCache = new Map<HealthappEnv, { at: number; rows: LoincRow[] }>();
+
 export const pgStore: Store = {
   async roleOf(env, uid) {
     const rows = await db().unsafe(`select role from ${schema(env)}.profiles where id = $1`, [uid]);
     const role = rows[0]?.role;
     return role === "patient" || role === "doctor" ? (role as Role) : null;
+  },
+
+  async loincCodes(env) {
+    const hit = loincCache.get(env);
+    if (hit && Date.now() - hit.at < LOINC_TTL_MS) return hit.rows;
+    const rows = await db().unsafe(`select loinc, name_en, name_el, ucum from ${schema(env)}.lab_loinc order by loinc collate "C"`);
+    const out: LoincRow[] = rows.map((r: Record<string, string | null>) => ({
+      loinc: r.loinc as string, name_en: r.name_en as string, name_el: r.name_el ?? null, ucum: r.ucum ?? null,
+    }));
+    if (out.length) loincCache.set(env, { at: Date.now(), rows: out });
+    return out;
   },
 
   async identityOf(env, uid) {
@@ -290,10 +305,10 @@ export const pgStore: Store = {
       if (draft.results.length) {
         await tx.unsafe(
           `insert into ${S}.results (document_id, patient_id, pos, analyte, analyte_key, value_num, value_text, unit,
-                                     ref_low, ref_high, ref_text, flag, confidence)
+                                     ref_low, ref_high, ref_text, flag, confidence, loinc)
            select $1::uuid, $2::uuid, x.ord::int - 1, x.v->>'analyte', x.v->>'analyte_key', (x.v->>'value_num')::numeric, x.v->>'value_text',
                   x.v->>'unit', (x.v->>'ref_low')::numeric, (x.v->>'ref_high')::numeric, x.v->>'ref_text', x.v->>'flag',
-                  (x.v->>'confidence')::real
+                  (x.v->>'confidence')::real, x.v->>'loinc'
              from jsonb_array_elements($3::jsonb) with ordinality as x(v, ord)`,
           [docId, patientId, jsonb(draft.results)],
         );
@@ -380,4 +395,28 @@ export async function allowTry(env: HealthappEnv, key: string, max: number, wind
     await tx.unsafe(`insert into ${S}.rate_events (kind, key) values ('demo_login', $1)`, [key]);
     return true;
   });
+}
+
+/** MIN-4674: the one-run-at-a-time lock of healthapp-simulate-live. A row in healthapp_dev.rate_events whatever
+ *  environment calls (the boxd credit is one pool). kind = 'demo_login' only because the table's check allows nothing
+ *  else; rename after the submission. The row stops counting after `ttlSeconds` on its own, so a crashed run never
+ *  blocks anyone for longer. Returns the row id to release, or null when a run holds the lock. */
+export const SIMULATE_LOCK_KEY = "simulate-live:lock";
+export async function takeSimulateLock(ttlSeconds: number): Promise<number | null> {
+  const S = schema("dev");
+  return await db().begin(async (tx) => {
+    await tx.unsafe(`select pg_advisory_xact_lock(hashtext($1))`, [`demo_login:${SIMULATE_LOCK_KEY}`]);
+    const c = await tx.unsafe(
+      `select count(*)::int as n from ${S}.rate_events where kind = 'demo_login' and key = $1 and at > now() - make_interval(secs => $2::int)`,
+      [SIMULATE_LOCK_KEY, ttlSeconds],
+    );
+    if (c[0].n > 0) return null;
+    const r = await tx.unsafe(`insert into ${S}.rate_events (kind, key) values ('demo_login', $1) returning id`, [SIMULATE_LOCK_KEY]);
+    return Number(r[0].id);
+  });
+}
+
+/** Deletes only the row this run took (by id), so a run that outlived its ttl never frees a later run's lock. */
+export async function releaseSimulateLock(id: number): Promise<void> {
+  await db().unsafe(`delete from ${schema("dev")}.rate_events where id = $1 and key = $2`, [id, SIMULATE_LOCK_KEY]);
 }

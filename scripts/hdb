@@ -7,6 +7,10 @@
 #   hdb files  <dev|demo>             print the counts-only file analysis check (six values, no row content)
 #   hdb scan   <dev|demo>             print the counts-only scan check (uploads, per status, refused per reason, stuck...)
 #   hdb kept   <dev|demo>             print the 017 check (refused rows keep a file only with its 14-day end; reads no row)
+#   hdb matches <dev|demo>            print the counts-only matching check (cohort size and fingerprint, 018/019 live)
+#   hdb loinc  <dev|demo>             print the 020 check (lab_loinc rows, coverage, md5; results.loinc counts, no row content)
+#   hdb down   <dev|demo> <file.sql>  print a rollback from supabase/sql/rollback/ with names filled in. Not a
+#                                     migration: render cannot take it. Applied only on the CTO's call (MIN-4649)
 set -euo pipefail
 cmd="${1:-}"; env="${2:-}"
 case "$env" in dev|demo) ;; *) echo "usage: hdb render|check dev|demo [file]" >&2; exit 2;; esac
@@ -15,8 +19,11 @@ dir="$(cd "$(dirname "$0")/../supabase/sql" && pwd)"
 run() { if [ -n "${HDB_DATABASE_URL:-}" ]; then psql "$HDB_DATABASE_URL" -X -v ON_ERROR_STOP=1 -1; else cat; fi; }
 case "$cmd" in
   render)
-    f="${3:?file}"; [[ "$f" =~ ^[0-9]{3}_[a-z_]+\.sql$ ]] || { echo "bad file name" >&2; exit 2; }
+    f="${3:?file}"; [[ "$f" =~ ^[0-9]{3}_[a-z0-9_]+\.sql$ ]] || { echo "bad file name" >&2; exit 2; }
     sed -e "s/__SCHEMA__/${schema}/g" -e "s/__BUCKET__/${bucket}/g" -e "s/__ENV__/${env}/g" "$dir/$f" ;;
+  down)
+    f="${3:?file}"; [[ "$f" =~ ^[0-9]{3}(_[0-9]{3})*_down\.sql$ ]] || { echo "bad rollback file name" >&2; exit 2; }
+    sed -e "s/__SCHEMA__/${schema}/g" -e "s/__BUCKET__/${bucket}/g" -e "s/__ENV__/${env}/g" "$dir/rollback/$f" ;;
   check)
     run <<SQL
 select
@@ -47,5 +54,9 @@ SQL
     sed -e "s/__SCHEMA__/${schema}/g" -e "s/__BUCKET__/${bucket}/g" "$dir/checks/scan_counts.sql" | run ;;
   kept)
     sed -e "s/__SCHEMA__/${schema}/g" "$dir/checks/refused_keeps_file_check.sql" | run ;;
-  *) echo "usage: hdb render|check|files|scan|kept dev|demo [file]" >&2; exit 2;;
+  matches)
+    sed -e "s/__SCHEMA__/${schema}/g" "$dir/checks/match_cohort_counts.sql" | run ;;
+  loinc)
+    sed -e "s/__SCHEMA__/${schema}/g" "$dir/checks/lab_loinc_check.sql" | run ;;
+  *) echo "usage: hdb render|down|check|files|scan|kept|matches|loinc dev|demo [file]" >&2; exit 2;;
 esac

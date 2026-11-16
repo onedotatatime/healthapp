@@ -1,4 +1,5 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import type { Browser, Page } from '@playwright/test';
+import { expect, test } from './helpers/no-post';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
@@ -63,14 +64,18 @@ test('G1 patient: sign in, home tiles, tab bar reaches every patient route, scan
   await expect(page).toHaveURL(/\/login$/);
 });
 
-test('G2 doctor: profile, sign out, and /doctor/simulate renders and matches', async ({ page }, ti) => {
+test('G2 doctor: profile, sign out, and /doctor/simulate renders and searches', async ({ page }, ti) => {
   await signIn(page, 'doctor');
   await expect(page.getByTestId('doctor-home')).toBeVisible();
   await page.getByTestId('simulate-link').click();
   await expect(page).toHaveURL(/\/doctor\/simulate$/);
   await expect(page.getByTestId('sim-page-label')).toBeVisible();
-  await page.getByTestId('sim-run').click();
-  await expect(page.getByTestId('sim-matches'), 'matching ran in the browser').toBeVisible({ timeout: 60_000 });
+  // MIN-4743: one flow. Search runs in the browser (reduced motion shows the end state at once); the page calls no backend.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.getByTestId('recruit-input').fill('I want to recruit 40 people matching rheumatoid arthritis for a trial');
+  await page.getByTestId('recruit-submit').click();
+  await expect(page.getByTestId('recruit-result'), 'the search read the sentence in the browser').toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId('recruit-line')).toHaveText('Asked 40. Found 40.');
   await shot(page, 'g2-simulate', ti);
 
   await page.goto('/doctor');
@@ -127,11 +132,14 @@ test('G3 handshake: doctor connects with the patient share code, patient approve
     await expect(doctor.getByTestId('overview')).toBeVisible();
     await expect(doctor.getByTestId('over-time')).toBeVisible({ timeout: 30_000 });
     await expect(doctor.getByTestId('matches-panel')).toBeVisible();
+    // From 900 px the dashboard shows one view at a time (MIN-4664): Ask is behind its nav item, the overview is behind the other.
+    await doctor.getByTestId('nav-ask').click();
     await expect(doctor.getByTestId('ask-input')).toBeVisible();
     await doctor.getByTestId('ask-input').fill('What is in this record?');
     await doctor.getByTestId('ask-submit').click();
     await expect(doctor.getByTestId('turn').first()).toBeVisible({ timeout: 90_000 });
     await shot(doctor, 'g3-workspace', ti);
+    await doctor.getByTestId('nav-overview').click();
 
     // the sheet: open a source from the timeline, see the "About this file" block, close it
     const open = doctor.getByTestId('overview').getByRole('button', { name: /^Source \d+: Blood test/ }).first(); // a document source (a diary entry has no file block)

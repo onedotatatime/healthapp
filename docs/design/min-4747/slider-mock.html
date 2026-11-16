@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MIN-4747 /simulation one diagram, a plan-year slider: mock</title>
+<!-- MOCK ONLY (spec A15 in docs/design/simulations-motion-spec.md). PLACEHOLDER NUMBERS: years 1 and 2 are the file's month 12 and month 24 values (synthetic records and a plan, drop rescaled to Greece's base by x0.47); year 3 and years 4 to 10 are typed here to show the shape. The app reads every value from simulation.json and types none. Strings: Anna's MIN-4723 comment 9e14b7f0; the few new ones are marked NEW in the spec.
+     Query: ?y=<1..10> sets the slider year (default 3); ?saved=1 shows the founder's "saved" wording instead of "modelled drop" (the CEO seat rules); ?money=own draws the money line on its own scale (variant, open question 2); ?rate=<0..100> the assumed growth rate (default 40). Nothing animates. -->
+<link rel="stylesheet" href="../../brand/tokens.css">
+<link rel="stylesheet" href="../../../src/styles/tokens.css">
+<style>
+html,body{margin:0}body{font:var(--text-doctor-body);color:var(--color-text);background:var(--color-bg)}
+.mock-banner{margin:0;padding:8px 16px;background:var(--peach);color:#12201F;font:600 14px/1.3 var(--font)}
+.sim-label{position:sticky;top:0;z-index:5;margin:0;padding:10px 16px;background:var(--color-info);color:#fff;font:600 16px/1.4 var(--font);text-align:center}
+.wrap{max-width:1120px;margin:var(--space-4) auto;padding:0 var(--space-4)}
+.hero-stub{margin:0 0 var(--space-4);height:56px;border:1px dashed var(--color-border-strong);border-radius:var(--radius-card);display:flex;align-items:center;justify-content:center;color:var(--color-muted);font:var(--text-label);text-align:center;padding:0 var(--space-3)}
+.dg{--k-plan:var(--color-info);--k-model:var(--color-flag-text);--k-computed:var(--color-link);margin:0;padding:var(--space-3) var(--space-4) var(--space-4);background:var(--glass-card);border:1px solid var(--glass-edge);border-radius:var(--radius-card);box-shadow:var(--shadow-soft)}
+@media (min-width:900px){.dg{padding:var(--space-4) var(--space-5) var(--space-5)}}
+.dg{display:flex;flex-direction:column}.dg h2{order:0}.main{order:1}.dg-cap{order:2}.notes{order:3}.dg details{order:4}
+@media (min-width:900px){.dg-cap{order:1}.main{order:2}}
+.dg h2{margin:0 0 var(--space-1);font:var(--text-lead);color:var(--color-text)}
+.dg-cap{margin:var(--space-3) 0 var(--space-3);max-width:70ch;font:var(--text-doctor-body);color:var(--color-muted)}
+.main{display:grid;gap:var(--space-2);grid-template-areas:"money" "plot" "list"}
+@media (min-width:900px){.main{grid-template-columns:minmax(0,1fr) 320px;column-gap:var(--space-5);row-gap:var(--space-3);grid-template-areas:"plot money" "plot list";grid-template-rows:auto 1fr}}
+.a-plot{grid-area:plot;min-width:0}.a-money{grid-area:money}.a-list{grid-area:list}
+.hero{margin:0;padding:var(--space-2) var(--space-4) var(--space-3);background:var(--color-surface-quiet);border-radius:var(--radius-sm);border:1px solid var(--color-border-strong)}
+.hero .hn{display:flex;align-items:center;gap:var(--space-2);font:var(--text-label);font-size:16px;color:var(--color-text)}
+.hero .hv{margin:var(--space-1) 0 0;font:600 36px/1.15 var(--font);color:var(--color-text);font-variant-numeric:tabular-nums}
+@media (min-width:900px){.hero .hv{font-size:40px}}
+.hero .hv small{font:var(--text-label);font-size:16px;color:var(--color-muted)}
+@media (min-width:900px){.hero .hv small{display:block}}
+.hero .hk{margin:0;font:var(--text-label);color:var(--color-muted)}
+.hero .hh{margin:2px 0 0;font:400 14px/1.35 var(--font);color:var(--color-muted)}
+.ro-list{margin:0;padding:0;list-style:none;border-top:1px solid var(--color-border)}
+.ro{display:grid;grid-template-columns:36px minmax(0,1fr) auto;column-gap:var(--space-2);align-items:center;min-height:56px;border-bottom:1px solid var(--color-border)}
+.ro .n{font:var(--text-label);color:var(--color-text)}.ro .k{display:block;font:var(--text-label);color:var(--color-muted)}
+.ro .v{font:var(--text-h2);color:var(--color-text);white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}.ro .v small{display:block;font:var(--text-label);color:var(--color-muted)}
+.ro .h{grid-column:2/4;margin:0 0 var(--space-2);font:400 14px/1.4 var(--font);color:var(--color-muted)}
+.svgbox{position:relative}.svgbox svg{display:block;overflow:visible}
+.svgbox svg text{font:400 11px var(--font);fill:var(--color-muted)}
+.svgbox .axis,.svgbox .tick{stroke:var(--color-border-strong);stroke-width:1}
+.svgbox .grid{stroke:var(--color-border);stroke-width:1}.svgbox .gridtop{stroke:var(--color-border-strong);stroke-width:1;stroke-dasharray:2 3}
+.svgbox .line{fill:none;stroke-linejoin:round;stroke-linecap:butt}
+.svgbox .cur{stroke:var(--color-text);stroke-width:1.5}
+.svgbox .shape{stroke:var(--color-surface);stroke-width:2}
+.svgbox .edge{stroke:var(--color-text);stroke-width:1.5;stroke-dasharray:4 3}
+.bandlab{position:absolute;margin:0;padding:4px 6px;box-sizing:border-box;font:600 11px/1.3 var(--font);color:var(--color-text)}
+@media (min-width:900px){.bandlab{font-size:12px;padding:4px 8px}}
+.ctl{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);margin:var(--space-1) 0 0;min-height:28px}
+.ctl label{white-space:nowrap;font:var(--text-label);font-size:16px;color:var(--color-text)}
+.yr{display:flex;align-items:center;gap:var(--space-2);font:var(--text-label);font-size:16px;color:var(--color-text);font-variant-numeric:tabular-nums}
+.state{margin:var(--space-1) 0 0;min-height:26px;display:flex;align-items:center;font:var(--text-label);color:var(--color-muted)}
+.chip{display:inline-block;padding:2px 10px;border-radius:var(--radius-pill);background:var(--color-caution-bg);color:var(--color-text);border:1px solid var(--color-flag-text);font:var(--text-label)}
+input[type=range]{display:block;height:44px;margin:0;padding:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:var(--radius-pill);background:var(--color-border-strong)}
+input[type=range]::-moz-range-track{height:8px;border-radius:var(--radius-pill);background:var(--color-border-strong)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:32px;height:32px;margin-top:-12px;border-radius:50%;background:var(--color-link);border:3px solid var(--color-surface);box-shadow:0 0 0 1.5px var(--color-link)}
+input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--color-link);border:3px solid var(--color-surface);box-shadow:0 0 0 1.5px var(--color-link)}
+input[type=range]:focus-visible{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{outline:var(--focus-ring);outline-offset:var(--focus-offset)}
+input[type=range]:focus-visible::-moz-range-thumb{outline:var(--focus-ring);outline-offset:var(--focus-offset)}
+.notes{margin:var(--space-3) 0 0}
+.notes p{margin:var(--space-2) 0 0;max-width:70ch;font:var(--text-doctor-body);color:var(--color-text)}.notes p.m{color:var(--color-muted)}.notes p.f{font:var(--text-label);font-weight:400;color:var(--color-muted)}
+.notes p.fact{font:var(--text-label);font-size:16px}
+.dg details{margin-top:var(--space-3)}.dg summary{min-height:var(--target-min);display:flex;align-items:center;font:var(--text-label);font-size:16px;color:var(--color-link);cursor:pointer}
+.tw{overflow-x:auto}.dg table{width:100%;border-collapse:collapse;font:var(--text-doctor-body)}.dg th,.dg td{padding:var(--space-2);text-align:right;border-top:1px solid var(--color-border);font-weight:400;white-space:nowrap}.dg th:first-child,.dg td:first-child{text-align:left}.dg thead th,.dg caption{font:var(--text-label);color:var(--color-muted)}.dg caption{text-align:left;padding:0 0 var(--space-1)}
+@media (max-width:480px){.dg table{font-size:14px}.dg th,.dg td{padding:var(--space-2) 4px}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style></head><body>
+<p class="mock-banner">MOCK (MIN-4747). PLACEHOLDER NUMBERS: years 1 and 2 follow the synthetic file's month 12 and 24, years 3 to 10 are typed to show the shape. Not a result.</p>
+<p class="sim-label">Simulation on synthetic data. A model, not a measurement</p>
+<div class="wrap">
+<p class="hero-stub">Page head and the rest of /simulation stay as they are; the old hero card, three small charts and animated card are gone</p>
+<section class="dg" id="dg" aria-labelledby="dg-h" aria-describedby="dg-desc" data-testid="sim-diagram">
+<h2 id="dg-h"></h2>
+<p class="dg-cap" id="dg-cap"></p>
+<p class="sr" id="dg-desc"></p>
+<div class="main">
+ <div class="a-money"><div class="hero" id="hero"></div></div>
+ <div class="a-plot"><div class="svgbox" id="box"><svg id="svg" aria-hidden="true" focusable="false"></svg><p class="bandlab" id="bl-plan"></p><p class="bandlab" id="bl-ass"></p></div>
+  <div class="ctl"><label for="yr">Plan year</label><span class="yr" id="yrtxt"></span></div>
+  <p class="state" id="state"></p>
+  <input type="range" id="yr" min="1" max="10" step="1" value="3"></div>
+ <div class="a-list"><ul class="ro-list" id="list"></ul></div>
+</div>
+<div class="notes" id="notes"></div>
+<details><summary>Show the values</summary><div class="tw" tabindex="0" role="region" aria-label="Values by plan year"><table><caption>Every plan year, the same figures as the diagram.</caption><thead id="th"></thead><tbody id="tb"></tbody></table></div></details>
+</section></div>
+<script>
+/* PLACEHOLDER DATA. Years 1, 2: file month 12, 24 (drop x0.47 for Greece's base). Year 3: typed. Years 4+: typed growth. */
+const Q=new URLSearchParams(location.search),RATE=(+Q.get('rate')||40)/100,SAVED=Q.get('saved')==='1',OWN=Q.get('money')==='own';
+const N=10,PLAN=3,EUROPLOT=Q.get('plot')==='euro';
+const base={patients:[238,2806,8200],matches:[28,1137,3400],income:[59429,228923,560000],drop:[638,41381,121000],dx:[0.2,9.8,28.6]};
+const D={};for(const k in base){D[k]=base[k].slice();for(let y=PLAN;y<N;y++)D[k].push(D[k][y-1]*(1+RATE))}
+const eur=v=>v<1000?'€'+Math.round(v):v<1e6?'€'+Math.round(v/1000)+'k':'€'+(v/1e6).toFixed(1)+' million';
+const cnt=v=>Math.round(v).toLocaleString('en'),dxf=v=>v>=10?String(Math.round(v)):v.toFixed(1);
+const MONEY_HEAD=SAVED?'Money saved in Greece':'Modelled drop in cost in Greece';
+/* order = rows in the readout: euros, people, diagnoses */
+const L=[
+ {id:'drop',unit:OWN?'own':'euro',kind:'model',shape:'diamond',n:MONEY_HEAD,tag:'Model',f:eur,suf:'a year',w:4.5,r:7.5},
+ {id:'income',unit:'euro',kind:'plan',shape:'up',n:'Our income',tag:'Plan',f:eur,suf:'a year, plan',w:3,r:6,off:11},
+ {id:'patients',unit:'people',kind:'plan',shape:'square',n:'Patients in the network',tag:'Plan',f:cnt,suf:'',w:3,r:6},
+ {id:'matches',unit:'people',kind:'computed',shape:'circle',n:'Records with a match',tag:'Computed on synthetic records',f:cnt,suf:'',w:3,r:6},
+ {id:'dx',unit:'dx',kind:'model',shape:'down',n:'Correct diagnoses gained',tag:'Model',f:dxf,suf:'a year, in the model',w:3,r:6}];
+const DASH={computed:'none',model:'6 4',plan:'12 4 2 4'},COL={computed:'var(--k-computed)',model:'var(--k-model)',plan:'var(--k-plan)'};
+const REF={};for(const u of ['people','euro','dx','own'])REF[u]=Math.max(0,...L.filter(l=>l.unit===u).flatMap(l=>D[l.id]));
+function shape(s,x,y,a,c){
+ if(s==='circle')return `<circle class="shape" cx="${x}" cy="${y}" r="${a}" fill="${c}"/>`;
+ if(s==='square')return `<rect class="shape" x="${x-a*.9}" y="${y-a*.9}" width="${a*1.8}" height="${a*1.8}" fill="${c}"/>`;
+ if(s==='diamond')return `<path class="shape" d="M${x} ${y-a*1.3}L${x+a*1.3} ${y}L${x} ${y+a*1.3}L${x-a*1.3} ${y}Z" fill="${c}"/>`;
+ if(s==='up')return `<path class="shape" d="M${x} ${y-a*1.2}L${x+a*1.2} ${y+a*.9}L${x-a*1.2} ${y+a*.9}Z" fill="${c}"/>`;
+ return `<path class="shape" d="M${x} ${y+a*1.2}L${x+a*1.2} ${y-a*.9}L${x-a*1.2} ${y-a*.9}Z" fill="${c}"/>`}
+const glyph=l=>`<svg width="36" height="14" viewBox="0 0 36 14" aria-hidden="true" focusable="false"><line x1="0" y1="7" x2="24" y2="7" stroke="${COL[l.kind]}" stroke-width="3" stroke-dasharray="${DASH[l.kind]}" stroke-dashoffset="${l.off||0}"/>${shape(l.shape,29,7,4.2,COL[l.kind])}</svg>`;
+const $=id=>document.getElementById(id);
+const rng=$('yr'),svg=$('svg'),box=$('box');
+let G;
+function build(){
+ const W=box.clientWidth||334,wide=innerWidth>=900;
+ const T=wide?46:54,H=wide?320:160,B=40,Lx=EUROPLOT?64:28,R=20,Ht=T+H+B;
+ const x=y=>Lx+(y-1)*(W-Lx-R)/(N-1),yy=f=>T+H*(1-f);
+ G={W,T,H,B,Lx,R,Ht,x,yy};
+ const bx=x(PLAN+.5);
+ let s=`<defs><pattern id="hat" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="9" height="9" style="fill:var(--color-surface-quiet)"/><line x1="0" y1="0" x2="0" y2="9" style="stroke:var(--color-border-strong)" stroke-width="1.5" opacity=".55"/></pattern></defs>`;
+ s+=`<rect x="${bx}" y="${T}" width="${W-R+8-bx}" height="${H}" fill="url(#hat)"/><line class="edge" x1="${bx}" x2="${bx}" y1="${T}" y2="${T+H}"/>`;
+ for(let k=1;k<=N;k++)s+=`<line class="grid" x1="${x(k)}" x2="${x(k)}" y1="${T}" y2="${T+H}"/>`;
+ s+=`<line class="gridtop" x1="${Lx}" x2="${W-R}" y1="${yy(1)}" y2="${yy(1)}"/><line class="grid" x1="${Lx}" x2="${W-R}" y1="${yy(.5)}" y2="${yy(.5)}"/><line class="axis" x1="${Lx}" x2="${W-R}" y1="${yy(0)}" y2="${yy(0)}"/>`;
+ if(EUROPLOT){s+=`<text x="${Lx-6}" y="${yy(0)+4}" text-anchor="end">€0</text><text x="${Lx-6}" y="${yy(.5)+4}" text-anchor="end">${eur(REF.euro/2)}</text><text x="${Lx-6}" y="${yy(1)+4}" text-anchor="end">${eur(REF.euro)}</text>`}else{s+=`<text x="${Lx}" y="${T-9}">Top: the largest value in the unit</text><text x="${Lx-6}" y="${yy(0)+4}" text-anchor="end">0</text>`}
+ for(let k=1;k<=N;k++){s+=`<line class="tick" x1="${x(k)}" x2="${x(k)}" y1="${yy(0)}" y2="${yy(0)+4}"/><text x="${x(k)}" y="${yy(0)+18}" text-anchor="middle">${k}</text>`}
+ s+=`<text x="${(Lx+W-R)/2}" y="${yy(0)+34}" text-anchor="middle">Plan year</text>`;
+ for(const l of [...L].reverse().filter(l=>!EUROPLOT||l.unit==='euro')){const pts=D[l.id].map((v,i)=>`${x(i+1).toFixed(1)},${yy(v/REF[l.unit]).toFixed(1)}`).join(' ');
+  s+=`<polyline class="line" points="${pts}" stroke="${COL[l.kind]}" stroke-width="${l.w}" stroke-dasharray="${DASH[l.kind]}" stroke-dashoffset="${l.off||0}"/>`}
+ s+=`<line class="cur" id="cur" y1="${T}" y2="${T+H}"/><g id="mk"></g>`;
+ svg.setAttribute('width',W);svg.setAttribute('height',Ht);svg.innerHTML=s;
+ const p=$('bl-plan'),a=$('bl-ass');
+ p.style.left=Lx+'px';p.style.top='0px';p.style.width=(bx-Lx)+'px';p.textContent='Plan: years 1 to 3';
+ a.style.left=bx+'px';a.style.top='0px';a.style.width=(W-R-bx)+'px';a.textContent=`Assumed growth, not in the plan: ${Math.round(RATE*100)}% a year`;
+ /* the slider's thumb centre sits at x(year): thumb 32 => centre inset 16 */
+ rng.style.marginLeft=(Lx-16)+'px';rng.style.width=((W-Lx-R)+32)+'px';
+}
+function set(y){
+ const i=y-1,cx=G.x(y);
+ $('cur').setAttribute('x1',cx);$('cur').setAttribute('x2',cx);
+ $('mk').innerHTML=[...L].reverse().filter(l=>!EUROPLOT||l.unit==='euro').map(l=>shape(l.shape,cx,G.yy(D[l.id][i]/REF[l.unit]),l.r,COL[l.kind])).join('');
+ const ass=y>PLAN;$('state').innerHTML=ass?'<span class="chip">Assumed growth, not in the plan</span>':'In the plan';
+ $('yrtxt').textContent=`Year ${y} of ${N}`;
+ rng.setAttribute('aria-valuetext',`Year ${y} of ${N}${ass?', assumed growth':', plan'}`);
+ const m=L[0];
+ $('hero').innerHTML=`<div class="hn">${glyph(m)}<span>${m.n}</span></div><p class="hv">${m.f(D.drop[i])} <small>${m.suf}</small></p><p class="hk">${m.tag}</p><p class="hh">Cost of wrong or missed diagnoses that the model removes, on 2024 spending.</p>`;
+ $('list').innerHTML=L.slice(1).map(l=>`<li class="ro"><span>${glyph(l)}</span><span><span class="n">${l.n}</span><span class="k">${l.tag}</span></span><span class="v">${l.f(D[l.id][i])}<small>${l.suf}</small></span>${l.id==='dx'?'<p class="h">Fewer wrong or missed diagnoses a year, in the model.</p>':''}</li>`).join('');
+ const pts=0.77,per=1915.3;
+ $('notes').querySelector('.ff').textContent=`${pts} points × €${per.toLocaleString('en',{minimumFractionDigits:2})} × ${cnt(D.patients[i])} patients = ${eur(D.drop[i])} a year`;
+ $('dg-desc').textContent=`One diagram, plan year ${y} of ${N}, synthetic model. Patients: ${cnt(D.patients[i])}. Records with a match: ${cnt(D.matches[i])}. Correct diagnoses gained: ${dxf(D.dx[i])} a year, in the model. ${MONEY_HEAD}: ${eur(D.drop[i])} a year. Our income: ${eur(D.income[i])} a year, plan. A model and a plan, not a measurement.`;
+}
+$('dg-h').textContent=SAVED?'What matching could save Greece, year by year':'What matching could change in Greece, year by year';
+$('dg-cap').textContent='Plan years 1 to 10, on synthetic records and a plan. Move the slider to see, for one year, how many patients have joined, how many records find a match, how many diagnoses go right instead of wrong or missed, what that is worth in Greek health spending in the model, and our planned income.';
+$('notes').innerHTML=`<p>Each unit has its own scale: people, euros, diagnoses. Compare heights only inside a unit. Across units, compare how the lines grow.</p>
+<p class="f">Patients and records with a match share one scale. Income and the modelled drop share another. Diagnoses have their own. Every scale starts at zero.</p>
+<p class="fact">For scale: Greece spent €19.9 billion on health in 2024, €1,915 for each inhabitant.</p>
+<p>Assumption, not a finding: each match lowers the chance of a wrong or missed diagnosis by 10%, rising to 20% as matches accumulate.</p>
+<p>Assumption: one visit per patient a year.</p>
+<p>The cost share is an OECD model estimate for a typical OECD country, about 11% of health spending. It is not a Greek measurement.</p>
+<p>Assumption: after plan year ${PLAN}, patients and income grow at ${Math.round(RATE*100)}% a year.</p>
+<p>Income: our plan, not a measurement. Every price and volume is an assumption.</p>
+<p>Spending base: Greece, 2024, €1,915.30 per inhabitant, €19.9 billion a year in all.</p>
+<p class="ff"></p>
+<p class="m">Health spending and population: Eurostat, current health expenditure and population on 1 January, Greece, 2024. Diagnostic cost share: OECD working paper No. 176, 2025. Diagnostic error rate: WHO patient safety fact sheet, 2023.</p>`;
+$('th').innerHTML=`<tr><th>Plan year</th><th>Patients</th><th>With a match</th><th>Diagnoses a year</th><th>${SAVED?'Saved a year':'Modelled drop a year'}</th><th>Income a year</th></tr>`;
+$('tb').innerHTML=D.patients.map((_,i)=>`<tr><td>${i+1}${i+1>PLAN?' (assumed)':''}</td><td>${cnt(D.patients[i])}</td><td>${cnt(D.matches[i])}</td><td>${dxf(D.dx[i])}</td><td>€${cnt(D.drop[i])}</td><td>€${cnt(D.income[i])}</td></tr>`).join('');
+rng.value=Math.min(N,Math.max(1,+Q.get('y')||3));
+build();set(+rng.value);
+rng.addEventListener('input',()=>set(+rng.value));
+addEventListener('resize',()=>{build();set(+rng.value)});
+</script></body></html>

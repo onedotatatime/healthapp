@@ -175,3 +175,39 @@ export function buildOverview(data: RecordData, index: RecordIndex): Overview {
   const timeline = [...exams, ...diary].sort((a, b) => b.at - a.at);
   return { outOfRange, conditions, timeline };
 }
+
+
+// Exams list (MIN-4664) -----------------------------------------------------------------------------------------
+
+export interface ExamRow {
+  key: string;
+  at: number;
+  title: string;
+  date: string;
+  values: number;
+  /** results with a low or high flag (the document's own printed range) */
+  flagged: number;
+  findings: number;
+  subject: Subject;
+  marks: MarkKind[];
+}
+
+/** Every confirmed document the grant can read, newest exam date first. A row opens that document in the source viewer. */
+export function buildExams(data: RecordData): ExamRow[] {
+  return data.documents
+    .map((d) => {
+      const rs = data.results.filter((r) => r.document_id === d.id);
+      return {
+        key: d.id,
+        at: ms(d.exam_date ?? d.created_at),
+        title: KIND_LABEL[d.kind],
+        date: formatDate(d.exam_date ?? d.created_at),
+        values: rs.length,
+        flagged: rs.filter((r) => r.flag === 'low' || r.flag === 'high').length,
+        findings: data.findings.filter((f) => f.document_id === d.id).length,
+        subject: { kind: 'doc', docId: d.id } as Subject,
+        marks: docMarks(d, false),
+      };
+    })
+    .sort((a, b) => b.at - a.at || a.key.localeCompare(b.key));
+}

@@ -22,7 +22,7 @@ export default function MatchesPreview() {
         <h2>What the patient sees</h2>
         <div style={{ maxWidth: 480 }}><MatchesOptIn onChange={() => setKey((k) => k + 1)} /></div>
         <h2>What the doctor sees, in a session with that patient</h2>
-        <PossibleMatchesPanel patientId={PREVIEW_PATIENT_ID} refreshKey={key} />
+        <PossibleMatchesPanel patientId={PREVIEW_PATIENT_ID} refreshKey={key} autoRun />
       </main>
     </MatchesContext.Provider>
   );

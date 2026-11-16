@@ -31,7 +31,7 @@ h2{font-size:clamp(40px,6vw,96px)}
 .nav ul{display:none;gap:24px;font-size:15px;font-weight:500;color:var(--soft)}
 .nav ul a{display:inline-flex;align-items:center;min-height:44px;text-underline-offset:6px;text-decoration-thickness:2px;text-decoration-color:transparent;transition:color .2s,text-decoration-color .2s}
 .nav ul a:hover,.nav ul a:focus-visible{color:var(--ink);text-decoration:underline;text-decoration-color:var(--mint)}
-@media(min-width:768px){.nav{left:48px;right:auto}.nav-aud{display:flex!important}}
+@media(min-width:768px){.nav{left:0;right:0;margin-inline:auto;width:fit-content;max-width:calc(100% - 48px)}.nav-aud{display:flex!important}}
 @media(min-width:1180px){.nav .nav-main{display:flex}}
 /* hero */
 .hero{position:relative;min-height:100dvh;overflow:hidden;padding:120px 24px 40px;display:flex;flex-direction:column;align-items:center}

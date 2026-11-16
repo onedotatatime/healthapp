@@ -1,7 +1,8 @@
 // Photo to structured data, the part that is code and not model (MIN-4475; PRD 10.4 steps 3 to 5).
 // The model copies what is printed, as text. Everything that decides something is here: parsing
 // comma decimals and dd/mm dates, the out-of-range flag (from the printed range, never the model),
-// the analyte key, and the "never half-read" refusals. No I/O in this file.
+// the analyte key, the LOINC code's validation against our list (MIN-4689), and the "never half-read" refusals.
+// No I/O in this file.
 import { z } from "npm:zod@4.6.7";
 import type { RefusalReason } from "./contract.ts";
 
@@ -23,6 +24,9 @@ export const ModelExtract = z.object({
     value: z.string(),
     unit: z.string(),
     ref_text: z.string(),
+    // MIN-4689: a code from the LOINC list sent with the document, or an empty string. No enum here: the list can be
+    // about 100 codes and model-side bounds have cost a Gemini 400 before (MIN-4662); the server validates it (build).
+    loinc: z.string(),
     confidence: Conf,
   })),
   findings: z.array(z.object({
@@ -43,6 +47,7 @@ Rules:
 - issuer: the laboratory, clinic or doctor in the letterhead.
 - printed_name and printed_id: the patient's name and ID number as printed in the patient block. Never infer them. If the page prints none, use an empty string.
 - results: one entry per row of a results table, in the document's order. value is the number or text in the result column only, without units, arrows or asterisks. unit and ref_text as printed (empty string if none). Imaging reports and letters have no results: an empty list.
+- loinc: for each result, the code from the LOINC list sent with the document whose test is the one printed (same analyte, same specimen, same kind of unit). Empty string when no code on the list fits. Never a code that is not on the list.
 - findings: for imaging reports and doctor letters, each statement the document itself makes, one entry per paragraph or labelled section (every sentence of a Conclusion paragraph is one conclusion entry, not one entry per sentence), in the document's own words and language: conclusion (the report's conclusion or impression), written_diagnosis (a diagnosis written by the doctor), medication (medicines named), note (any other clinical statement). date is the date printed with it, or the document's date. specialty is the writing doctor's specialty if printed, else an empty string. A blood test has none unless the lab wrote a comment.
 - Do not make a finding out of a heading, a referral line, a label or the patient block; findings are the clinical statements only.
 - Never add an opinion, a cause, advice, a diagnosis of your own, or a word such as "abnormal".
@@ -182,10 +187,29 @@ const KEYS: [string, RegExp][] = [
   ["sodium", /sodium|νατριο/],
   ["potassium", /potassium|καλιο/],
 ];
+/** Every key analyteKey can return (lab_loinc.analyte_key and the 020 check name these). */
+export const ANALYTE_KEYS: readonly string[] = KEYS.map(([k]) => k);
 export function analyteKey(printed: string): string | null {
   const s = stripAccents(printed.toLowerCase());
   for (const [key, re] of KEYS) if (re.test(s)) return key;
   return null;
+}
+
+// ---------------------------------------------------------------------------------------------
+// LOINC (MIN-4689, CTO decision on MIN-4688 §3): the list comes from healthapp_<env>.lab_loinc, never from a copy in
+// code. It is sent to the model as one text part; the model picks from it and the server keeps only a code that is
+// on it. The list is our reference data, not patient data.
+// ---------------------------------------------------------------------------------------------
+export interface LoincRow {
+  loinc: string;
+  name_en: string;
+  name_el: string | null;
+  ucum: string | null;
+}
+export const LOINC_LIST_HEADER = "LOINC codes you may use (code | English | Greek | unit):";
+/** The extra text part: the header, then one line per row of the table. */
+export function loincListText(rows: readonly LoincRow[]): string {
+  return [LOINC_LIST_HEADER, ...rows.map((r) => `${r.loinc} | ${r.name_en} | ${r.name_el ?? ""} | ${r.ucum ?? ""}`)].join("\n");
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -202,6 +226,8 @@ export interface DraftResultIn {
   ref_text: string | null;
   flag: FlagValue;
   confidence: number | null;
+  /** MIN-4689: a code that is on our LOINC list, or null (none given, not on the list, or no list). */
+  loinc: string | null;
 }
 export interface DraftFindingIn {
   kind: "conclusion" | "written_diagnosis" | "medication" | "note";
@@ -222,7 +248,10 @@ export interface DraftIn {
   results: DraftResultIn[];
   findings: DraftFindingIn[];
 }
-export type Built = { ok: true; draft: DraftIn } | { ok: false; reason: RefusalReason; message: string };
+/** loinc: how many results kept a code from the list, and how many codes the model gave that were dropped. Counts only. */
+export type Built =
+  | { ok: true; draft: DraftIn; loinc: { coded: number; dropped: number } }
+  | { ok: false; reason: RefusalReason; message: string };
 
 export const REFUSAL_MESSAGE: Record<string, string> = {
   unreadable: "We could not read this photo. Retake it flat, in good light, with the whole page in view.",
@@ -233,7 +262,8 @@ export const REFUSAL_MESSAGE: Record<string, string> = {
 
 const blank = (s: string) => (s.trim() === "" ? null : s.trim());
 
-export function build(m: ModelExtract): Built {
+/** codes: the LOINC codes on our list. Null when the list could not be read: then every code is dropped. */
+export function build(m: ModelExtract, codes: ReadonlySet<string> | null = null): Built {
   const no = (reason: RefusalReason): Built => ({ ok: false, reason, message: REFUSAL_MESSAGE[reason] });
   if (!m.readable) return no("unreadable");
   if (m.document_kind === "other") return no("unsupported_kind");
@@ -244,12 +274,17 @@ export function build(m: ModelExtract): Built {
   if (!exam_date) return no("incomplete");
 
   const results: DraftResultIn[] = [];
+  let coded = 0, dropped = 0;
   for (const r of m.results) {
     const analyte = r.analyte.trim();
     const printed = r.value.trim();
     if (!analyte || !printed) continue;
     const value_num = parseNumber(printed, lang);
     const range = parseRange(r.ref_text, lang);
+    const given = r.loinc.trim();
+    const loinc = given && codes?.has(given) ? given : null;
+    if (loinc) coded++;
+    else if (given) dropped++;
     results.push({
       analyte,
       analyte_key: analyteKey(analyte),
@@ -261,6 +296,7 @@ export function build(m: ModelExtract): Built {
       ref_text: blank(r.ref_text),
       flag: flagOf(value_num, range?.low ?? null, range?.high ?? null),
       confidence: r.confidence,
+      loinc,
     });
   }
   const findings: DraftFindingIn[] = [];
@@ -296,5 +332,6 @@ export function build(m: ModelExtract): Built {
       results,
       findings,
     },
+    loinc: { coded, dropped },
   };
 }

@@ -1,0 +1,37 @@
+/* The sentence box, the step rows and the result of /doctor/simulate (MIN-4706, MIN-4736). Same tokens and cards as simulate.css; no shadows beyond .sm-card, no new colours. */
+.rc-form{display:flex;flex-wrap:wrap;gap:var(--space-3);align-items:flex-end}
+.rc-field{display:grid;gap:var(--space-1);flex:1 1 280px;min-width:0}
+.rc-field label{font:var(--text-label);color:var(--color-muted)}
+.rc-input{width:100%;min-height:var(--tap-input);padding:0 var(--space-4);font:var(--text-doctor-body);color:var(--color-text);background:var(--color-surface);border:1.5px solid var(--color-border-strong);border-radius:var(--radius-sm)}
+.rc-input::placeholder{color:var(--color-muted);opacity:1}
+.rc-form .btn{flex:0 0 auto;min-height:var(--tap-input)}
+@media (max-width:480px){.rc-form .btn{flex:1 1 100%}}
+.rc-out{display:grid;gap:var(--space-3);min-width:0}
+.rc-read{font:var(--text-label);color:var(--color-muted)}
+.rc-notice{padding:var(--space-2) var(--space-3);border-left:3px solid var(--color-info);background:var(--color-info-bg);color:var(--ink)}
+.rc-picks{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:var(--space-2)}
+.rc-pick{min-height:var(--tap-doctor);padding:2px 14px;border-radius:var(--radius-pill);background:var(--color-surface-quiet);border:1px solid var(--color-link);color:var(--color-link);font:var(--text-label);cursor:pointer}
+.rc-pick:hover{background:var(--color-surface)}
+.rc-funnel{list-style:none;margin:0;padding:0;display:grid;gap:var(--space-2)}
+.rc-funnel li{display:grid;grid-template-columns:6rem minmax(0,1fr);column-gap:var(--space-3);align-items:start;min-height:64px;padding:10px var(--space-3);border-left:3px solid var(--color-border);opacity:.35;transition:opacity var(--dur-step) var(--ease-out),border-color var(--dur-step) var(--ease-out)}
+.rc-funnel li.show{opacity:1;border-color:var(--color-link)}
+.rc-end{display:grid;gap:var(--space-2)}
+.rc-num{font:var(--text-h2);text-align:right;white-space:nowrap}
+.rc-funnel strong{display:block}
+.rc-funnel span.rc-line{display:block;font-size:14px;color:var(--color-muted)}
+.rc-funnel .sm-bar{margin-top:var(--space-1)}
+
+/* The profiles of the selected records and what they have in common (MIN-4756). Plain text and quiet cards: no shadow, no pill, no new colour. */
+.pf{display:grid;gap:var(--space-2);min-width:0;margin-top:var(--space-4)}
+.pf h3,.pf p{margin:0;overflow-wrap:anywhere}
+.pf .pf-sub{margin-top:var(--space-2)}
+.pf-showing{font:var(--text-label);color:var(--color-muted)}
+.pf-showing:focus-visible{outline:2px solid var(--color-link);outline-offset:2px}
+.pf-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:var(--space-2)}
+.pf-card{display:grid;align-content:start;gap:4px;min-width:0;padding:var(--space-3);border-radius:var(--radius-sm);background:var(--color-surface-quiet);content-visibility:auto;contain-intrinsic-size:auto 120px}
+.pf-meta{display:flex;flex-wrap:wrap;gap:0 var(--space-3);font-size:14px;color:var(--color-muted)}
+.pf-codes{font-size:14px;line-height:20px}
+.pf-lines{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.pf-lines li{overflow-wrap:anywhere}
+.pf-more{justify-self:start;min-height:var(--tap-doctor)}
+@media (max-width:480px){.pf-more{justify-self:stretch}}

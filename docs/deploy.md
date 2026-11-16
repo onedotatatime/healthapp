@@ -12,7 +12,8 @@ Decisions are quoted from the CTO's three "CTO · Decision" comments on MIN-4449
 | Cloudflare account | "Lefteris.georgaras@gmail.com's Account" (`e5f64a453111271fc64f577452c93737`) |
 | Pages project | `healthapp`, Git-connected to `onedotatatime/healthapp` (Cloudflare's GitHub app) |
 | Production URL | `https://healthapp-8ui.pages.dev` (`healthapp.pages.dev` was taken) |
-| Staging URL (stable preview) | `https://staging.healthapp-8ui.pages.dev` |
+| Staging URL (stable preview) | `https://staging.healthapp-8ui.pages.dev`, built as `demo`: the founder's own records, the same as production (MIN-4658) |
+| Synthetic twin (`staging-dev`) | `https://staging-dev.healthapp-8ui.pages.dev`, built as `dev`, always the same commit as `staging`. Every automated test and every agent check opens this one, never `staging` |
 | Other branches | `https://<branch>.healthapp-8ui.pages.dev`, plus one URL per commit |
 | Build | framework preset None · `npm run build` · output `dist` · root `/` |
 | Backend | Supabase project `conductor` (`fnbnhvgrnkrbsrwhgcgc`, eu-west-1, Ireland), schemas `healthapp_dev` and `healthapp_demo`. No healthapp project of its own (founder, 14 Nov: "Conductor too") |
@@ -24,8 +25,16 @@ Created 14 Nov 2026 by the coordinator in the founder's Chrome, after the founde
 | Git | Pages | URL | `VITE_HEALTHAPP_ENV` |
 | --- | --- | --- | --- |
 | `main` | Production | `https://healthapp-8ui.pages.dev` | `demo` after the real-data gate; `dev` before |
-| `staging` | Preview | `https://staging.healthapp-8ui.pages.dev`, the stable `dev` URL for the H8 joint check | `dev` |
+| `staging` | Preview | `https://staging.healthapp-8ui.pages.dev`, where the founder tests on his own records | `demo`, set by the build from the branch name (`src/lib/buildEnv.ts`), not by a variable |
+| `staging-dev` | Preview | `https://staging-dev.healthapp-8ui.pages.dev`, the address for every automated test and agent check | `dev` |
 | any other branch | Preview | its own preview URL | `dev` |
+
+Since MIN-4658 (CTO's amended decision, 15 Nov 2026) the `staging` row is `demo`. Founder, 15 Nov: "staging to load the data from the database and not show dummy data. So if i loged in as patient to load the same patient as production with the same data". Two rules follow for Release:
+
+- After every merge to `staging`, fast-forward the twin in the same step: `git push origin origin/staging:refs/heads/staging-dev`. Fast-forward only, never a commit of its own, no PR into it. If the twin's `/health` sha differs from staging's, fix the twin before E2E runs.
+- No PR merges to `staging` until every schema file its head needs is in `healthapp_demo._applied` (a count by name, no row content). SQL that reaches `demo` ahead of production is additive only.
+
+On `staging`, no agent and no automated run signs in (MIN-4526); Release checks only that `/health` answers 200 with the new sha and `healthapp_demo`. Rollback of the switch: revert the `buildEnv` commit on `staging`; the next build is `dev` again.
 
 > "Both environments use the same Supabase URL and the same anon key. Only the env name differs. Promotions `staging` → `main` are batched at the checkpoints (the gate, H12, the H18 freeze), not per change." — CTO, MIN-4449, Decision 3 of 3
 
@@ -64,7 +73,7 @@ Check it: `gh api repos/onedotatatime/healthapp/branches/main/protection` (and `
 | --- | --- | --- |
 | `VITE_SUPABASE_URL` | Pages → Settings → Variables and secrets, Production and Preview; `.env.example` (name only) | the conductor project URL |
 | `VITE_SUPABASE_ANON_KEY` | same | the conductor anon (publishable) key |
-| `VITE_HEALTHAPP_ENV` | same | `dev` or `demo` (table in §2) |
+| `VITE_HEALTHAPP_ENV` | same | `dev` or `demo` (table in §2). For the `staging` branch only, `vite.config.ts` overrides it to `demo` from `CF_PAGES_BRANCH` (`src/lib/buildEnv.ts`); Preview's variable stays `dev` |
 | `CF_PAGES_COMMIT_SHA` | provided by Pages at build time | read in `vite.config`, shown on the health page; nothing to set |
 | `HEALTHAPP_*` | Supabase function secrets only (`supabase secrets set HEALTHAPP_… --project-ref fnbnhvgrnkrbsrwhgcgc`, one at a time) | never in Pages, never prefixed `VITE_` |
 

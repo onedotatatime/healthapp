@@ -4,7 +4,7 @@
 #   dashboard/install.sh [--viewer-url BASE] [--rotate] [--no-secrets] [--uninstall]
 #
 # What it does:
-#   1. ~/.healthapp-dashboard/ (mode 700): copies snapshot.py, rates.json and open.sh, keeps hand-set.json and directions.json if present.
+#   1. ~/.healthapp-dashboard/ (mode 700): copies snapshot.py, rates.json and open.sh, keeps hand-set.json if present. The five directions are computed from Linear (snapshot.py), no file to seed; an old directions.json is left where it is and ignored.
 #   2. push.key and view.key (mode 600, `openssl rand -hex 32`), created once; --rotate makes new ones.
 #   3. push.json (mode 600): the ingest URL and the PUBLIC anon key the Supabase gateway wants as a bearer.
 #   4. Sets the function secrets HEALTHAPP_DASHBOARD_PUSH_KEY, HEALTHAPP_DASHBOARD_VIEW_KEY and
@@ -57,7 +57,6 @@ chmod 700 "$HOME_DIR/open.sh"
 if [ -f "$SRC/chat_service.sh" ]; then
   HEALTHAPP_DASHBOARD_HOME="$HOME_DIR" bash "$SRC/chat_service.sh" sync-agents || echo "warning: could not sync the sample's new agents into $HOME_DIR/hand-set.json" >&2
 fi
-[ -f "$HOME_DIR/directions.json" ] || cp "$SRC/directions.sample.json" "$HOME_DIR/directions.json"      # never overwritten: the founder's statuses stay
 
 for k in push view; do
   if [ "$ROTATE" = 1 ] || [ ! -s "$HOME_DIR/$k.key" ]; then

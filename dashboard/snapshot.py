@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """snapshot.py — builds one dashboard snapshot (contract v1, MIN-4456) and writes it to a file and/or pushes it.
 
-    snapshot.py [--out PATH] [--push] [--home DIR] [--hand PATH] [--directions PATH] [--rates PATH] [--root DIR] [--now ISO]
+    snapshot.py [--out PATH] [--push] [--home DIR] [--hand PATH] [--rates PATH] [--root DIR] [--now ISO]
 
-Stdlib only (Python 3.9+). Five blocks, each with its own asOf and error:
+Stdlib only (Python 3.9+). Seven blocks, each with its own asOf and error:
   linear  Linear GraphQL, READ-ONLY queries (a test fails if this file contains a write operation); also the `forecast` block (MIN-4565)
   usage   ~/.claude/projects transcripts, read through the same scan()/build_run() code as conductor's bin/usage
   money   usage tokens by model x rates.json x eurPerUsd. An estimate at API list price, never a bill
   hand    ~/.healthapp-dashboard/hand-set.json (credits, demo steps, clean runs, milestone metadata)
   branches  the healthapp repo's branches: local git (read-only: no fetch, no lock, no write) and PRs through one `gh pr list` call (MIN-4460)
   repo      numbers only about the same repo: branches, PRs, commits, lines of code (MIN-4568). Same read-only git and one more `gh pr list`; every field names its source in build_repo
-Besides the blocks, `directions` (the project goal's five directions and their status, MIN-4497) is read from ~/.healthapp-dashboard/directions.json,
-a second hand-set file: summary text only, no patient data. A missing file omits the field; a bad file omits it too and puts the reason in blocks.hand.error.
+  founder_time  minutes of the founder's own chat messages per day, chat and direction (MIN-4559); metadata only, never message text
+Besides the blocks, `directions` (the project goal's five directions and how close each is, MIN-4653) is computed inside the `linear` block from the same
+fetch: DIRECTION_ROOTS (or config.directionRoots in hand-set.json) names the root issues of each direction, and everything under them is counted. Counts only.
 A block that fails keeps its last good value, gets a newer `error`, keeps its old `asOf`; the others stay fresh.
 No key is ever printed, logged or put in the snapshot (see assert_clean).
 """
@@ -29,11 +30,19 @@ SECRET_RE = re.compile('|'.join(['lin' + '_api_', 'eyJ' + '[A-Za-z0-9_-]{30,}', 
 HOME_DEFAULT = '~/.healthapp-dashboard'
 USAGE_BIN_DEFAULT = '~/AppDevelopment/conductor/bin/usage'
 ENV_AGENTS = '~/.claude/.env.agents'
-BLOCKS = ('linear', 'usage', 'money', 'hand', 'branches', 'repo')
+BLOCKS = ('linear', 'usage', 'money', 'hand', 'branches', 'repo', 'founder_time')
 
 
 DIRECTION_STATUSES = ('on_track', 'at_risk', 'off_track', 'not_started')
-DIRECTIONS_FILE = 'directions.json'
+# The five directions of the project goal and the root issues each one is counted from (CTO decision, MIN-4561). A root may sit in two directions.
+# config.directionRoots in hand-set.json has the same shape and wins when present, so the map changes without a PR.
+DIRECTION_ROOTS = (
+    {'n': 1, 'title': 'Scan \u2192 AI reads', 'roots': ('MIN-4474', 'MIN-4554', 'MIN-4613')},
+    {'n': 2, 'title': 'Store extracted data', 'roots': ('MIN-4474', 'MIN-4477', 'MIN-4554')},
+    {'n': 3, 'title': 'Store + analyse original files (staging and main)', 'roots': ('MIN-4546',)},
+    {'n': 4, 'title': 'Real analysis + projection', 'roots': ('MIN-4547',)},
+    {'n': 5, 'title': 'Real matching', 'roots': ('MIN-4504', 'MIN-4649')},
+)
 
 
 class BlockError(Exception):
@@ -323,6 +332,17 @@ def role_label_name(n, role_labels):
                  if (l.get('parent') or {}).get('name') == 'Role' and l['name'] in role_labels), None)
 
 
+def is_done(n):
+    """The one test for "done" (MIN-4765): tasks.done, the milestone counts, the direction counts and doneSeries all use it."""
+    return (n.get('state') or {}).get('type') == 'completed'
+
+
+def milestone_id(n):
+    """"M2 \u00b7 Digitize" -> "M2"; '' when the issue has no milestone."""
+    mname = (n.get('projectMilestone') or {}).get('name') or ''
+    return mname.split(' ')[0] if mname else ''
+
+
 def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
     role_labels = cfg['roleLabels']
     agents_cfg = cfg['agents']
@@ -335,7 +355,7 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
         st, name = n['state']['type'], n['state']['name']
         blocked = any(r['type'] == 'blocks' and r['issue']['state']['type'] not in ('completed', 'canceled')
                       for r in n['inverseRelations']['nodes'])
-        if st == 'completed':
+        if is_done(n):
             t['done'] += 1
         elif name == 'In Review':
             t['inReview'] += 1
@@ -350,11 +370,10 @@ def summarize_linear(nodes, cfg, hand_milestones, now, since, last_seen):
         if role is None and founder.get('linear') and (n.get('assignee') or {}).get('name') == founder['linear']:
             role = founder.get('role', 'Founder')   # the founder's own issues (his Q issues) are not an agent's work
         by_role[role or 'Other'] += 1
-        mname = (n.get('projectMilestone') or {}).get('name') or ''
-        mid = mname.split(' ')[0] if mname else ''
+        mid = milestone_id(n)
         if mid:
             ms[mid][1] += 1
-            if st == 'completed':
+            if is_done(n):
                 ms[mid][0] += 1
     tasks = {k: t[k] for k in ('done', 'inProgress', 'inReview', 'open', 'blocked')}
     tasks['total'] = len(live)
@@ -484,6 +503,96 @@ def blockers_of(n):
         i = r.get('issue') or {}
         if r.get('type') == 'blocks' and (i.get('state') or {}).get('type') not in ('completed', 'canceled', 'duplicate'):
             out.append({'id': i.get('identifier'), 'who': (i.get('assignee') or {}).get('name') or 'unassigned'})
+    return out
+
+
+def direction_roots(cfg):
+    """The direction map: config.directionRoots when present, else DIRECTION_ROOTS. [{n, title, roots}], 1 to 5 entries, n a different whole
+    number 1..5, roots a non-empty list of identifiers. Raises BlockError on a bad one, so a typo is a warning and never a silent wrong map."""
+    items = cfg.get('directionRoots')
+    if items is None:
+        return list(DIRECTION_ROOTS)
+    if not isinstance(items, list) or not 1 <= len(items) <= 5:
+        raise BlockError('config.directionRoots must be a list of 1 to 5 entries')
+    seen = set()
+    for d in items:
+        ok = (isinstance(d, dict) and set(d) == {'n', 'title', 'roots'} and isinstance(d['n'], int) and not isinstance(d['n'], bool) and 1 <= d['n'] <= 5
+              and d['n'] not in seen and isinstance(d['title'], str) and 0 < len(d['title'].strip()) <= 120
+              and isinstance(d['roots'], list) and d['roots'] and all(isinstance(r, str) and r for r in d['roots']))
+        if not ok:
+            raise BlockError('config.directionRoots: every entry needs a different n (1 to 5), a title and a non-empty list of root identifiers')
+        seen.add(d['n'])
+    return sorted(items, key=lambda d: d['n'])
+
+
+def direction_leaves(nodes, d):
+    """Identifiers counted for one direction entry (a direction_roots item): every issue under its roots (root included), canceled, duplicate and
+    backlog left out, leaves only (an issue that is the parent of another counted issue is an umbrella, not one more item). The one place this is
+    decided: build_directions and build_done_series both call it, so the live counts and the series cannot drift (MIN-4765)."""
+    parent = parent_map(nodes)
+    by_id = {n['identifier']: n for n in nodes}
+    under = set()
+    for r in d['roots']:
+        under |= under_root(nodes, r)
+    counted = {i for i in under if (by_id[i].get('state') or {}).get('type') not in ('canceled', 'duplicate', 'backlog')}
+    parents = {parent[i] for i in counted if i in parent}
+    return counted - parents
+
+
+def build_done_series(nodes, cfg, hand_milestones, now, since):
+    """doneSeries (MIN-4765, CTO call on MIN-4764): cumulative done counts per 15-minute bucket, same buckets as tokens.series, for the replay page.
+    Counts only: whole numbers, no issue id and no title leave this function. Built with bucketize from completedAt (startedAt, then the window
+    start, when Linear sent none, so the last value still equals the live count), over the same filters as tasks.done (is_done), the milestone
+    counts (milestone_id) and build_directions (direction_leaves). completedAt after `now` counts at `now`; before `since` counts in bucket 1."""
+    def series(items):
+        pts = []
+        for n in items:
+            stamp = n.get('completedAt') or n.get('startedAt')
+            pts.append((min(parse(stamp), now) if stamp else since, 1))
+        pts.sort(key=lambda x: x[0])
+        return [int(x) for x in bucketize(pts, since, now, SERIES_STEP_MIN)]
+    done = [n for n in nodes if is_done(n)]
+    by_id = {n['identifier']: n for n in nodes}
+    return {
+        'seriesFrom': iso(since), 'stepMin': SERIES_STEP_MIN,
+        'total': series(done),
+        'byMilestone': {m['id']: series([n for n in done if milestone_id(n) == m['id']]) for m in hand_milestones},
+        'byDirection': {str(d['n']): series([by_id[i] for i in direction_leaves(nodes, d) if is_done(by_id[i])]) for d in direction_roots(cfg)},
+    }
+
+
+def build_directions(nodes, cfg, now, freeze):
+    """[{n, title, status, note, updatedAt}] for the five directions (CTO decision, MIN-4561). Every issue under a direction's roots (root included),
+    leaves only (an umbrella parent is not one more open item), canceled, duplicate and backlog left out. Each counted issue is exactly one of
+    done, blocked, in progress (state type started, In Review included) or open. Numbers only: no issue id and no title leaves this function."""
+    by_id = {n['identifier']: n for n in nodes}
+    out = []
+    for d in direction_roots(cfg):
+        done = blocked = prog = 0
+        total = 0
+        for i in direction_leaves(nodes, d):                          # leaves
+            n = by_id[i]
+            stype = (n.get('state') or {}).get('type')
+            total += 1
+            if is_done(n):
+                done += 1
+            elif blockers_of(n):
+                blocked += 1
+            elif stype == 'started':
+                prog += 1
+        if total == 0 or done == prog == blocked == 0:
+            status = 'not_started'
+        elif done == total:
+            status = 'on_track'
+        elif blocked and not prog:
+            status = 'off_track'
+        elif blocked or now >= freeze:
+            status = 'at_risk'
+        else:
+            status = 'on_track'
+        note = 'no issues mapped' if total == 0 else '%d of %d done' % (done, total) + ''.join(
+            ' \u00b7 %d %s' % (c, label) for c, label in ((prog, 'in progress'), (blocked, 'blocked')) if c)
+        out.append({'n': d['n'], 'title': d['title'].strip(), 'status': status, 'note': note, 'updatedAt': iso(now)})
     return out
 
 
@@ -861,7 +970,7 @@ def build_branches(bcfg, now, tz, nodes, agents_cfg, role_labels, runner=default
 
 # ----------------------------------------------------------------------------- hand
 
-def build_hand(hand, warning=None):
+def build_hand(hand):
     need = ('deadline', 'buildStart', 'freeze', 'submitBy', 'milestones', 'credits', 'demo')
     miss = [k for k in need if k not in hand]
     if miss:
@@ -874,61 +983,129 @@ def build_hand(hand, warning=None):
     data = dict([(k, hand[k]) for k in ('deadline', 'buildStart', 'freeze', 'submitBy')] +
                 [('milestonesMeta', hand['milestones']), ('credits', hand['credits']), ('demo', hand['demo']),
                  ('current', hand.get('current'))])
-    if warning:                                       # a bad directions.json: the hand data is fresh, and the reason is on the block
-        data['_warning'] = warning
     return data
 
 
-# ----------------------------------------------------------------------------- directions
-
-def check_directions(doc):
-    """The directions of a parsed file, or raises BlockError with the reason. {"directions": [{n, title, status, note, updatedAt}, ...]}, 1 to 5
-    entries, n an integer 1..5 and unique, status one of DIRECTION_STATUSES, updatedAt an ISO time with an offset. Sorted by n. Text only."""
-    items = doc.get('directions') if isinstance(doc, dict) else None
-    if not isinstance(items, list) or not 1 <= len(items) <= 5:
-        raise BlockError('directions.json: "directions" must be a list of 1 to 5 entries')
-    out, seen = [], set()
-    for i, d in enumerate(items):
-        where = 'directions.json entry %d' % (i + 1)
-        if not isinstance(d, dict) or set(d) != {'n', 'title', 'status', 'note', 'updatedAt'}:
-            raise BlockError('%s: needs exactly n, title, status, note, updatedAt' % where)
-        n = d['n']
-        if isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= 5 or n in seen:
-            raise BlockError('%s: n must be a different whole number from 1 to 5' % where)
-        seen.add(n)
-        if not isinstance(d['title'], str) or not d['title'].strip() or len(d['title']) > 120:
-            raise BlockError('%s: title must be 1 to 120 characters' % where)
-        if d['status'] not in DIRECTION_STATUSES:
-            raise BlockError('%s: status must be %s' % (where, ' | '.join(DIRECTION_STATUSES)))
-        if not isinstance(d['note'], str) or len(d['note']) > 300:
-            raise BlockError('%s: note must be text of at most 300 characters' % where)
-        try:
-            if not isinstance(d['updatedAt'], str) or datetime.fromisoformat(d['updatedAt'].replace('Z', '+00:00')).tzinfo is None:
-                raise ValueError('needs text with an offset')           # no offset would be read as UTC, and the page shows "updated N min ago"
-        except Exception:
-            raise BlockError('%s: updatedAt must be an ISO time with an offset, such as 2026-11-14T22:00:00+02:00' % where)
-        if SECRET_RE.search(d['title'] + ' ' + d['note']):
-            raise BlockError('%s: the text looks like it holds a key' % where)
-        out.append({'n': n, 'title': d['title'].strip(), 'status': d['status'], 'note': d['note'], 'updatedAt': d['updatedAt']})
-    return sorted(out, key=lambda x: x['n'])
+# ----------------------------------------------------------------------------- founder time (MIN-4559)
+# METADATA ONLY (CTO, MIN-4558): the timestamp of each of the founder's own messages in the Claude chats on this Mac, the chat title and the git
+# branch of the chat. The text of a message is never read, kept or printed. GitHub and Linear actions are not his time (agents act under his accounts).
+FT_GAP_CAP_MIN = 10          # a message is credited the minutes until his next message anywhere, at most this many
+FT_LAST_MIN = 2              # the last message of the window (no next one) is credited this many
+FT_TOP_CHATS = 12
+FT_ISSUE_RE = re.compile(r'\bMIN-\d+\b', re.I)
+# issue (and its whole subtree) -> the directions it serves. Overridable in hand-set config.founderTime.directionRoots. Time on an issue that is under
+# none of these is "not toward the goal"; time in a chat with no issue in its title or branch is "untagged" (also not counted toward the goal).
+FT_DIRECTION_ROOTS = {'MIN-4554': [1, 2], 'MIN-4546': [3], 'MIN-4547': [4], 'MIN-4504': [5]}
 
 
-def read_directions(path):
-    """(directions | None, warning | None). A missing file is (None, None): the field is omitted and the page says "not reported yet". A file that
-    cannot be read or fails the check is (None, reason): omitted too, and the reason goes to blocks.hand.error so a typo is never silent."""
-    try:
-        with open(path) as f:
-            raw = f.read()
-    except FileNotFoundError:
-        return None, None
-    except OSError:
-        return None, 'directions.json: the file cannot be read'
-    try:
-        return check_directions(json.loads(raw)), None
-    except BlockError as ex:
-        return None, str(ex)
-    except ValueError:
-        return None, 'directions.json: not valid JSON'
+def ft_parent_map(nodes):
+    parent = {}
+    for n in nodes or []:
+        p = n.get('parent') or {}
+        if p.get('identifier'):
+            parent[n['identifier']] = p['identifier']
+            gp = (p.get('parent') or {}).get('identifier')
+            if gp:
+                parent.setdefault(p['identifier'], gp)
+    return parent
+
+
+def directions_of(issue_id, roots, parent):
+    cur, seen = issue_id, set()
+    while cur and cur not in seen:
+        if cur in roots:
+            return list(roots[cur])
+        seen.add(cur)
+        cur = parent.get(cur)
+    return []
+
+
+def read_founder_chats(root, name_filter, since, until):
+    """[{key, title, issues:set, stamps:[datetime]}] for the top-level chat files of the healthapp project directories. A founder message is a
+    user record with turnOrigin 'human' that is neither a sidechain (sub-agent) nor meta; tool results, task notifications and agent briefs are not."""
+    import glob
+    chats = []
+    for proj in sorted(os.listdir(root)):
+        if name_filter and name_filter not in proj:
+            continue
+        for p in sorted(glob.glob(os.path.join(root, proj, '*.jsonl'))):      # top level only: sub-agent transcripts live deeper
+            if os.path.getmtime(p) < since.timestamp():
+                continue
+            title, branches, stamps = '', set(), []
+            with open(p, errors='replace') as f:
+                for line in f:
+                    try:
+                        o = json.loads(line)
+                    except ValueError:
+                        continue
+                    t = o.get('type')
+                    if t == 'custom-title':
+                        title = o.get('customTitle') or title
+                    if o.get('gitBranch'):
+                        branches.add(o['gitBranch'])
+                    if t == 'user' and o.get('turnOrigin') == 'human' and not o.get('isSidechain') and not o.get('isMeta') and o.get('timestamp'):
+                        ts = parse(o['timestamp'])
+                        if since <= ts <= until:
+                            stamps.append(ts)
+            if stamps:
+                issues = {m.upper() for m in FT_ISSUE_RE.findall(title + ' ' + ' '.join(branches))}
+                chats.append({'key': os.path.basename(p)[:-6], 'title': title, 'issues': issues, 'stamps': stamps})
+    return chats
+
+
+def build_founder_time(chats, nodes, ftcfg, dirs, now, since, tz):
+    roots = {k.upper(): v for k, v in (ftcfg.get('directionRoots') or FT_DIRECTION_ROOTS).items()}
+    parent = ft_parent_map(nodes)
+    cap = timedelta(minutes=ftcfg.get('gapCapMinutes', FT_GAP_CAP_MIN))
+    last = timedelta(minutes=ftcfg.get('lastMessageMinutes', FT_LAST_MIN))
+    pts = sorted((ts, c['key']) for c in chats for ts in c['stamps'])
+    by_key = {c['key']: c for c in chats}
+    mins, msgs, day = collections.Counter(), collections.Counter(), collections.defaultdict(float)
+    for i, (ts, key) in enumerate(pts):
+        gap = pts[i + 1][0] - ts if i + 1 < len(pts) else last
+        m = min(gap, cap).total_seconds() / 60
+        mins[key] += m
+        msgs[key] += 1
+        day[ts.astimezone(tz).date().isoformat()] += m
+    titles = {d['n']: d['title'] for d in (dirs or [])}
+    per_dir, rows = collections.Counter(), []
+    day_goal = collections.defaultdict(float)
+    for key, m in mins.items():
+        c = by_key[key]
+        issues = sorted(c['issues'])
+        share = {}                                           # bucket -> minutes of this chat
+        for iid in issues:
+            ds = directions_of(iid, roots, parent)
+            for b in (ds or ['none']):
+                share[b] = share.get(b, 0) + m / len(issues) / len(ds or [0])
+        if not issues:
+            share['untagged'] = m
+        for b, v in share.items():
+            per_dir[b] += v
+        toward = sum(v for b, v in share.items() if isinstance(b, int))
+        rows.append({'chat': clean(c['title'])[:60] or 'untitled chat', 'issues': issues[:6], 'directions': sorted(b for b in share if isinstance(b, int)),
+                     'minutes': round(m, 1), 'messages': msgs[key], 'toward_goal_minutes': round(toward, 1)})
+    total = sum(mins.values())
+    toward = sum(v for b, v in per_dir.items() if isinstance(b, int))
+    rows.sort(key=lambda r: -r['minutes'])
+    drains = [dict(r, off_goal_minutes=round(r['minutes'] - r['toward_goal_minutes'], 1)) for r in rows]
+    drain = max(drains, key=lambda r: r['off_goal_minutes'], default=None)
+    per_direction = [{'key': str(n), 'title': titles.get(n), 'minutes': round(per_dir.get(n, 0), 1)} for n in range(1, 6)]
+    per_direction += [{'key': 'none', 'title': 'Not toward the goal (an issue under no direction)', 'minutes': round(per_dir.get('none', 0), 1)},
+                      {'key': 'untagged', 'title': 'Not toward the goal (no issue in the chat title or branch)', 'minutes': round(per_dir.get('untagged', 0), 1)}]
+    return {
+        'window': {'since': iso(since), 'until': iso(now)},
+        'method': 'Only the timestamps of your own messages in the Claude chats on this Mac. Each message counts the minutes until your next message '
+                  'anywhere, at most %d; the last one counts %d. Chats are tagged by the issue in the chat title or git branch, never by message text. '
+                  'GitHub and Linear actions are not counted.' % (cap.total_seconds() / 60, last.total_seconds() / 60),
+        'total_minutes': round(total, 1), 'toward_goal_minutes': round(toward, 1),
+        'share_toward_goal': round(toward / total, 3) if total else None,
+        'messages': sum(msgs.values()),
+        'per_day': [{'date': d, 'minutes': round(v, 1)} for d, v in sorted(day.items())],
+        'per_direction': per_direction,
+        'per_chat': rows[:FT_TOP_CHATS],
+        'biggest_drain': {k: drain[k] for k in ('chat', 'issues', 'off_goal_minutes')} if drain and drain['off_goal_minutes'] > 0 else None,
+    }
 
 
 # ----------------------------------------------------------------------------- repo numbers (MIN-4568)
@@ -1116,15 +1293,13 @@ def run_block(state, name, fn, now):
                        'error': {'message': clean(ex), 'at': iso(now)}}
 
 
-def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runner=default_runner, gh_bin=None, directions=None):
-    """`directions` is read_directions()'s (list | None, warning | None); omitted means the file does not exist."""
-    dirs, dirs_warning = directions or (None, None)
+def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runner=default_runner, gh_bin=None):
     cfg = dict(hand['config'])
     cfg['_deadline'] = hand['deadline']
     since = parse(hand['buildStart'])
     holder = {}
 
-    run_block(state, 'hand', lambda: build_hand(hand, dirs_warning), now)
+    run_block(state, 'hand', lambda: build_hand(hand), now)
 
     def usage():
         data, rows, U = build_usage(cfg, now, since, root, usage_bin, cfg.get('projectFilter'))
@@ -1148,6 +1323,20 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
             data['forecast'] = build_forecast(nodes, cfg, now, since, parse(hand['freeze']), parse(hand['submitBy']))
         except Exception as ex:
             data['_warning'] = '; '.join(w for w in (data.get('_warning'), 'forecast not computed: %s' % ex) if w)
+        try:                                           # same for the directions; a failure keeps the last good value, whose updatedAt shows its age
+            data['directions'] = build_directions(nodes, cfg, now, parse(hand['freeze']))
+        except Exception as ex:
+            data['_warning'] = '; '.join(w for w in (data.get('_warning'), 'directions not computed: %s' % ex) if w)
+            last = ((state.get('linear') or {}).get('data') or {}).get('directions')
+            if last:
+                data['directions'] = last
+        try:                                           # doneSeries (MIN-4765): same rule, the last good value stays when this pass cannot compute it
+            data['doneSeries'] = build_done_series(nodes, cfg, meta.get('milestonesMeta', hand['milestones']), now, since)
+        except Exception as ex:
+            data['_warning'] = '; '.join(w for w in (data.get('_warning'), 'doneSeries not computed: %s' % ex) if w)
+            last = ((state.get('linear') or {}).get('data') or {}).get('doneSeries')
+            if last:
+                data['doneSeries'] = last
         return data
     run_block(state, 'linear', linear, now)
 
@@ -1161,8 +1350,14 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         return build_repo(rcfg, now, since, runner, gh_bin)
     run_block(state, 'repo', repo_numbers, now)
 
+    def founder_time():
+        tz = parse(hand['buildStart']).tzinfo
+        chats = read_founder_chats(root, cfg.get('projectFilter'), since, now)
+        return build_founder_time(chats, holder.get('nodes'), cfg.get('founderTime') or {}, ((state.get('linear') or {}).get('data') or {}).get('directions'), now, since, tz)
+    run_block(state, 'founder_time', founder_time, now)
+
     g = lambda b: (state.get(b) or {}).get('data') or {}
-    h, lin, us, mo, br, rp = g('hand'), g('linear'), g('usage'), g('money'), g('branches'), g('repo')
+    h, lin, us, mo, br, rp, ft = g('hand'), g('linear'), g('usage'), g('money'), g('branches'), g('repo'), g('founder_time')
     snap = {
         'schema': SCHEMA, 'intervalSec': INTERVAL_SEC, 'generatedAt': iso(now),
         'blocks': {b: {'asOf': (state.get(b) or {}).get('asOf'), 'error': (state.get(b) or {}).get('error')} for b in BLOCKS},
@@ -1174,6 +1369,10 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         snap.update({k: lin[k] for k in ('milestones', 'current', 'tasks', 'agents', 'lanes')})
         if lin.get('forecast'):
             snap['forecast'] = lin['forecast']
+        if lin.get('directions'):
+            snap['directions'] = lin['directions']
+        if lin.get('doneSeries'):
+            snap['doneSeries'] = lin['doneSeries']
     elif h:
         snap['milestones'] = h.get('milestonesMeta', [])
     if h.get('current'):
@@ -1184,12 +1383,12 @@ def build(now, hand, rates, state, root, usage_bin, key_fn, api=LINEAR_API, runn
         snap['money'] = dict(mo, credits=h.get('credits', []))
     if h:
         snap['demo'] = h['demo']
-    if dirs:
-        snap['directions'] = dirs
     if br:
         snap['branches'] = br
     if rp:
         snap['repo'] = rp
+    if ft:
+        snap['founder_time'] = ft
     return snap
 
 
@@ -1225,7 +1424,6 @@ def main(argv=None):
     here = os.path.dirname(os.path.abspath(__file__))
     ap.add_argument('--home', default=HOME_DEFAULT)
     ap.add_argument('--hand')
-    ap.add_argument('--directions', help='the five directions of the project goal (default <home>/directions.json); a missing file omits the field')
     ap.add_argument('--rates', default=os.path.join(here, 'rates.json'))
     ap.add_argument('--root', default='~/.claude/projects')
     ap.add_argument('--usage-bin', default=USAGE_BIN_DEFAULT)
@@ -1241,8 +1439,7 @@ def main(argv=None):
     hand = json.load(open(hand_path))
     rates = json.load(open(a.rates))
     state = json.load(open(state_path)) if os.path.isfile(state_path) else {}
-    directions = read_directions(os.path.expanduser(a.directions or os.path.join(home, DIRECTIONS_FILE)))
-    snap = build(now, hand, rates, state, os.path.expanduser(a.root), a.usage_bin, linear_key, directions=directions)
+    snap = build(now, hand, rates, state, os.path.expanduser(a.root), a.usage_bin, linear_key)
     text = json.dumps(snap, separators=(',', ':'), sort_keys=False)
     assert_clean(text)
     tmp = state_path + '.tmp'

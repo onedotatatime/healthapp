@@ -7,6 +7,7 @@ import type {
   AssistantResponse,
   ConfirmDocResponse,
   DemoLoginResponse,
+  DiagnosesResponse,
   DiaryRow,
   DocCreateResponse,
   DocPhotoResponse,
@@ -408,3 +409,36 @@ export const fileAnalysisFailed: FileAnalysisRow = {
   analysed_at: "2026-11-14T18:31:00.000+00:00",
 };
 export const analyseDone: AnalyseResponse = { outcome: "analysed", status: "done", error_code: null, items_count: 1 };
+
+// healthapp-diagnoses (MIN-4662): synthetic Maria. The list is sorted by name; every cite resolves to a row above.
+const NO_COUNTS = { facts: 0, items: 0, citations: 0, guard_drops: 0, errors: 0 };
+export const diagnosesOk: DiagnosesResponse = {
+  run_id: "6f708293-a4b5-4c63-97e8-f90a1b2c3d06",
+  status: "ok",
+  items: [
+    {
+      name: "Inflammatory arthritis",
+      fits: [
+        { text: "CRP was 14.2 mg/L, above the printed range <5.", cites: [`r:${IDS.resCrp}`] },
+        { text: "ESR was 38 mm/h, above the printed range 0-20.", cites: [`r:${IDS.resEsr}`] },
+      ],
+      does_not_explain: [{ text: "Rheumatoid factor was 9 IU/mL, within the printed range <14.", cites: [`r:${IDS.resRf}`] }],
+      not_in_record: ["Anti-CCP"],
+    },
+    {
+      name: "Osteoarthritis",
+      fits: [{ text: "A finding records mild degenerative changes of the right knee.", cites: [`f:${IDS.findKnee}`] }],
+      does_not_explain: [],
+      not_in_record: [],
+    },
+  ],
+  truncated: false,
+  counts: { facts: 5, items: 2, citations: 4, guard_drops: 1, errors: 0 },
+  created_at: NOW,
+};
+export const diagnosesNone: DiagnosesResponse = {
+  run_id: "70819304-b5c6-4d74-88f9-0a1b2c3d4e07", status: "none", items: [], truncated: false, counts: { ...NO_COUNTS, facts: 5, guard_drops: 3 }, created_at: NOW,
+};
+export const diagnosesOff: DiagnosesResponse = {
+  run_id: "8192a415-c6d7-4e85-99a0-1b2c3d4e5f08", status: "off", items: [], truncated: false, counts: NO_COUNTS, created_at: NOW,
+};

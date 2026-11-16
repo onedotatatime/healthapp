@@ -1,1 +1,0 @@
-- [Simulation claim rules](reference_simulation_claim_rules.md) — CEO conditions on MIN-4506, CTO-fixed labels, simulation.json is generated (Cron)
