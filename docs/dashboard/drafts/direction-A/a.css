@@ -22,7 +22,7 @@ body{background-color:var(--bg);background-image:linear-gradient(color-mix(in sr
 .vchip.swap{opacity:.15;filter:blur(2px)}
 .top .clock{font:500 14px/18px var(--mono);color:var(--ink-2);white-space:nowrap}
 .tools{display:flex;gap:4px}
-main{padding:var(--gap);display:grid;gap:var(--gap);grid-template-rows:auto auto auto 1fr auto;min-height:0;min-width:0}   /* hero, directions, milestones, panels (take the rest), demo strip */
+main{padding:var(--gap);display:grid;gap:var(--gap);grid-template-rows:auto auto 1fr auto auto;min-height:0;min-width:0}   /* hero, milestones, panels (take the rest), demo strip, directions (the project goal sits last) */
 .dyn{display:contents}
 .hero{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:var(--gap)}
 .hero-main{position:relative;box-shadow:var(--glow);padding:var(--pad) 18px}
