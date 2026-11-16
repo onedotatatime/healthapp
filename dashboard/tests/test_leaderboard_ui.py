@@ -160,7 +160,7 @@ class PageSource(unittest.TestCase):
         hero = fn[fn.index("? '<section class=\"hero-repo"):fn.index(": '<section class=\"card repo-card")]
         self.assertNotIn('class="card', hero)
         css = self.read("direction-A", "a.css")
-        self.assertIn("grid-template-rows:auto auto auto 1fr auto", css)      # hero, directions, milestones, panels, demo strip: no row for the tiles
+        self.assertIn("grid-template-rows:auto auto 1fr auto auto", css)      # hero, milestones, panels, demo strip, directions (project goal last, MIN-4654): no row for the tiles
         self.assertNotIn(".rtiles.wide", css)
 
     def test_the_hero_card_never_gets_a_fixed_height(self):
